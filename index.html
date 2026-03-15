@@ -89,10 +89,10 @@ body{font-family:var(--font-b);background:var(--cream);color:var(--charcoal);min
 .toolbar-top{height:48px;display:flex;align-items:center;justify-content:space-between;gap:12px}
 .toolbar-search{padding:6px 0 8px}
 .search-wrap{position:relative;width:100%}
-.search-input-toolbar{width:100%;background:var(--cream);border:1px solid var(--light-gray);border-radius:30px;padding:7px 16px 7px 38px;color:var(--charcoal);font-family:var(--font-b);font-size:.9rem;outline:none;transition:var(--tr)}
+.search-input-toolbar{width:100%;background:var(--cream);border:1px solid var(--light-gray);border-radius:30px;padding:8px 16px 8px 44px;color:var(--charcoal);font-family:var(--font-b);font-size:.9rem;outline:none;transition:var(--tr);box-sizing:border-box}
 .search-input-toolbar::placeholder{color:var(--warm-gray);opacity:.6}
 .search-input-toolbar:focus{background:var(--ivory);border-color:var(--burgundy)}
-.search-icon{position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--warm-gray);font-size:.95rem;pointer-events:none}
+.search-icon{position:absolute;left:16px;top:50%;transform:translateY(-50%);color:var(--warm-gray);font-size:.95rem;pointer-events:none;line-height:1}
 .filter-tabs{display:flex;gap:3px}
 .filter-tab{background:none;border:none;padding:4px 12px;border-radius:20px;font-family:var(--font-b);font-size:.85rem;color:var(--warm-gray);cursor:pointer;transition:var(--tr)}
 .filter-tab:hover{color:var(--burgundy)}
@@ -413,7 +413,7 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
     </div>
     <div class="toolbar-search">
       <div class="search-wrap">
-        <input type="text" id="searchInput" placeholder="Search wines…" class="search-input search-input-toolbar"/>
+        <input type="text" id="searchInput" placeholder="Search wines…" class="search-input-toolbar"/>
         <span class="search-icon">⌕</span>
       </div>
     </div>
@@ -959,7 +959,7 @@ const Scanner = (() => {
 
   // Aliases used by key modal
   function getUrl() { return localStorage.getItem(STORE_KEY) || ''; }
-  return { analyzeLabel, getUrl, saveUrl, clearUrl, hasUrl,
+  return { analyzeLabel, getUrl, saveUrl, clearUrl, hasUrl, getProxyUrl,
            getKey: getUrl, saveKey: saveUrl, clearKey: clearUrl, hasKey: hasUrl };
 })();
 </script>
@@ -1293,25 +1293,13 @@ function startLocationTracking() {
     _appLocLat = pos.coords.latitude;
     _appLocLng = pos.coords.longitude;
     try {
-      const r = await fetch(
-        `https://nominatim.openstreetmap.org/reverse?lat=${_appLocLat}&lon=${_appLocLng}&format=json&accept-language=en`,
-        { headers: { 'Accept-Language': 'en' } }
-      );
+      const workerUrl = Scanner.getProxyUrl ? Scanner.getProxyUrl() : (localStorage.getItem('wwwProxyUrl') || WORKER_URL_GEOCODE);
+      const r = await fetch(`${workerUrl}/geocode?lat=${_appLocLat}&lon=${_appLocLng}`);
       const d = await r.json();
-      const a = d.address || {};
-      // Try progressively broader place names until we get something useful
-      const place = a.neighbourhood || a.suburb || a.village || a.town ||
-                    a.city_district || a.city || a.county || a.state_district || a.state || '';
-      const country = a.country || '';
-      if (place || country) {
-        _appLocLabel = [place, country].filter(Boolean).join(', ');
-      } else {
-        // Last resort: display_name from Nominatim (already human-readable)
-        _appLocLabel = d.display_name
-          ? d.display_name.split(',').slice(-3).map(s=>s.trim()).join(', ')
-          : `${_appLocLat.toFixed(4)}, ${_appLocLng.toFixed(4)}`;
-      }
-    } catch(_) {
+      _appLocLabel = d.label || '';
+    } catch(_) {}
+    // Fallback only if geocode completely failed
+    if (!_appLocLabel) {
       _appLocLabel = `${_appLocLat.toFixed(4)}, ${_appLocLng.toFixed(4)}`;
     }
   }
@@ -1377,21 +1365,13 @@ function captureLocation() {
     _appLocLat = pos.coords.latitude;
     _appLocLng = pos.coords.longitude;
     try {
-      const r = await fetch(
-        `https://nominatim.openstreetmap.org/reverse?lat=${_appLocLat}&lon=${_appLocLng}&format=json&accept-language=en`,
-        { headers: { 'Accept-Language': 'en' } }
-      );
-      const d = await r.json(); const a = d.address || {};
-      const place = a.neighbourhood||a.suburb||a.village||a.town||a.city_district||a.city||a.county||a.state||'';
-      const country = a.country || '';
-      if (place || country) {
-        _appLocLabel = [place, country].filter(Boolean).join(', ');
-      } else {
-        _appLocLabel = d.display_name
-          ? d.display_name.split(',').slice(-3).map(s=>s.trim()).join(', ')
-          : `${_appLocLat.toFixed(4)}, ${_appLocLng.toFixed(4)}`;
-      }
-    } catch(_) { _appLocLabel = `${_appLocLat.toFixed(4)}, ${_appLocLng.toFixed(4)}`; }
+      const workerUrl = Scanner.getProxyUrl();
+      const r = await fetch(`${workerUrl}/geocode?lat=${_appLocLat}&lon=${_appLocLng}`);
+      const d = await r.json();
+      _appLocLabel = d.label || `${_appLocLat.toFixed(4)}, ${_appLocLng.toFixed(4)}`;
+    } catch(_) {
+      _appLocLabel = `${_appLocLat.toFixed(4)}, ${_appLocLng.toFixed(4)}`;
+    }
     currentLocLat = _appLocLat; currentLocLng = _appLocLng; currentLocLabel = _appLocLabel;
     setLocDisplay(_appLocLabel);
     btn.disabled = false; btn.textContent = '📍 Update';
