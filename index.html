@@ -75,7 +75,6 @@ body{font-family:var(--font-b);background:var(--cream);color:var(--charcoal);min
 .logo-title{font-family:var(--font-d);font-size:1.25rem;font-weight:600;color:var(--parchment);letter-spacing:.05em;line-height:1}
 .logo-sub{font-family:var(--font-b);font-size:.65rem;color:var(--blush);letter-spacing:.14em;text-transform:uppercase;font-style:italic;line-height:1;margin-top:2px}
 .header-actions{display:flex;align-items:center;gap:8px;flex:1;justify-content:flex-end}
-.search-icon{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--warm-gray);font-size:.95rem;pointer-events:none}
 .btn-scan{background:transparent;color:var(--parchment);border:1px solid rgba(196,120,138,.5);border-radius:30px;padding:7px 14px;font-family:var(--font-b);font-size:.85rem;cursor:pointer;transition:var(--tr);white-space:nowrap;flex-shrink:0}
 .btn-scan:hover{background:rgba(196,120,138,.15);border-color:var(--blush)}
 .btn-add{background:var(--gold);color:var(--burgundy-deep);border:none;border-radius:30px;padding:8px 18px;font-family:var(--font-d);font-size:.85rem;font-weight:600;letter-spacing:.04em;cursor:pointer;transition:var(--tr);white-space:nowrap;flex-shrink:0}
@@ -90,10 +89,10 @@ body{font-family:var(--font-b);background:var(--cream);color:var(--charcoal);min
 .toolbar-top{height:48px;display:flex;align-items:center;justify-content:space-between;gap:12px}
 .toolbar-search{padding:6px 0 8px}
 .search-wrap{position:relative;width:100%}
-.search-input-toolbar{width:100%;background:var(--cream);border:1px solid var(--light-gray);border-radius:30px;padding:7px 16px 7px 34px;color:var(--charcoal);font-family:var(--font-b);font-size:.9rem;outline:none;transition:var(--tr)}
+.search-input-toolbar{width:100%;background:var(--cream);border:1px solid var(--light-gray);border-radius:30px;padding:7px 16px 7px 38px;color:var(--charcoal);font-family:var(--font-b);font-size:.9rem;outline:none;transition:var(--tr)}
 .search-input-toolbar::placeholder{color:var(--warm-gray);opacity:.6}
 .search-input-toolbar:focus{background:var(--ivory);border-color:var(--burgundy)}
-.search-icon{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--warm-gray);font-size:.95rem;pointer-events:none}
+.search-icon{position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--warm-gray);font-size:.95rem;pointer-events:none}
 .filter-tabs{display:flex;gap:3px}
 .filter-tab{background:none;border:none;padding:4px 12px;border-radius:20px;font-family:var(--font-b);font-size:.85rem;color:var(--warm-gray);cursor:pointer;transition:var(--tr)}
 .filter-tab:hover{color:var(--burgundy)}
@@ -1325,37 +1324,49 @@ function startLocationTracking() {
 }
 
 function autoCapureLocation() {
-  // Just read the cached app-level location — no new prompt
-  if (_appLocLat) {
-    currentLocLat   = _appLocLat;
-    currentLocLng   = _appLocLng;
-    currentLocLabel = _appLocLabel;
-    setLocDisplay(_appLocLabel);
-    const btn = document.getElementById('locateBtn');
-    if (btn) { btn.disabled = false; btn.textContent = '📍 Update'; }
-  } else {
-    // Not yet available — show spinner and wait
-    const el = document.getElementById('locationText');
-    if (el) el.textContent = '📍 Getting location…';
-    const btn = document.getElementById('locateBtn');
-    if (btn) btn.disabled = true;
-    // Poll until geocoded label is ready (max 12s)
-    let attempts = 0;
-    const poll = setInterval(() => {
-      attempts++;
-      // Wait until _appLocLabel is a real place name, not just coordinates
-      const hasLabel = _appLocLat && _appLocLabel && !_appLocLabel.match(/^-?\d+\.\d+,/);
-      const timeout  = attempts > 24; // 12 seconds
-      if (hasLabel || timeout) {
-        clearInterval(poll);
+  const el  = document.getElementById('locationText');
+  const btn = document.getElementById('locateBtn');
+
+  // Helper to apply cached location once label is a real place name
+  function applyIfReady() {
+    const hasLabel = _appLocLat && _appLocLabel && !_appLocLabel.match(/^-?\d+\.\d+/);
+    if (hasLabel) {
+      currentLocLat   = _appLocLat;
+      currentLocLng   = _appLocLng;
+      currentLocLabel = _appLocLabel;
+      setLocDisplay(_appLocLabel);
+      if (btn) { btn.disabled = false; btn.textContent = '📍 Update'; }
+      return true;
+    }
+    return false;
+  }
+
+  // Already resolved — apply immediately
+  if (applyIfReady()) return;
+
+  // Not ready yet — show status and poll
+  if (el) el.textContent = '📍 Getting location…';
+  if (btn) btn.disabled = true;
+
+  let attempts = 0;
+  const poll = setInterval(() => {
+    attempts++;
+    if (applyIfReady()) {
+      clearInterval(poll);
+    } else if (attempts > 24) { // 12 second timeout
+      clearInterval(poll);
+      // Show best available — coordinates if that's all we have
+      if (_appLocLat) {
         currentLocLat   = _appLocLat;
         currentLocLng   = _appLocLng;
-        currentLocLabel = _appLocLabel;
-        setLocDisplay(_appLocLabel || `${_appLocLat.toFixed(4)}, ${_appLocLng.toFixed(4)}`);
-        if (btn) { btn.disabled = false; btn.textContent = '📍 Update'; }
+        currentLocLabel = _appLocLabel || `${_appLocLat.toFixed(4)}, ${_appLocLng.toFixed(4)}`;
+        setLocDisplay(currentLocLabel);
+      } else {
+        if (el) el.textContent = 'Location unavailable';
       }
-    }, 500);
-  }
+      if (btn) { btn.disabled = false; btn.textContent = '📍 Update'; }
+    }
+  }, 500);
 }
 
 function captureLocation() {
