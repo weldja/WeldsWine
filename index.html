@@ -620,7 +620,7 @@ const Scanner = (() => {
   // Replace the placeholder with your Worker URL before deploying.
   // Example: 'https://wine-scan.yourname.workers.dev'
   // This is the ONLY thing you need to change in this file.
-  const WORKER_URL = 'https://aged-union-8f0d.james-weld.workers.dev/';
+  const WORKER_URL = 'PASTE_WORKER_URL_HERE';
   // ───────────────────────────────────────────────────────────
 
   // localStorage override — lets you update the URL without redeploying
@@ -920,17 +920,18 @@ function initMapView() {
   setTimeout(()=>leafletMap.invalidateSize(),120);
 }
 
-function openModal(wine=null) {
+function openModal(wine=null, injectFront=null, injectBack=null) {
   wineForm.reset();
-  currentPhotoFront=null; currentPhotoBack=null;
+  currentPhotoFront = injectFront;   // set BEFORE setPhotoPreview calls below
+  currentPhotoBack  = injectBack;
   currentLocLat=null; currentLocLng=null; currentLocLabel='';
   setStars(0);
   document.getElementById('aiBanner').style.display='none';
   document.getElementById('locationText').textContent='No location captured';
   document.getElementById('locationText').classList.remove('set');
-  // Reset photo widgets
-  setPhotoPreview('Front', null);
-  setPhotoPreview('Back', null);
+  // Show injected or cleared photos
+  setPhotoPreview('Front', currentPhotoFront);
+  setPhotoPreview('Back',  currentPhotoBack);
 
   if (wine) {
     document.getElementById('modalTitle').textContent='Edit Wine';
@@ -1254,10 +1255,15 @@ function importToForm() {
   let region=scanResult.region||'';
   if(scanResult.appellation&&scanResult.appellation!==region) region=region?`${region} – ${scanResult.appellation}`:scanResult.appellation;
   if(scanResult.classification) region=region?`${region} (${scanResult.classification})`:scanResult.classification;
-  currentPhotoFront=scanFrontUrl;
-  currentPhotoBack=scanBackUrl;
+
+  // Capture photos BEFORE closing scan modal (scanFrontUrl/scanBackUrl are about to be cleared)
+  const front = scanFrontUrl;
+  const back  = scanBackUrl;
+
   closeScanModal();
-  openModal();
+  // Pass photos directly into openModal so the reset doesn't wipe them
+  openModal(null, front, back);
+
   setTimeout(()=>{
     document.getElementById('aiBanner').style.display='flex';
     const map={name:'wineName',winery:'winery',vintage:'vintage',country:'country',grape:'grape'};
@@ -1267,9 +1273,6 @@ function importToForm() {
     });
     if(region){ const e=document.getElementById('region'); e.value=region; flashAutofill(e); }
     if(scanResult.style){ const s=document.getElementById('style'); [...s.options].forEach(o=>{ if(o.value===scanResult.style) s.value=scanResult.style; }); }
-    // Show scanned photos in the form photo widgets
-    if(currentPhotoFront) setPhotoPreview('Front', currentPhotoFront);
-    if(currentPhotoBack)  setPhotoPreview('Back',  currentPhotoBack);
     showToast('Label imported — add your rating and save ✓');
   },260);
 }
