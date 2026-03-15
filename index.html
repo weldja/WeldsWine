@@ -808,9 +808,10 @@ async function handleAuthSubmit() {
 
   setAuthLoading(true);
   try {
+    const redirectTo = window.location.origin + window.location.pathname;
     const { error } = isSignIn
       ? await _sb.auth.signInWithPassword({ email, password })
-      : await _sb.auth.signUp({ email, password });
+      : await _sb.auth.signUp({ email, password, options: { emailRedirectTo: redirectTo } });
 
     if (error) throw error;
     if (!isSignIn) showAuthMsg('ok', 'Account created! Check your email to confirm, then sign in.');
@@ -827,7 +828,8 @@ async function handleMagicLink() {
   if (!email) { showAuthMsg('err', 'Enter your email first'); return; }
   setAuthLoading(true);
   try {
-    const { error } = await _sb.auth.signInWithOtp({ email });
+    const redirectTo = window.location.origin + window.location.pathname;
+    const { error } = await _sb.auth.signInWithOtp({ email, options: { emailRedirectTo: redirectTo } });
     if (error) throw error;
     showAuthMsg('ok', '✉ Magic link sent — check your email');
   } catch(e) {
