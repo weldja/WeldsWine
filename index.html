@@ -472,8 +472,8 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
           </div>
         </div>
 
-        <!-- Rating, date and save on same row -->
-        <div class="form-row rating-save-row">
+        <!-- Rating with Save Wine directly below, date alongside -->
+        <div class="form-row two-col">
           <div class="form-group">
             <label>Rating</label>
             <div class="star-input" id="starInput">
@@ -484,14 +484,11 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
               <span class="star" data-val="5">★</span>
             </div>
             <input type="hidden" id="rating" value="0"/>
+            <button type="button" class="btn-primary" id="saveWineBtn" style="margin-top:8px;width:100%">Save Wine</button>
           </div>
           <div class="form-group">
             <label for="dateTasted">Date Tasted</label>
             <input type="date" id="dateTasted"/>
-          </div>
-          <div class="form-group save-group">
-            <label>&nbsp;</label>
-            <button type="button" class="btn-primary" id="saveWineBtn">Save Wine</button>
           </div>
         </div>
 
