@@ -377,7 +377,6 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
       <button class="auth-tab" id="tabSignUp" onclick="switchAuthTab('signup')">Create Account</button>
     </div>
 
-    <!-- Email / password -->
     <div class="auth-form-group">
       <label for="authEmail">Email</label>
       <input type="email" id="authEmail" placeholder="you@example.com" autocomplete="email"/>
@@ -388,21 +387,15 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
     </div>
     <button class="auth-btn-primary" id="authSubmitBtn" onclick="handleAuthSubmit()">Sign In</button>
 
-    <!-- Magic link option for sign in -->
-    <div id="magicLinkRow">
-      <div class="auth-divider">or</div>
-      <button class="auth-btn-passkey" id="magicLinkBtn" onclick="handleMagicLink()">
-        ✉ Send magic link (no password)
+    <div class="auth-msg" id="authMsg"></div>
+
+    <!-- Magic link as a small text fallback — not a prominent button -->
+    <div id="magicLinkRow" style="text-align:center;margin-top:14px">
+      <button id="magicLinkBtn" onclick="handleMagicLink()" style="background:none;border:none;color:var(--warm-gray);font-family:var(--font-b);font-size:.78rem;cursor:pointer;text-decoration:underline;text-underline-offset:2px;font-style:italic;padding:0">
+        Forgot password? Send a sign-in link instead
       </button>
     </div>
 
-    <!-- Passkey / fingerprint -->
-    <div class="auth-divider">or</div>
-    <button class="auth-btn-passkey" id="passkeyBtn" onclick="handlePasskey()">
-      <span id="passkeyIcon">✉</span> Sign in without a password
-    </button>
-
-    <div class="auth-msg" id="authMsg"></div>
     <div class="auth-footer" id="authFooter">Sign in to access your personal wine journal</div>
   </div>
 </div>
@@ -856,9 +849,8 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   });
 
-  // Magic link button is always available
-  var passkeyIcon = document.getElementById('passkeyIcon');
-  if (passkeyIcon) passkeyIcon.textContent = '✉';
+
+
 
 }); // end DOMContentLoaded
 
@@ -946,33 +938,6 @@ async function handleMagicLink() {
   }
 }
 
-/* ── Passkey / WebAuthn / fingerprint ────────────────────── */
-async function handlePasskey() {
-  // True WebAuthn passkeys require server-side credential storage not available
-  // in a static app. We use magic link (one-tap email login) as the
-  // passwordless alternative — works on all devices including fingerprint-unlock email apps.
-  const email = document.getElementById('authEmail').value.trim();
-  if (!email) {
-    showAuthMsg('err', 'Enter your email address above, then tap this button for a one-click sign-in link');
-    return;
-  }
-  setAuthLoading(true);
-  clearAuthMsg();
-  try {
-    const redirectTo = window.location.origin + window.location.pathname;
-    const { error } = await _sb.auth.signInWithOtp({
-      email,
-      options: { emailRedirectTo: redirectTo }
-    });
-    if (error) throw error;
-    showAuthMsg('ok', '✉ Magic link sent to ' + email + ' — tap the link in your email to sign in instantly (no password needed)');
-  } catch(e) {
-    showAuthMsg('err', e.message || 'Failed to send link');
-  } finally {
-    setAuthLoading(false);
-  }
-}
-
 /* ── Sign out ────────────────────────────────────────────── */
 async function handleSignOut() {
   if (_sb) await _sb.auth.signOut();
@@ -998,7 +963,7 @@ function clearAuthMsg() {
   el.textContent = '';
 }
 function setAuthLoading(on) {
-  ['authSubmitBtn','magicLinkBtn','passkeyBtn'].forEach(id => {
+  ['authSubmitBtn','magicLinkBtn'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.disabled = on;
   });
