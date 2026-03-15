@@ -351,7 +351,7 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
     <!-- Passkey / fingerprint -->
     <div class="auth-divider">or</div>
     <button class="auth-btn-passkey" id="passkeyBtn" onclick="handlePasskey()">
-      <span id="passkeyIcon">☞</span> Sign in with fingerprint / face
+      <span id="passkeyIcon">✉</span> Sign in without a password
     </button>
 
     <div class="auth-msg" id="authMsg"></div>
@@ -720,6 +720,7 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
 const SUPABASE_URL = 'https://phcnswuwrqarikzjvfqd.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBoY25zd3V3cnFhcmlremp2ZnFkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM1OTI2NjEsImV4cCI6MjA4OTE2ODY2MX0.nW_aLGeiFNu6km1leeqTofcOqFQxe3dabNWfIPkc334';
 
+
 // These are set inside DOMContentLoaded — never at parse time
 var _sb = null;
 var _currentUser = null;
@@ -747,26 +748,9 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   });
 
-  // Detect fingerprint/passkey support
-  if (window.PublicKeyCredential) {
-    PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable().then(function(available) {
-      var icon = document.getElementById('passkeyIcon');
-      if (icon) icon.textContent = available ? '👆' : '🔑';
-      var btn = document.getElementById('passkeyBtn');
-      if (btn) {
-        var nodes = btn.childNodes;
-        for (var i = 0; i < nodes.length; i++) {
-          if (nodes[i].nodeType === 3) { // text node
-            nodes[i].textContent = available ? ' Sign in with fingerprint / face' : ' Sign in with passkey';
-            break;
-          }
-        }
-      }
-    });
-  } else {
-    var btn = document.getElementById('passkeyBtn');
-    if (btn) { btn.disabled = true; btn.title = 'Not supported in this browser'; }
-  }
+  // Magic link button is always available
+  var passkeyIcon = document.getElementById('passkeyIcon');
+  if (passkeyIcon) passkeyIcon.textContent = '✉';
 
 }); // end DOMContentLoaded
 
@@ -841,52 +825,26 @@ async function handleMagicLink() {
 
 /* ── Passkey / WebAuthn / fingerprint ────────────────────── */
 async function handlePasskey() {
-  const btn = document.getElementById('passkeyBtn');
-  const isSignIn = document.getElementById('tabSignIn').classList.contains('active');
-
-  // Check browser support
-  if (!window.PublicKeyCredential) {
-    showAuthMsg('err', 'Your browser does not support passkeys/fingerprint login');
+  // True WebAuthn passkeys require server-side credential storage not available
+  // in a static app. We use magic link (one-tap email login) as the
+  // passwordless alternative — works on all devices including fingerprint-unlock email apps.
+  const email = document.getElementById('authEmail').value.trim();
+  if (!email) {
+    showAuthMsg('err', 'Enter your email address above, then tap this button for a one-click sign-in link');
     return;
   }
-
   setAuthLoading(true);
   clearAuthMsg();
-
   try {
-    if (isSignIn) {
-      // Sign in with existing passkey
-      const { data, error } = await _sb.auth.signInWithPasskey();
-      if (error) throw error;
-    } else {
-      // Register a new passkey — user must be signed in with email first
-      const email = document.getElementById('authEmail').value.trim();
-      if (!email) {
-        showAuthMsg('err', 'Enter your email, sign in with password first, then register a passkey');
-        setAuthLoading(false);
-        return;
-      }
-      // Sign in with email/password first to get a session, then enrol passkey
-      const password = document.getElementById('authPassword').value;
-      if (!password) {
-        showAuthMsg('err', 'Enter your password to enrol a passkey for this account');
-        setAuthLoading(false);
-        return;
-      }
-      const { error: signInErr } = await _sb.auth.signInWithPassword({ email, password });
-      if (signInErr) throw signInErr;
-      // Enrol passkey
-      const { error: enrolErr } = await _sb.auth.mfa.enroll({ factorType: 'webauthn' });
-      if (enrolErr) throw enrolErr;
-      showAuthMsg('ok', 'Fingerprint/passkey registered — you can now use it to sign in');
-    }
+    const redirectTo = window.location.origin + window.location.pathname;
+    const { error } = await _sb.auth.signInWithOtp({
+      email,
+      options: { emailRedirectTo: redirectTo }
+    });
+    if (error) throw error;
+    showAuthMsg('ok', '✉ Magic link sent to ' + email + ' — tap the link in your email to sign in instantly (no password needed)');
   } catch(e) {
-    const msg = e.message || '';
-    if (msg.includes('no credentials') || msg.includes('not found')) {
-      showAuthMsg('err', 'No passkey found for this device. Sign in with email/password first, then register a fingerprint.');
-    } else {
-      showAuthMsg('err', msg || 'Passkey authentication failed');
-    }
+    showAuthMsg('err', e.message || 'Failed to send link');
   } finally {
     setAuthLoading(false);
   }
