@@ -81,10 +81,20 @@ body{font-family:var(--font-b);background:var(--cream);color:var(--charcoal);min
 .wine-card:hover{transform:translateY(-3px);box-shadow:0 8px 28px var(--shadow-lg);border-color:var(--blush)}
 @keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
 .card-label-strip{height:4px;background:linear-gradient(90deg,var(--burgundy-deep),var(--blush))}
-.card-dual-photo{display:grid;grid-template-columns:1fr 1fr;height:180px}
-.card-dual-photo img{width:100%;height:180px;object-fit:cover}
-.card-dual-photo img:first-child{border-right:1px solid var(--light-gray)}
-.card-photo{width:100%;height:200px;object-fit:cover;border-bottom:1px solid var(--light-gray)}
+.card-thumb-wrap{position:relative;display:flex;gap:2px;height:80px;cursor:zoom-in;overflow:hidden;background:var(--parchment)}
+.card-thumb-wrap img{flex:1;min-width:0;height:80px;object-fit:cover;transition:opacity .2s}
+.card-thumb-wrap:hover img{opacity:.88}
+.card-thumb-badge{position:absolute;bottom:4px;right:5px;background:rgba(44,36,32,.55);color:#fff;font-size:.62rem;font-family:var(--font-b);padding:1px 6px;border-radius:10px;pointer-events:none;letter-spacing:.04em}
+.card-thumb-single{height:80px;width:100%;object-fit:cover;cursor:zoom-in;display:block;transition:opacity .2s}
+.card-thumb-single:hover{opacity:.88}
+/* Lightbox */
+.label-lightbox{position:fixed;inset:0;background:rgba(10,5,8,.88);z-index:500;display:flex;align-items:center;justify-content:center;padding:20px;cursor:zoom-out;animation:lbIn .18s ease}
+@keyframes lbIn{from{opacity:0}to{opacity:1}}
+.label-lightbox-inner{display:flex;gap:12px;max-width:92vw;max-height:88vh;align-items:center;justify-content:center}
+.label-lightbox-inner img{max-height:88vh;max-width:48vw;object-fit:contain;border-radius:var(--rl);box-shadow:0 8px 40px rgba(0,0,0,.6);flex:1}
+.label-lightbox-inner img.single{max-width:80vw}
+.label-lightbox-close{position:fixed;top:16px;right:18px;background:rgba(255,255,255,.15);border:none;color:#fff;font-size:1.3rem;width:36px;height:36px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.2s}
+.label-lightbox-close:hover{background:rgba(255,255,255,.28)}
 .card-body{padding:16px 18px 12px;flex:1;display:flex;flex-direction:column}
 .card-header{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:6px}
 .card-vintage-badge{font-family:var(--font-d);font-size:.78rem;font-weight:600;color:var(--burgundy);background:var(--parchment);border:1px solid var(--light-gray);border-radius:3px;padding:1px 7px;display:inline-block;margin-bottom:3px}
@@ -374,6 +384,38 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
             <input type="text" id="wineName" placeholder="e.g. Château Margaux" required/>
           </div>
         </div>
+
+        <!-- Rating and date right at the top -->
+        <div class="form-row two-col">
+          <div class="form-group">
+            <label>Rating</label>
+            <div class="star-input" id="starInput">
+              <span class="star" data-val="1">★</span>
+              <span class="star" data-val="2">★</span>
+              <span class="star" data-val="3">★</span>
+              <span class="star" data-val="4">★</span>
+              <span class="star" data-val="5">★</span>
+            </div>
+            <input type="hidden" id="rating" value="0"/>
+          </div>
+          <div class="form-group">
+            <label for="dateTasted">Date Tasted</label>
+            <input type="date" id="dateTasted"/>
+          </div>
+        </div>
+
+        <!-- Location near the top -->
+        <div class="form-row">
+          <div class="location-row" id="locationRow">
+            <span class="location-text" id="locationText">No location captured</span>
+            <button type="button" class="btn-locate" id="locateBtn">📍 Get Location</button>
+          </div>
+          <input type="hidden" id="locLat"/>
+          <input type="hidden" id="locLng"/>
+          <input type="hidden" id="locLabel"/>
+        </div>
+
+        <div class="form-section">Details <span class="opt-tag">optional</span></div>
         <div class="form-row two-col">
           <div class="form-group">
             <label for="winery">Winery / Producer</label>
@@ -421,27 +463,10 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
           </div>
         </div>
 
-        <div class="form-section">Your Tasting <span class="opt-tag">optional</span></div>
-        <div class="form-row two-col">
-          <div class="form-group">
-            <label for="dateTasted">Date Tasted</label>
-            <input type="date" id="dateTasted"/>
-          </div>
-          <div class="form-group">
-            <label>Rating</label>
-            <div class="star-input" id="starInput">
-              <span class="star" data-val="1">★</span>
-              <span class="star" data-val="2">★</span>
-              <span class="star" data-val="3">★</span>
-              <span class="star" data-val="4">★</span>
-              <span class="star" data-val="5">★</span>
-            </div>
-            <input type="hidden" id="rating" value="0"/>
-          </div>
-        </div>
+        <div class="form-section">Tasting Notes <span class="opt-tag">optional</span></div>
         <div class="form-row">
           <div class="form-group">
-            <label for="notes">Tasting Notes</label>
+            <label for="notes">Notes</label>
             <textarea id="notes" rows="3" placeholder="Colour, nose, palate, finish…"></textarea>
           </div>
         </div>
@@ -472,17 +497,6 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
             </div>
             <button type="button" class="photo-clear-btn" id="photoClearBack" style="display:none">✕ Remove</button>
           </div>
-        </div>
-
-        <div class="form-section">Location <span class="opt-tag">optional</span></div>
-        <div class="form-row">
-          <div class="location-row" id="locationRow">
-            <span class="location-text" id="locationText">No location captured</span>
-            <button type="button" class="btn-locate" id="locateBtn">📍 Get Location</button>
-          </div>
-          <input type="hidden" id="locLat"/>
-          <input type="hidden" id="locLng"/>
-          <input type="hidden" id="locLabel"/>
         </div>
 
         <div class="modal-footer" style="padding:16px 0 0;margin-top:6px;border-top:1px solid var(--light-gray)">
@@ -751,7 +765,7 @@ function setupEvents() {
   document.getElementById('viewGrid').addEventListener('click', ()=>setView('grid'));
   document.getElementById('viewMap').addEventListener('click',  ()=>setView('map'));
   document.getElementById('locateBtn').addEventListener('click', captureLocation);
-  document.addEventListener('keydown', e=>{ if(e.key==='Escape'){ closeModal(); closeDetail(); closeScanModal(); } });
+  document.addEventListener('keydown', e=>{ if(e.key==='Escape'){ closeModal(); closeDetail(); closeScanModal(); closeLightbox(e); } });
 }
 
 function setView(v) {
@@ -796,12 +810,16 @@ function createCard(w) {
   const card = document.createElement('div');
   card.className = 'wine-card';
 
-  // Top image area
+  // Thumbnail image area — click opens lightbox
   let imgHtml = '';
   if (w.photoFront && w.photoBack) {
-    imgHtml = `<div class="card-dual-photo"><img src="${w.photoFront}" loading="lazy"/><img src="${w.photoBack}" loading="lazy"/></div>`;
+    imgHtml = `<div class="card-thumb-wrap" onclick="openLightbox('${w.id}',event)">
+      <img src="${w.photoFront}" loading="lazy"/>
+      <img src="${w.photoBack}" loading="lazy"/>
+      <span class="card-thumb-badge">front · back</span>
+    </div>`;
   } else if (w.photoFront || w.photo) {
-    imgHtml = `<img class="card-photo" src="${w.photoFront||w.photo}" loading="lazy"/>`;
+    imgHtml = `<img class="card-thumb-single" src="${w.photoFront||w.photo}" loading="lazy" onclick="openLightbox('${w.id}',event)"/>`;
   } else {
     imgHtml = `<div class="card-label-strip"></div>`;
   }
@@ -834,6 +852,36 @@ function createCard(w) {
       </div>
     </div>`;
   return card;
+}
+
+function openLightbox(id, e) {
+  if (e) e.stopPropagation();
+  const w = getWineById(id);
+  if (!w) return;
+  const front = w.photoFront || w.photo;
+  const back  = w.photoBack;
+  // Remove any existing lightbox
+  const existing = document.getElementById('labelLightbox');
+  if (existing) existing.remove();
+
+  const lb = document.createElement('div');
+  lb.id = 'labelLightbox';
+  lb.className = 'label-lightbox';
+  lb.innerHTML = `
+    <button class="label-lightbox-close" onclick="closeLightbox(event)">✕</button>
+    <div class="label-lightbox-inner">
+      ${front ? `<img src="${front}" class="${back ? '' : 'single'}" alt="Front label"/>` : ''}
+      ${back  ? `<img src="${back}"  alt="Back label"/>` : ''}
+    </div>`;
+  lb.addEventListener('click', e => { if (e.target === lb) closeLightbox(e); });
+  document.body.appendChild(lb);
+  document.body.style.overflow = 'hidden';
+}
+
+function closeLightbox(e) {
+  if (e) e.stopPropagation();
+  const lb = document.getElementById('labelLightbox');
+  if (lb) { lb.remove(); document.body.style.overflow = ''; }
 }
 
 function openDetail(w, e) {
@@ -1067,11 +1115,12 @@ async function handleSave(e) {
       wineGrid.appendChild(c);
       rendered++;
     } catch(err) {
-      console.error('createCard failed for wine:', w.name, err);
+      console.error('createCard failed:', w.name, err);
     }
   });
 
   updateStats();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 function editWine(id,e) { if(e) e.stopPropagation(); closeDetail(); const w=wines.find(w=>w.id===id); if(w) openModal(w); }
