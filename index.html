@@ -714,28 +714,29 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
 <!-- AUTH MODULE -->
 <script>
 /* ══════════════════════════════════════════════════════════════
-   SUPABASE CONFIG
-   ──────────────────────────────────────────────────────────────
-   Replace the two placeholders below with your Supabase project values.
-   Find them at: supabase.com → your project → Settings → API
-   SUPABASE_URL  = Project URL  (https://xxxx.supabase.co)
-   SUPABASE_KEY  = anon/public key (eyJ…)
+   SUPABASE CONFIG — replace with your project values
+   supabase.com → your project → Settings → API
 ══════════════════════════════════════════════════════════════ */
 const SUPABASE_URL = 'PASTE_SUPABASE_URL';
 const SUPABASE_KEY = 'PASTE_SUPABASE_ANON_KEY';
 
-const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+// Declared at top level so all functions can reference it,
+// but initialised inside initAuth() after DOM is ready.
+let _sb = null;
 let _currentUser = null;
 
-/* ── Auth state listener ─────────────────────────────────── */
-_sb.auth.onAuthStateChange((event, session) => {
-  _currentUser = session?.user || null;
-  if (_currentUser) {
-    showApp();
-  } else {
-    hideApp();
-  }
-});
+function initAuth() {
+  _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  _sb.auth.onAuthStateChange((event, session) => {
+    _currentUser = session?.user || null;
+    if (_currentUser) {
+      showApp();
+    } else {
+      hideApp();
+    }
+  });
+}
 
 function showApp() {
   document.getElementById('authScreen').classList.add('hidden');
@@ -859,7 +860,7 @@ async function handlePasskey() {
 
 /* ── Sign out ────────────────────────────────────────────── */
 async function handleSignOut() {
-  await _sb.auth.signOut();
+  if (_sb) await _sb.auth.signOut();
   wines = [];
   if (typeof renderGrid === 'function') renderGrid();
   if (typeof updateStats === 'function') updateStats();
@@ -885,6 +886,9 @@ function setAuthLoading(on) {
 
 // Allow Enter key on email/password inputs
 document.addEventListener('DOMContentLoaded', () => {
+  // Initialise Supabase client first
+  initAuth();
+
   ['authEmail','authPassword'].forEach(id => {
     document.getElementById(id)?.addEventListener('keydown', e => {
       if (e.key === 'Enter') handleAuthSubmit();
@@ -1510,7 +1514,7 @@ function flashAutofill(el){ el.classList.remove('autofilled'); void el.offsetWid
 function loadWines(){ try{ return JSON.parse(localStorage.getItem('wwwines')||'[]'); }catch{ return[]; } }
 
 async function loadWinesFromDB() {
-  if (!_currentUser) return;
+  if (!_sb || !_currentUser) return;
   try {
     const { data, error } = await _sb
       .from('wines')
@@ -1553,7 +1557,7 @@ function saveWines() {
 }
 
 async function saveWineToDB(entry) {
-  if (!_currentUser) return false;
+  if (!_sb || !_currentUser) return false;
   const row = {
     id:            entry.id,
     user_id:       _currentUser.id,
@@ -1581,7 +1585,7 @@ async function saveWineToDB(entry) {
 }
 
 async function deleteWineFromDB(id) {
-  if (!_currentUser) return;
+  if (!_sb || !_currentUser) return;
   await _sb.from('wines').delete().eq('id', id).eq('user_id', _currentUser.id);
 }
 
