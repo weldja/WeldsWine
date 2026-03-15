@@ -1015,35 +1015,45 @@ function handleSave(e) {
   };
   const idx=wines.findIndex(w=>w.id===id);
   if (idx>=0) { entry.createdAt=wines[idx].createdAt; wines[idx]=entry; showToast('Wine updated ✓'); }
-  else { wines.unshift(entry); showToast('Wine saved ✓'); }
+  else { wines.unshift(entry); showToast('Wine saved ✓ ('+wines.length+' total)'); }
   saveWines();
   closeModal();
 
-  // Reset to default state so new wine is always visible
   activeFilter = 'all';
   activeSort   = 'date-desc';
   activeView   = 'grid';
   searchQuery  = '';
   searchInput.value = '';
 
-  // Reset filter tab UI
   document.querySelectorAll('.filter-tab').forEach(t =>
     t.classList.toggle('active', t.dataset.filter === 'all')
   );
-  // Reset view toggle UI
   document.getElementById('viewGrid').classList.add('active');
   document.getElementById('viewMap').classList.remove('active');
 
-  // Force grid visible and render directly
   mapViewEl.style.display  = 'none';
   emptyState.style.display = 'none';
   wineGrid.style.display   = 'grid';
   wineGrid.innerHTML = '';
+
+  let rendered = 0;
   wines.forEach((w,i) => {
-    const c = createCard(w);
-    c.style.animationDelay = `${i * 0.04}s`;
-    wineGrid.appendChild(c);
+    try {
+      const c = createCard(w);
+      c.style.animationDelay = `${i * 0.04}s`;
+      wineGrid.appendChild(c);
+      rendered++;
+    } catch(err) {
+      console.error('createCard failed for wine:', w.name, err);
+    }
   });
+
+  // Show debug info in toast if nothing rendered
+  if (rendered === 0) {
+    showToast('ERROR: 0 cards rendered from ' + wines.length + ' wines');
+  } else {
+    showToast('Saved! Showing ' + rendered + ' wines');
+  }
 
   updateStats();
 }
