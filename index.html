@@ -8,6 +8,40 @@
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&family=EB+Garamond:ital,wght@0,400;1,400&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
   <style>
+/* ── Auth screen ─────────────────────────────────────────── */
+#authScreen{position:fixed;inset:0;background:var(--burgundy-deep);z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px}
+#authScreen.hidden{display:none}
+.auth-card{background:var(--ivory);border-radius:var(--rl);width:100%;max-width:380px;padding:36px 32px;box-shadow:0 20px 60px rgba(0,0,0,.4);animation:fadeUp .35s ease}
+.auth-logo{text-align:center;margin-bottom:28px}
+.auth-logo-icon{font-size:2.4rem;display:block;margin-bottom:8px}
+.auth-logo-title{font-family:var(--font-d);font-size:1.5rem;font-weight:600;color:var(--burgundy-deep);letter-spacing:.05em}
+.auth-logo-sub{font-family:var(--font-b);font-size:.72rem;color:var(--blush);letter-spacing:.14em;text-transform:uppercase;font-style:italic;margin-top:2px}
+.auth-tabs{display:flex;background:var(--light-gray);border-radius:var(--r);padding:2px;gap:2px;margin-bottom:22px}
+.auth-tab{flex:1;background:none;border:none;padding:7px;font-family:var(--font-b);font-size:.88rem;color:var(--warm-gray);cursor:pointer;border-radius:2px;transition:var(--tr)}
+.auth-tab.active{background:var(--ivory);color:var(--burgundy);box-shadow:0 1px 3px var(--shadow)}
+.auth-form-group{margin-bottom:14px}
+.auth-form-group label{display:block;font-family:var(--font-b);font-size:.74rem;letter-spacing:.08em;text-transform:uppercase;color:var(--warm-gray);margin-bottom:4px}
+.auth-form-group input{width:100%;border:1px solid var(--light-gray);border-radius:var(--r);padding:9px 12px;font-family:var(--font-b);font-size:.95rem;color:var(--charcoal);background:var(--cream);outline:none;transition:border-color .2s}
+.auth-form-group input:focus{border-color:var(--burgundy);background:var(--ivory)}
+.auth-btn-primary{width:100%;background:var(--burgundy);color:var(--ivory);border:none;border-radius:var(--r);padding:11px;font-family:var(--font-d);font-size:.92rem;font-weight:600;letter-spacing:.05em;cursor:pointer;transition:var(--tr);margin-top:4px}
+.auth-btn-primary:hover{background:var(--burgundy-lt)}
+.auth-btn-primary:disabled{opacity:.5;cursor:not-allowed}
+.auth-divider{display:flex;align-items:center;gap:10px;margin:16px 0;color:var(--light-gray);font-family:var(--font-b);font-size:.8rem}
+.auth-divider::before,.auth-divider::after{content:'';flex:1;height:1px;background:var(--light-gray)}
+.auth-btn-passkey{width:100%;background:var(--parchment);color:var(--charcoal);border:1px solid var(--light-gray);border-radius:var(--r);padding:10px;font-family:var(--font-b);font-size:.9rem;cursor:pointer;transition:var(--tr);display:flex;align-items:center;justify-content:center;gap:8px}
+.auth-btn-passkey:hover{border-color:var(--blush);background:var(--cream)}
+.auth-btn-passkey:disabled{opacity:.4;cursor:not-allowed}
+.auth-msg{font-family:var(--font-b);font-size:.82rem;margin-top:12px;padding:8px 12px;border-radius:var(--r);text-align:center;display:none}
+.auth-msg.ok{background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0;display:block}
+.auth-msg.err{background:#fef2f2;color:#dc2626;border:1px solid #fca5a5;display:block}
+.auth-footer{margin-top:14px;text-align:center;font-family:var(--font-b);font-size:.78rem;color:var(--warm-gray);font-style:italic}
+/* User badge in header */
+.user-badge{display:flex;align-items:center;gap:6px;color:rgba(245,239,230,.7);font-family:var(--font-b);font-size:.8rem}
+.user-badge-avatar{width:26px;height:26px;border-radius:50%;background:var(--burgundy);border:1px solid var(--blush);display:flex;align-items:center;justify-content:center;font-size:.75rem;color:var(--parchment);flex-shrink:0}
+.btn-signout{background:none;border:1px solid rgba(196,120,138,.3);border-radius:var(--r);padding:3px 10px;color:rgba(245,239,230,.6);font-family:var(--font-b);font-size:.75rem;cursor:pointer;transition:var(--tr)}
+.btn-signout:hover{border-color:var(--blush);color:var(--parchment)}
+  </style>
+  <style>
 /* ============================================================
    Welds Wine Wisdoms — v4
    ============================================================ */
@@ -278,6 +312,53 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
 </head>
 <body>
 
+<!-- Supabase -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<!-- AUTH SCREEN -->
+<div id="authScreen">
+  <div class="auth-card">
+    <div class="auth-logo">
+      <span class="auth-logo-icon">🍷</span>
+      <div class="auth-logo-title">Welds Wine Wisdoms</div>
+      <div class="auth-logo-sub">Personal Wine Journal</div>
+    </div>
+
+    <div class="auth-tabs">
+      <button class="auth-tab active" id="tabSignIn" onclick="switchAuthTab('signin')">Sign In</button>
+      <button class="auth-tab" id="tabSignUp" onclick="switchAuthTab('signup')">Create Account</button>
+    </div>
+
+    <!-- Email / password -->
+    <div class="auth-form-group">
+      <label for="authEmail">Email</label>
+      <input type="email" id="authEmail" placeholder="you@example.com" autocomplete="email"/>
+    </div>
+    <div class="auth-form-group" id="authPasswordGroup">
+      <label for="authPassword">Password</label>
+      <input type="password" id="authPassword" placeholder="••••••••" autocomplete="current-password"/>
+    </div>
+    <button class="auth-btn-primary" id="authSubmitBtn" onclick="handleAuthSubmit()">Sign In</button>
+
+    <!-- Magic link option for sign in -->
+    <div id="magicLinkRow">
+      <div class="auth-divider">or</div>
+      <button class="auth-btn-passkey" id="magicLinkBtn" onclick="handleMagicLink()">
+        ✉ Send magic link (no password)
+      </button>
+    </div>
+
+    <!-- Passkey / fingerprint -->
+    <div class="auth-divider">or</div>
+    <button class="auth-btn-passkey" id="passkeyBtn" onclick="handlePasskey()">
+      <span id="passkeyIcon">☞</span> Sign in with fingerprint / face
+    </button>
+
+    <div class="auth-msg" id="authMsg"></div>
+    <div class="auth-footer" id="authFooter">Sign in to access your personal wine journal</div>
+  </div>
+</div>
+
 <!-- HEADER -->
 <header class="site-header">
   <div class="header-inner">
@@ -295,6 +376,10 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
       </div>
       <button class="btn-scan" id="openScanModal">📷 Scan Label</button>
       <button class="btn-add" id="openAddModal">+ Add Wine</button>
+      <div class="user-badge" id="userBadge" style="display:none">
+        <div class="user-badge-avatar" id="userAvatar">?</div>
+        <button class="btn-signout" onclick="handleSignOut()">Sign out</button>
+      </div>
     </div>
   </div>
 </header>
@@ -626,7 +711,203 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-<!-- SCANNER MODULE -->
+<!-- AUTH MODULE -->
+<script>
+/* ══════════════════════════════════════════════════════════════
+   SUPABASE CONFIG
+   ──────────────────────────────────────────────────────────────
+   Replace the two placeholders below with your Supabase project values.
+   Find them at: supabase.com → your project → Settings → API
+   SUPABASE_URL  = Project URL  (https://xxxx.supabase.co)
+   SUPABASE_KEY  = anon/public key (eyJ…)
+══════════════════════════════════════════════════════════════ */
+const SUPABASE_URL = 'PASTE_SUPABASE_URL';
+const SUPABASE_KEY = 'PASTE_SUPABASE_ANON_KEY';
+
+const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+let _currentUser = null;
+
+/* ── Auth state listener ─────────────────────────────────── */
+_sb.auth.onAuthStateChange((event, session) => {
+  _currentUser = session?.user || null;
+  if (_currentUser) {
+    showApp();
+  } else {
+    hideApp();
+  }
+});
+
+function showApp() {
+  document.getElementById('authScreen').classList.add('hidden');
+  const badge = document.getElementById('userBadge');
+  badge.style.display = 'flex';
+  const email = _currentUser?.email || '';
+  document.getElementById('userAvatar').textContent = email ? email[0].toUpperCase() : '✓';
+  // Re-initialise wines from Supabase for this user
+  if (typeof loadWinesFromDB === 'function') loadWinesFromDB();
+}
+
+function hideApp() {
+  document.getElementById('authScreen').classList.remove('hidden');
+  document.getElementById('userBadge').style.display = 'none';
+}
+
+/* ── Tab switching ───────────────────────────────────────── */
+function switchAuthTab(tab) {
+  const isSignIn = tab === 'signin';
+  document.getElementById('tabSignIn').classList.toggle('active', isSignIn);
+  document.getElementById('tabSignUp').classList.toggle('active', !isSignIn);
+  document.getElementById('authSubmitBtn').textContent = isSignIn ? 'Sign In' : 'Create Account';
+  document.getElementById('magicLinkRow').style.display = isSignIn ? '' : 'none';
+  document.getElementById('authPasswordGroup').querySelector('input').autocomplete =
+    isSignIn ? 'current-password' : 'new-password';
+  clearAuthMsg();
+}
+
+/* ── Email / password ────────────────────────────────────── */
+async function handleAuthSubmit() {
+  const email    = document.getElementById('authEmail').value.trim();
+  const password = document.getElementById('authPassword').value;
+  const isSignIn = document.getElementById('tabSignIn').classList.contains('active');
+
+  if (!email)    { showAuthMsg('err', 'Please enter your email'); return; }
+  if (!password) { showAuthMsg('err', 'Please enter a password'); return; }
+
+  setAuthLoading(true);
+  try {
+    const { error } = isSignIn
+      ? await _sb.auth.signInWithPassword({ email, password })
+      : await _sb.auth.signUp({ email, password });
+
+    if (error) throw error;
+    if (!isSignIn) showAuthMsg('ok', 'Account created! Check your email to confirm, then sign in.');
+  } catch(e) {
+    showAuthMsg('err', e.message || 'Authentication failed');
+  } finally {
+    setAuthLoading(false);
+  }
+}
+
+/* ── Magic link ──────────────────────────────────────────── */
+async function handleMagicLink() {
+  const email = document.getElementById('authEmail').value.trim();
+  if (!email) { showAuthMsg('err', 'Enter your email first'); return; }
+  setAuthLoading(true);
+  try {
+    const { error } = await _sb.auth.signInWithOtp({ email });
+    if (error) throw error;
+    showAuthMsg('ok', '✉ Magic link sent — check your email');
+  } catch(e) {
+    showAuthMsg('err', e.message || 'Failed to send magic link');
+  } finally {
+    setAuthLoading(false);
+  }
+}
+
+/* ── Passkey / WebAuthn / fingerprint ────────────────────── */
+async function handlePasskey() {
+  const btn = document.getElementById('passkeyBtn');
+  const isSignIn = document.getElementById('tabSignIn').classList.contains('active');
+
+  // Check browser support
+  if (!window.PublicKeyCredential) {
+    showAuthMsg('err', 'Your browser does not support passkeys/fingerprint login');
+    return;
+  }
+
+  setAuthLoading(true);
+  clearAuthMsg();
+
+  try {
+    if (isSignIn) {
+      // Sign in with existing passkey
+      const { data, error } = await _sb.auth.signInWithPasskey();
+      if (error) throw error;
+    } else {
+      // Register a new passkey — user must be signed in with email first
+      const email = document.getElementById('authEmail').value.trim();
+      if (!email) {
+        showAuthMsg('err', 'Enter your email, sign in with password first, then register a passkey');
+        setAuthLoading(false);
+        return;
+      }
+      // Sign in with email/password first to get a session, then enrol passkey
+      const password = document.getElementById('authPassword').value;
+      if (!password) {
+        showAuthMsg('err', 'Enter your password to enrol a passkey for this account');
+        setAuthLoading(false);
+        return;
+      }
+      const { error: signInErr } = await _sb.auth.signInWithPassword({ email, password });
+      if (signInErr) throw signInErr;
+      // Enrol passkey
+      const { error: enrolErr } = await _sb.auth.mfa.enroll({ factorType: 'webauthn' });
+      if (enrolErr) throw enrolErr;
+      showAuthMsg('ok', 'Fingerprint/passkey registered — you can now use it to sign in');
+    }
+  } catch(e) {
+    const msg = e.message || '';
+    if (msg.includes('no credentials') || msg.includes('not found')) {
+      showAuthMsg('err', 'No passkey found for this device. Sign in with email/password first, then register a fingerprint.');
+    } else {
+      showAuthMsg('err', msg || 'Passkey authentication failed');
+    }
+  } finally {
+    setAuthLoading(false);
+  }
+}
+
+/* ── Sign out ────────────────────────────────────────────── */
+async function handleSignOut() {
+  await _sb.auth.signOut();
+  wines = [];
+  if (typeof renderGrid === 'function') renderGrid();
+  if (typeof updateStats === 'function') updateStats();
+}
+
+/* ── Helpers ─────────────────────────────────────────────── */
+function showAuthMsg(type, msg) {
+  const el = document.getElementById('authMsg');
+  el.className = 'auth-msg ' + type;
+  el.textContent = msg;
+}
+function clearAuthMsg() {
+  const el = document.getElementById('authMsg');
+  el.className = 'auth-msg';
+  el.textContent = '';
+}
+function setAuthLoading(on) {
+  ['authSubmitBtn','magicLinkBtn','passkeyBtn'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.disabled = on;
+  });
+}
+
+// Allow Enter key on email/password inputs
+document.addEventListener('DOMContentLoaded', () => {
+  ['authEmail','authPassword'].forEach(id => {
+    document.getElementById(id)?.addEventListener('keydown', e => {
+      if (e.key === 'Enter') handleAuthSubmit();
+    });
+  });
+
+  // Check for passkey support and update button
+  if (window.PublicKeyCredential) {
+    PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable().then(available => {
+      const icon = document.getElementById('passkeyIcon');
+      if (icon) icon.textContent = available ? '👆' : '🔑';
+      const btn = document.getElementById('passkeyBtn');
+      if (btn) btn.childNodes[1].textContent =
+        available ? ' Sign in with fingerprint / face' : ' Sign in with passkey';
+    });
+  } else {
+    const btn = document.getElementById('passkeyBtn');
+    if (btn) { btn.disabled = true; btn.title = 'Not supported in this browser'; }
+  }
+});
+</script>
+
+
 <script>
 const Scanner = (() => {
 
@@ -1085,9 +1366,14 @@ async function handleSave(e) {
     createdAt:    Date.now()
   };
   const idx=wines.findIndex(w=>w.id===id);
-  if (idx>=0) { entry.createdAt=wines[idx].createdAt; wines[idx]=entry; showToast('Wine updated ✓'); }
-  else { wines.unshift(entry); showToast('Wine saved ✓'); }
-  saveWines();
+  if (idx>=0) { entry.createdAt=wines[idx].createdAt; wines[idx]=entry; }
+  else { wines.unshift(entry); }
+
+  // Save to Supabase
+  const ok = await saveWineToDB(entry);
+  if (!ok) { showToast('Failed to save — check your connection'); return; }
+  showToast(idx>=0 ? 'Wine updated ✓' : 'Wine saved ✓');
+  saveWines(); // no-op for compat
   closeModal();
 
   activeFilter = 'all';
@@ -1129,7 +1415,8 @@ function deleteWine(id,e) {
   if(e) e.stopPropagation();
   const w=wines.find(w=>w.id===id); if(!w) return;
   if(!confirm(`Delete "${w.name}"?`)) return;
-  wines=wines.filter(w=>w.id!==id); saveWines();
+  wines=wines.filter(w=>w.id!==id);
+  deleteWineFromDB(id);
   setView('grid');
   updateStats(); showToast('Entry deleted');
 }
@@ -1221,24 +1508,81 @@ function generateId(){ return Date.now().toString(36)+Math.random().toString(36)
 function showToast(m){ const t=document.getElementById('toast'); t.textContent=m; t.classList.add('show'); clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove('show'),3000); }
 function flashAutofill(el){ el.classList.remove('autofilled'); void el.offsetWidth; el.classList.add('autofilled'); }
 function loadWines(){ try{ return JSON.parse(localStorage.getItem('wwwines')||'[]'); }catch{ return[]; } }
-function saveWines() {
+
+async function loadWinesFromDB() {
+  if (!_currentUser) return;
   try {
-    localStorage.setItem('wwwines', JSON.stringify(wines));
+    const { data, error } = await _sb
+      .from('wines')
+      .select('*')
+      .eq('user_id', _currentUser.id)
+      .order('created_at', { ascending: false });
+    if (error) throw error;
+    wines = (data || []).map(row => ({
+      id:           row.id,
+      name:         row.name,
+      winery:       row.winery,
+      vintage:      row.vintage,
+      country:      row.country,
+      region:       row.region,
+      grape:        row.grape,
+      style:        row.style,
+      price:        row.price,
+      purchasedFrom:row.purchased_from,
+      dateTasted:   row.date_tasted,
+      notes:        row.notes,
+      rating:       row.rating,
+      photoFront:   row.photo_front,
+      photoBack:    row.photo_back,
+      photo:        row.photo_front,
+      locLat:       row.loc_lat,
+      locLng:       row.loc_lng,
+      locLabel:     row.loc_label,
+      createdAt:    new Date(row.created_at).getTime()
+    }));
+    renderGrid();
+    updateStats();
   } catch(e) {
-    // localStorage quota exceeded — strip photos from older entries and retry
-    console.warn('localStorage full, stripping photos from older entries');
-    const slim = wines.map((w, i) => {
-      if (i === 0) return w; // always keep newest entry intact
-      return {...w, photoFront: null, photoBack: null, photo: null};
-    });
-    try {
-      localStorage.setItem('wwwines', JSON.stringify(slim));
-      wines = slim;
-      showToast('Storage full — older label photos removed to make space');
-    } catch(e2) {
-      showToast('Could not save — storage is full. Try deleting some entries.');
-    }
+    console.error('loadWinesFromDB:', e);
+    showToast('Could not load wines from database');
   }
+}
+
+function saveWines() {
+  // Wines are saved individually via saveWineToDB — this is a no-op for compat
+}
+
+async function saveWineToDB(entry) {
+  if (!_currentUser) return false;
+  const row = {
+    id:            entry.id,
+    user_id:       _currentUser.id,
+    name:          entry.name,
+    winery:        entry.winery,
+    vintage:       entry.vintage,
+    country:       entry.country,
+    region:        entry.region,
+    grape:         entry.grape,
+    style:         entry.style,
+    price:         entry.price,
+    purchased_from:entry.purchasedFrom,
+    date_tasted:   entry.dateTasted,
+    notes:         entry.notes,
+    rating:        entry.rating,
+    photo_front:   entry.photoFront,
+    photo_back:    entry.photoBack,
+    loc_lat:       entry.locLat,
+    loc_lng:       entry.locLng,
+    loc_label:     entry.locLabel
+  };
+  const { error } = await _sb.from('wines').upsert(row, { onConflict: 'id' });
+  if (error) { console.error('saveWineToDB:', error); return false; }
+  return true;
+}
+
+async function deleteWineFromDB(id) {
+  if (!_currentUser) return;
+  await _sb.from('wines').delete().eq('id', id).eq('user_id', _currentUser.id);
 }
 
 /* ── Scanner UI ─────────────────────────────────────────── */
@@ -1503,16 +1847,8 @@ function updateKeyBadge() {
   btn.style.borderColor = has ? 'rgba(107,39,55,.3)' : '';
 }
 
-/* ── Sample data ─────────────────────────────────────────── */
-if (!wines.length) {
-  wines=[
-    {id:'s1',name:'Barolo Vigna Rionda',winery:'Massolino',vintage:'2017',country:'Italy',region:'Piedmont',grape:'Nebbiolo',style:'Red',rating:5,dateTasted:new Date(Date.now()-5*86400000).toISOString().slice(0,10),notes:'Deep garnet. Complex nose of dried roses, tar, and dark cherry. Full-bodied with silky tannins and an extraordinary finish.',price:'£65',purchasedFrom:'Hedonism Wines',locLat:51.5074,locLng:-0.1278,locLabel:'London, United Kingdom',photoFront:null,photoBack:null,photo:null,createdAt:Date.now()-5*86400000},
-    {id:'s2',name:'Chablis Premier Cru Montée de Tonnerre',winery:'Domaine Raveneau',vintage:'2020',country:'France',region:'Burgundy',grape:'Chardonnay',style:'White',rating:5,dateTasted:new Date(Date.now()-12*86400000).toISOString().slice(0,10),notes:'Pale gold. Intense minerality — pure flint and sea spray. Crystalline acidity with lemon curd and oyster shell.',price:'£58',purchasedFrom:'Berry Bros. & Rudd',locLat:48.8566,locLng:2.3522,locLabel:'Paris, France',photoFront:null,photoBack:null,photo:null,createdAt:Date.now()-12*86400000},
-    {id:'s3',name:'Malbec Reserve',winery:'Achaval Ferrer',vintage:'2019',country:'Argentina',region:'Mendoza',grape:'Malbec',style:'Red',rating:4,dateTasted:new Date(Date.now()-20*86400000).toISOString().slice(0,10),notes:'Inky purple. Ripe plum, dark chocolate, violet. Plush tannins, warm finish.',price:'£22',purchasedFrom:'Majestic',locLat:53.4808,locLng:-2.2426,locLabel:'Manchester, United Kingdom',photoFront:null,photoBack:null,photo:null,createdAt:Date.now()-20*86400000},
-    {id:'s4',name:'Fino En Rama',winery:'Lustau',vintage:null,country:'Spain',region:'Jerez',grape:'Palomino',style:'Fortified',rating:4,dateTasted:new Date(Date.now()-35*86400000).toISOString().slice(0,10),notes:'Bone dry, saline, almonds and green apple. Ethereally delicate.',price:'£16',purchasedFrom:'Waitrose',locLat:53.8008,locLng:-1.5491,locLabel:'Leeds, United Kingdom',photoFront:null,photoBack:null,photo:null,createdAt:Date.now()-35*86400000}
-  ];
-  saveWines();
-}
+/* ── No sample data — wines load from Supabase after login ── */
+
 </script>
 </body>
 </html>
