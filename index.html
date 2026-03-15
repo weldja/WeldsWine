@@ -75,10 +75,12 @@ body{font-family:var(--font-b);background:var(--cream);color:var(--charcoal);min
 .logo-title{font-family:var(--font-d);font-size:1.25rem;font-weight:600;color:var(--parchment);letter-spacing:.05em;line-height:1}
 .logo-sub{font-family:var(--font-b);font-size:.65rem;color:var(--blush);letter-spacing:.14em;text-transform:uppercase;font-style:italic;line-height:1;margin-top:2px}
 .header-actions{display:flex;align-items:center;gap:8px;flex:1;justify-content:flex-end}
-.btn-scan{background:transparent;color:var(--parchment);border:1px solid rgba(196,120,138,.5);border-radius:30px;padding:7px 14px;font-family:var(--font-b);font-size:.85rem;cursor:pointer;transition:var(--tr);white-space:nowrap;flex-shrink:0}
-.btn-scan:hover{background:rgba(196,120,138,.15);border-color:var(--blush)}
-.btn-add{background:var(--gold);color:var(--burgundy-deep);border:none;border-radius:30px;padding:8px 18px;font-family:var(--font-d);font-size:.85rem;font-weight:600;letter-spacing:.04em;cursor:pointer;transition:var(--tr);white-space:nowrap;flex-shrink:0}
-.btn-add:hover{background:var(--gold-lt);transform:translateY(-1px);box-shadow:0 4px 12px rgba(201,168,76,.4)}
+.scan-cta{display:flex;flex-direction:column;align-items:center;gap:2px}
+.btn-scan-primary{background:var(--gold);color:var(--burgundy-deep);border:none;border-radius:30px;padding:9px 20px;font-family:var(--font-d);font-size:.92rem;font-weight:600;letter-spacing:.04em;cursor:pointer;transition:var(--tr);white-space:nowrap;flex-shrink:0;box-shadow:0 2px 10px rgba(201,168,76,.35)}
+.btn-scan-primary:hover{background:var(--gold-lt);transform:translateY(-1px);box-shadow:0 4px 16px rgba(201,168,76,.5)}
+.scan-hint{font-family:var(--font-b);font-size:.62rem;color:var(--blush);letter-spacing:.08em;font-style:italic;white-space:nowrap;opacity:.85}
+.btn-add-subtle{background:none;color:rgba(245,239,230,.45);border:none;border-radius:30px;padding:6px 10px;font-family:var(--font-b);font-size:.78rem;cursor:pointer;transition:var(--tr);white-space:nowrap;flex-shrink:0;text-decoration:underline;text-underline-offset:2px;text-decoration-color:rgba(196,120,138,.25)}
+.btn-add-subtle:hover{color:var(--parchment);text-decoration-color:var(--blush)}
 .btn-primary{background:var(--burgundy);color:var(--ivory);border:none;border-radius:var(--r);padding:10px 24px;font-family:var(--font-d);font-size:.88rem;font-weight:600;letter-spacing:.05em;cursor:pointer;transition:var(--tr)}
 .btn-primary:hover{background:var(--burgundy-lt);transform:translateY(-1px)}
 .btn-primary:disabled{opacity:.4;cursor:not-allowed;transform:none}
@@ -372,8 +374,11 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
       </div>
     </div>
     <div class="header-actions">
-      <button class="btn-scan" id="openScanModal">📷 Scan Label</button>
-      <button class="btn-add" id="openAddModal">+ Add Wine</button>
+      <div class="scan-cta">
+        <button class="btn-scan-primary" id="openScanModal">📷 Scan Label</button>
+        <span class="scan-hint">Fastest way to add a wine</span>
+      </div>
+      <button class="btn-add-subtle" id="openAddModal">+ Add manually</button>
       <div class="user-badge" id="userBadge" style="display:none">
         <div class="user-badge-avatar" id="userAvatar">?</div>
         <button class="btn-signout" onclick="handleSignOut()">Sign out</button>
@@ -442,7 +447,7 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
     <div class="empty-icon">🍾</div>
     <h2>Your cellar is empty</h2>
     <p>Scan a wine label or add your first entry to get started.</p>
-    <button class="btn-scan" style="font-size:.95rem;padding:10px 22px" onclick="document.getElementById('openScanModal').click()">📷 Scan Your First Label</button>
+    <button class="btn-scan-primary" style="font-size:.95rem;padding:10px 22px" onclick="document.getElementById('openScanModal').click()">📷 Scan Your First Label</button>
   </div>
 </main>
 
