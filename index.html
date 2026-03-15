@@ -720,23 +720,55 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
 const SUPABASE_URL = 'https://phcnswuwrqarikzjvfqd.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBoY25zd3V3cnFhcmlremp2ZnFkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM1OTI2NjEsImV4cCI6MjA4OTE2ODY2MX0.nW_aLGeiFNu6km1leeqTofcOqFQxe3dabNWfIPkc334';
 
-// Declared at top level so all functions can reference it,
-// but initialised inside initAuth() after DOM is ready.
-let _sb = null;
-let _currentUser = null;
+// These are set inside DOMContentLoaded — never at parse time
+var _sb = null;
+var _currentUser = null;
 
-function initAuth() {
+document.addEventListener('DOMContentLoaded', function() {
+
+  // Initialise Supabase
   _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-  _sb.auth.onAuthStateChange((event, session) => {
-    _currentUser = session?.user || null;
+  // Listen for auth changes
+  _sb.auth.onAuthStateChange(function(event, session) {
+    _currentUser = session ? session.user : null;
     if (_currentUser) {
       showApp();
     } else {
       hideApp();
     }
   });
-}
+
+  // Wire up keyboard shortcuts
+  ['authEmail','authPassword'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') handleAuthSubmit();
+    });
+  });
+
+  // Detect fingerprint/passkey support
+  if (window.PublicKeyCredential) {
+    PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable().then(function(available) {
+      var icon = document.getElementById('passkeyIcon');
+      if (icon) icon.textContent = available ? '👆' : '🔑';
+      var btn = document.getElementById('passkeyBtn');
+      if (btn) {
+        var nodes = btn.childNodes;
+        for (var i = 0; i < nodes.length; i++) {
+          if (nodes[i].nodeType === 3) { // text node
+            nodes[i].textContent = available ? ' Sign in with fingerprint / face' : ' Sign in with passkey';
+            break;
+          }
+        }
+      }
+    });
+  } else {
+    var btn = document.getElementById('passkeyBtn');
+    if (btn) { btn.disabled = true; btn.title = 'Not supported in this browser'; }
+  }
+
+}); // end DOMContentLoaded
 
 function showApp() {
   document.getElementById('authScreen').classList.add('hidden');
@@ -884,31 +916,7 @@ function setAuthLoading(on) {
   });
 }
 
-// Allow Enter key on email/password inputs
-document.addEventListener('DOMContentLoaded', () => {
-  // Initialise Supabase client first
-  initAuth();
 
-  ['authEmail','authPassword'].forEach(id => {
-    document.getElementById(id)?.addEventListener('keydown', e => {
-      if (e.key === 'Enter') handleAuthSubmit();
-    });
-  });
-
-  // Check for passkey support and update button
-  if (window.PublicKeyCredential) {
-    PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable().then(available => {
-      const icon = document.getElementById('passkeyIcon');
-      if (icon) icon.textContent = available ? '👆' : '🔑';
-      const btn = document.getElementById('passkeyBtn');
-      if (btn) btn.childNodes[1].textContent =
-        available ? ' Sign in with fingerprint / face' : ' Sign in with passkey';
-    });
-  } else {
-    const btn = document.getElementById('passkeyBtn');
-    if (btn) { btn.disabled = true; btn.title = 'Not supported in this browser'; }
-  }
-});
 </script>
 
 
