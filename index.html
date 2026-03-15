@@ -987,11 +987,34 @@ function setLocDisplay(label) {
   el.textContent='📍 '+label; el.classList.add('set');
 }
 
-function handleSave(e) {
+async function compressForStorage(dataUrl) {
+  if (!dataUrl) return null;
+  return new Promise(res => {
+    const img = new Image();
+    img.onload = () => {
+      const MAX = 400; // small enough to stay well within localStorage limits
+      const r = Math.min(MAX / img.width, MAX / img.height, 1);
+      const c = document.createElement('canvas');
+      c.width  = Math.round(img.width  * r);
+      c.height = Math.round(img.height * r);
+      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+      res(c.toDataURL('image/jpeg', 0.7));
+    };
+    img.onerror = () => res(null);
+    img.src = dataUrl;
+  });
+}
+
+async function handleSave(e) {
   if (e) e.preventDefault();
   const name=document.getElementById('wineName').value.trim();
   if (!name) { showToast('Please enter a wine name'); document.getElementById('wineName').focus(); return; }
   const id=document.getElementById('wineId').value||generateId();
+
+  // Compress photos to ~400px before storing (prevents localStorage quota errors)
+  const storedFront = await compressForStorage(currentPhotoFront);
+  const storedBack  = await compressForStorage(currentPhotoBack);
+
   const entry={
     id, name,
     winery:       document.getElementById('winery').value.trim()||null,
@@ -1005,9 +1028,9 @@ function handleSave(e) {
     dateTasted:   document.getElementById('dateTasted').value||null,
     notes:        document.getElementById('notes').value.trim()||null,
     rating:       parseInt(ratingInput.value,10)||null,
-    photoFront:   currentPhotoFront,
-    photoBack:    currentPhotoBack,
-    photo:        currentPhotoFront,
+    photoFront:   storedFront,
+    photoBack:    storedBack,
+    photo:        storedFront,
     locLat:       currentLocLat,
     locLng:       currentLocLng,
     locLabel:     currentLocLabel||null,
@@ -1015,7 +1038,7 @@ function handleSave(e) {
   };
   const idx=wines.findIndex(w=>w.id===id);
   if (idx>=0) { entry.createdAt=wines[idx].createdAt; wines[idx]=entry; showToast('Wine updated ✓'); }
-  else { wines.unshift(entry); showToast('Wine saved ✓ ('+wines.length+' total)'); }
+  else { wines.unshift(entry); showToast('Wine saved ✓'); }
   saveWines();
   closeModal();
 
@@ -1047,13 +1070,6 @@ function handleSave(e) {
       console.error('createCard failed for wine:', w.name, err);
     }
   });
-
-  // Show debug info in toast if nothing rendered
-  if (rendered === 0) {
-    showToast('ERROR: 0 cards rendered from ' + wines.length + ' wines');
-  } else {
-    showToast('Saved! Showing ' + rendered + ' wines');
-  }
 
   updateStats();
 }
@@ -1156,7 +1172,25 @@ function generateId(){ return Date.now().toString(36)+Math.random().toString(36)
 function showToast(m){ const t=document.getElementById('toast'); t.textContent=m; t.classList.add('show'); clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove('show'),3000); }
 function flashAutofill(el){ el.classList.remove('autofilled'); void el.offsetWidth; el.classList.add('autofilled'); }
 function loadWines(){ try{ return JSON.parse(localStorage.getItem('wwwines')||'[]'); }catch{ return[]; } }
-function saveWines(){ localStorage.setItem('wwwines',JSON.stringify(wines)); }
+function saveWines() {
+  try {
+    localStorage.setItem('wwwines', JSON.stringify(wines));
+  } catch(e) {
+    // localStorage quota exceeded — strip photos from older entries and retry
+    console.warn('localStorage full, stripping photos from older entries');
+    const slim = wines.map((w, i) => {
+      if (i === 0) return w; // always keep newest entry intact
+      return {...w, photoFront: null, photoBack: null, photo: null};
+    });
+    try {
+      localStorage.setItem('wwwines', JSON.stringify(slim));
+      wines = slim;
+      showToast('Storage full — older label photos removed to make space');
+    } catch(e2) {
+      showToast('Could not save — storage is full. Try deleting some entries.');
+    }
+  }
+}
 
 /* ── Scanner UI ─────────────────────────────────────────── */
 function initScanner() {
