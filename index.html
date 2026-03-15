@@ -493,7 +493,7 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
         <div class="form-row">
           <div class="location-row" id="locationRow">
             <span class="location-text" id="locationText">No location captured</span>
-            <button type="button" class="btn-locate" id="locateBtn">📍 Get Location</button>
+            <button type="button" class="btn-locate" id="locateBtn">📍 Update</button>
           </div>
           <input type="hidden" id="locLat"/>
           <input type="hidden" id="locLng"/>
@@ -1223,14 +1223,13 @@ function initMapView() {
 
 function openModal(wine=null, injectFront=null, injectBack=null) {
   wineForm.reset();
-  currentPhotoFront = injectFront;   // set BEFORE setPhotoPreview calls below
+  currentPhotoFront = injectFront;
   currentPhotoBack  = injectBack;
   currentLocLat=null; currentLocLng=null; currentLocLabel='';
   setStars(0);
   document.getElementById('aiBanner').style.display='none';
   document.getElementById('locationText').textContent='No location captured';
   document.getElementById('locationText').classList.remove('set');
-  // Show injected or cleared photos
   setPhotoPreview('Front', currentPhotoFront);
   setPhotoPreview('Back',  currentPhotoBack);
 
@@ -1258,6 +1257,8 @@ function openModal(wine=null, injectFront=null, injectBack=null) {
     document.getElementById('modalTitle').textContent='Add Wine';
     document.getElementById('wineId').value='';
     document.getElementById('dateTasted').valueAsDate=new Date();
+    // Auto-capture location silently
+    autoCapureLocation();
   }
 
   modalOverlay.classList.add('open');
@@ -1267,20 +1268,45 @@ function openModal(wine=null, injectFront=null, injectBack=null) {
 
 function closeModal() { modalOverlay.classList.remove('open'); document.body.style.overflow=''; }
 
-function captureLocation() {
-  const btn=document.getElementById('locateBtn');
-  btn.disabled=true; btn.textContent='…';
-  if (!navigator.geolocation) { showToast('Geolocation not supported'); btn.disabled=false; btn.textContent='📍 Get Location'; return; }
-  navigator.geolocation.getCurrentPosition(async pos=>{
-    currentLocLat=pos.coords.latitude; currentLocLng=pos.coords.longitude;
+function autoCapureLocation() {
+  if (!navigator.geolocation) return;
+  const el = document.getElementById('locationText');
+  el.textContent = '📍 Getting location…';
+  const btn = document.getElementById('locateBtn');
+  btn.disabled = true; btn.textContent = '…';
+  navigator.geolocation.getCurrentPosition(async pos => {
+    currentLocLat = pos.coords.latitude;
+    currentLocLng = pos.coords.longitude;
     try {
-      const r=await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${currentLocLat}&lon=${currentLocLng}&format=json`);
-      const d=await r.json(); const a=d.address||{};
-      currentLocLabel=[a.village||a.town||a.city||a.county,a.country].filter(Boolean).join(', ');
-    } catch(_){ currentLocLabel=`${currentLocLat.toFixed(4)}, ${currentLocLng.toFixed(4)}`; }
+      const r = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${currentLocLat}&lon=${currentLocLng}&format=json`);
+      const d = await r.json(); const a = d.address || {};
+      currentLocLabel = [a.village||a.town||a.city||a.county, a.country].filter(Boolean).join(', ');
+    } catch(_) {
+      currentLocLabel = `${currentLocLat.toFixed(4)}, ${currentLocLng.toFixed(4)}`;
+    }
     setLocDisplay(currentLocLabel);
-    btn.disabled=false; btn.textContent='📍 Update';
-  }, err=>{ showToast('Could not get location'); btn.disabled=false; btn.textContent='📍 Get Location'; },{timeout:10000,enableHighAccuracy:true});
+    btn.disabled = false; btn.textContent = '📍 Update';
+  }, () => {
+    el.textContent = 'Location unavailable';
+    btn.disabled = false; btn.textContent = '📍 Try Again';
+  }, { timeout: 10000, enableHighAccuracy: true });
+}
+
+function captureLocation() {
+  const btn = document.getElementById('locateBtn');
+  btn.disabled = true; btn.textContent = '…';
+  if (!navigator.geolocation) { showToast('Geolocation not supported'); btn.disabled=false; btn.textContent='📍 Update'; return; }
+  navigator.geolocation.getCurrentPosition(async pos => {
+    currentLocLat = pos.coords.latitude; currentLocLng = pos.coords.longitude;
+    try {
+      const r = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${currentLocLat}&lon=${currentLocLng}&format=json`);
+      const d = await r.json(); const a = d.address || {};
+      currentLocLabel = [a.village||a.town||a.city||a.county, a.country].filter(Boolean).join(', ');
+    } catch(_) { currentLocLabel = `${currentLocLat.toFixed(4)}, ${currentLocLng.toFixed(4)}`; }
+    setLocDisplay(currentLocLabel);
+    btn.disabled = false; btn.textContent = '📍 Update';
+  }, () => { showToast('Could not get location'); btn.disabled=false; btn.textContent='📍 Update'; },
+  { timeout: 10000, enableHighAccuracy: true });
 }
 
 function setLocDisplay(label) {
