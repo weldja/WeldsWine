@@ -630,7 +630,7 @@ const Scanner = (() => {
   }
   function saveUrl(u)  { localStorage.setItem(STORE_KEY, u.trim().replace(/\/$/,'')); }
   function clearUrl()  { localStorage.removeItem(STORE_KEY); }
-  function hasUrl()    { const u = getProxyUrl(); return !!u && u !== 'PASTE_WORKER_URL_HERE'; }
+  function hasUrl()    { const u = getProxyUrl(); return !!u && u !== 'https://aged-union-8f0d.james-weld.workers.dev/'; }
 
   // ── Image resize ─────────────────────────────────────────
   function resize(dataUrl, maxPx=1024) {
@@ -652,7 +652,7 @@ const Scanner = (() => {
 
   async function analyzeLabel(frontUrl, backUrl=null) {
     const proxyUrl = getProxyUrl();
-    if (!proxyUrl || proxyUrl === 'PASTE_WORKER_URL_HERE') throw new Error('NO_KEY');
+    if (!proxyUrl || proxyUrl === 'https://aged-union-8f0d.james-weld.workers.dev/') throw new Error('NO_KEY');
 
     const fB64 = strip(await resize(frontUrl));
     const bB64 = backUrl ? strip(await resize(backUrl)) : null;
