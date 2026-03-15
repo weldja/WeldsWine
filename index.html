@@ -1018,7 +1018,9 @@ function handleSave(e) {
   else { wines.unshift(entry); showToast('Wine saved ✓'); }
   saveWines();
   closeModal();
-  // Always switch to grid view so the saved wine is visible
+  // Reset filter to 'all' so the new wine is always visible regardless of active filter
+  activeFilter = 'all';
+  document.querySelectorAll('.filter-tab').forEach(t => t.classList.toggle('active', t.dataset.filter === 'all'));
   setView('grid');
   updateStats();
 }
@@ -1136,6 +1138,7 @@ function initScanner() {
 }
 
 function openScanModal() {
+  _keyCallback = null;  // always clear — prevents key modal re-triggering on second scan
   scanFrontUrl=null; scanBackUrl=null; scanResult=null;
   ['scanStep1','scanAnalysing','scanResults','scanError'].forEach(id=>{
     document.getElementById(id).style.display = id==='scanStep1'?'':'none';
