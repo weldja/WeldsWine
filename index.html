@@ -620,7 +620,7 @@ const Scanner = (() => {
   // Replace the placeholder with your Worker URL before deploying.
   // Example: 'https://wine-scan.yourname.workers.dev'
   // This is the ONLY thing you need to change in this file.
-  const WORKER_URL = 'https://aged-union-8f0d.james-weld.workers.dev/';
+  const WORKER_URL = 'PASTE_WORKER_URL_HERE';
   // ───────────────────────────────────────────────────────────
 
   // localStorage override — lets you update the URL without redeploying
@@ -1018,7 +1018,8 @@ function handleSave(e) {
   else { wines.unshift(entry); showToast('Wine saved ✓'); }
   saveWines();
   closeModal();
-  if (activeView==='map') initMapView(); else renderGrid();
+  // Always switch to grid view so the saved wine is visible
+  setView('grid');
   updateStats();
 }
 
@@ -1029,7 +1030,7 @@ function deleteWine(id,e) {
   const w=wines.find(w=>w.id===id); if(!w) return;
   if(!confirm(`Delete "${w.name}"?`)) return;
   wines=wines.filter(w=>w.id!==id); saveWines();
-  if(activeView==='map') initMapView(); else renderGrid();
+  setView('grid');
   updateStats(); showToast('Entry deleted');
 }
 
