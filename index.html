@@ -75,11 +75,7 @@ body{font-family:var(--font-b);background:var(--cream);color:var(--charcoal);min
 .logo-title{font-family:var(--font-d);font-size:1.25rem;font-weight:600;color:var(--parchment);letter-spacing:.05em;line-height:1}
 .logo-sub{font-family:var(--font-b);font-size:.65rem;color:var(--blush);letter-spacing:.14em;text-transform:uppercase;font-style:italic;line-height:1;margin-top:2px}
 .header-actions{display:flex;align-items:center;gap:8px;flex:1;justify-content:flex-end}
-.search-wrap{position:relative;flex:1;max-width:260px}
-.search-input{width:100%;background:rgba(255,255,255,.08);border:1px solid rgba(196,120,138,.3);border-radius:30px;padding:7px 14px 7px 32px;color:var(--parchment);font-family:var(--font-b);font-size:.9rem;outline:none;transition:var(--tr)}
-.search-input::placeholder{color:rgba(245,239,230,.4)}
-.search-input:focus{background:rgba(255,255,255,.13);border-color:var(--blush)}
-.search-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--blush);font-size:.95rem;pointer-events:none}
+.search-icon{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--warm-gray);font-size:.95rem;pointer-events:none}
 .btn-scan{background:transparent;color:var(--parchment);border:1px solid rgba(196,120,138,.5);border-radius:30px;padding:7px 14px;font-family:var(--font-b);font-size:.85rem;cursor:pointer;transition:var(--tr);white-space:nowrap;flex-shrink:0}
 .btn-scan:hover{background:rgba(196,120,138,.15);border-color:var(--blush)}
 .btn-add{background:var(--gold);color:var(--burgundy-deep);border:none;border-radius:30px;padding:8px 18px;font-family:var(--font-d);font-size:.85rem;font-weight:600;letter-spacing:.04em;cursor:pointer;transition:var(--tr);white-space:nowrap;flex-shrink:0}
@@ -90,7 +86,14 @@ body{font-family:var(--font-b);background:var(--cream);color:var(--charcoal);min
 .btn-secondary{background:transparent;color:var(--warm-gray);border:1px solid var(--light-gray);border-radius:var(--r);padding:9px 20px;font-family:var(--font-b);font-size:.88rem;cursor:pointer;transition:var(--tr)}
 .btn-secondary:hover{border-color:var(--warm-gray);color:var(--charcoal)}
 .toolbar{background:var(--ivory);border-bottom:1px solid var(--light-gray);position:sticky;top:64px;z-index:100}
-.toolbar-inner{max-width:1200px;margin:0 auto;padding:0 20px;height:48px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.toolbar-inner{max-width:1200px;margin:0 auto;padding:0 20px;display:flex;flex-direction:column;gap:0}
+.toolbar-top{height:48px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.toolbar-search{padding:6px 0 8px}
+.search-wrap{position:relative;width:100%}
+.search-input-toolbar{width:100%;background:var(--cream);border:1px solid var(--light-gray);border-radius:30px;padding:7px 16px 7px 34px;color:var(--charcoal);font-family:var(--font-b);font-size:.9rem;outline:none;transition:var(--tr)}
+.search-input-toolbar::placeholder{color:var(--warm-gray);opacity:.6}
+.search-input-toolbar:focus{background:var(--ivory);border-color:var(--burgundy)}
+.search-icon{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--warm-gray);font-size:.95rem;pointer-events:none}
 .filter-tabs{display:flex;gap:3px}
 .filter-tab{background:none;border:none;padding:4px 12px;border-radius:20px;font-family:var(--font-b);font-size:.85rem;color:var(--warm-gray);cursor:pointer;transition:var(--tr)}
 .filter-tab:hover{color:var(--burgundy)}
@@ -286,8 +289,7 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
 .footer-admin-btn:hover{opacity:1;color:var(--warm-gray)}
 @media(max-width:768px){
   .header-inner{flex-wrap:wrap;height:auto;padding:10px 14px;gap:8px}
-  .header-actions{width:100%}
-  .search-wrap{max-width:none}
+  .header-actions{gap:6px}
   .toolbar{position:static}
   .toolbar-inner{flex-wrap:wrap;height:auto;padding:8px 14px;gap:6px}
   .stats-inner{flex-wrap:wrap}
@@ -372,10 +374,6 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
       </div>
     </div>
     <div class="header-actions">
-      <div class="search-wrap">
-        <input type="text" id="searchInput" placeholder="Search wines…" class="search-input"/>
-        <span class="search-icon">⌕</span>
-      </div>
       <button class="btn-scan" id="openScanModal">📷 Scan Label</button>
       <button class="btn-add" id="openAddModal">+ Add Wine</button>
       <div class="user-badge" id="userBadge" style="display:none">
@@ -389,28 +387,36 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
 <!-- TOOLBAR -->
 <div class="toolbar">
   <div class="toolbar-inner">
-    <div class="filter-tabs">
-      <button class="filter-tab active" data-filter="all">All</button>
-      <button class="filter-tab" data-filter="5">★★★★★</button>
-      <button class="filter-tab" data-filter="4">★★★★+</button>
-      <button class="filter-tab" data-filter="recent">Recent</button>
+    <div class="toolbar-top">
+      <div class="filter-tabs">
+        <button class="filter-tab active" data-filter="all">All</button>
+        <button class="filter-tab" data-filter="5">★★★★★</button>
+        <button class="filter-tab" data-filter="4">★★★★+</button>
+        <button class="filter-tab" data-filter="recent">Recent</button>
+      </div>
+      <div class="toolbar-right">
+        <div class="view-toggle">
+          <button class="view-btn active" id="viewGrid" title="Grid view">⊞ Grid</button>
+          <button class="view-btn" id="viewMap" title="Map view">◎ Map</button>
+        </div>
+        <div class="sort-wrap">
+          <label for="sortSelect">Sort:</label>
+          <select id="sortSelect">
+            <option value="date-desc">Newest</option>
+            <option value="date-asc">Oldest</option>
+            <option value="rating-desc">Top rated</option>
+            <option value="rating-asc">Lowest rated</option>
+            <option value="name-asc">A–Z</option>
+          </select>
+        </div>
+        <button class="export-btn" id="exportBtn">⬇ CSV</button>
+      </div>
     </div>
-    <div class="toolbar-right">
-      <div class="view-toggle">
-        <button class="view-btn active" id="viewGrid" title="Grid view">⊞ Grid</button>
-        <button class="view-btn" id="viewMap" title="Map view">◎ Map</button>
+    <div class="toolbar-search">
+      <div class="search-wrap">
+        <input type="text" id="searchInput" placeholder="Search wines…" class="search-input search-input-toolbar"/>
+        <span class="search-icon">⌕</span>
       </div>
-      <div class="sort-wrap">
-        <label for="sortSelect">Sort:</label>
-        <select id="sortSelect">
-          <option value="date-desc">Newest</option>
-          <option value="date-asc">Oldest</option>
-          <option value="rating-desc">Top rated</option>
-          <option value="rating-asc">Lowest rated</option>
-          <option value="name-asc">A–Z</option>
-        </select>
-      </div>
-      <button class="export-btn" id="exportBtn">⬇ CSV</button>
     </div>
   </div>
 </div>
@@ -1288,9 +1294,24 @@ function startLocationTracking() {
     _appLocLat = pos.coords.latitude;
     _appLocLng = pos.coords.longitude;
     try {
-      const r = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${_appLocLat}&lon=${_appLocLng}&format=json`);
-      const d = await r.json(); const a = d.address || {};
-      _appLocLabel = [a.village||a.town||a.city||a.county, a.country].filter(Boolean).join(', ');
+      const r = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?lat=${_appLocLat}&lon=${_appLocLng}&format=json&accept-language=en`,
+        { headers: { 'Accept-Language': 'en' } }
+      );
+      const d = await r.json();
+      const a = d.address || {};
+      // Try progressively broader place names until we get something useful
+      const place = a.neighbourhood || a.suburb || a.village || a.town ||
+                    a.city_district || a.city || a.county || a.state_district || a.state || '';
+      const country = a.country || '';
+      if (place || country) {
+        _appLocLabel = [place, country].filter(Boolean).join(', ');
+      } else {
+        // Last resort: display_name from Nominatim (already human-readable)
+        _appLocLabel = d.display_name
+          ? d.display_name.split(',').slice(-3).map(s=>s.trim()).join(', ')
+          : `${_appLocLat.toFixed(4)}, ${_appLocLng.toFixed(4)}`;
+      }
     } catch(_) {
       _appLocLabel = `${_appLocLat.toFixed(4)}, ${_appLocLng.toFixed(4)}`;
     }
@@ -1318,28 +1339,26 @@ function autoCapureLocation() {
     if (el) el.textContent = '📍 Getting location…';
     const btn = document.getElementById('locateBtn');
     if (btn) btn.disabled = true;
-    // Poll until available (max 10s)
+    // Poll until geocoded label is ready (max 12s)
     let attempts = 0;
     const poll = setInterval(() => {
       attempts++;
-      if (_appLocLat) {
+      // Wait until _appLocLabel is a real place name, not just coordinates
+      const hasLabel = _appLocLat && _appLocLabel && !_appLocLabel.match(/^-?\d+\.\d+,/);
+      const timeout  = attempts > 24; // 12 seconds
+      if (hasLabel || timeout) {
         clearInterval(poll);
         currentLocLat   = _appLocLat;
         currentLocLng   = _appLocLng;
         currentLocLabel = _appLocLabel;
-        setLocDisplay(_appLocLabel);
+        setLocDisplay(_appLocLabel || `${_appLocLat.toFixed(4)}, ${_appLocLng.toFixed(4)}`);
         if (btn) { btn.disabled = false; btn.textContent = '📍 Update'; }
-      } else if (attempts > 20) {
-        clearInterval(poll);
-        if (el) el.textContent = 'Location unavailable';
-        if (btn) { btn.disabled = false; btn.textContent = '📍 Try Again'; }
       }
     }, 500);
   }
 }
 
 function captureLocation() {
-  // Manual refresh — update the cached location then apply to current entry
   const btn = document.getElementById('locateBtn');
   btn.disabled = true; btn.textContent = '…';
   if (!navigator.geolocation) { btn.disabled=false; btn.textContent='📍 Update'; return; }
@@ -1347,9 +1366,20 @@ function captureLocation() {
     _appLocLat = pos.coords.latitude;
     _appLocLng = pos.coords.longitude;
     try {
-      const r = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${_appLocLat}&lon=${_appLocLng}&format=json`);
+      const r = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?lat=${_appLocLat}&lon=${_appLocLng}&format=json&accept-language=en`,
+        { headers: { 'Accept-Language': 'en' } }
+      );
       const d = await r.json(); const a = d.address || {};
-      _appLocLabel = [a.village||a.town||a.city||a.county, a.country].filter(Boolean).join(', ');
+      const place = a.neighbourhood||a.suburb||a.village||a.town||a.city_district||a.city||a.county||a.state||'';
+      const country = a.country || '';
+      if (place || country) {
+        _appLocLabel = [place, country].filter(Boolean).join(', ');
+      } else {
+        _appLocLabel = d.display_name
+          ? d.display_name.split(',').slice(-3).map(s=>s.trim()).join(', ')
+          : `${_appLocLat.toFixed(4)}, ${_appLocLng.toFixed(4)}`;
+      }
     } catch(_) { _appLocLabel = `${_appLocLat.toFixed(4)}, ${_appLocLng.toFixed(4)}`; }
     currentLocLat = _appLocLat; currentLocLng = _appLocLng; currentLocLabel = _appLocLabel;
     setLocDisplay(_appLocLabel);
