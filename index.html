@@ -1410,13 +1410,14 @@ function closeModal() { modalOverlay.classList.remove('open'); document.body.sty
    Started once after login. Keeps _appLocLat/Lng/Label fresh.
    openModal() just reads the cached values — no prompt needed.
 ──────────────────────────────────────────────────────────── */
+let _locDenied = false;
+
 function startLocationTracking() {
-  if (!navigator.geolocation) return;
+  if (!navigator.geolocation) { _locDenied = true; return; }
   if (_locWatcher) navigator.geolocation.clearWatch(_locWatcher);
 
   async function geocode(lat, lng) {
     try {
-      // BigDataCloud — free, no key, no User-Agent issues, built for browsers
       const r = await fetch(
         `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=en`
       );
@@ -1429,6 +1430,7 @@ function startLocationTracking() {
   }
 
   async function onPosition(pos) {
+    _locDenied = false;
     const lat = pos.coords.latitude;
     const lng = pos.coords.longitude;
     _appLocLat = lat;
@@ -1440,13 +1442,22 @@ function startLocationTracking() {
     }
   }
 
-  navigator.geolocation.getCurrentPosition(onPosition, ()=>{}, { enableHighAccuracy: false, timeout: 10000 });
-  _locWatcher = navigator.geolocation.watchPosition(onPosition, ()=>{}, { enableHighAccuracy: false });
+  function onDenied() { _locDenied = true; }
+
+  navigator.geolocation.getCurrentPosition(onPosition, onDenied, { enableHighAccuracy: false, timeout: 10000 });
+  _locWatcher = navigator.geolocation.watchPosition(onPosition, onDenied, { enableHighAccuracy: false });
 }
 
 function autoCapureLocation() {
   const el  = document.getElementById('locationText');
   const btn = document.getElementById('locateBtn');
+
+  // If denied or no geolocation support — fail immediately, don't spin
+  if (_locDenied || !navigator.geolocation) {
+    if (el) el.textContent = 'Location not available';
+    if (btn) { btn.disabled = false; btn.textContent = '📍 Try Again'; }
+    return;
+  }
 
   // Helper to apply cached location once label is a real place name
   function applyIfReady() {
@@ -1472,20 +1483,26 @@ function autoCapureLocation() {
   let attempts = 0;
   const poll = setInterval(() => {
     attempts++;
+    // Short-circuit if denied while we were waiting
+    if (_locDenied) {
+      clearInterval(poll);
+      if (el) el.textContent = 'Location not available';
+      if (btn) { btn.disabled = false; btn.textContent = '📍 Try Again'; }
+      return;
+    }
     if (applyIfReady()) {
       clearInterval(poll);
     } else if (attempts > 24) { // 12 second timeout
       clearInterval(poll);
-      // Show best available — coordinates if that's all we have
       if (_appLocLat) {
         currentLocLat   = _appLocLat;
         currentLocLng   = _appLocLng;
         currentLocLabel = _appLocLabel || `${_appLocLat.toFixed(4)}, ${_appLocLng.toFixed(4)}`;
         setLocDisplay(currentLocLabel);
       } else {
-        if (el) el.textContent = 'Location unavailable';
+        if (el) el.textContent = 'Location not available';
       }
-      if (btn) { btn.disabled = false; btn.textContent = '📍 Update'; }
+      if (btn) { btn.disabled = false; btn.textContent = '📍 Try Again'; }
     }
   }, 500);
 }
@@ -1493,8 +1510,9 @@ function autoCapureLocation() {
 function captureLocation() {
   const btn = document.getElementById('locateBtn');
   btn.disabled = true; btn.textContent = '…';
-  if (!navigator.geolocation) { btn.disabled=false; btn.textContent='📍 Update'; return; }
+  if (!navigator.geolocation) { btn.disabled=false; btn.textContent='📍 Try Again'; return; }
   navigator.geolocation.getCurrentPosition(async pos => {
+    _locDenied = false;
     const lat = pos.coords.latitude;
     const lng = pos.coords.longitude;
     _appLocLat = lat; _appLocLng = lng; _appLocLabel = '';
@@ -1512,8 +1530,12 @@ function captureLocation() {
     currentLocLat = _appLocLat; currentLocLng = _appLocLng; currentLocLabel = _appLocLabel;
     setLocDisplay(_appLocLabel);
     btn.disabled = false; btn.textContent = '📍 Update';
-  }, () => { btn.disabled=false; btn.textContent='📍 Update'; },
-  { timeout: 10000, enableHighAccuracy: false });
+  }, () => {
+    _locDenied = true;
+    const el = document.getElementById('locationText');
+    if (el) el.textContent = 'Location not available';
+    btn.disabled = false; btn.textContent = '📍 Try Again';
+  }, { timeout: 10000, enableHighAccuracy: false });
 }
 
 function setLocDisplay(label) {
