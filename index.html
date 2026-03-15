@@ -89,10 +89,9 @@ body{font-family:var(--font-b);background:var(--cream);color:var(--charcoal);min
 .toolbar-top{height:48px;display:flex;align-items:center;justify-content:space-between;gap:12px}
 .toolbar-search{padding:6px 0 8px}
 .search-wrap{position:relative;width:100%}
-.search-input-toolbar{width:100%;background:var(--cream);border:1px solid var(--light-gray);border-radius:30px;padding:8px 16px 8px 44px;color:var(--charcoal);font-family:var(--font-b);font-size:.9rem;outline:none;transition:var(--tr);box-sizing:border-box}
+.search-input-toolbar{width:100%;background:var(--cream);border:1px solid var(--light-gray);border-radius:30px;padding:8px 16px;color:var(--charcoal);font-family:var(--font-b);font-size:.9rem;outline:none;transition:var(--tr);box-sizing:border-box}
 .search-input-toolbar::placeholder{color:var(--warm-gray);opacity:.6}
 .search-input-toolbar:focus{background:var(--ivory);border-color:var(--burgundy)}
-.search-icon{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--warm-gray);pointer-events:none;display:block;flex-shrink:0}
 .filter-tabs{display:flex;gap:3px}
 .filter-tab{background:none;border:none;padding:4px 12px;border-radius:20px;font-family:var(--font-b);font-size:.85rem;color:var(--warm-gray);cursor:pointer;transition:var(--tr)}
 .filter-tab:hover{color:var(--burgundy)}
@@ -414,10 +413,6 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
     <div class="toolbar-search">
       <div class="search-wrap">
         <input type="text" id="searchInput" placeholder="Search wines…" class="search-input-toolbar"/>
-        <svg class="search-icon" width="15" height="15" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <circle cx="6.5" cy="6.5" r="5" stroke="currentColor" stroke-width="1.5"/>
-          <line x1="10.5" y1="10.5" x2="14" y2="14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-        </svg>
       </div>
     </div>
   </div>
@@ -1294,16 +1289,15 @@ function startLocationTracking() {
 
   async function geocode(lat, lng) {
     try {
+      // BigDataCloud — free, no key, no User-Agent issues, built for browsers
       const r = await fetch(
-        `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&zoom=10&addressdetails=1`,
-        { headers: { 'Accept-Language': 'en', 'Accept': 'application/json' } }
+        `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=en`
       );
       if (!r.ok) return '';
       const d = await r.json();
-      const a = d.address || {};
-      const place = a.city || a.town || a.village || a.suburb || a.county || a.state || '';
-      const country = a.country || '';
-      return [place, country].filter(Boolean).join(', ') || '';
+      const place = d.city || d.locality || d.principalSubdivision || '';
+      const country = d.countryName || '';
+      return [place, country].filter(Boolean).join(', ');
     } catch(_) { return ''; }
   }
 
@@ -1312,9 +1306,8 @@ function startLocationTracking() {
     const lng = pos.coords.longitude;
     _appLocLat = lat;
     _appLocLng = lng;
-    _appLocLabel = ''; // clear while geocoding
+    _appLocLabel = '';
     const label = await geocode(lat, lng);
-    // Only update if these are still the current coordinates
     if (_appLocLat === lat && _appLocLng === lng) {
       _appLocLabel = label || `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
     }
@@ -1380,13 +1373,12 @@ function captureLocation() {
     _appLocLat = lat; _appLocLng = lng; _appLocLabel = '';
     try {
       const r = await fetch(
-        `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&zoom=10&addressdetails=1`,
-        { headers: { 'Accept-Language': 'en', 'Accept': 'application/json' } }
+        `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=en`
       );
       if (r.ok) {
-        const d = await r.json(); const a = d.address || {};
-        const place = a.city || a.town || a.village || a.suburb || a.county || a.state || '';
-        _appLocLabel = [place, a.country].filter(Boolean).join(', ');
+        const d = await r.json();
+        const place = d.city || d.locality || d.principalSubdivision || '';
+        _appLocLabel = [place, d.countryName].filter(Boolean).join(', ');
       }
     } catch(_) {}
     if (!_appLocLabel) _appLocLabel = `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
