@@ -192,6 +192,8 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
 .star-input .star{color:var(--light-gray);transition:color .15s,transform .15s;user-select:none}
 .star-input .star.filled{color:var(--gold)}
 .star-input .star:hover{transform:scale(1.15)}
+.rating-save-row{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:end}
+.save-group .btn-primary{width:100%;white-space:nowrap}
 .ai-banner{display:flex;align-items:center;gap:8px;background:rgba(201,168,76,.1);border:1px solid rgba(201,168,76,.3);border-radius:var(--r);padding:8px 12px;margin-bottom:14px;font-family:var(--font-b);font-size:.84rem;color:var(--warm-gray);font-style:italic}
 .ai-banner-icon{font-size:1rem;flex-shrink:0}
 @keyframes autofillFlash{0%{background:rgba(201,168,76,.22)}100%{background:var(--cream)}}
@@ -470,8 +472,8 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
           </div>
         </div>
 
-        <!-- Rating and date right at the top -->
-        <div class="form-row two-col">
+        <!-- Rating, date and save on same row -->
+        <div class="form-row rating-save-row">
           <div class="form-group">
             <label>Rating</label>
             <div class="star-input" id="starInput">
@@ -486,6 +488,10 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
           <div class="form-group">
             <label for="dateTasted">Date Tasted</label>
             <input type="date" id="dateTasted"/>
+          </div>
+          <div class="form-group save-group">
+            <label>&nbsp;</label>
+            <button type="button" class="btn-primary" id="saveWineBtn">Save Wine</button>
           </div>
         </div>
 
@@ -584,9 +590,8 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
           </div>
         </div>
 
-        <div class="modal-footer" style="padding:16px 0 0;margin-top:6px;border-top:1px solid var(--light-gray)">
+        <div class="modal-footer" style="padding:12px 0 0;margin-top:6px;border-top:1px solid var(--light-gray)">
           <button type="button" class="btn-secondary" id="cancelBtn">Cancel</button>
-          <button type="button" class="btn-primary" id="saveWineBtn">Save Wine</button>
         </div>
       </form>
     </div>
@@ -760,8 +765,8 @@ function showApp() {
   badge.style.display = 'flex';
   const email = _currentUser?.email || '';
   document.getElementById('userAvatar').textContent = email ? email[0].toUpperCase() : '✓';
-  // Re-initialise wines from Supabase for this user
   if (typeof loadWinesFromDB === 'function') loadWinesFromDB();
+  startLocationTracking();
 }
 
 function hideApp() {
@@ -972,6 +977,12 @@ let currentPhotoBack  = null;
 let currentLocLat     = null;
 let currentLocLng     = null;
 let currentLocLabel   = '';
+
+// Shared app-level location — fetched once at startup, reused for all new entries
+let _appLocLat   = null;
+let _appLocLng   = null;
+let _appLocLabel = '';
+let _locWatcher  = null;
 
 let scanFrontUrl = null;
 let scanBackUrl  = null;
@@ -1268,44 +1279,85 @@ function openModal(wine=null, injectFront=null, injectBack=null) {
 
 function closeModal() { modalOverlay.classList.remove('open'); document.body.style.overflow=''; }
 
-function autoCapureLocation() {
+/* ── Location tracking ───────────────────────────────────────
+   Started once after login. Keeps _appLocLat/Lng/Label fresh.
+   openModal() just reads the cached values — no prompt needed.
+──────────────────────────────────────────────────────────── */
+function startLocationTracking() {
   if (!navigator.geolocation) return;
-  const el = document.getElementById('locationText');
-  el.textContent = '📍 Getting location…';
-  const btn = document.getElementById('locateBtn');
-  btn.disabled = true; btn.textContent = '…';
-  navigator.geolocation.getCurrentPosition(async pos => {
-    currentLocLat = pos.coords.latitude;
-    currentLocLng = pos.coords.longitude;
+  if (_locWatcher) navigator.geolocation.clearWatch(_locWatcher);
+
+  async function onPosition(pos) {
+    _appLocLat = pos.coords.latitude;
+    _appLocLng = pos.coords.longitude;
     try {
-      const r = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${currentLocLat}&lon=${currentLocLng}&format=json`);
+      const r = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${_appLocLat}&lon=${_appLocLng}&format=json`);
       const d = await r.json(); const a = d.address || {};
-      currentLocLabel = [a.village||a.town||a.city||a.county, a.country].filter(Boolean).join(', ');
+      _appLocLabel = [a.village||a.town||a.city||a.county, a.country].filter(Boolean).join(', ');
     } catch(_) {
-      currentLocLabel = `${currentLocLat.toFixed(4)}, ${currentLocLng.toFixed(4)}`;
+      _appLocLabel = `${_appLocLat.toFixed(4)}, ${_appLocLng.toFixed(4)}`;
     }
-    setLocDisplay(currentLocLabel);
-    btn.disabled = false; btn.textContent = '📍 Update';
-  }, () => {
-    el.textContent = 'Location unavailable';
-    btn.disabled = false; btn.textContent = '📍 Try Again';
-  }, { timeout: 10000, enableHighAccuracy: true });
+  }
+
+  // Get position immediately
+  navigator.geolocation.getCurrentPosition(onPosition, ()=>{}, { enableHighAccuracy: true, timeout: 10000 });
+
+  // Then watch for updates (moves between different locations)
+  _locWatcher = navigator.geolocation.watchPosition(onPosition, ()=>{}, { enableHighAccuracy: true });
+}
+
+function autoCapureLocation() {
+  // Just read the cached app-level location — no new prompt
+  if (_appLocLat) {
+    currentLocLat   = _appLocLat;
+    currentLocLng   = _appLocLng;
+    currentLocLabel = _appLocLabel;
+    setLocDisplay(_appLocLabel);
+    const btn = document.getElementById('locateBtn');
+    if (btn) { btn.disabled = false; btn.textContent = '📍 Update'; }
+  } else {
+    // Not yet available — show spinner and wait
+    const el = document.getElementById('locationText');
+    if (el) el.textContent = '📍 Getting location…';
+    const btn = document.getElementById('locateBtn');
+    if (btn) btn.disabled = true;
+    // Poll until available (max 10s)
+    let attempts = 0;
+    const poll = setInterval(() => {
+      attempts++;
+      if (_appLocLat) {
+        clearInterval(poll);
+        currentLocLat   = _appLocLat;
+        currentLocLng   = _appLocLng;
+        currentLocLabel = _appLocLabel;
+        setLocDisplay(_appLocLabel);
+        if (btn) { btn.disabled = false; btn.textContent = '📍 Update'; }
+      } else if (attempts > 20) {
+        clearInterval(poll);
+        if (el) el.textContent = 'Location unavailable';
+        if (btn) { btn.disabled = false; btn.textContent = '📍 Try Again'; }
+      }
+    }, 500);
+  }
 }
 
 function captureLocation() {
+  // Manual refresh — update the cached location then apply to current entry
   const btn = document.getElementById('locateBtn');
   btn.disabled = true; btn.textContent = '…';
-  if (!navigator.geolocation) { showToast('Geolocation not supported'); btn.disabled=false; btn.textContent='📍 Update'; return; }
+  if (!navigator.geolocation) { btn.disabled=false; btn.textContent='📍 Update'; return; }
   navigator.geolocation.getCurrentPosition(async pos => {
-    currentLocLat = pos.coords.latitude; currentLocLng = pos.coords.longitude;
+    _appLocLat = pos.coords.latitude;
+    _appLocLng = pos.coords.longitude;
     try {
-      const r = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${currentLocLat}&lon=${currentLocLng}&format=json`);
+      const r = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${_appLocLat}&lon=${_appLocLng}&format=json`);
       const d = await r.json(); const a = d.address || {};
-      currentLocLabel = [a.village||a.town||a.city||a.county, a.country].filter(Boolean).join(', ');
-    } catch(_) { currentLocLabel = `${currentLocLat.toFixed(4)}, ${currentLocLng.toFixed(4)}`; }
-    setLocDisplay(currentLocLabel);
+      _appLocLabel = [a.village||a.town||a.city||a.county, a.country].filter(Boolean).join(', ');
+    } catch(_) { _appLocLabel = `${_appLocLat.toFixed(4)}, ${_appLocLng.toFixed(4)}`; }
+    currentLocLat = _appLocLat; currentLocLng = _appLocLng; currentLocLabel = _appLocLabel;
+    setLocDisplay(_appLocLabel);
     btn.disabled = false; btn.textContent = '📍 Update';
-  }, () => { showToast('Could not get location'); btn.disabled=false; btn.textContent='📍 Update'; },
+  }, () => { btn.disabled=false; btn.textContent='📍 Update'; },
   { timeout: 10000, enableHighAccuracy: true });
 }
 
