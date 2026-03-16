@@ -363,6 +363,38 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
 .empty-icon{font-size:3rem;margin-bottom:14px;opacity:.55}
 .empty-state h2{font-family:var(--font-d);font-size:1.5rem;color:var(--warm-gray);font-weight:400;margin-bottom:10px}
 .empty-state p{font-family:var(--font-b);font-style:italic;color:var(--warm-gray);font-size:.95rem;margin-bottom:26px;opacity:.8;max-width:380px;margin-left:auto;margin-right:auto;line-height:1.6}
+/* ─── Quick Add button ─────────────────────────────────── */
+.btn-quick-add{background:rgba(201,163,74,.15);color:var(--gold);border:1px solid rgba(201,163,74,.4);border-radius:30px;padding:7px 14px;font-family:var(--font-b);font-size:.82rem;cursor:pointer;transition:var(--tr);white-space:nowrap;flex-shrink:0}
+.btn-quick-add:hover{background:rgba(201,163,74,.25);border-color:var(--gold)}
+/* ─── Favourite / buy-again on cards ──────────────────── */
+.card-fav-btn{background:none;border:none;cursor:pointer;font-size:1.1rem;color:var(--light-gray);padding:0 2px;transition:color .15s,transform .15s;line-height:1;flex-shrink:0}
+.card-fav-btn:hover,.card-fav-btn.active{color:#e05c7a;transform:scale(1.2)}
+.card-fav-btn.active{color:#e05c7a}
+.card-buy-badge{font-size:.68rem;background:rgba(201,163,74,.15);color:var(--gold);border:1px solid rgba(201,163,74,.35);border-radius:10px;padding:1px 7px;font-family:var(--font-b);white-space:nowrap}
+/* ─── Toggle labels in form ────────────────────────────── */
+.toggle-label{display:flex;align-items:center;gap:5px;cursor:pointer;user-select:none}
+.fav-toggle{font-size:1.2rem;color:var(--light-gray);transition:color .15s,transform .15s;line-height:1}
+.fav-toggle.active{color:#e05c7a;transform:scale(1.1)}
+.buy-toggle{font-size:1.1rem;color:var(--light-gray);transition:color .15s,transform .15s;line-height:1;font-weight:600}
+.buy-toggle.active{color:var(--gold);transform:scale(1.1)}
+/* ─── Insights view ────────────────────────────────────── */
+.insights-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:20px}
+.insight-card{background:var(--ivory);border:1px solid var(--light-gray);border-radius:var(--rl);padding:22px 24px;animation:fadeUp .3s ease both}
+.insight-card-title{font-family:var(--font-d);font-size:.75rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--warm-gray);margin-bottom:14px;display:flex;align-items:center;gap:7px}
+.insight-card-title span{font-size:1rem}
+.insight-stat-big{font-family:var(--font-d);font-size:2.8rem;font-weight:600;color:var(--burgundy);line-height:1;margin-bottom:4px}
+.insight-stat-label{font-family:var(--font-b);font-size:.88rem;color:var(--warm-gray);font-style:italic}
+.insight-list{list-style:none;display:flex;flex-direction:column;gap:8px}
+.insight-list-item{display:flex;align-items:center;justify-content:space-between;gap:10px;font-family:var(--font-b);font-size:.9rem}
+.insight-list-item-name{color:var(--charcoal);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.insight-list-item-meta{color:var(--warm-gray);font-size:.82rem;white-space:nowrap;flex-shrink:0}
+.insight-bar-wrap{margin-top:10px;display:flex;flex-direction:column;gap:7px}
+.insight-bar-row{display:flex;align-items:center;gap:8px;font-family:var(--font-b);font-size:.82rem}
+.insight-bar-label{width:90px;color:var(--charcoal);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex-shrink:0}
+.insight-bar-track{flex:1;height:8px;background:var(--light-gray);border-radius:4px;overflow:hidden}
+.insight-bar-fill{height:100%;background:var(--burgundy);border-radius:4px;transition:width .4s ease}
+.insight-bar-count{color:var(--warm-gray);width:24px;text-align:right;flex-shrink:0}
+.insight-empty{font-family:var(--font-b);font-style:italic;color:var(--warm-gray);font-size:.9rem;text-align:center;padding:20px 0;opacity:.7}
 /* ─── Onboarding hint ──────────────────────────────────── */
 #onboardingHint{background:linear-gradient(135deg,rgba(123,30,58,.06),rgba(201,163,74,.08));border-bottom:1px solid rgba(201,163,74,.25)}
 .onboarding-inner{max-width:1200px;margin:0 auto;padding:12px 20px;display:flex;align-items:flex-start;gap:12px}
@@ -490,23 +522,23 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
         <div id="magicLinkRow" style="text-align:center;margin-top:16px">
           <button id="magicLinkBtn" onclick="showAuthState('reset')"
             style="background:none;border:none;color:var(--warm-gray);font-family:var(--font-b);font-size:.78rem;cursor:pointer;text-decoration:underline;text-underline-offset:2px;font-style:italic;padding:0">
-            Forgot password? Send a sign-in link
+            Forgot password? Reset it here
           </button>
         </div>
       </div>
 
-      <!-- State: forgot password / magic link -->
+      <!-- State: forgot password -->
       <div id="authStateReset" style="display:none">
         <div style="text-align:center;margin-bottom:20px">
-          <div style="font-family:var(--font-d);font-size:1rem;color:var(--charcoal);margin-bottom:6px">Sign-in link</div>
-          <div style="font-family:var(--font-b);font-size:.85rem;color:var(--warm-gray);line-height:1.6">Enter your email and we'll send a link to sign in — no password needed.</div>
+          <div style="font-family:var(--font-d);font-size:1rem;color:var(--charcoal);margin-bottom:6px">Reset your password</div>
+          <div style="font-family:var(--font-b);font-size:.85rem;color:var(--warm-gray);line-height:1.6">Enter your email and we'll send a link to reset your password.</div>
         </div>
         <div class="auth-form-group">
           <label for="resetEmail">Email</label>
           <input type="email" id="resetEmail" placeholder="you@example.com" autocomplete="email"/>
         </div>
         <button class="auth-btn-primary" id="resetSubmitBtn" onclick="handleSendLink()">
-          <span id="resetSubmitLabel">Send Sign-in Link</span>
+          <span id="resetSubmitLabel">Send Reset Link</span>
           <span id="resetSubmitSpinner" style="display:none">Sending…</span>
         </button>
         <div class="auth-msg" id="resetMsg"></div>
@@ -550,6 +582,7 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
         <span class="scan-hint">Fastest way to add a wine</span>
       </div>
       <button class="btn-add-subtle" id="openAddModal" aria-label="Add wine manually">+ Add Wine</button>
+      <button class="btn-quick-add" id="openQuickAdd" aria-label="Quick add wine" title="Log a wine in seconds">⚡ Quick Add</button>
       <div class="user-badge" id="userBadge" style="display:none">
         <div class="user-badge-avatar" id="userAvatar">?</div>
         <button class="btn-signout" onclick="handleSignOut()">Sign out</button>
@@ -564,6 +597,7 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
     <div class="toolbar-top">
       <div class="filter-tabs">
         <button class="filter-tab active" data-filter="all">All</button>
+        <button class="filter-tab" data-filter="fav">♥ Favourites</button>
         <button class="filter-tab" data-filter="5">★★★★★</button>
         <button class="filter-tab" data-filter="4">★★★★+</button>
         <button class="filter-tab" data-filter="recent">Recent</button>
@@ -572,6 +606,7 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
         <div class="view-toggle">
           <button class="view-btn active" id="viewGrid" title="Grid view">⊞ Grid</button>
           <button class="view-btn" id="viewMap" title="Map view">◎ Map</button>
+          <button class="view-btn" id="viewInsights" title="Insights">◈ Insights</button>
         </div>
         <div class="sort-wrap">
           <label for="sortSelect">Sort:</label>
@@ -605,6 +640,9 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
     <button class="onboarding-close" onclick="dismissOnboarding()" aria-label="Dismiss">✕</button>
   </div>
 </div>
+
+<!-- STATS BAR -->
+<div class="stats-bar">
   <div class="stats-inner">
     <div class="stat"><span id="statTotal">0</span><label>Wines Tasted</label></div>
     <div class="stat-divider"></div>
@@ -622,6 +660,10 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
   <div class="map-view" id="mapView">
     <div class="no-loc-note" id="noLocNote" style="display:none">Some entries have no location — scan or add wines with 📍 Get Location to see them on the map.</div>
     <div id="wineMap"></div>
+  </div>
+  <!-- INSIGHTS VIEW -->
+  <div id="insightsView" style="display:none">
+    <div class="insights-grid" id="insightsGrid"></div>
   </div>
   <div class="empty-state" id="emptyState" style="display:none">
     <div class="empty-icon" id="emptyIcon">🍷</div>
@@ -645,6 +687,50 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
   <span class="footer-sep">·</span>
   <button class="footer-admin-btn" id="openKeyModal" title="Settings">⚙</button>
 </footer>
+
+<!-- QUICK ADD MODAL -->
+<div class="modal-overlay" id="quickAddOverlay" role="dialog" aria-modal="true" aria-labelledby="quickAddTitle">
+  <div class="modal" style="max-width:400px">
+    <div class="modal-header">
+      <h2 class="modal-title" id="quickAddTitle">⚡ Quick Add</h2>
+      <button class="modal-close" id="closeQuickAdd" aria-label="Close">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-family:var(--font-b);font-size:.85rem;color:var(--warm-gray);font-style:italic;margin-bottom:16px;line-height:1.5">Log a wine in seconds. You can add more details later.</p>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="qaName">Wine Name *</label>
+          <input type="text" id="qaName" placeholder="e.g. Château Margaux" autocomplete="off"/>
+        </div>
+      </div>
+      <div class="form-row two-col">
+        <div class="form-group">
+          <label for="qaCountry">Country</label>
+          <input type="text" id="qaCountry" placeholder="e.g. France" autocomplete="off"/>
+        </div>
+        <div class="form-group">
+          <label for="qaVintage">Vintage</label>
+          <input type="number" id="qaVintage" placeholder="e.g. 2021" min="1900" max="2099"/>
+        </div>
+      </div>
+      <div class="form-group" style="margin-bottom:18px">
+        <label>Rating</label>
+        <div class="star-input" id="qaStarInput">
+          <span class="star" data-val="1">★</span>
+          <span class="star" data-val="2">★</span>
+          <span class="star" data-val="3">★</span>
+          <span class="star" data-val="4">★</span>
+          <span class="star" data-val="5">★</span>
+        </div>
+        <input type="hidden" id="qaRating" value="0"/>
+      </div>
+      <div style="display:flex;gap:10px">
+        <button class="btn-primary" id="saveQuickAddBtn" style="flex:1">Save Wine</button>
+        <button class="btn-secondary" id="cancelQuickAdd">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 <!-- ADD / EDIT MODAL -->
 <div class="modal-overlay" id="modalOverlay" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
@@ -786,6 +872,18 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
         </div>
 
         <div class="modal-footer" style="padding:12px 0 0;margin-top:6px;border-top:1px solid var(--light-gray)">
+          <div style="display:flex;align-items:center;gap:16px;flex:1">
+            <label class="toggle-label" title="Mark as favourite">
+              <input type="checkbox" id="isFavourite" style="display:none"/>
+              <span class="fav-toggle" id="favToggleIcon">♡</span>
+              <span style="font-family:var(--font-b);font-size:.82rem;color:var(--warm-gray)">Favourite</span>
+            </label>
+            <label class="toggle-label" title="Would buy again">
+              <input type="checkbox" id="buyAgain" style="display:none"/>
+              <span class="buy-toggle" id="buyToggleIcon">↺</span>
+              <span style="font-family:var(--font-b);font-size:.82rem;color:var(--warm-gray)">Buy Again</span>
+            </label>
+          </div>
           <button type="button" class="btn-secondary" id="cancelBtn">Cancel</button>
         </div>
       </form>
@@ -969,9 +1067,8 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
    SUPABASE CONFIG — replace with your project values
    supabase.com → your project → Settings → API
 ══════════════════════════════════════════════════════════════ */
-const SUPABASE_URL = 'https://phcnswuwrqarikzjvfqd.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBoY25zd3V3cnFhcmlremp2ZnFkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM1OTI2NjEsImV4cCI6MjA4OTE2ODY2MX0.nW_aLGeiFNu6km1leeqTofcOqFQxe3dabNWfIPkc334';
-
+const SUPABASE_URL = 'PASTE_SUPABASE_URL';
+const SUPABASE_KEY = 'PASTE_SUPABASE_ANON_KEY';
 
 // These are set inside DOMContentLoaded — never at parse time
 var _sb = null;
@@ -1145,7 +1242,7 @@ async function handleAuthSubmit() {
   }
 }
 
-/* ── Magic link / forgot password via Resend ─────────────── */
+/* ── Forgot password ─────────────────────────────────────── */
 async function handleSendLink() {
   if (!_sb) { showResetMsg('err', 'Still loading — please wait a moment and try again'); return; }
   const email = document.getElementById('resetEmail').value.trim();
@@ -1154,36 +1251,26 @@ async function handleSendLink() {
   const submitBtn     = document.getElementById('resetSubmitBtn');
   const submitLabel   = document.getElementById('resetSubmitLabel');
   const submitSpinner = document.getElementById('resetSubmitSpinner');
-  submitBtn.disabled    = true;
-  submitLabel.style.display   = 'none';
+  submitBtn.disabled         = true;
+  submitLabel.style.display  = 'none';
   submitSpinner.style.display = 'inline';
 
   try {
-    // Generate magic link via Supabase (creates the auth token)
     const redirectTo = window.location.origin + window.location.pathname;
-    const { data, error } = await _sb.auth.signInWithOtp({
-      email,
-      options: { shouldCreateUser: false, emailRedirectTo: redirectTo }
+
+    // resetPasswordForEmail is the correct client-side method —
+    // it sends a password reset link via Supabase SMTP (or custom SMTP if configured)
+    const { error } = await _sb.auth.resetPasswordForEmail(email, {
+      redirectTo
     });
 
-    // Supabase will have sent its own email (if not using custom SMTP)
-    // We also send via Resend for reliability — user gets whichever arrives first
-    // If custom SMTP is configured in Supabase, disable the Supabase send and rely on this
-    if (!error) {
-      try {
-        // Get the magic link URL from the Supabase response if available
-        const magicUrl = data?.properties?.action_link || redirectTo + '?type=magiclink&email=' + encodeURIComponent(email);
-        await fetch(`${Scanner.getProxyUrl()}/email`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ type: 'magic_link', email, url: magicUrl })
-        });
-      } catch(_) { /* non-fatal — Supabase email already sent */ }
+    // Don't expose whether the account exists — always show success
+    if (error && !error.message?.toLowerCase().includes('not found')) {
+      throw error;
     }
 
-    // Show success regardless — don't reveal whether account exists
     const sentMsg = document.getElementById('sentEmailMsg');
-    sentMsg.textContent = 'A sign-in link has been sent to ';
+    sentMsg.textContent = 'A password reset link has been sent to ';
     const strong = document.createElement('strong');
     strong.textContent = email;
     sentMsg.appendChild(strong);
@@ -1191,9 +1278,10 @@ async function handleSendLink() {
     showAuthState('sent');
 
   } catch(e) {
-    showResetMsg('err', 'Could not send link — please try again');
+    console.error('handleSendLink:', e);
+    showResetMsg('err', 'Could not send reset link — please try again');
   } finally {
-    submitBtn.disabled    = false;
+    submitBtn.disabled          = false;
     submitLabel.style.display   = 'inline';
     submitSpinner.style.display = 'none';
   }
@@ -1373,12 +1461,44 @@ document.addEventListener('DOMContentLoaded', () => {
   initScanner();
   document.getElementById('dateTasted').valueAsDate = new Date();
   document.getElementById('exportBtn').addEventListener('click', exportCSV);
+
+  // Quick Add star input
+  document.querySelectorAll('#qaStarInput .star').forEach(s => {
+    s.addEventListener('mouseover', () => {
+      document.querySelectorAll('#qaStarInput .star').forEach(st => st.classList.toggle('filled', +st.dataset.val <= +s.dataset.val));
+    });
+    s.addEventListener('mouseleave', () => {
+      const v = +document.getElementById('qaRating').value;
+      document.querySelectorAll('#qaStarInput .star').forEach(st => st.classList.toggle('filled', +st.dataset.val <= v));
+    });
+    s.addEventListener('click', () => {
+      document.getElementById('qaRating').value = s.dataset.val;
+      document.querySelectorAll('#qaStarInput .star').forEach(st => st.classList.toggle('filled', +st.dataset.val <= +s.dataset.val));
+    });
+  });
+  document.getElementById('saveQuickAddBtn').addEventListener('click', handleQuickAdd);
+  document.getElementById('cancelQuickAdd').addEventListener('click', closeQuickAdd);
+  document.getElementById('closeQuickAdd').addEventListener('click', closeQuickAdd);
+  document.getElementById('quickAddOverlay').addEventListener('click', e => { if (e.target === document.getElementById('quickAddOverlay')) closeQuickAdd(); });
+  ['qaName','qaCountry','qaVintage'].forEach(id => {
+    document.getElementById(id).addEventListener('keydown', e => { if (e.key === 'Enter') handleQuickAdd(); });
+  });
 });
 
 function setupEvents() {
   document.getElementById('openAddModal').addEventListener('click', ()=>openModal());
   document.getElementById('closeModal').addEventListener('click', closeModal);
   document.getElementById('cancelBtn').addEventListener('click', closeModal);
+
+  // Favourite / buy-again toggle icon updates
+  document.getElementById('isFavourite').addEventListener('change', e => {
+    const icon = document.getElementById('favToggleIcon');
+    icon.classList.toggle('active', e.target.checked);
+    icon.textContent = e.target.checked ? '♥' : '♡';
+  });
+  document.getElementById('buyAgain').addEventListener('change', e => {
+    document.getElementById('buyToggleIcon').classList.toggle('active', e.target.checked);
+  });
   modalOverlay.addEventListener('click', e=>{ if(e.target===modalOverlay) closeModal(); });
   document.getElementById('closeDetail').addEventListener('click', closeDetail);
   detailOverlay.addEventListener('click', e=>{ if(e.target===detailOverlay) closeDetail(); });
@@ -1397,24 +1517,30 @@ function setupEvents() {
   });
   document.getElementById('viewGrid').addEventListener('click', ()=>setView('grid'));
   document.getElementById('viewMap').addEventListener('click',  ()=>setView('map'));
+  document.getElementById('viewInsights').addEventListener('click', ()=>setView('insights'));
+  document.getElementById('openQuickAdd').addEventListener('click', openQuickAdd);
   document.getElementById('locateBtn').addEventListener('click', captureLocation);
   document.getElementById('closeShareModal').addEventListener('click', closeShareModal);
   document.getElementById('shareOverlay').addEventListener('click', e=>{ if(e.target===document.getElementById('shareOverlay')) closeShareModal(); });
   document.getElementById('closeInfoModal').addEventListener('click', closeInfoModal);
   document.getElementById('infoOverlay').addEventListener('click', e=>{ if(e.target===document.getElementById('infoOverlay')) closeInfoModal(); });
-  document.addEventListener('keydown', e=>{ if(e.key==='Escape'){ closeModal(); closeDetail(); closeScanModal(); closeLightbox(); closeShareModal(); closeInfoModal(); } });
+  document.addEventListener('keydown', e=>{ if(e.key==='Escape'){ closeModal(); closeDetail(); closeScanModal(); closeLightbox(); closeShareModal(); closeInfoModal(); closeQuickAdd(); } });
   // Check for public wine share link in URL
   checkPublicWineView();
 }
 
 function setView(v) {
   activeView = v;
-  document.getElementById('viewGrid').classList.toggle('active', v==='grid');
-  document.getElementById('viewMap').classList.toggle('active',  v==='map');
-  wineGrid.style.display    = v==='grid' ? 'grid'  : 'none';
-  mapViewEl.style.display   = v==='map'  ? 'block' : 'none';
-  emptyState.style.display  = 'none';
-  if (v==='map') initMapView(); else renderGrid();
+  document.getElementById('viewGrid').classList.toggle('active',     v==='grid');
+  document.getElementById('viewMap').classList.toggle('active',      v==='map');
+  document.getElementById('viewInsights').classList.toggle('active', v==='insights');
+  wineGrid.style.display             = v==='grid'     ? 'grid'  : 'none';
+  mapViewEl.style.display            = v==='map'      ? 'block' : 'none';
+  document.getElementById('insightsView').style.display = v==='insights' ? 'block' : 'none';
+  emptyState.style.display           = 'none';
+  if (v==='map')      initMapView();
+  else if (v==='insights') renderInsights();
+  else renderGrid();
 }
 
 function getList() {
@@ -1422,7 +1548,8 @@ function getList() {
   if (searchQuery) list=list.filter(w=>
     [w.name,w.winery,w.region,w.country,w.grape,w.purchasedFrom].some(v=>(v||'').toLowerCase().includes(searchQuery))
   );
-  if (activeFilter==='5') list=list.filter(w=>w.rating===5);
+  if (activeFilter==='fav')    list=list.filter(w=>w.isFavourite);
+  else if (activeFilter==='5') list=list.filter(w=>w.rating===5);
   else if (activeFilter==='4') list=list.filter(w=>w.rating>=4);
   else if (activeFilter==='recent') { const c=Date.now()-30*86400000; list=list.filter(w=>new Date(w.dateTasted||w.createdAt)>c); }
   list.sort((a,b)=>{
@@ -1523,7 +1650,6 @@ function createCard(w) {
   const tags   = [w.region, w.grape, w.style].filter(Boolean);
   const dateStr= w.dateTasted ? formatDate(w.dateTasted) : '';
 
-  // Append text content via innerHTML (all values escaped) — photo already appended above
   const body = document.createElement('div');
   body.innerHTML = `
     <div class="card-body">
@@ -1532,10 +1658,13 @@ function createCard(w) {
           ${w.vintage?`<div class="card-vintage-badge">${escHtml(String(w.vintage))}</div>`:''}
           <div class="card-name">${escHtml(w.name)}</div>
         </div>
-        ${w.rating?`<div class="card-rating">${renderStars(w.rating)}</div>`:''}
+        <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
+          ${w.rating?`<div class="card-rating">${renderStars(w.rating)}</div>`:''}
+        </div>
       </div>
       ${meta?`<div class="card-meta">${escHtml(meta)}</div>`:''}
-      ${tags.length?`<div class="card-tags">${tags.map(t=>`<span class="card-tag">${escHtml(t)}</span>`).join('')}</div>`:''}
+      ${tags.length?`<div class="card-tags">${tags.map(t=>`<span class="card-tag">${escHtml(t)}</span>`).join('')}${w.buyAgain?'<span class="card-buy-badge">↺ Buy again</span>':''}</div>`:''}
+      ${!tags.length && w.buyAgain?`<div class="card-tags"><span class="card-buy-badge">↺ Buy again</span></div>`:''}
       ${w.notes?`<p class="card-notes">${escHtml(w.notes)}</p>`:''}
       ${w.locLabel?`<div class="card-location">📍 ${escHtml(w.locLabel)}</div>`:''}
     </div>
@@ -1543,6 +1672,14 @@ function createCard(w) {
       <span class="card-date">${dateStr}</span>
       <div class="card-actions"></div>
     </div>`;
+
+  // Favourite button — built via DOM to avoid inline handler with ID interpolation
+  const favBtn = document.createElement('button');
+  favBtn.className = 'card-fav-btn' + (w.isFavourite ? ' active' : '');
+  favBtn.title = w.isFavourite ? 'Remove from favourites' : 'Add to favourites';
+  favBtn.textContent = w.isFavourite ? '♥' : '♡';
+  favBtn.addEventListener('click', e => { e.stopPropagation(); toggleFavourite(w.id); });
+  body.querySelector('.card-header > div:last-child').prepend(favBtn);
 
   // Wire action buttons via addEventListener — no inline onclick handlers
   const actions = body.querySelector('.card-actions');
@@ -1742,6 +1879,12 @@ function openModal(wine=null, injectFront=null, injectBack=null) {
     document.getElementById('dateTasted').value=wine.dateTasted||'';
     document.getElementById('notes').value=wine.notes||'';
     setStars(wine.rating||0);
+    document.getElementById('isFavourite').checked = !!wine.isFavourite;
+    document.getElementById('buyAgain').checked    = !!wine.buyAgain;
+    // Update toggle icon states
+    document.getElementById('favToggleIcon').classList.toggle('active', !!wine.isFavourite);
+    document.getElementById('favToggleIcon').textContent = wine.isFavourite ? '♥' : '♡';
+    document.getElementById('buyToggleIcon').classList.toggle('active', !!wine.buyAgain);
     currentPhotoFront=wine.photoFront||wine.photo||null;
     currentPhotoBack =wine.photoBack||null;
     if (currentPhotoFront) setPhotoPreview('Front', currentPhotoFront);
@@ -1751,7 +1894,11 @@ function openModal(wine=null, injectFront=null, injectBack=null) {
     document.getElementById('modalTitle').textContent='Add Wine';
     document.getElementById('wineId').value='';
     document.getElementById('dateTasted').valueAsDate=new Date();
-    // Auto-capture location silently
+    document.getElementById('isFavourite').checked = false;
+    document.getElementById('buyAgain').checked    = false;
+    document.getElementById('favToggleIcon').classList.remove('active');
+    document.getElementById('favToggleIcon').textContent = '♡';
+    document.getElementById('buyToggleIcon').classList.remove('active');
     autoCaptureLocation();
   }
 
@@ -1948,6 +2095,8 @@ async function handleSave(e) {
     dateTasted:   document.getElementById('dateTasted').value||null,
     notes:        document.getElementById('notes').value.trim()||null,
     rating:       parseInt(ratingInput.value,10)||null,
+    isFavourite:  document.getElementById('isFavourite').checked,
+    buyAgain:     document.getElementById('buyAgain').checked,
     photoFront:   storedFront,
     photoBack:    storedBack,
     photo:        storedFront,
@@ -2039,6 +2188,30 @@ async function deleteWine(id, e) {
   renderGrid();
   updateStats();
   showToast('Entry deleted');
+}
+
+/* ── Toggle favourite ────────────────────────────────────── */
+async function toggleFavourite(id) {
+  const w = wines.find(w => w.id === id);
+  if (!w) return;
+  w.isFavourite = !w.isFavourite;
+  // Update card button immediately for instant feedback
+  const card = wineGrid.querySelector(`[data-id="${id}"]`);
+  if (card) {
+    const btn = card.querySelector('.card-fav-btn');
+    if (btn) {
+      btn.classList.toggle('active', w.isFavourite);
+      btn.textContent = w.isFavourite ? '♥' : '♡';
+      btn.title = w.isFavourite ? 'Remove from favourites' : 'Add to favourites';
+    }
+  }
+  // Persist to DB (fire-and-forget — UI already updated)
+  if (_sb && _currentUser) {
+    await _sb.from('wines')
+      .update({ is_favourite: w.isFavourite })
+      .eq('id', id).eq('user_id', _currentUser.id);
+  }
+  showToast(w.isFavourite ? '♥ Added to favourites' : 'Removed from favourites');
 }
 
 /* ── Share wine ──────────────────────────────────────────── */
@@ -2148,6 +2321,71 @@ function closeInfoModal() {
   document.getElementById('infoOverlay').classList.remove('open');
 }
 
+/* ── Quick Add ───────────────────────────────────────────── */
+function openQuickAdd() {
+  // Reset fields
+  document.getElementById('qaName').value    = '';
+  document.getElementById('qaCountry').value = '';
+  document.getElementById('qaVintage').value = '';
+  document.getElementById('qaRating').value  = '0';
+  document.querySelectorAll('#qaStarInput .star').forEach(s => s.classList.remove('filled'));
+  document.getElementById('quickAddOverlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+  setTimeout(() => document.getElementById('qaName').focus(), 200);
+}
+
+function closeQuickAdd() {
+  document.getElementById('quickAddOverlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+async function handleQuickAdd() {
+  const name = document.getElementById('qaName').value.trim();
+  if (!name) { document.getElementById('qaName').focus(); showToast('Please enter a wine name'); return; }
+
+  const btn = document.getElementById('saveQuickAddBtn');
+  btn.disabled = true;
+  btn.textContent = 'Saving…';
+
+  const entry = {
+    id:          generateId(),
+    name,
+    country:     document.getElementById('qaCountry').value.trim() || null,
+    vintage:     document.getElementById('qaVintage').value || null,
+    rating:      parseInt(document.getElementById('qaRating').value, 10) || null,
+    winery:      null, region: null, grape: null, style: null,
+    price:       null, purchasedFrom: null,
+    dateTasted:  new Date().toISOString().slice(0, 10),
+    notes:       null, isFavourite: false, buyAgain: false,
+    photoFront:  null, photoBack: null, photo: null,
+    locLat:      _appLocLat, locLng: _appLocLng, locLabel: _appLocLabel || null,
+    createdAt:   Date.now()
+  };
+
+  const ok = await saveWineToDB(entry);
+  if (!ok) {
+    showToast('Failed to save — check your connection');
+    btn.disabled = false;
+    btn.textContent = 'Save Wine';
+    return;
+  }
+
+  wines.unshift(entry);
+  closeQuickAdd();
+  // Reset view to grid/all so the new wine is visible
+  if (activeView !== 'grid') setView('grid');
+  else {
+    const card = createCard(entry);
+    card.style.animationDelay = '0s';
+    if (wineGrid.firstChild) wineGrid.insertBefore(card, wineGrid.firstChild);
+    else { emptyState.style.display = 'none'; wineGrid.style.display = 'grid'; wineGrid.appendChild(card); }
+  }
+  updateStats();
+  showToast(`${name} saved ✓`);
+  btn.disabled = false;
+  btn.textContent = 'Save Wine';
+}
+
 function copyShareLink() {
   const input = document.getElementById('shareLinkInput');
   navigator.clipboard.writeText(input.value).then(() => {
@@ -2253,6 +2491,133 @@ function updateStats() {
   document.getElementById('statAvg').textContent=avg==='—'?'—':`${avg} ★`;
   document.getElementById('statCountries').textContent=countries;
   document.getElementById('statTop').textContent=top.length>12?top.slice(0,12)+'…':top;
+}
+
+/* ── Insights ──────────────────────────────────────────────
+   Renders rich analysis cards into #insightsGrid.
+   Called by setView('insights') — uses current wines array.
+────────────────────────────────────────────────────────── */
+function renderInsights() {
+  const grid = document.getElementById('insightsGrid');
+  grid.innerHTML = '';
+
+  if (!wines.length) {
+    grid.innerHTML = '<p class="insight-empty">Add some wines to see your insights.</p>';
+    return;
+  }
+
+  const rated = wines.filter(w => w.rating);
+  const avg   = rated.length ? (rated.reduce((s, w) => s + w.rating, 0) / rated.length).toFixed(1) : null;
+  const favs  = wines.filter(w => w.isFavourite);
+  const buys  = wines.filter(w => w.buyAgain);
+
+  // ── Card builder helpers ──────────────────────────────────
+  function card(titleIcon, titleText, bodyHtml, delay) {
+    const el = document.createElement('div');
+    el.className = 'insight-card';
+    el.style.animationDelay = `${delay * 0.06}s`;
+    el.innerHTML = `
+      <div class="insight-card-title"><span>${titleIcon}</span>${escHtml(titleText)}</div>
+      ${bodyHtml}`;
+    grid.appendChild(el);
+  }
+
+  function statCard(icon, title, value, sub, delay) {
+    card(icon, title, `
+      <div class="insight-stat-big">${escHtml(String(value))}</div>
+      <div class="insight-stat-label">${escHtml(sub)}</div>`, delay);
+  }
+
+  function listCard(icon, title, items, delay) {
+    // items: [{name, meta}]
+    const rows = items.length
+      ? items.map(it => `
+          <li class="insight-list-item">
+            <span class="insight-list-item-name">${escHtml(it.name)}</span>
+            <span class="insight-list-item-meta">${escHtml(it.meta)}</span>
+          </li>`).join('')
+      : `<li style="font-family:var(--font-b);font-size:.85rem;color:var(--warm-gray);font-style:italic;padding:6px 0">None yet</li>`;
+    card(icon, title, `<ul class="insight-list">${rows}</ul>`, delay);
+  }
+
+  function barCard(icon, title, entries, maxVal, delay) {
+    // entries: [{label, count}]
+    const bars = entries.map(e => `
+      <div class="insight-bar-row">
+        <span class="insight-bar-label" title="${escHtml(e.label)}">${escHtml(e.label)}</span>
+        <div class="insight-bar-track"><div class="insight-bar-fill" style="width:${Math.round((e.count/maxVal)*100)}%"></div></div>
+        <span class="insight-bar-count">${e.count}</span>
+      </div>`).join('');
+    card(icon, title, `<div class="insight-bar-wrap">${bars}</div>`, delay);
+  }
+
+  let d = 0;
+
+  // 1. Total wines
+  statCard('🍷', 'Wines Tasted', wines.length,
+    wines.length === 1 ? '1 bottle logged' : `${wines.length} bottles logged`, d++);
+
+  // 2. Average rating
+  statCard('★', 'Average Rating', avg ? `${avg} ★` : '—',
+    rated.length ? `From ${rated.length} rated wine${rated.length > 1 ? 's' : ''}` : 'No rated wines yet', d++);
+
+  // 3. Countries explored
+  const countryCounts = {};
+  wines.forEach(w => { if (w.country) countryCounts[w.country] = (countryCounts[w.country] || 0) + 1; });
+  const countryCount  = Object.keys(countryCounts).length;
+  statCard('🌍', 'Countries Explored', countryCount, countryCount === 1 ? '1 country' : `${countryCount} countries`, d++);
+
+  // 4. Favourites count
+  statCard('♥', 'Favourites', favs.length,
+    favs.length === 1 ? '1 wine marked favourite' : `${favs.length} wines marked favourite`, d++);
+
+  // 5. Top countries by bottle count (bar chart)
+  const sortedCountries = Object.entries(countryCounts)
+    .sort((a, b) => b[1] - a[1]).slice(0, 6)
+    .map(([label, count]) => ({ label, count }));
+  if (sortedCountries.length) {
+    barCard('🗺', 'Bottles by Country', sortedCountries, sortedCountries[0].count, d++);
+  }
+
+  // 6. Top rated wines
+  const topRated = [...wines]
+    .filter(w => w.rating)
+    .sort((a, b) => (b.rating - a.rating) || (new Date(b.dateTasted||0) - new Date(a.dateTasted||0)))
+    .slice(0, 5)
+    .map(w => ({ name: w.name, meta: '★'.repeat(w.rating) + (w.vintage ? ` · ${w.vintage}` : '') }));
+  listCard('🏆', 'Top Rated Wines', topRated, d++);
+
+  // 7. Buy again list
+  const buyList = buys.slice(0, 6).map(w => ({
+    name: w.name,
+    meta: [w.winery, w.country].filter(Boolean).join(' · ') || (w.vintage || '—')
+  }));
+  listCard('↺', 'Buy Again', buyList, d++);
+
+  // 8. Favourite wines
+  const favList = favs.slice(0, 5).map(w => ({
+    name: w.name,
+    meta: [w.country, w.vintage].filter(Boolean).join(' · ') || '—'
+  }));
+  listCard('♥', 'Your Favourites', favList, d++);
+
+  // 9. Grape varieties
+  const grapeCounts = {};
+  wines.forEach(w => { if (w.grape) grapeCounts[w.grape] = (grapeCounts[w.grape] || 0) + 1; });
+  const topGrapes = Object.entries(grapeCounts)
+    .sort((a, b) => b[1] - a[1]).slice(0, 6)
+    .map(([label, count]) => ({ label, count }));
+  if (topGrapes.length) {
+    barCard('🍇', 'Bottles by Grape', topGrapes, topGrapes[0].count, d++);
+  }
+
+  // 10. Recent activity — last 5 wines by date tasted
+  const recent = [...wines]
+    .filter(w => w.dateTasted)
+    .sort((a, b) => new Date(b.dateTasted) - new Date(a.dateTasted))
+    .slice(0, 5)
+    .map(w => ({ name: w.name, meta: formatDate(w.dateTasted) }));
+  if (recent.length) listCard('📅', 'Recently Tasted', recent, d++);
 }
 
 function initStarInput() {
@@ -2363,7 +2728,7 @@ async function loadWinesFromDB(cacheKey) {
     // Run metadata and photo queries in parallel
     const [metaResult, photoResult] = await Promise.all([
       _sb.from('wines')
-        .select('id,name,winery,vintage,country,region,grape,style,price,purchased_from,date_tasted,notes,rating,loc_lat,loc_lng,loc_label,created_at')
+        .select('id,name,winery,vintage,country,region,grape,style,price,purchased_from,date_tasted,notes,rating,is_favourite,buy_again,loc_lat,loc_lng,loc_label,created_at')
         .eq('user_id', _currentUser.id)
         .order('created_at', { ascending: false }),
       _sb.from('wines')
@@ -2391,6 +2756,8 @@ async function loadWinesFromDB(cacheKey) {
       dateTasted:   row.date_tasted,
       notes:        row.notes,
       rating:       row.rating,
+      isFavourite:  row.is_favourite || false,
+      buyAgain:     row.buy_again    || false,
       photoFront:   photoMap[row.id]?.photo_front || null,
       photoBack:    photoMap[row.id]?.photo_back  || null,
       photo:        photoMap[row.id]?.photo_front || null,
@@ -2436,6 +2803,8 @@ async function saveWineToDB(entry) {
     date_tasted:   entry.dateTasted,
     notes:         entry.notes,
     rating:        entry.rating,
+    is_favourite:  entry.isFavourite || false,
+    buy_again:     entry.buyAgain    || false,
     photo_front:   entry.photoFront,
     photo_back:    entry.photoBack,
     loc_lat:       entry.locLat,

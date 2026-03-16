@@ -69,3 +69,20 @@ create policy "Users can insert shared wines"
 create policy "Users can delete own shared wines"
   on public.shared_wines for delete
   using (auth.uid() = user_id);
+
+-- ── Migration: add is_favourite and buy_again columns ──────────────────────
+-- Run this if you already have the wines table from the initial setup.
+-- Safe to run multiple times (uses IF NOT EXISTS pattern via DO block).
+
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'wines' AND column_name = 'is_favourite') THEN
+    ALTER TABLE public.wines ADD COLUMN is_favourite boolean DEFAULT false;
+  END IF;
+
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'wines' AND column_name = 'buy_again') THEN
+    ALTER TABLE public.wines ADD COLUMN buy_again boolean DEFAULT false;
+  END IF;
+END $$;
