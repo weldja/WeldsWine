@@ -14,37 +14,63 @@
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Cormorant+Garamond:ital,wght@0,400;1,400&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
   <style>
-/* ── Auth screen ─────────────────────────────────────────── */
-#authScreen{position:fixed;inset:0;background:var(--burgundy-deep);z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px}
+/* ── Auth / Landing screen ───────────────────────────────── */
+#authScreen{position:fixed;inset:0;background:var(--burgundy-deep);z-index:1000;display:flex;align-items:stretch;overflow-y:auto}
 #authScreen.hidden{display:none}
-.auth-card{background:var(--ivory);border-radius:var(--rl);width:100%;max-width:380px;padding:36px 32px;box-shadow:0 20px 60px rgba(0,0,0,.4);animation:fadeUp .35s ease}
-.auth-logo{text-align:center;margin-bottom:28px}
-.auth-logo-icon{font-size:2.4rem;display:block;margin-bottom:8px}
-.auth-logo-title{font-family:var(--font-d);font-size:1.5rem;font-weight:600;color:var(--burgundy-deep);letter-spacing:.05em}
-.auth-logo-sub{font-family:var(--font-b);font-size:.72rem;color:var(--blush);letter-spacing:.14em;text-transform:uppercase;font-style:italic;margin-top:2px}
+
+/* Left: hero panel */
+.auth-hero{flex:1;display:flex;flex-direction:column;justify-content:center;padding:52px 48px;color:var(--parchment);min-width:0}
+.auth-hero-logo{display:flex;align-items:center;gap:10px;margin-bottom:48px}
+.auth-hero-logo-icon{font-size:1.6rem;line-height:1}
+.auth-hero-logo-text{font-family:var(--font-d);font-size:1.1rem;font-weight:600;color:var(--parchment);letter-spacing:.06em}
+.auth-hero-headline{font-family:var(--font-d);font-size:2.4rem;font-weight:600;line-height:1.2;color:var(--ivory);margin-bottom:16px;letter-spacing:.01em}
+.auth-hero-sub{font-family:var(--font-b);font-size:1.1rem;color:rgba(245,239,230,.72);line-height:1.65;margin-bottom:36px;font-style:italic}
+.auth-hero-features{display:flex;flex-direction:column;gap:13px;list-style:none}
+.auth-hero-features li{display:flex;align-items:center;gap:12px;font-family:var(--font-b);font-size:.96rem;color:rgba(245,239,230,.85)}
+.auth-hero-features li::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--gold);flex-shrink:0}
+
+/* Right: form panel */
+.auth-panel{width:400px;flex-shrink:0;background:var(--ivory);display:flex;flex-direction:column;justify-content:center;padding:52px 40px;overflow-y:auto}
+.auth-panel-logo{text-align:center;margin-bottom:30px}
+.auth-panel-logo-icon{font-size:2rem;display:block;margin-bottom:8px}
+.auth-panel-logo-title{font-family:var(--font-d);font-size:1.35rem;font-weight:600;color:var(--burgundy-deep);letter-spacing:.04em}
+.auth-panel-logo-sub{font-family:var(--font-b);font-size:.7rem;color:var(--blush);letter-spacing:.14em;text-transform:uppercase;font-style:italic;margin-top:3px}
+
+/* Shared auth card styles (used by panel) */
+.auth-card{width:100%}
 .auth-tabs{display:flex;background:var(--light-gray);border-radius:var(--r);padding:2px;gap:2px;margin-bottom:22px}
-.auth-tab{flex:1;background:none;border:none;padding:7px;font-family:var(--font-b);font-size:.88rem;color:var(--warm-gray);cursor:pointer;border-radius:2px;transition:var(--tr)}
+.auth-tab{flex:1;background:none;border:none;padding:8px;font-family:var(--font-b);font-size:.9rem;color:var(--warm-gray);cursor:pointer;border-radius:2px;transition:var(--tr)}
 .auth-tab.active{background:var(--ivory);color:var(--burgundy);box-shadow:0 1px 3px var(--shadow)}
 .auth-form-group{margin-bottom:14px}
-.auth-form-group label{display:block;font-family:var(--font-b);font-size:.74rem;letter-spacing:.08em;text-transform:uppercase;color:var(--warm-gray);margin-bottom:4px}
-.auth-form-group input{width:100%;border:1px solid var(--light-gray);border-radius:var(--r);padding:9px 12px;font-family:var(--font-b);font-size:.95rem;color:var(--charcoal);background:var(--cream);outline:none;transition:border-color .2s}
+.auth-form-group label{display:block;font-family:var(--font-b);font-size:.74rem;letter-spacing:.08em;text-transform:uppercase;color:var(--warm-gray);margin-bottom:5px}
+.auth-form-group input{width:100%;border:1px solid var(--light-gray);border-radius:var(--r);padding:10px 12px;font-family:var(--font-b);font-size:.95rem;color:var(--charcoal);background:var(--cream);outline:none;transition:border-color .2s}
 .auth-form-group input:focus{border-color:var(--burgundy);background:var(--ivory)}
-.auth-btn-primary{width:100%;background:var(--burgundy);color:var(--ivory);border:none;border-radius:var(--r);padding:11px;font-family:var(--font-d);font-size:.92rem;font-weight:600;letter-spacing:.05em;cursor:pointer;transition:var(--tr);margin-top:4px}
+.auth-btn-primary{width:100%;background:var(--burgundy);color:var(--ivory);border:none;border-radius:var(--r);padding:12px;font-family:var(--font-d);font-size:.95rem;font-weight:600;letter-spacing:.05em;cursor:pointer;transition:var(--tr);margin-top:4px}
 .auth-btn-primary:hover{background:var(--burgundy-lt)}
 .auth-btn-primary:disabled{opacity:.5;cursor:not-allowed}
 .auth-divider{display:flex;align-items:center;gap:10px;margin:16px 0;color:var(--light-gray);font-family:var(--font-b);font-size:.8rem}
 .auth-divider::before,.auth-divider::after{content:'';flex:1;height:1px;background:var(--light-gray)}
-.auth-btn-passkey{width:100%;background:var(--parchment);color:var(--charcoal);border:1px solid var(--light-gray);border-radius:var(--r);padding:10px;font-family:var(--font-b);font-size:.9rem;cursor:pointer;transition:var(--tr);display:flex;align-items:center;justify-content:center;gap:8px}
-.auth-btn-passkey:hover{border-color:var(--blush);background:var(--cream)}
-.auth-btn-passkey:disabled{opacity:.4;cursor:not-allowed}
 .auth-msg{font-family:var(--font-b);font-size:.82rem;margin-top:12px;padding:8px 12px;border-radius:var(--r);text-align:center;display:none}
 .auth-msg.ok{background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0;display:block}
 .auth-msg.err{background:#fef2f2;color:#dc2626;border:1px solid #fca5a5;display:block}
-.auth-footer{margin-top:14px;text-align:center;font-family:var(--font-b);font-size:.78rem;color:var(--warm-gray);font-style:italic}
+.auth-footer{margin-top:16px;text-align:center;font-family:var(--font-b);font-size:.78rem;color:var(--warm-gray);font-style:italic}
+
+/* Mobile: stack vertically, hero collapses to compact banner */
+@media(max-width:700px){
+  #authScreen{flex-direction:column;overflow-y:auto}
+  .auth-hero{padding:36px 24px 28px;flex:none}
+  .auth-hero-headline{font-size:1.7rem;margin-bottom:10px}
+  .auth-hero-sub{font-size:.95rem;margin-bottom:22px}
+  .auth-hero-features{gap:10px}
+  .auth-hero-features li{font-size:.88rem}
+  .auth-panel{width:100%;padding:32px 24px 44px;flex:none}
+  .auth-panel-logo{display:none}
+}
+
 /* User badge in header */
 .user-badge{display:flex;align-items:center;gap:6px;color:rgba(245,239,230,.7);font-family:var(--font-b);font-size:.8rem}
-.user-badge-avatar{width:26px;height:26px;border-radius:50%;background:var(--burgundy);border:1px solid var(--blush);display:flex;align-items:center;justify-content:center;font-size:.75rem;color:var(--parchment);flex-shrink:0}
-.btn-signout{background:none;border:1px solid rgba(196,120,138,.3);border-radius:var(--r);padding:3px 10px;color:rgba(245,239,230,.6);font-family:var(--font-b);font-size:.75rem;cursor:pointer;transition:var(--tr)}
+.user-badge-avatar{width:28px;height:28px;border-radius:50%;background:var(--burgundy);border:1px solid var(--blush);display:flex;align-items:center;justify-content:center;font-size:.75rem;color:var(--parchment);flex-shrink:0}
+.btn-signout{background:none;border:1px solid rgba(196,120,138,.3);border-radius:var(--r);padding:4px 11px;color:rgba(245,239,230,.6);font-family:var(--font-b);font-size:.75rem;cursor:pointer;transition:var(--tr)}
 .btn-signout:hover{border-color:var(--blush);color:var(--parchment)}
 </style>
 <style>
@@ -52,9 +78,9 @@
    Welds Wine Wisdoms — main styles
    ============================================================ */
 :root {
-  --burgundy:      #6B2737;
+  --burgundy:      #7B1E3A;
   --burgundy-deep: #4A1424;
-  --burgundy-lt:   #8B3A4A;
+  --burgundy-lt:   #9B3050;
   --blush:         #C4788A;
   --parchment:     #F5EFE6;
   --cream:         #FAF7F2;
@@ -62,8 +88,8 @@
   --charcoal:      #2C2420;
   --warm-gray:     #6B5D58;
   --light-gray:    #E8DDD6;
-  --gold:          #C9A84C;
-  --gold-lt:       #E8C87A;
+  --gold:          #C9A34A;
+  --gold-lt:       #E2C070;
   --shadow:        rgba(44,36,32,0.12);
   --shadow-lg:     rgba(44,36,32,0.22);
   --font-d: 'Playfair Display', Georgia, serif;
@@ -327,9 +353,25 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
 ::-webkit-scrollbar-track{background:var(--cream)}
 ::-webkit-scrollbar-thumb{background:var(--light-gray);border-radius:3px}
 ::-webkit-scrollbar-thumb:hover{background:var(--blush)}
-.site-footer{text-align:center;padding:18px 20px;font-family:var(--font-b);font-size:.78rem;color:var(--light-gray);letter-spacing:.06em;display:flex;align-items:center;justify-content:center;gap:12px}
+.site-footer{text-align:center;padding:20px 20px;font-family:var(--font-b);font-size:.78rem;color:var(--warm-gray);letter-spacing:.04em;display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;border-top:1px solid var(--light-gray);background:var(--ivory)}
+.footer-sep{color:var(--light-gray)}
+.footer-link{color:var(--warm-gray);text-decoration:none;font-family:var(--font-b);font-size:.78rem;transition:color .2s}
+.footer-link:hover{color:var(--burgundy)}
 .footer-admin-btn{background:none;border:none;cursor:pointer;color:var(--light-gray);font-size:.85rem;padding:2px 6px;border-radius:var(--r);transition:var(--tr);opacity:.5}
 .footer-admin-btn:hover{opacity:1;color:var(--warm-gray)}
+.empty-state{text-align:center;padding:70px 20px}
+.empty-icon{font-size:3rem;margin-bottom:14px;opacity:.55}
+.empty-state h2{font-family:var(--font-d);font-size:1.5rem;color:var(--warm-gray);font-weight:400;margin-bottom:10px}
+.empty-state p{font-family:var(--font-b);font-style:italic;color:var(--warm-gray);font-size:.95rem;margin-bottom:26px;opacity:.8;max-width:380px;margin-left:auto;margin-right:auto;line-height:1.6}
+/* ─── Onboarding hint ──────────────────────────────────── */
+#onboardingHint{background:linear-gradient(135deg,rgba(123,30,58,.06),rgba(201,163,74,.08));border-bottom:1px solid rgba(201,163,74,.25)}
+.onboarding-inner{max-width:1200px;margin:0 auto;padding:12px 20px;display:flex;align-items:flex-start;gap:12px}
+.onboarding-icon{font-size:1.2rem;flex-shrink:0;margin-top:1px}
+.onboarding-text{font-family:var(--font-b);font-size:.88rem;color:var(--charcoal);line-height:1.6;flex:1}
+.onboarding-text strong{font-weight:600;color:var(--burgundy)}
+.onboarding-text em{font-style:normal;font-weight:600}
+.onboarding-close{background:none;border:none;color:var(--warm-gray);cursor:pointer;font-size:.9rem;padding:2px 6px;border-radius:var(--r);flex-shrink:0;transition:var(--tr);margin-top:1px}
+.onboarding-close:hover{background:var(--light-gray);color:var(--charcoal)}
 @media(max-width:768px){
   .header-inner{flex-wrap:wrap;height:auto;padding:10px 14px;gap:8px}
   .header-actions{gap:6px}
@@ -389,87 +431,106 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
 <!-- Supabase -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-<!-- AUTH SCREEN -->
+<!-- AUTH / LANDING SCREEN -->
 <div id="authScreen">
-  <div class="auth-card">
 
-    <!-- Logo -->
-    <div class="auth-logo">
-      <span class="auth-logo-icon">🍷</span>
-      <div class="auth-logo-title">Welds Wine Wisdoms</div>
-      <div class="auth-logo-sub">Personal Wine Journal</div>
+  <!-- Left: product hero -->
+  <div class="auth-hero">
+    <div class="auth-hero-logo">
+      <span class="auth-hero-logo-icon">🍷</span>
+      <span class="auth-hero-logo-text">Welds Wine Wisdoms</span>
+    </div>
+    <h1 class="auth-hero-headline">Track and remember<br>every wine you taste.</h1>
+    <p class="auth-hero-sub">A personal wine journal. Scan labels, rate wines,<br>and build your tasting history.</p>
+    <ul class="auth-hero-features">
+      <li>Scan wine labels instantly with AI</li>
+      <li>Record tasting notes and star ratings</li>
+      <li>Map your wines from around the world</li>
+      <li>Share bottles with friends</li>
+    </ul>
+  </div>
+
+  <!-- Right: auth form -->
+  <div class="auth-panel">
+    <div class="auth-panel-logo">
+      <span class="auth-panel-logo-icon">🍷</span>
+      <div class="auth-panel-logo-title">Welds Wine Wisdoms</div>
+      <div class="auth-panel-logo-sub">Personal Wine Journal</div>
     </div>
 
-    <!-- State: sign-in / sign-up (default) -->
-    <div id="authStateMain">
-      <div class="auth-tabs">
-        <button class="auth-tab active" id="tabSignIn" onclick="switchAuthTab('signin')">Sign In</button>
-        <button class="auth-tab" id="tabSignUp" onclick="switchAuthTab('signup')">Create Account</button>
-      </div>
+    <div class="auth-card">
 
-      <div class="auth-form-group">
-        <label for="authEmail">Email</label>
-        <input type="email" id="authEmail" placeholder="you@example.com" autocomplete="email"/>
-      </div>
-      <div class="auth-form-group" id="authPasswordGroup">
-        <label for="authPassword">Password</label>
-        <div style="position:relative">
-          <input type="password" id="authPassword" placeholder="••••••••" autocomplete="current-password"/>
-          <button type="button" id="togglePassword" onclick="togglePasswordVisibility()"
-            style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--warm-gray);font-size:.8rem;padding:2px 4px">Show</button>
+      <!-- State: sign-in / sign-up (default) -->
+      <div id="authStateMain">
+        <div class="auth-tabs">
+          <button class="auth-tab active" id="tabSignIn" onclick="switchAuthTab('signin')">Sign In</button>
+          <button class="auth-tab" id="tabSignUp" onclick="switchAuthTab('signup')">Create Account</button>
+        </div>
+
+        <div class="auth-form-group">
+          <label for="authEmail">Email</label>
+          <input type="email" id="authEmail" placeholder="you@example.com" autocomplete="email"/>
+        </div>
+        <div class="auth-form-group" id="authPasswordGroup">
+          <label for="authPassword">Password</label>
+          <div style="position:relative">
+            <input type="password" id="authPassword" placeholder="••••••••" autocomplete="current-password"/>
+            <button type="button" id="togglePassword" onclick="togglePasswordVisibility()"
+              style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--warm-gray);font-size:.8rem;padding:2px 4px">Show</button>
+          </div>
+        </div>
+
+        <button class="auth-btn-primary" id="authSubmitBtn" onclick="handleAuthSubmit()">
+          <span id="authSubmitLabel">Sign In</span>
+          <span id="authSubmitSpinner" style="display:none">…</span>
+        </button>
+
+        <div class="auth-msg" id="authMsg"></div>
+
+        <div id="magicLinkRow" style="text-align:center;margin-top:16px">
+          <button id="magicLinkBtn" onclick="showAuthState('reset')"
+            style="background:none;border:none;color:var(--warm-gray);font-family:var(--font-b);font-size:.78rem;cursor:pointer;text-decoration:underline;text-underline-offset:2px;font-style:italic;padding:0">
+            Forgot password? Send a sign-in link
+          </button>
         </div>
       </div>
 
-      <button class="auth-btn-primary" id="authSubmitBtn" onclick="handleAuthSubmit()">
-        <span id="authSubmitLabel">Sign In</span>
-        <span id="authSubmitSpinner" style="display:none">…</span>
-      </button>
-
-      <div class="auth-msg" id="authMsg"></div>
-
-      <div id="magicLinkRow" style="text-align:center;margin-top:14px">
-        <button id="magicLinkBtn" onclick="showAuthState('reset')"
-          style="background:none;border:none;color:var(--warm-gray);font-family:var(--font-b);font-size:.78rem;cursor:pointer;text-decoration:underline;text-underline-offset:2px;font-style:italic;padding:0">
-          Forgot password? Send a sign-in link
+      <!-- State: forgot password / magic link -->
+      <div id="authStateReset" style="display:none">
+        <div style="text-align:center;margin-bottom:20px">
+          <div style="font-family:var(--font-d);font-size:1rem;color:var(--charcoal);margin-bottom:6px">Sign-in link</div>
+          <div style="font-family:var(--font-b);font-size:.85rem;color:var(--warm-gray);line-height:1.6">Enter your email and we'll send a link to sign in — no password needed.</div>
+        </div>
+        <div class="auth-form-group">
+          <label for="resetEmail">Email</label>
+          <input type="email" id="resetEmail" placeholder="you@example.com" autocomplete="email"/>
+        </div>
+        <button class="auth-btn-primary" id="resetSubmitBtn" onclick="handleSendLink()">
+          <span id="resetSubmitLabel">Send Sign-in Link</span>
+          <span id="resetSubmitSpinner" style="display:none">Sending…</span>
         </button>
+        <div class="auth-msg" id="resetMsg"></div>
+        <div style="text-align:center;margin-top:14px">
+          <button onclick="showAuthState('main')"
+            style="background:none;border:none;color:var(--warm-gray);font-family:var(--font-b);font-size:.78rem;cursor:pointer;text-decoration:underline;text-underline-offset:2px;font-style:italic;padding:0">
+            ← Back to sign in
+          </button>
+        </div>
       </div>
-    </div>
 
-    <!-- State: forgot password / magic link -->
-    <div id="authStateReset" style="display:none">
-      <div style="text-align:center;margin-bottom:20px">
-        <div style="font-family:var(--font-d);font-size:1rem;color:var(--charcoal);margin-bottom:6px">Sign-in link</div>
-        <div style="font-family:var(--font-b);font-size:.85rem;color:var(--warm-gray);line-height:1.6">Enter your email and we'll send you a link to sign in — no password needed.</div>
-      </div>
-      <div class="auth-form-group">
-        <label for="resetEmail">Email</label>
-        <input type="email" id="resetEmail" placeholder="you@example.com" autocomplete="email"/>
-      </div>
-      <button class="auth-btn-primary" id="resetSubmitBtn" onclick="handleSendLink()">
-        <span id="resetSubmitLabel">Send Sign-in Link</span>
-        <span id="resetSubmitSpinner" style="display:none">Sending…</span>
-      </button>
-      <div class="auth-msg" id="resetMsg"></div>
-      <div style="text-align:center;margin-top:14px">
+      <!-- State: link sent confirmation -->
+      <div id="authStateSent" style="display:none;text-align:center">
+        <div style="font-size:2.5rem;margin-bottom:14px">✉</div>
+        <div style="font-family:var(--font-d);font-size:1.05rem;color:var(--charcoal);margin-bottom:10px">Check your email</div>
+        <div style="font-family:var(--font-b);font-size:.88rem;color:var(--warm-gray);line-height:1.7;margin-bottom:20px" id="sentEmailMsg">A sign-in link has been sent.</div>
         <button onclick="showAuthState('main')"
           style="background:none;border:none;color:var(--warm-gray);font-family:var(--font-b);font-size:.78rem;cursor:pointer;text-decoration:underline;text-underline-offset:2px;font-style:italic;padding:0">
           ← Back to sign in
         </button>
       </div>
-    </div>
 
-    <!-- State: link sent confirmation -->
-    <div id="authStateSent" style="display:none;text-align:center">
-      <div style="font-size:2.5rem;margin-bottom:14px">✉</div>
-      <div style="font-family:var(--font-d);font-size:1.05rem;color:var(--charcoal);margin-bottom:10px">Check your email</div>
-      <div style="font-family:var(--font-b);font-size:.88rem;color:var(--warm-gray);line-height:1.7;margin-bottom:20px" id="sentEmailMsg">A sign-in link has been sent.</div>
-      <button onclick="showAuthState('main')"
-        style="background:none;border:none;color:var(--warm-gray);font-family:var(--font-b);font-size:.78rem;cursor:pointer;text-decoration:underline;text-underline-offset:2px;font-style:italic;padding:0">
-        ← Back to sign in
-      </button>
+      <div class="auth-footer" id="authFooter">Your wines, your history</div>
     </div>
-
-    <div class="auth-footer" id="authFooter">Your personal wine journal</div>
   </div>
 </div>
 
@@ -485,10 +546,10 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
     </div>
     <div class="header-actions">
       <div class="scan-cta">
-        <button class="btn-scan-primary" id="openScanModal" aria-label="Scan wine label">📷 Scan Label</button>
+        <button class="btn-scan-primary" id="openScanModal" aria-label="Scan wine label">📷 Scan Wine Label</button>
         <span class="scan-hint">Fastest way to add a wine</span>
       </div>
-      <button class="btn-add-subtle" id="openAddModal" aria-label="Add wine manually">+ Add manually</button>
+      <button class="btn-add-subtle" id="openAddModal" aria-label="Add wine manually">+ Add Wine</button>
       <div class="user-badge" id="userBadge" style="display:none">
         <div class="user-badge-avatar" id="userAvatar">?</div>
         <button class="btn-signout" onclick="handleSignOut()">Sign out</button>
@@ -522,7 +583,7 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
             <option value="name-asc">A–Z</option>
           </select>
         </div>
-        <button class="export-btn" id="exportBtn">⬇ CSV</button>
+        <button class="export-btn" id="exportBtn" title="Export your wines as a CSV file">⬇ Export Data</button>
       </div>
     </div>
     <div class="toolbar-search">
@@ -533,8 +594,17 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
   </div>
 </div>
 
-<!-- STATS -->
-<div class="stats-bar">
+<!-- ONBOARDING HINT (shown once to new users) -->
+<div id="onboardingHint" style="display:none">
+  <div class="onboarding-inner">
+    <span class="onboarding-icon">👋</span>
+    <div class="onboarding-text">
+      <strong>Welcome to your wine journal.</strong>
+      Tap <em>Scan Wine Label</em> to photograph a bottle and AI will fill the details, or use <em>Add Wine</em> to enter manually. Rate wines, view them on the map, and share favourites.
+    </div>
+    <button class="onboarding-close" onclick="dismissOnboarding()" aria-label="Dismiss">✕</button>
+  </div>
+</div>
   <div class="stats-inner">
     <div class="stat"><span id="statTotal">0</span><label>Wines Tasted</label></div>
     <div class="stat-divider"></div>
@@ -554,16 +624,26 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
     <div id="wineMap"></div>
   </div>
   <div class="empty-state" id="emptyState" style="display:none">
-    <div class="empty-icon" id="emptyIcon">🍾</div>
+    <div class="empty-icon" id="emptyIcon">🍷</div>
     <h2 id="emptyTitle">Your cellar is empty</h2>
-    <p id="emptyMsg">Scan a wine label or add your first entry to get started.</p>
-    <button class="btn-scan-primary" id="emptyScanBtn" style="font-size:.95rem;padding:10px 22px" onclick="document.getElementById('openScanModal').click()">📷 Scan Your First Label</button>
+    <p id="emptyMsg">Start by scanning your first wine label or adding a wine manually.</p>
+    <div id="emptyScanBtn" style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+      <button class="btn-primary" onclick="document.getElementById('openScanModal').click()" style="display:flex;align-items:center;gap:7px">📷 Scan Wine Label</button>
+      <button class="btn-secondary" onclick="document.getElementById('openAddModal').click()" style="display:flex;align-items:center;gap:7px">+ Add Wine Manually</button>
+    </div>
   </div>
 </main>
 
 <footer class="site-footer">
-  <span>Welds Wine Wisdoms</span>
-  <button class="footer-admin-btn" id="openKeyModal">⚙</button>
+  <span>© Welds Wine Wisdoms</span>
+  <span class="footer-sep">·</span>
+  <a href="#" class="footer-link" onclick="showFooterModal('about');return false">About</a>
+  <span class="footer-sep">·</span>
+  <a href="#" class="footer-link" onclick="showFooterModal('privacy');return false">Privacy</a>
+  <span class="footer-sep">·</span>
+  <a href="mailto:hello@weldswine.com" class="footer-link">Contact</a>
+  <span class="footer-sep">·</span>
+  <button class="footer-admin-btn" id="openKeyModal" title="Settings">⚙</button>
 </footer>
 
 <!-- ADD / EDIT MODAL -->
@@ -803,6 +883,17 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
   </div>
 </div>
 
+<!-- ABOUT / PRIVACY MODAL -->
+<div class="modal-overlay" id="infoOverlay">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-header">
+      <h2 class="modal-title" id="infoModalTitle">About</h2>
+      <button class="modal-close" id="closeInfoModal" aria-label="Close">✕</button>
+    </div>
+    <div class="modal-body" id="infoModalBody"></div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <!-- SHARE MODAL -->
@@ -880,6 +971,7 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
 ══════════════════════════════════════════════════════════════ */
 const SUPABASE_URL = 'https://phcnswuwrqarikzjvfqd.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBoY25zd3V3cnFhcmlremp2ZnFkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM1OTI2NjEsImV4cCI6MjA4OTE2ODY2MX0.nW_aLGeiFNu6km1leeqTofcOqFQxe3dabNWfIPkc334';
+
 
 // These are set inside DOMContentLoaded — never at parse time
 var _sb = null;
@@ -960,11 +1052,24 @@ function showApp() {
 
   if (typeof loadWinesFromDB === 'function') loadWinesFromDB(cacheKey);
   setTimeout(startLocationTracking, 100);
+
+  // Show onboarding hint once for new users
+  try {
+    if (!localStorage.getItem('wwwOnboardingDone')) {
+      document.getElementById('onboardingHint').style.display = 'block';
+    }
+  } catch(_) {}
 }
 
 function hideApp() {
   document.getElementById('authScreen').classList.remove('hidden');
   document.getElementById('userBadge').style.display = 'none';
+  document.getElementById('onboardingHint').style.display = 'none';
+}
+
+function dismissOnboarding() {
+  document.getElementById('onboardingHint').style.display = 'none';
+  try { localStorage.setItem('wwwOnboardingDone', '1'); } catch(_) {}
 }
 
 /* ── Auth state navigation ───────────────────────────────── */
@@ -1295,7 +1400,9 @@ function setupEvents() {
   document.getElementById('locateBtn').addEventListener('click', captureLocation);
   document.getElementById('closeShareModal').addEventListener('click', closeShareModal);
   document.getElementById('shareOverlay').addEventListener('click', e=>{ if(e.target===document.getElementById('shareOverlay')) closeShareModal(); });
-  document.addEventListener('keydown', e=>{ if(e.key==='Escape'){ closeModal(); closeDetail(); closeScanModal(); closeLightbox(); closeShareModal(); } });
+  document.getElementById('closeInfoModal').addEventListener('click', closeInfoModal);
+  document.getElementById('infoOverlay').addEventListener('click', e=>{ if(e.target===document.getElementById('infoOverlay')) closeInfoModal(); });
+  document.addEventListener('keydown', e=>{ if(e.key==='Escape'){ closeModal(); closeDetail(); closeScanModal(); closeLightbox(); closeShareModal(); closeInfoModal(); } });
   // Check for public wine share link in URL
   checkPublicWineView();
 }
@@ -1359,10 +1466,10 @@ function renderGrid() {
     emptyState.style.display = 'block';
     if (_winesLoaded) {
       // DB has responded — truly empty cellar
-      document.getElementById('emptyIcon').textContent  = '🍾';
+      document.getElementById('emptyIcon').textContent  = '🍷';
       document.getElementById('emptyTitle').textContent = 'Your cellar is empty';
-      document.getElementById('emptyMsg').textContent   = 'Scan a wine label or add your first entry to get started.';
-      document.getElementById('emptyScanBtn').style.display = '';
+      document.getElementById('emptyMsg').textContent   = 'Start by scanning your first wine label or adding a wine manually.';
+      document.getElementById('emptyScanBtn').style.display = 'flex';
     } else {
       // Still waiting for DB — show loading message
       document.getElementById('emptyIcon').textContent  = '⏳';
@@ -2005,6 +2112,40 @@ async function getOrCreateShareId(w) {
 function closeShareModal() {
   document.getElementById('shareOverlay').classList.remove('open');
   document.body.style.overflow = '';
+}
+
+/* ── About / Privacy modals ──────────────────────────────── */
+const _infoContent = {
+  about: {
+    title: 'About Welds Wine Wisdoms',
+    body: `<p style="font-family:var(--font-b);font-size:.95rem;color:var(--charcoal);line-height:1.75;margin-bottom:14px">Welds Wine Wisdoms is a personal wine tasting journal built for wine enthusiasts who want to remember every bottle they've tasted.</p>
+<p style="font-family:var(--font-b);font-size:.95rem;color:var(--warm-gray);line-height:1.75;margin-bottom:14px">Scan a label with your phone camera and AI reads the wine details automatically. Add tasting notes, a star rating, and your location. Browse your collection in a visual grid or on an interactive map.</p>
+<p style="font-family:var(--font-b);font-size:.95rem;color:var(--warm-gray);line-height:1.75">Built with care for wine lovers.</p>`
+  },
+  privacy: {
+    title: 'Privacy',
+    body: `<p style="font-family:var(--font-b);font-size:.95rem;color:var(--charcoal);line-height:1.75;margin-bottom:14px">Your wine journal is private by default. Only you can see your entries.</p>
+<ul style="font-family:var(--font-b);font-size:.92rem;color:var(--warm-gray);line-height:1.9;padding-left:18px;margin-bottom:14px">
+  <li>Your data is stored securely and never shared with third parties.</li>
+  <li>Label photos are stored in your account only.</li>
+  <li>Sharing a wine creates a public link for that single entry only.</li>
+  <li>Location is optional and used only for your personal map.</li>
+  <li>You can export or delete your data at any time.</li>
+</ul>
+<p style="font-family:var(--font-b);font-size:.88rem;color:var(--warm-gray);font-style:italic;line-height:1.6">We do not advertise, sell data, or track behaviour beyond what is needed to operate the app.</p>`
+  }
+};
+
+function showFooterModal(type) {
+  const content = _infoContent[type];
+  if (!content) return;
+  document.getElementById('infoModalTitle').textContent = content.title;
+  document.getElementById('infoModalBody').innerHTML = content.body;
+  document.getElementById('infoOverlay').classList.add('open');
+}
+
+function closeInfoModal() {
+  document.getElementById('infoOverlay').classList.remove('open');
 }
 
 function copyShareLink() {
