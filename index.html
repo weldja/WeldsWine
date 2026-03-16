@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://*.tile.openstreetmap.org https://tile.openstreetmap.org; connect-src 'self' https://*.supabase.co https://aged-union-8f0d.james-weld.workers.dev https://api.bigdatacloud.net https://nominatim.openstreetmap.org;">
   <title>Welds Wine Wisdoms</title>
   <!-- Preconnect to all external origins to cut DNS/TLS time -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -46,10 +47,10 @@
 .user-badge-avatar{width:26px;height:26px;border-radius:50%;background:var(--burgundy);border:1px solid var(--blush);display:flex;align-items:center;justify-content:center;font-size:.75rem;color:var(--parchment);flex-shrink:0}
 .btn-signout{background:none;border:1px solid rgba(196,120,138,.3);border-radius:var(--r);padding:3px 10px;color:rgba(245,239,230,.6);font-family:var(--font-b);font-size:.75rem;cursor:pointer;transition:var(--tr)}
 .btn-signout:hover{border-color:var(--blush);color:var(--parchment)}
-  </style>
-  <style>
+</style>
+<style>
 /* ============================================================
-   Welds Wine Wisdoms — v4
+   Welds Wine Wisdoms — main styles
    ============================================================ */
 :root {
   --burgundy:      #6B2737;
@@ -68,7 +69,6 @@
   --shadow-lg:     rgba(44,36,32,0.22);
   --font-d: 'Playfair Display', Georgia, serif;
   --font-b: 'Cormorant Garamond', Georgia, serif;
-  --font-s: 'EB Garamond', Georgia, serif;
   --r: 4px; --rl: 8px; --tr: 0.22s ease;
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -335,7 +335,11 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
   .header-inner{flex-wrap:wrap;height:auto;padding:10px 14px;gap:8px}
   .header-actions{gap:6px}
   .toolbar{position:static}
-  .toolbar-inner{flex-wrap:wrap;height:auto;padding:8px 14px;gap:6px}
+  .toolbar-inner{padding:8px 14px;gap:6px}
+  .toolbar-top{height:auto;flex-wrap:wrap;gap:6px}
+  .toolbar-right{gap:5px}
+  .sort-wrap label{display:none}
+  .export-btn{display:none}
   .stats-inner{flex-wrap:wrap}
   .stat{flex:0 0 50%;max-width:50%;padding:4px 0}
   .stat-divider{display:none}
@@ -350,18 +354,40 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
   .detail-dual-photo img:last-child{display:none}
   .detail-dual-photo img:first-child{border-radius:var(--rl) var(--rl) 0 0;height:200px}
 }
+@media(max-width:520px){
+  .scan-hint{display:none}
+  .btn-scan-primary{padding:8px 16px;font-size:.85rem}
+  .btn-add-subtle{font-size:.72rem;padding:5px 8px}
+  .card-actions{gap:2px}
+  .card-btn{padding:3px 7px;font-size:.7rem}
+  .auth-card{padding:28px 20px}
+}
 @media(max-width:420px){
   .filter-tabs{flex-wrap:wrap}
   .logo-sub{display:none}
-  .btn-scan{padding:6px 10px;font-size:.78rem}
-  .btn-add{padding:7px 14px;font-size:.82rem}
 }
-  </style>
+/* Larger touch targets on true touch devices */
+@media(hover:none){
+  .card-btn{padding:6px 12px;min-height:36px}
+  .filter-tab{padding:7px 14px;min-height:38px}
+  .star-input .star{font-size:1.6rem;padding:0 3px}
+  .btn-locate{min-height:38px}
+}
+/* ─── Loading skeleton ─────────────────────────────────── */
+@keyframes shimmer{0%{background-position:-400px 0}100%{background-position:400px 0}}
+.skeleton{background:linear-gradient(90deg,var(--light-gray) 25%,var(--cream) 50%,var(--light-gray) 75%);background-size:800px 100%;animation:shimmer 1.4s infinite;border-radius:var(--r)}
+.skeleton-card{background:var(--ivory);border:1px solid var(--light-gray);border-radius:var(--rl);overflow:hidden;animation:fadeUp .35s ease both}
+.skeleton-card .sk-img{height:80px}
+.skeleton-card .sk-body{padding:16px 18px 12px}
+.skeleton-card .sk-line{height:14px;margin-bottom:10px}
+.skeleton-card .sk-line.wide{width:80%}
+.skeleton-card .sk-line.mid{width:55%}
+.skeleton-card .sk-line.short{width:35%;height:10px}
 </head>
 <body>
 
-<!-- Supabase — async so it doesn't block HTML rendering but loads ASAP -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" async></script>
+<!-- Supabase -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <!-- AUTH SCREEN -->
 <div id="authScreen">
@@ -459,10 +485,10 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
     </div>
     <div class="header-actions">
       <div class="scan-cta">
-        <button class="btn-scan-primary" id="openScanModal">📷 Scan Label</button>
+        <button class="btn-scan-primary" id="openScanModal" aria-label="Scan wine label">📷 Scan Label</button>
         <span class="scan-hint">Fastest way to add a wine</span>
       </div>
-      <button class="btn-add-subtle" id="openAddModal">+ Add manually</button>
+      <button class="btn-add-subtle" id="openAddModal" aria-label="Add wine manually">+ Add manually</button>
       <div class="user-badge" id="userBadge" style="display:none">
         <div class="user-badge-avatar" id="userAvatar">?</div>
         <button class="btn-signout" onclick="handleSignOut()">Sign out</button>
@@ -521,7 +547,7 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
 </div>
 
 <!-- MAIN -->
-<main class="main-content">
+<main class="main-content" role="main" aria-label="Wine collection">
   <div class="wine-grid" id="wineGrid"></div>
   <div class="map-view" id="mapView">
     <div class="no-loc-note" id="noLocNote" style="display:none">Some entries have no location — scan or add wines with 📍 Get Location to see them on the map.</div>
@@ -541,11 +567,11 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
 </footer>
 
 <!-- ADD / EDIT MODAL -->
-<div class="modal-overlay" id="modalOverlay">
+<div class="modal-overlay" id="modalOverlay" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
   <div class="modal">
     <div class="modal-header">
       <h2 class="modal-title" id="modalTitle">Add Wine</h2>
-      <button class="modal-close" id="closeModal">✕</button>
+      <button class="modal-close" id="closeModal" aria-label="Close">✕</button>
     </div>
     <div class="modal-body">
       <form id="wineForm" novalidate>
@@ -690,7 +716,7 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
 <!-- DETAIL / VIEW MODAL -->
 <div class="modal-overlay" id="detailOverlay">
   <div class="modal detail-modal">
-    <button class="modal-close" id="closeDetail">✕</button>
+    <button class="modal-close" id="closeDetail" aria-label="Close">✕</button>
     <div id="detailContent"></div>
   </div>
 </div>
@@ -700,7 +726,7 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
   <div class="modal scan-modal">
     <div class="modal-header">
       <h2 class="modal-title">📷 Scan Wine Label</h2>
-      <button class="modal-close" id="closeScanModal">✕</button>
+      <button class="modal-close" id="closeScanModal" aria-label="Close">✕</button>
     </div>
     <div class="modal-body">
 
@@ -874,20 +900,8 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   } catch(_) {}
 
-  // Disable auth buttons until Supabase is ready
-  ['authSubmitBtn', 'magicLinkBtn', 'resetSubmitBtn'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) { el.disabled = true; el.title = 'Loading…'; }
-  });
-
   // Initialise Supabase
   _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-  // Re-enable buttons
-  ['authSubmitBtn', 'magicLinkBtn', 'resetSubmitBtn'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) { el.disabled = false; el.title = ''; }
-  });
 
   // Listen for auth changes
   _sb.auth.onAuthStateChange(function(event, session) {
@@ -926,14 +940,19 @@ function showApp() {
 
   // Show cached wines immediately so returning users see content at once
   const cacheKey = 'wwwCache_' + (_currentUser?.id || '');
+  let hadCache = false;
   try {
     const cached = sessionStorage.getItem(cacheKey);
     if (cached) {
       wines = JSON.parse(cached);
       renderGrid();
       updateStats();
+      hadCache = true;
     }
   } catch(_) {}
+
+  // No cache — show skeleton placeholders while DB loads
+  if (!hadCache) showSkeletonGrid(4);
 
   // Load fresh data from DB — updates the view when ready
   if (typeof loadWinesFromDB === 'function') loadWinesFromDB(cacheKey);
@@ -1057,8 +1076,12 @@ async function handleSendLink() {
     }
 
     // Show success regardless — don't reveal whether account exists
-    document.getElementById('sentEmailMsg').innerHTML =
-      `A sign-in link has been sent to <strong>${email}</strong>.<br/>Check your inbox (and spam folder).`;
+    const sentMsg = document.getElementById('sentEmailMsg');
+    sentMsg.textContent = 'A sign-in link has been sent to ';
+    const strong = document.createElement('strong');
+    strong.textContent = email;
+    sentMsg.appendChild(strong);
+    sentMsg.appendChild(document.createTextNode('. Check your inbox (and spam folder).'));
     showAuthState('sent');
 
   } catch(e) {
@@ -1197,7 +1220,8 @@ const Scanner = (() => {
 
 <!-- MAIN APP -->
 <script>
-let wines        = loadWines();
+// Wines populated from Supabase after authentication — see loadWinesFromDB()
+let wines        = [];
 let activeFilter = 'all';
 let activeSort   = 'date-desc';
 let searchQuery  = '';
@@ -1268,7 +1292,7 @@ function setupEvents() {
   document.getElementById('locateBtn').addEventListener('click', captureLocation);
   document.getElementById('closeShareModal').addEventListener('click', closeShareModal);
   document.getElementById('shareOverlay').addEventListener('click', e=>{ if(e.target===document.getElementById('shareOverlay')) closeShareModal(); });
-  document.addEventListener('keydown', e=>{ if(e.key==='Escape'){ closeModal(); closeDetail(); closeScanModal(); closeLightbox(e); closeShareModal(); } });
+  document.addEventListener('keydown', e=>{ if(e.key==='Escape'){ closeModal(); closeDetail(); closeScanModal(); closeLightbox(); closeShareModal(); } });
   // Check for public wine share link in URL
   checkPublicWineView();
 }
@@ -1302,6 +1326,25 @@ function getList() {
   return list;
 }
 
+function showSkeletonGrid(count = 4) {
+  wineGrid.innerHTML = '';
+  wineGrid.style.display = 'grid';
+  emptyState.style.display = 'none';
+  for (let i = 0; i < count; i++) {
+    const card = document.createElement('div');
+    card.className = 'skeleton-card';
+    card.style.animationDelay = `${i * 0.06}s`;
+    card.innerHTML = `
+      <div class="sk-img skeleton"></div>
+      <div class="sk-body">
+        <div class="sk-line wide skeleton"></div>
+        <div class="sk-line mid skeleton"></div>
+        <div class="sk-line short skeleton"></div>
+      </div>`;
+    wineGrid.appendChild(card);
+  }
+}
+
 function renderGrid() {
   if (activeView==='map') return;
   const list = getList();
@@ -1311,30 +1354,48 @@ function renderGrid() {
   list.forEach((w,i)=>{ const c=createCard(w); c.style.animationDelay=`${i*.04}s`; wineGrid.appendChild(c); });
 }
 
+function safePhotoSrc(url) {
+  // Only allow base64 JPEG/PNG data URLs — reject anything else
+  if (!url) return '';
+  if (typeof url === 'string' && url.match(/^data:image\/(jpeg|jpg|png|webp);base64,[A-Za-z0-9+/=]+$/)) return url;
+  return ''; // reject unexpected formats
+}
+
 function createCard(w) {
   const card = document.createElement('div');
   card.className = 'wine-card';
+  card.dataset.id = w.id;
 
-  // Thumbnail image area — click opens lightbox
-  let imgHtml = '';
-  if (w.photoFront && w.photoBack) {
-    imgHtml = `<div class="card-thumb-wrap" onclick="openLightbox('${w.id}',event)">
-      <img src="${w.photoFront}" loading="lazy"/>
-      <img src="${w.photoBack}" loading="lazy"/>
-      <span class="card-thumb-badge">front · back</span>
-    </div>`;
-  } else if (w.photoFront || w.photo) {
-    imgHtml = `<img class="card-thumb-single" src="${w.photoFront||w.photo}" loading="lazy" onclick="openLightbox('${w.id}',event)"/>`;
+  // Build photo area using DOM APIs — never put user-derived URLs into innerHTML
+  const front = safePhotoSrc(w.photoFront || w.photo);
+  const back  = safePhotoSrc(w.photoBack);
+
+  if (front && back) {
+    const wrap = document.createElement('div');
+    wrap.className = 'card-thumb-wrap';
+    wrap.addEventListener('click', e => openLightbox(w.id, e));
+    const imgF = document.createElement('img'); imgF.src = front; imgF.loading = 'lazy'; wrap.appendChild(imgF);
+    const imgB = document.createElement('img'); imgB.src = back;  imgB.loading = 'lazy'; wrap.appendChild(imgB);
+    const badge = document.createElement('span'); badge.className = 'card-thumb-badge'; badge.textContent = 'front · back'; wrap.appendChild(badge);
+    card.appendChild(wrap);
+  } else if (front) {
+    const img = document.createElement('img');
+    img.className = 'card-thumb-single'; img.src = front; img.loading = 'lazy';
+    img.addEventListener('click', e => openLightbox(w.id, e));
+    card.appendChild(img);
   } else {
-    imgHtml = `<div class="card-label-strip"></div>`;
+    const strip = document.createElement('div');
+    strip.className = 'card-label-strip';
+    card.appendChild(strip);
   }
 
   const meta   = [w.winery, w.vintage, w.country].filter(Boolean).join(' · ');
   const tags   = [w.region, w.grape, w.style].filter(Boolean);
   const dateStr= w.dateTasted ? formatDate(w.dateTasted) : '';
 
-  card.innerHTML = `
-    ${imgHtml}
+  // Append text content via innerHTML (all values escaped) — photo already appended above
+  const body = document.createElement('div');
+  body.innerHTML = `
     <div class="card-body">
       <div class="card-header">
         <div>
@@ -1350,13 +1411,25 @@ function createCard(w) {
     </div>
     <div class="card-footer">
       <span class="card-date">${dateStr}</span>
-      <div class="card-actions">
-        <button class="card-btn view"   onclick="openDetail(getWineById('${w.id}'),event)">View</button>
-        <button class="card-btn share"  onclick="shareWine('${w.id}',event)">Share</button>
-        <button class="card-btn edit"   onclick="editWine('${w.id}',event)">Edit</button>
-        <button class="card-btn delete" onclick="deleteWine('${w.id}',event)">Delete</button>
-      </div>
+      <div class="card-actions"></div>
     </div>`;
+
+  // Wire action buttons via addEventListener — no inline onclick handlers
+  const actions = body.querySelector('.card-actions');
+  [
+    ['View',   'view',   () => openDetail(getWineById(w.id), null)],
+    ['Share',  'share',  (ev) => shareWine(w.id, ev)],
+    ['Edit',   'edit',   (ev) => editWine(w.id, ev)],
+    ['Delete', 'delete', (ev) => deleteWine(w.id, ev)]
+  ].forEach(([label, cls, handler]) => {
+    const btn = document.createElement('button');
+    btn.className = `card-btn ${cls}`;
+    btn.textContent = label;
+    btn.addEventListener('click', e => { e.stopPropagation(); handler(e); });
+    actions.appendChild(btn);
+  });
+
+  card.appendChild(body);
   return card;
 }
 
@@ -1364,33 +1437,39 @@ async function openLightbox(id, e) {
   if (e) e.stopPropagation();
   let w = getWineById(id);
   if (!w) return;
-  // Fetch photos if not yet loaded
   if (!w.photoFront && _sb && _currentUser) {
-    const { data } = await _sb.from('wines').select('photo_front,photo_back').eq('id',id).single();
+    const { data } = await _sb.from('wines').select('photo_front,photo_back').eq('id', id).single();
     if (data) { w.photoFront = data.photo_front; w.photoBack = data.photo_back; w.photo = data.photo_front; }
   }
-  const front = w.photoFront || w.photo;
-  const back  = w.photoBack;
-  // Remove any existing lightbox
+  const front = safePhotoSrc(w.photoFront || w.photo);
+  const back  = safePhotoSrc(w.photoBack);
+  if (!front && !back) return;
+
   const existing = document.getElementById('labelLightbox');
   if (existing) existing.remove();
 
   const lb = document.createElement('div');
   lb.id = 'labelLightbox';
   lb.className = 'label-lightbox';
-  lb.innerHTML = `
-    <button class="label-lightbox-close" onclick="closeLightbox(event)">✕</button>
-    <div class="label-lightbox-inner">
-      ${front ? `<img src="${front}" class="${back ? '' : 'single'}" alt="Front label"/>` : ''}
-      ${back  ? `<img src="${back}"  alt="Back label"/>` : ''}
-    </div>`;
-  lb.addEventListener('click', e => { if (e.target === lb) closeLightbox(e); });
+
+  const closeBtn = document.createElement('button');
+  closeBtn.className = 'label-lightbox-close';
+  closeBtn.textContent = '✕';
+  closeBtn.addEventListener('click', closeLightbox);
+  lb.appendChild(closeBtn);
+
+  const inner = document.createElement('div');
+  inner.className = 'label-lightbox-inner';
+  if (front) { const img = document.createElement('img'); img.src = front; img.className = back ? '' : 'single'; img.alt = 'Front label'; inner.appendChild(img); }
+  if (back)  { const img = document.createElement('img'); img.src = back;  img.alt = 'Back label'; inner.appendChild(img); }
+  lb.appendChild(inner);
+
+  lb.addEventListener('click', e => { if (e.target === lb) closeLightbox(); });
   document.body.appendChild(lb);
   document.body.style.overflow = 'hidden';
 }
 
-function closeLightbox(e) {
-  if (e) e.stopPropagation();
+function closeLightbox() {
   const lb = document.getElementById('labelLightbox');
   if (lb) { lb.remove(); document.body.style.overflow = ''; }
 }
@@ -1404,13 +1483,15 @@ async function openDetail(w, e) {
     if (data) { w.photoFront = data.photo_front; w.photoBack = data.photo_back; w.photo = data.photo_front; }
   }
 
+  const front = safePhotoSrc(w.photoFront || w.photo);
+  const back  = safePhotoSrc(w.photoBack);
   let imgHtml = '';
-  if (w.photoFront && w.photoBack) {
-    imgHtml=`<div class="detail-dual-photo"><img src="${w.photoFront}"/><img src="${w.photoBack}"/></div>`;
-  } else if (w.photoFront||w.photo) {
-    imgHtml=`<img class="detail-photo" src="${w.photoFront||w.photo}" alt="${escHtml(w.name)}"/>`;
+  if (front && back) {
+    imgHtml = `<div class="detail-dual-photo"><img src="${front}"/><img src="${back}"/></div>`;
+  } else if (front) {
+    imgHtml = `<img class="detail-photo" src="${front}" alt="${escHtml(w.name)}"/>`;
   } else {
-    imgHtml=`<div class="detail-strip"></div>`;
+    imgHtml = `<div class="detail-strip"></div>`;
   }
 
   const mapId = 'detailMiniMap_'+w.id;
@@ -1541,7 +1622,7 @@ function openModal(wine=null, injectFront=null, injectBack=null) {
     document.getElementById('wineId').value='';
     document.getElementById('dateTasted').valueAsDate=new Date();
     // Auto-capture location silently
-    autoCapureLocation();
+    autoCaptureLocation();
   }
 
   modalOverlay.classList.add('open');
@@ -1593,7 +1674,7 @@ function startLocationTracking() {
   _locWatcher = navigator.geolocation.watchPosition(onPosition, onDenied, { enableHighAccuracy: false });
 }
 
-function autoCapureLocation() {
+function autoCaptureLocation() {
   const el  = document.getElementById('locationText');
   const btn = document.getElementById('locateBtn');
 
@@ -1690,16 +1771,20 @@ function setLocDisplay(label) {
 
 async function compressForStorage(dataUrl) {
   if (!dataUrl) return null;
+  // Only accept valid image data URLs
+  if (!dataUrl.match(/^data:image\/(jpeg|jpg|png|webp);base64,/)) return null;
   return new Promise(res => {
     const img = new Image();
     img.onload = () => {
-      const MAX = 400; // small enough to stay well within localStorage limits
-      const r = Math.min(MAX / img.width, MAX / img.height, 1);
-      const c = document.createElement('canvas');
-      c.width  = Math.round(img.width  * r);
-      c.height = Math.round(img.height * r);
-      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
-      res(c.toDataURL('image/jpeg', 0.7));
+      try {
+        const MAX = 400;
+        const r = Math.min(MAX / img.width, MAX / img.height, 1);
+        const c = document.createElement('canvas');
+        c.width  = Math.round(img.width  * r);
+        c.height = Math.round(img.height * r);
+        c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+        res(c.toDataURL('image/jpeg', 0.7));
+      } catch(_) { res(null); }
     };
     img.onerror = () => res(null);
     img.src = dataUrl;
@@ -1708,8 +1793,12 @@ async function compressForStorage(dataUrl) {
 
 async function handleSave(e) {
   if (e) e.preventDefault();
-  const name=document.getElementById('wineName').value.trim();
+  const name = document.getElementById('wineName').value.trim();
   if (!name) { showToast('Please enter a wine name'); document.getElementById('wineName').focus(); return; }
+
+  const saveBtn = document.getElementById('saveWineBtn');
+  saveBtn.disabled = true;
+  saveBtn.textContent = 'Saving…';
   const id=document.getElementById('wineId').value||generateId();
 
   // Compress photos to ~400px before storing (prevents localStorage quota errors)
@@ -1737,15 +1826,22 @@ async function handleSave(e) {
     locLabel:     currentLocLabel||null,
     createdAt:    Date.now()
   };
-  const idx=wines.findIndex(w=>w.id===id);
-  if (idx>=0) { entry.createdAt=wines[idx].createdAt; wines[idx]=entry; }
+  const idx = wines.findIndex(w => w.id === id);
+
+  // Save to DB first — only update local state on success
+  const ok = await saveWineToDB(entry);
+  if (!ok) {
+    showToast('Failed to save — check your connection');
+    saveBtn.disabled = false;
+    saveBtn.textContent = 'Save Wine';
+    return;
+  }
+
+  // DB confirmed — now update local array
+  if (idx >= 0) { entry.createdAt = wines[idx].createdAt; wines[idx] = entry; }
   else { wines.unshift(entry); }
 
-  // Save to Supabase
-  const ok = await saveWineToDB(entry);
-  if (!ok) { showToast('Failed to save — check your connection'); return; }
-  showToast(idx>=0 ? 'Wine updated ✓' : 'Wine saved ✓');
-  saveWines();
+  showToast(idx >= 0 ? 'Wine updated ✓' : 'Wine saved ✓');
   closeModal();
 
   activeFilter = 'all';
@@ -1764,14 +1860,12 @@ async function handleSave(e) {
   wineGrid.style.display   = 'grid';
 
   if (idx >= 0) {
-    // Update: replace just the one card in place
-    const cards = wineGrid.querySelectorAll('.wine-card');
-    cards.forEach(card => {
-      if (card.innerHTML.includes(`'${entry.id}'`)) {
-        const newCard = createCard(entry);
-        wineGrid.replaceChild(newCard, card);
-      }
-    });
+    // Update: replace just the one card using reliable data-id attribute
+    const existing = wineGrid.querySelector(`[data-id="${entry.id}"]`);
+    if (existing) {
+      const newCard = createCard(entry);
+      wineGrid.replaceChild(newCard, existing);
+    }
   } else {
     // New wine: prepend a single card — no full re-render
     const newCard = createCard(entry);
@@ -1797,14 +1891,24 @@ async function editWine(id,e) {
   openModal(w);
 }
 
-function deleteWine(id,e) {
-  if(e) e.stopPropagation();
-  const w=wines.find(w=>w.id===id); if(!w) return;
-  if(!confirm(`Delete "${w.name}"?`)) return;
-  wines=wines.filter(w=>w.id!==id);
-  deleteWineFromDB(id);
-  setView('grid');
-  updateStats(); showToast('Entry deleted');
+async function deleteWine(id, e) {
+  if (e) e.stopPropagation();
+  const w = wines.find(w => w.id === id);
+  if (!w) return;
+  if (!confirm(`Delete "${w.name}"?`)) return;
+
+  const ok = await deleteWineFromDB(id);
+  if (!ok) { showToast('Failed to delete — check your connection'); return; }
+
+  wines = wines.filter(w => w.id !== id);
+  // Always return to grid so empty-state shows correctly
+  activeView = 'grid';
+  document.getElementById('viewGrid').classList.add('active');
+  document.getElementById('viewMap').classList.remove('active');
+  mapViewEl.style.display = 'none';
+  renderGrid();
+  updateStats();
+  showToast('Entry deleted');
 }
 
 /* ── Share wine ──────────────────────────────────────────── */
@@ -1824,7 +1928,8 @@ async function shareWine(id, e) {
   const tags = [w.style, w.grape, w.region].filter(Boolean);
   document.getElementById('shareCardTags').innerHTML = tags.map(t=>`<span class="share-card-tag">${escHtml(t)}</span>`).join('');
   const photo = document.getElementById('shareCardPhoto');
-  if (w.photoFront) { photo.src = w.photoFront; photo.style.display = 'block'; }
+  const safeSrc = safePhotoSrc(w.photoFront);
+  if (safeSrc) { photo.src = safeSrc; photo.style.display = 'block'; }
   else { photo.style.display = 'none'; }
 
   // Show or hide native share button
@@ -1902,14 +2007,15 @@ async function nativeShare() {
       text:  w ? `Check out this wine on Welds Wine Wisdoms: ${w.name}${w.winery?' by '+w.winery:''}${w.rating?' — '+('★'.repeat(w.rating)):''}` : '',
       url:   link
     });
-  } catch(_) {}
+  } catch(e) {
+    if (e.name !== 'AbortError') showToast('Could not share — try copying the link instead');
+  }
 }
-
-/* ── Public wine view (loads when ?wine=ID in URL) ───────── */
 async function checkPublicWineView() {
   const params  = new URLSearchParams(window.location.search);
   const shareId = params.get('wine');
-  if (!shareId) return false;
+  // Validate — only allow alphanumeric and hyphen (UUID format)
+  if (!shareId || !/^[a-zA-Z0-9\-]{8,64}$/.test(shareId)) return false;
 
   const view = document.getElementById('publicWineView');
   view.classList.add('show');
@@ -1962,7 +2068,7 @@ async function checkPublicWineView() {
       ${stars ? `<div class="public-wine-rating">${stars}</div>` : ''}
       ${tags.length ? `<div class="public-wine-tags">${tags.map(t=>`<span class="public-wine-tag">${escHtml(t)}</span>`).join('')}</div>` : ''}
     </div>
-    ${w.photo_front ? `<img class="public-wine-photo" src="${w.photo_front}" alt="${escHtml(w.name)}"/>` : ''}
+    ${safePhotoSrc(w.photo_front) ? `<img class="public-wine-photo" src="${safePhotoSrc(w.photo_front)}" alt="${escHtml(w.name)}"/>` : ''}
     ${w.notes ? `<div class="public-wine-notes">${escHtml(w.notes)}</div>` : ''}
     ${details.length ? `<div class="public-wine-detail-grid">${details.map(([k,v])=>`<div class="public-wine-detail"><b>${k}</b>${escHtml(String(v))}</div>`).join('')}</div>` : ''}
     <p style="font-family:var(--font-b);font-size:.78rem;color:var(--warm-gray);font-style:italic;text-align:center;margin-bottom:16px">Shared from Welds Wine Wisdoms</p>
@@ -2078,10 +2184,14 @@ function formatDate(s) {
   return _dateCache[s];
 }
 function escHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;'); }
-function generateId(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
 function showToast(m){ const t=document.getElementById('toast'); t.textContent=m; t.classList.add('show'); clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove('show'),3000); }
 function flashAutofill(el){ el.classList.remove('autofilled'); void el.offsetWidth; el.classList.add('autofilled'); }
-function loadWines(){ try{ return JSON.parse(localStorage.getItem('wwwines')||'[]'); }catch{ return[]; } }
+// Crypto-safe ID — no collisions across devices
+function generateId(){
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID();
+  // Fallback for very old browsers
+  return Date.now().toString(36) + Math.random().toString(36).slice(2,9) + Math.random().toString(36).slice(2,9);
+}
 
 async function loadWinesFromDB(cacheKey) {
   if (!_sb || !_currentUser) return;
@@ -2107,7 +2217,7 @@ async function loadWinesFromDB(cacheKey) {
       id:           row.id,
       name:         row.name,
       winery:       row.winery,
-      vintage:      row.vintage,
+      vintage:      row.vintage ? String(row.vintage) : null,
       country:      row.country,
       region:       row.region,
       grape:        row.grape,
@@ -2143,35 +2253,6 @@ async function loadWinesFromDB(cacheKey) {
   }
 }
 
-async function loadPhotosInBackground() {
-  // No longer needed — photos fetched in parallel with metadata above
-}
-
-function _updateCardThumbnail(w) {
-  // Find the card in the grid and update its thumbnail without full re-render
-  if (!w.photoFront) return;
-  const cards = wineGrid.querySelectorAll('.wine-card');
-  cards.forEach(card => {
-    // Cards contain buttons with the wine id in their onclick
-    if (card.innerHTML.includes(`'${w.id}'`)) {
-      const existing = card.querySelector('.card-thumb-wrap, .card-thumb-single, .card-label-strip');
-      if (!existing || existing.classList.contains('card-label-strip')) {
-        // Replace strip with thumbnail
-        const thumb = document.createElement('img');
-        thumb.className = 'card-thumb-single';
-        thumb.src = w.photoFront;
-        thumb.loading = 'lazy';
-        thumb.setAttribute('onclick', `openLightbox('${w.id}',event)`);
-        if (existing) card.replaceChild(thumb, existing);
-        else card.insertBefore(thumb, card.firstChild);
-      }
-    }
-  });
-}
-
-function saveWines() {
-  // Wines are saved individually via saveWineToDB — this is a no-op for compat
-}
 
 async function saveWineToDB(entry) {
   if (!_sb || !_currentUser) return false;
@@ -2202,8 +2283,15 @@ async function saveWineToDB(entry) {
 }
 
 async function deleteWineFromDB(id) {
-  if (!_sb || !_currentUser) return;
-  await _sb.from('wines').delete().eq('id', id).eq('user_id', _currentUser.id);
+  if (!_sb || !_currentUser) return false;
+  try {
+    const { error } = await _sb.from('wines').delete().eq('id', id).eq('user_id', _currentUser.id);
+    if (error) throw error;
+    return true;
+  } catch(e) {
+    console.error('deleteWineFromDB:', e);
+    return false;
+  }
 }
 
 /* ── Scanner UI ─────────────────────────────────────────── */

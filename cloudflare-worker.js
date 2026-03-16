@@ -121,6 +121,14 @@ export default {
     // ── POST /email ────────────────────────────────────────────
     if (url.pathname.endsWith('/email')) {
       if (request.method !== 'POST') return new Response(JSON.stringify({ error: 'POST only' }), { status: 405, headers: cors });
+
+      // Restrict to known app origins to prevent email abuse
+      const origin = request.headers.get('Origin') || '';
+      const allowedOrigins = [APP_URL, 'http://localhost', 'http://127.0.0.1'];
+      const originAllowed = allowedOrigins.some(o => origin.startsWith(o)) || origin === '';
+      if (!originAllowed) {
+        return new Response(JSON.stringify({ error: 'Forbidden' }), { status: 403, headers: cors });
+      }
       let body;
       try { body = await request.json(); } catch { return new Response(JSON.stringify({ error: 'Invalid JSON' }), { status: 400, headers: cors }); }
 
