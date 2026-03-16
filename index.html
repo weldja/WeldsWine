@@ -366,37 +366,84 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
 <!-- AUTH SCREEN -->
 <div id="authScreen">
   <div class="auth-card">
+
+    <!-- Logo -->
     <div class="auth-logo">
       <span class="auth-logo-icon">🍷</span>
       <div class="auth-logo-title">Welds Wine Wisdoms</div>
       <div class="auth-logo-sub">Personal Wine Journal</div>
     </div>
 
-    <div class="auth-tabs">
-      <button class="auth-tab active" id="tabSignIn" onclick="switchAuthTab('signin')">Sign In</button>
-      <button class="auth-tab" id="tabSignUp" onclick="switchAuthTab('signup')">Create Account</button>
+    <!-- State: sign-in / sign-up (default) -->
+    <div id="authStateMain">
+      <div class="auth-tabs">
+        <button class="auth-tab active" id="tabSignIn" onclick="switchAuthTab('signin')">Sign In</button>
+        <button class="auth-tab" id="tabSignUp" onclick="switchAuthTab('signup')">Create Account</button>
+      </div>
+
+      <div class="auth-form-group">
+        <label for="authEmail">Email</label>
+        <input type="email" id="authEmail" placeholder="you@example.com" autocomplete="email"/>
+      </div>
+      <div class="auth-form-group" id="authPasswordGroup">
+        <label for="authPassword">Password</label>
+        <div style="position:relative">
+          <input type="password" id="authPassword" placeholder="••••••••" autocomplete="current-password"/>
+          <button type="button" id="togglePassword" onclick="togglePasswordVisibility()"
+            style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--warm-gray);font-size:.8rem;padding:2px 4px">Show</button>
+        </div>
+      </div>
+
+      <button class="auth-btn-primary" id="authSubmitBtn" onclick="handleAuthSubmit()">
+        <span id="authSubmitLabel">Sign In</span>
+        <span id="authSubmitSpinner" style="display:none">…</span>
+      </button>
+
+      <div class="auth-msg" id="authMsg"></div>
+
+      <div id="magicLinkRow" style="text-align:center;margin-top:14px">
+        <button id="magicLinkBtn" onclick="showAuthState('reset')"
+          style="background:none;border:none;color:var(--warm-gray);font-family:var(--font-b);font-size:.78rem;cursor:pointer;text-decoration:underline;text-underline-offset:2px;font-style:italic;padding:0">
+          Forgot password? Send a sign-in link
+        </button>
+      </div>
     </div>
 
-    <div class="auth-form-group">
-      <label for="authEmail">Email</label>
-      <input type="email" id="authEmail" placeholder="you@example.com" autocomplete="email"/>
+    <!-- State: forgot password / magic link -->
+    <div id="authStateReset" style="display:none">
+      <div style="text-align:center;margin-bottom:20px">
+        <div style="font-family:var(--font-d);font-size:1rem;color:var(--charcoal);margin-bottom:6px">Sign-in link</div>
+        <div style="font-family:var(--font-b);font-size:.85rem;color:var(--warm-gray);line-height:1.6">Enter your email and we'll send you a link to sign in — no password needed.</div>
+      </div>
+      <div class="auth-form-group">
+        <label for="resetEmail">Email</label>
+        <input type="email" id="resetEmail" placeholder="you@example.com" autocomplete="email"/>
+      </div>
+      <button class="auth-btn-primary" id="resetSubmitBtn" onclick="handleSendLink()">
+        <span id="resetSubmitLabel">Send Sign-in Link</span>
+        <span id="resetSubmitSpinner" style="display:none">Sending…</span>
+      </button>
+      <div class="auth-msg" id="resetMsg"></div>
+      <div style="text-align:center;margin-top:14px">
+        <button onclick="showAuthState('main')"
+          style="background:none;border:none;color:var(--warm-gray);font-family:var(--font-b);font-size:.78rem;cursor:pointer;text-decoration:underline;text-underline-offset:2px;font-style:italic;padding:0">
+          ← Back to sign in
+        </button>
+      </div>
     </div>
-    <div class="auth-form-group" id="authPasswordGroup">
-      <label for="authPassword">Password</label>
-      <input type="password" id="authPassword" placeholder="••••••••" autocomplete="current-password"/>
-    </div>
-    <button class="auth-btn-primary" id="authSubmitBtn" onclick="handleAuthSubmit()">Sign In</button>
 
-    <div class="auth-msg" id="authMsg"></div>
-
-    <!-- Magic link as a small text fallback — not a prominent button -->
-    <div id="magicLinkRow" style="text-align:center;margin-top:14px">
-      <button id="magicLinkBtn" onclick="handleMagicLink()" style="background:none;border:none;color:var(--warm-gray);font-family:var(--font-b);font-size:.78rem;cursor:pointer;text-decoration:underline;text-underline-offset:2px;font-style:italic;padding:0">
-        Forgot password? Send a sign-in link instead
+    <!-- State: link sent confirmation -->
+    <div id="authStateSent" style="display:none;text-align:center">
+      <div style="font-size:2.5rem;margin-bottom:14px">✉</div>
+      <div style="font-family:var(--font-d);font-size:1.05rem;color:var(--charcoal);margin-bottom:10px">Check your email</div>
+      <div style="font-family:var(--font-b);font-size:.88rem;color:var(--warm-gray);line-height:1.7;margin-bottom:20px" id="sentEmailMsg">A sign-in link has been sent.</div>
+      <button onclick="showAuthState('main')"
+        style="background:none;border:none;color:var(--warm-gray);font-family:var(--font-b);font-size:.78rem;cursor:pointer;text-decoration:underline;text-underline-offset:2px;font-style:italic;padding:0">
+        ← Back to sign in
       </button>
     </div>
 
-    <div class="auth-footer" id="authFooter">Sign in to access your personal wine journal</div>
+    <div class="auth-footer" id="authFooter">Your personal wine journal</div>
   </div>
 </div>
 
@@ -805,9 +852,8 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
    SUPABASE CONFIG — replace with your project values
    supabase.com → your project → Settings → API
 ══════════════════════════════════════════════════════════════ */
-const SUPABASE_URL = 'https://phcnswuwrqarikzjvfqd.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBoY25zd3V3cnFhcmlremp2ZnFkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM1OTI2NjEsImV4cCI6MjA4OTE2ODY2MX0.nW_aLGeiFNu6km1leeqTofcOqFQxe3dabNWfIPkc334';
-
+const SUPABASE_URL = 'PASTE_SUPABASE_URL';
+const SUPABASE_KEY = 'PASTE_SUPABASE_ANON_KEY';
 
 // These are set inside DOMContentLoaded — never at parse time
 var _sb = null;
@@ -849,6 +895,11 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   });
 
+  var resetEmailEl = document.getElementById('resetEmail');
+  if (resetEmailEl) resetEmailEl.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') handleSendLink();
+  });
+
 
 
 
@@ -884,12 +935,33 @@ function hideApp() {
   document.getElementById('userBadge').style.display = 'none';
 }
 
+/* ── Auth state navigation ───────────────────────────────── */
+function showAuthState(state) {
+  document.getElementById('authStateMain').style.display  = state === 'main'  ? '' : 'none';
+  document.getElementById('authStateReset').style.display = state === 'reset' ? '' : 'none';
+  document.getElementById('authStateSent').style.display  = state === 'sent'  ? '' : 'none';
+  clearAuthMsg();
+  if (state === 'reset') {
+    const email = document.getElementById('authEmail').value;
+    const resetEl = document.getElementById('resetEmail');
+    if (email && resetEl) resetEl.value = email;
+    setTimeout(() => resetEl?.focus(), 100);
+  }
+}
+
+function togglePasswordVisibility() {
+  const input = document.getElementById('authPassword');
+  const btn   = document.getElementById('togglePassword');
+  if (input.type === 'password') { input.type = 'text';     btn.textContent = 'Hide'; }
+  else                           { input.type = 'password'; btn.textContent = 'Show'; }
+}
+
 /* ── Tab switching ───────────────────────────────────────── */
 function switchAuthTab(tab) {
   const isSignIn = tab === 'signin';
   document.getElementById('tabSignIn').classList.toggle('active', isSignIn);
   document.getElementById('tabSignUp').classList.toggle('active', !isSignIn);
-  document.getElementById('authSubmitBtn').textContent = isSignIn ? 'Sign In' : 'Create Account';
+  document.getElementById('authSubmitLabel').textContent = isSignIn ? 'Sign In' : 'Create Account';
   document.getElementById('magicLinkRow').style.display = isSignIn ? '' : 'none';
   document.getElementById('authPasswordGroup').querySelector('input').autocomplete =
     isSignIn ? 'current-password' : 'new-password';
@@ -904,38 +976,93 @@ async function handleAuthSubmit() {
 
   if (!email)    { showAuthMsg('err', 'Please enter your email'); return; }
   if (!password) { showAuthMsg('err', 'Please enter a password'); return; }
+  if (!isSignIn && password.length < 8) { showAuthMsg('err', 'Password must be at least 8 characters'); return; }
 
   setAuthLoading(true);
   try {
-    const redirectTo = window.location.origin + window.location.pathname;
     const { error } = isSignIn
       ? await _sb.auth.signInWithPassword({ email, password })
-      : await _sb.auth.signUp({ email, password, options: { emailRedirectTo: redirectTo } });
+      : await _sb.auth.signUp({ email, password });
 
     if (error) throw error;
-    if (!isSignIn) showAuthMsg('ok', 'Account created! Check your email to confirm, then sign in.');
+
+    if (!isSignIn) {
+      // Send welcome email via Worker/Resend
+      try {
+        await fetch(`${Scanner.getProxyUrl()}/email`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ type: 'welcome', email })
+        });
+      } catch(_) { /* non-fatal */ }
+      showAuthMsg('ok', 'Account created — you are now signed in.');
+    }
   } catch(e) {
-    showAuthMsg('err', e.message || 'Authentication failed');
+    const msg = e.message || '';
+    if (msg.includes('Invalid login')) showAuthMsg('err', 'Incorrect email or password');
+    else if (msg.includes('already registered')) showAuthMsg('err', 'An account with that email already exists — sign in instead');
+    else showAuthMsg('err', msg || 'Something went wrong, please try again');
   } finally {
     setAuthLoading(false);
   }
 }
 
-/* ── Magic link ──────────────────────────────────────────── */
-async function handleMagicLink() {
-  const email = document.getElementById('authEmail').value.trim();
-  if (!email) { showAuthMsg('err', 'Enter your email first'); return; }
-  setAuthLoading(true);
+/* ── Magic link / forgot password via Resend ─────────────── */
+async function handleSendLink() {
+  const email = document.getElementById('resetEmail').value.trim();
+  if (!email) { showResetMsg('err', 'Please enter your email address'); return; }
+
+  const submitBtn     = document.getElementById('resetSubmitBtn');
+  const submitLabel   = document.getElementById('resetSubmitLabel');
+  const submitSpinner = document.getElementById('resetSubmitSpinner');
+  submitBtn.disabled    = true;
+  submitLabel.style.display   = 'none';
+  submitSpinner.style.display = 'inline';
+
   try {
+    // Generate magic link via Supabase (creates the auth token)
     const redirectTo = window.location.origin + window.location.pathname;
-    const { error } = await _sb.auth.signInWithOtp({ email, options: { emailRedirectTo: redirectTo } });
-    if (error) throw error;
-    showAuthMsg('ok', '✉ Magic link sent — check your email');
+    const { data, error } = await _sb.auth.signInWithOtp({
+      email,
+      options: { shouldCreateUser: false, emailRedirectTo: redirectTo }
+    });
+
+    // Supabase will have sent its own email (if not using custom SMTP)
+    // We also send via Resend for reliability — user gets whichever arrives first
+    // If custom SMTP is configured in Supabase, disable the Supabase send and rely on this
+    if (!error) {
+      try {
+        // Get the magic link URL from the Supabase response if available
+        const magicUrl = data?.properties?.action_link || redirectTo + '?type=magiclink&email=' + encodeURIComponent(email);
+        await fetch(`${Scanner.getProxyUrl()}/email`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ type: 'magic_link', email, url: magicUrl })
+        });
+      } catch(_) { /* non-fatal — Supabase email already sent */ }
+    }
+
+    // Show success regardless — don't reveal whether account exists
+    document.getElementById('sentEmailMsg').innerHTML =
+      `A sign-in link has been sent to <strong>${email}</strong>.<br/>Check your inbox (and spam folder).`;
+    showAuthState('sent');
+
   } catch(e) {
-    showAuthMsg('err', e.message || 'Failed to send magic link');
+    showResetMsg('err', 'Could not send link — please try again');
   } finally {
-    setAuthLoading(false);
+    submitBtn.disabled    = false;
+    submitLabel.style.display   = 'inline';
+    submitSpinner.style.display = 'none';
   }
+}
+
+// Legacy alias
+function handleMagicLink() { showAuthState('reset'); }
+
+function showResetMsg(type, msg) {
+  const el = document.getElementById('resetMsg');
+  el.className = 'auth-msg ' + type;
+  el.textContent = msg;
 }
 
 /* ── Sign out ────────────────────────────────────────────── */
@@ -963,10 +1090,14 @@ function clearAuthMsg() {
   el.textContent = '';
 }
 function setAuthLoading(on) {
-  ['authSubmitBtn','magicLinkBtn'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.disabled = on;
-  });
+  const btn     = document.getElementById('authSubmitBtn');
+  const label   = document.getElementById('authSubmitLabel');
+  const spinner = document.getElementById('authSubmitSpinner');
+  if (btn)     btn.disabled             = on;
+  if (label)   label.style.display      = on ? 'none'   : 'inline';
+  if (spinner) spinner.style.display    = on ? 'inline' : 'none';
+  const ml = document.getElementById('magicLinkBtn');
+  if (ml) ml.disabled = on;
 }
 
 
