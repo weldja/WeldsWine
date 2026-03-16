@@ -429,8 +429,17 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
 }
 @media(max-width:520px){
   .scan-hint{display:none}
-  .btn-scan-primary{padding:8px 16px;font-size:.85rem}
-  .btn-add-subtle{font-size:.72rem;padding:5px 8px}
+  .btn-scan-primary{padding:7px 12px;font-size:.8rem;letter-spacing:0}
+  .btn-add-subtle{font-size:.78rem;padding:5px 8px}
+  .btn-quick-add{padding:6px 10px;font-size:.78rem}
+  /* Shorten button text on small screens */
+  #openScanModal{font-size:0}
+  #openScanModal::after{content:'📷 Scan';font-size:.8rem}
+  #openAddModal{font-size:0}
+  #openAddModal::after{content:'+ Add';font-size:.78rem}
+  #openQuickAdd{font-size:0}
+  #openQuickAdd::after{content:'⚡ Quick';font-size:.78rem}
+}
   .card-actions{gap:2px}
   .card-btn{padding:3px 7px;font-size:.7rem}
   .auth-card{padding:28px 20px}
