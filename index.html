@@ -881,7 +881,6 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
 const SUPABASE_URL = 'https://phcnswuwrqarikzjvfqd.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBoY25zd3V3cnFhcmlremp2ZnFkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM1OTI2NjEsImV4cCI6MjA4OTE2ODY2MX0.nW_aLGeiFNu6km1leeqTofcOqFQxe3dabNWfIPkc334';
 
-
 // These are set inside DOMContentLoaded — never at parse time
 var _sb = null;
 var _currentUser = null;
@@ -939,26 +938,27 @@ function showApp() {
   const email = _currentUser?.email || '';
   document.getElementById('userAvatar').textContent = email ? email[0].toUpperCase() : '✓';
 
-  // Show cached wines immediately so returning users see content at once
   const cacheKey = 'wwwCache_' + (_currentUser?.id || '');
   let hadCache = false;
   try {
     const cached = sessionStorage.getItem(cacheKey);
     if (cached) {
       wines = JSON.parse(cached);
-      renderGrid();
-      updateStats();
       hadCache = true;
     }
   } catch(_) {}
 
-  // No cache — show skeleton placeholders while DB loads
-  if (!hadCache) showSkeletonGrid(4);
+  if (hadCache) {
+    // Returning user — show cached wines instantly, DB will refresh silently
+    renderGrid();
+    updateStats();
+  } else {
+    // First load — show skeleton until DB responds, never show empty state
+    _winesLoaded = false;
+    showSkeletonGrid(4);
+  }
 
-  // Load fresh data from DB — updates the view when ready
   if (typeof loadWinesFromDB === 'function') loadWinesFromDB(cacheKey);
-
-  // Start location after grid is rendered to avoid contention
   setTimeout(startLocationTracking, 100);
 }
 
@@ -1113,7 +1113,7 @@ async function handleSignOut() {
   } catch(_) {}
   wines = [];
   _winesLoaded = false;
-  if (typeof renderGrid === 'function') renderGrid();
+  // Auth screen will show — no need to renderGrid here
   if (typeof updateStats === 'function') updateStats();
 }
 
@@ -1350,6 +1350,8 @@ function showSkeletonGrid(count = 4) {
 
 function renderGrid() {
   if (activeView === 'map') return;
+  // Don't replace skeleton with empty state — wait for DB to respond
+  if (!_winesLoaded && wines.length === 0) return;
   const list = getList();
   wineGrid.innerHTML = '';
   if (!list.length) {
