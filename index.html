@@ -119,7 +119,8 @@ body{font-family:var(--font-b);background:var(--cream);color:var(--charcoal);min
 .btn-secondary:hover{border-color:var(--warm-gray);color:var(--charcoal)}
 .toolbar{background:var(--ivory);border-bottom:1px solid var(--light-gray);position:sticky;top:64px;z-index:100}
 .toolbar-inner{max-width:1200px;margin:0 auto;padding:0 20px;display:flex;flex-direction:column;gap:0}
-.toolbar-top{height:48px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.toolbar-filters{padding:8px 0 4px;display:flex;align-items:center}
+.toolbar-controls{height:44px;display:flex;align-items:center;justify-content:space-between;gap:8px;border-top:1px solid var(--light-gray)}
 .toolbar-search{padding:6px 0 8px}
 .search-wrap{position:relative;width:100%}
 .search-input-toolbar{width:100%;background:var(--cream);border:1px solid var(--light-gray);border-radius:30px;padding:8px 16px;color:var(--charcoal);font-family:var(--font-b);font-size:.9rem;outline:none;transition:var(--tr);box-sizing:border-box}
@@ -135,8 +136,9 @@ body{font-family:var(--font-b);background:var(--cream);color:var(--charcoal);min
 .view-btn.active{background:var(--ivory);color:var(--burgundy);box-shadow:0 1px 3px var(--shadow)}
 .sort-wrap{display:flex;align-items:center;gap:5px;font-family:var(--font-b);font-size:.82rem;color:var(--warm-gray)}
 .sort-wrap select{background:var(--cream);border:1px solid var(--light-gray);border-radius:var(--r);padding:3px 8px;font-family:var(--font-b);font-size:.82rem;color:var(--charcoal);cursor:pointer;outline:none}
-.export-btn{background:none;border:1px solid var(--light-gray);border-radius:var(--r);padding:4px 10px;font-family:var(--font-b);font-size:.78rem;color:var(--warm-gray);cursor:pointer;transition:var(--tr)}
+.export-btn{background:none;border:1px solid var(--light-gray);border-radius:var(--r);padding:4px 10px;font-family:var(--font-b);font-size:.78rem;color:var(--warm-gray);cursor:pointer;transition:var(--tr);white-space:nowrap;flex-shrink:0}
 .export-btn:hover{background:var(--parchment)}
+.export-icon{display:none}
 .stats-bar{background:var(--parchment);border-bottom:1px solid var(--light-gray)}
 .stats-inner{max-width:1200px;margin:0 auto;display:flex;align-items:center;justify-content:center;padding:10px 20px}
 .stat{display:flex;flex-direction:column;align-items:center;padding:0 28px;flex:1;max-width:180px}
@@ -408,11 +410,24 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
   .header-inner{flex-wrap:wrap;height:auto;padding:10px 14px;gap:8px}
   .header-actions{gap:6px}
   .toolbar{position:static}
-  .toolbar-inner{padding:8px 14px;gap:6px}
-  .toolbar-top{height:auto;flex-wrap:wrap;gap:6px}
-  .toolbar-right{gap:5px}
+  .toolbar-inner{padding:0;gap:0}
+  /* Row 1: filter tabs — horizontally scrollable on mobile */
+  .toolbar-filters{overflow-x:auto;-webkit-overflow-scrolling:touch;padding:7px 14px 5px;border-bottom:1px solid var(--light-gray);scrollbar-width:none}
+  .toolbar-filters::-webkit-scrollbar{display:none}
+  .filter-tabs{flex-wrap:nowrap;gap:4px}
+  .filter-tab{white-space:nowrap;flex-shrink:0;padding:6px 12px;font-size:.82rem}
+  /* Row 2: controls — scrollable strip */
+  .toolbar-controls{height:auto;overflow-x:auto;-webkit-overflow-scrolling:touch;flex-wrap:nowrap;padding:7px 14px;gap:7px;border-top:none;border-bottom:1px solid var(--light-gray);scrollbar-width:none;justify-content:flex-start}
+  .toolbar-controls::-webkit-scrollbar{display:none}
+  .view-toggle{flex-shrink:0}
+  .sort-wrap{flex-shrink:0}
   .sort-wrap label{display:none}
-  .export-btn{display:none}
+  /* Export always visible — show icon only to save space */
+  .export-label{display:none}
+  .export-icon{display:inline}
+  .export-btn{display:block;flex-shrink:0;white-space:nowrap;font-size:.88rem;padding:5px 9px}
+  /* Row 3: search */
+  .toolbar-search{padding:7px 14px 8px}
   .stats-inner{flex-wrap:wrap}
   .stat{flex:0 0 50%;max-width:50%;padding:4px 0}
   .stat-divider{display:none}
@@ -429,17 +444,10 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
 }
 @media(max-width:520px){
   .scan-hint{display:none}
+  .header-actions{gap:5px}
   .btn-scan-primary{padding:7px 12px;font-size:.8rem;letter-spacing:0}
-  .btn-add-subtle{font-size:.78rem;padding:5px 8px}
+  .btn-add-subtle{font-size:.75rem;padding:5px 8px}
   .btn-quick-add{padding:6px 10px;font-size:.78rem}
-  /* Shorten button text on small screens */
-  #openScanModal{font-size:0}
-  #openScanModal::after{content:'📷 Scan';font-size:.8rem}
-  #openAddModal{font-size:0}
-  #openAddModal::after{content:'+ Add';font-size:.78rem}
-  #openQuickAdd{font-size:0}
-  #openQuickAdd::after{content:'⚡ Quick';font-size:.78rem}
-}
   .card-actions{gap:2px}
   .card-btn{padding:3px 7px;font-size:.7rem}
   .auth-card{padding:28px 20px}
@@ -447,6 +455,10 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
 @media(max-width:420px){
   .filter-tabs{flex-wrap:wrap}
   .logo-sub{display:none}
+  .header-actions{gap:4px}
+  .btn-scan-primary{padding:6px 10px;font-size:.76rem}
+  .btn-add-subtle{padding:4px 7px;font-size:.72rem}
+  .btn-quick-add{padding:5px 8px;font-size:.74rem}
 }
 /* Larger touch targets on true touch devices */
 @media(hover:none){
@@ -603,33 +615,39 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
 <!-- TOOLBAR -->
 <div class="toolbar">
   <div class="toolbar-inner">
-    <div class="toolbar-top">
+    <!-- Row 1: filter tabs — wraps freely on mobile -->
+    <div class="toolbar-filters">
       <div class="filter-tabs">
         <button class="filter-tab active" data-filter="all">All</button>
-        <button class="filter-tab" data-filter="fav">♥ Favourites</button>
+        <button class="filter-tab" data-filter="fav">♥ Favs</button>
         <button class="filter-tab" data-filter="5">★★★★★</button>
         <button class="filter-tab" data-filter="4">★★★★+</button>
         <button class="filter-tab" data-filter="recent">Recent</button>
       </div>
-      <div class="toolbar-right">
-        <div class="view-toggle">
-          <button class="view-btn active" id="viewGrid" title="Grid view">⊞ Grid</button>
-          <button class="view-btn" id="viewMap" title="Map view">◎ Map</button>
-          <button class="view-btn" id="viewInsights" title="Insights">◈ Insights</button>
-        </div>
-        <div class="sort-wrap">
-          <label for="sortSelect">Sort:</label>
-          <select id="sortSelect">
-            <option value="date-desc">Newest</option>
-            <option value="date-asc">Oldest</option>
-            <option value="rating-desc">Top rated</option>
-            <option value="rating-asc">Lowest rated</option>
-            <option value="name-asc">A–Z</option>
-          </select>
-        </div>
-        <button class="export-btn" id="exportBtn" title="Export your wines as a CSV file">⬇ Export Data</button>
-      </div>
     </div>
+    <!-- Row 2: view toggle, sort, export -->
+    <div class="toolbar-controls">
+      <div class="view-toggle">
+        <button class="view-btn active" id="viewGrid" title="Grid view">⊞ Grid</button>
+        <button class="view-btn" id="viewMap" title="Map view">◎ Map</button>
+        <button class="view-btn" id="viewInsights" title="Insights">◈ Insights</button>
+      </div>
+      <div class="sort-wrap">
+        <label for="sortSelect">Sort:</label>
+        <select id="sortSelect">
+          <option value="date-desc">Newest</option>
+          <option value="date-asc">Oldest</option>
+          <option value="rating-desc">Top rated</option>
+          <option value="rating-asc">Lowest rated</option>
+          <option value="name-asc">A–Z</option>
+        </select>
+      </div>
+      <button class="export-btn" id="exportBtn" title="Export your wines as a CSV file">
+        <span class="export-label">⬇ Export Data</span>
+        <span class="export-icon">⬇</span>
+      </button>
+    </div>
+    <!-- Row 3: search -->
     <div class="toolbar-search">
       <div class="search-wrap">
         <input type="text" id="searchInput" placeholder="Search wines…" class="search-input-toolbar"/>
@@ -1078,7 +1096,6 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
 ══════════════════════════════════════════════════════════════ */
 const SUPABASE_URL = 'https://phcnswuwrqarikzjvfqd.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBoY25zd3V3cnFhcmlremp2ZnFkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM1OTI2NjEsImV4cCI6MjA4OTE2ODY2MX0.nW_aLGeiFNu6km1leeqTofcOqFQxe3dabNWfIPkc334';
-
 
 // These are set inside DOMContentLoaded — never at parse time
 var _sb = null;
