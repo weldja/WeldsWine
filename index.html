@@ -554,10 +554,10 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
     <div id="wineMap"></div>
   </div>
   <div class="empty-state" id="emptyState" style="display:none">
-    <div class="empty-icon">🍾</div>
-    <h2>Your cellar is empty</h2>
-    <p>Scan a wine label or add your first entry to get started.</p>
-    <button class="btn-scan-primary" style="font-size:.95rem;padding:10px 22px" onclick="document.getElementById('openScanModal').click()">📷 Scan Your First Label</button>
+    <div class="empty-icon" id="emptyIcon">🍾</div>
+    <h2 id="emptyTitle">Your cellar is empty</h2>
+    <p id="emptyMsg">Scan a wine label or add your first entry to get started.</p>
+    <button class="btn-scan-primary" id="emptyScanBtn" style="font-size:.95rem;padding:10px 22px" onclick="document.getElementById('openScanModal').click()">📷 Scan Your First Label</button>
   </div>
 </main>
 
@@ -1112,6 +1112,7 @@ async function handleSignOut() {
     sessionStorage.removeItem(cacheKey);
   } catch(_) {}
   wines = [];
+  _winesLoaded = false;
   if (typeof renderGrid === 'function') renderGrid();
   if (typeof updateStats === 'function') updateStats();
 }
@@ -1223,6 +1224,7 @@ const Scanner = (() => {
 <script>
 // Wines populated from Supabase after authentication — see loadWinesFromDB()
 let wines        = [];
+let _winesLoaded = false; // false until first DB load completes
 let activeFilter = 'all';
 let activeSort   = 'date-desc';
 let searchQuery  = '';
@@ -1347,12 +1349,30 @@ function showSkeletonGrid(count = 4) {
 }
 
 function renderGrid() {
-  if (activeView==='map') return;
+  if (activeView === 'map') return;
   const list = getList();
   wineGrid.innerHTML = '';
-  if (!list.length) { emptyState.style.display='block'; wineGrid.style.display='none'; return; }
-  emptyState.style.display='none'; wineGrid.style.display='grid';
-  list.forEach((w,i)=>{ const c=createCard(w); c.style.animationDelay=`${i*.04}s`; wineGrid.appendChild(c); });
+  if (!list.length) {
+    wineGrid.style.display = 'none';
+    emptyState.style.display = 'block';
+    if (_winesLoaded) {
+      // DB has responded — truly empty cellar
+      document.getElementById('emptyIcon').textContent  = '🍾';
+      document.getElementById('emptyTitle').textContent = 'Your cellar is empty';
+      document.getElementById('emptyMsg').textContent   = 'Scan a wine label or add your first entry to get started.';
+      document.getElementById('emptyScanBtn').style.display = '';
+    } else {
+      // Still waiting for DB — show loading message
+      document.getElementById('emptyIcon').textContent  = '⏳';
+      document.getElementById('emptyTitle').textContent = 'Loading your cellar…';
+      document.getElementById('emptyMsg').textContent   = '';
+      document.getElementById('emptyScanBtn').style.display = 'none';
+    }
+    return;
+  }
+  emptyState.style.display = 'none';
+  wineGrid.style.display = 'grid';
+  list.forEach((w, i) => { const c = createCard(w); c.style.animationDelay = `${i * .04}s`; wineGrid.appendChild(c); });
 }
 
 function safePhotoSrc(url) {
@@ -2237,6 +2257,7 @@ async function loadWinesFromDB(cacheKey) {
       createdAt:    new Date(row.created_at).getTime()
     }));
 
+    _winesLoaded = true;
     renderGrid();
     updateStats();
 
