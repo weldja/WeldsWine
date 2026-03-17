@@ -715,11 +715,11 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
 <!-- STATS BAR -->
 <div class="stats-bar">
   <div class="stats-inner">
-    <div class="stat"><span id="statTotal">0</span><label>Wines Tasted</label></div>
+    <div class="stat"><span id="statTotal">—</span><label>Wines Tasted</label></div>
     <div class="stat-divider"></div>
     <div class="stat"><span id="statAvg">—</span><label>Avg. Rating</label></div>
     <div class="stat-divider"></div>
-    <div class="stat"><span id="statCountries">0</span><label>Countries</label></div>
+    <div class="stat"><span id="statCountries">—</span><label>Countries</label></div>
     <div class="stat-divider"></div>
     <div class="stat"><span id="statTop">—</span><label>Top Region</label></div>
   </div>
@@ -1162,7 +1162,40 @@ document.addEventListener('DOMContentLoaded', function() {
     if (sbKey) {
       const token = JSON.parse(localStorage.getItem(sbKey));
       if (token?.access_token) {
+        // Hide auth screen immediately — no flash
         document.getElementById('authScreen').classList.add('hidden');
+        // Show skeleton grid immediately — before onAuthStateChange fires
+        // This prevents the 0-wines flash on refresh and re-login
+        _winesLoaded = false;
+        const gridEl = document.getElementById('wineGrid');
+        const emptyEl = document.getElementById('emptyState');
+        const bannerEl = document.getElementById('loadingBanner');
+        const bannerMsg = document.getElementById('loadingBannerMsg');
+        if (gridEl && emptyEl) {
+          emptyEl.style.display = 'none';
+          gridEl.style.display = 'grid';
+          gridEl.innerHTML = [0,1,2,3].map((i) => `
+            <div class="skeleton-card" style="animation-delay:${i*0.07}s">
+              <div class="sk-img skeleton"></div>
+              <div class="sk-body">
+                <div class="sk-line wide skeleton"></div>
+                <div class="sk-line mid skeleton"></div>
+                <div class="sk-tags"><div class="sk-tag skeleton"></div><div class="sk-tag skeleton"></div></div>
+                <div class="sk-line short skeleton"></div>
+              </div>
+              <div class="sk-footer">
+                <div class="sk-date skeleton"></div>
+                <div class="sk-btns"><div class="sk-btn skeleton"></div><div class="sk-btn skeleton"></div></div>
+              </div>
+            </div>`).join('');
+        }
+        if (bannerEl) { bannerEl.classList.add('show'); }
+        if (bannerMsg) { bannerMsg.textContent = 'Loading your cellar…'; }
+        // Stats show dashes immediately
+        ['statTotal','statAvg','statCountries','statTop'].forEach(id => {
+          const el = document.getElementById(id);
+          if (el) el.textContent = '—';
+        });
       }
     }
   } catch(_) {}
@@ -1212,22 +1245,30 @@ function showApp() {
   const cacheKey = 'wwwCache_' + (_currentUser?.id || '');
   let hadCache = false;
   try {
-    const cached = sessionStorage.getItem(cacheKey);
-    if (cached) {
-      wines = JSON.parse(cached);
-      hadCache = true;
+    const raw = localStorage.getItem(cacheKey);
+    if (raw) {
+      const { ts, data } = JSON.parse(raw);
+      // Use cache if less than 5 minutes old
+      if (data && (Date.now() - ts) < 5 * 60 * 1000) {
+        wines = data;
+        hadCache = true;
+      }
     }
   } catch(_) {}
 
   if (hadCache) {
-    // Returning user — show cached wines instantly, DB will refresh silently
+    // Fresh cache — show wines instantly, then silently refresh from DB
+    _winesLoaded = true;
+    hideLoadingBanner();
     renderGrid();
     updateStats();
   } else {
-    // Fresh login — show skeleton until DB responds, never show empty state
+    // No cache — skeleton is already showing from pre-check or showSkeletonGrid
     _winesLoaded = false;
     wines = [];
-    showSkeletonGrid(4);
+    if (document.getElementById('wineGrid').innerHTML.indexOf('skeleton-card') === -1) {
+      showSkeletonGrid(4);
+    }
     updateStats();
   }
 
@@ -1389,6 +1430,7 @@ async function handleSignOut() {
   try {
     const cacheKey = 'wwwCache_' + (_currentUser?.id || '');
     sessionStorage.removeItem(cacheKey);
+    localStorage.removeItem(cacheKey);
   } catch(_) {}
   wines = [];
   _winesLoaded = false;
@@ -2893,11 +2935,12 @@ async function loadWinesFromDB(cacheKey) {
     renderGrid();
     updateStats();
 
-    // Cache for next visit — strip photos to keep sessionStorage light
+    // Cache to localStorage with timestamp — persists across refresh/reload
+    // Strip photos to keep storage light
     if (cacheKey) {
       try {
         const slim = wines.map(w => ({...w, photoFront:null, photoBack:null, photo:null}));
-        sessionStorage.setItem(cacheKey, JSON.stringify(slim));
+        localStorage.setItem(cacheKey, JSON.stringify({ ts: Date.now(), data: slim }));
       } catch(_) {}
     }
 
