@@ -477,15 +477,25 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
   select{min-height:40px}
 }
 /* ─── Loading skeleton ─────────────────────────────────── */
-@keyframes shimmer{0%{background-position:-400px 0}100%{background-position:400px 0}}
-.skeleton{background:linear-gradient(90deg,var(--light-gray) 25%,var(--cream) 50%,var(--light-gray) 75%);background-size:800px 100%;animation:shimmer 1.4s infinite;border-radius:var(--r)}
+@keyframes shimmer{0%{background-position:-600px 0}100%{background-position:600px 0}}
+.skeleton{background:linear-gradient(90deg,var(--light-gray) 25%,var(--cream) 50%,var(--light-gray) 75%);background-size:1200px 100%;animation:shimmer 1.6s ease-in-out infinite;border-radius:var(--r)}
 .skeleton-card{background:var(--ivory);border:1px solid var(--light-gray);border-radius:var(--rl);overflow:hidden;animation:fadeUp .35s ease both}
-.skeleton-card .sk-img{height:80px}
-.skeleton-card .sk-body{padding:16px 18px 12px}
-.skeleton-card .sk-line{height:14px;margin-bottom:10px}
-.skeleton-card .sk-line.wide{width:80%}
-.skeleton-card .sk-line.mid{width:55%}
-.skeleton-card .sk-line.short{width:35%;height:10px}
+.skeleton-card .sk-img{height:90px}
+.skeleton-card .sk-body{padding:16px 18px 14px}
+.skeleton-card .sk-line{height:14px;margin-bottom:10px;border-radius:3px}
+.skeleton-card .sk-line.wide{width:75%}
+.skeleton-card .sk-line.mid{width:50%}
+.skeleton-card .sk-line.short{width:30%;height:10px}
+.skeleton-card .sk-tags{display:flex;gap:6px;margin-bottom:10px}
+.skeleton-card .sk-tag{height:20px;width:52px;border-radius:20px}
+.skeleton-card .sk-footer{padding:8px 18px 12px;border-top:1px solid var(--light-gray);display:flex;justify-content:space-between;align-items:center}
+.skeleton-card .sk-date{height:10px;width:80px;border-radius:3px}
+.skeleton-card .sk-btns{display:flex;gap:4px}
+.skeleton-card .sk-btn{height:28px;width:44px;border-radius:var(--r)}
+/* Loading banner shown above grid while fetching */
+.loading-banner{display:none;align-items:center;justify-content:center;gap:10px;padding:14px 20px;background:var(--parchment);border-bottom:1px solid var(--light-gray);font-family:var(--font-b);font-size:.88rem;color:var(--warm-gray);font-style:italic}
+.loading-banner.show{display:flex}
+.loading-banner-spinner{width:16px;height:16px;border:2px solid var(--light-gray);border-top-color:var(--burgundy);border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0}
 
 /* ── Hamburger menu ──────────────────────────────────────── */
 .hamburger-btn{background:none;border:none;cursor:pointer;padding:6px 8px;display:flex;flex-direction:column;gap:5px;align-items:center;justify-content:center;border-radius:var(--r);transition:var(--tr);flex-shrink:0}
@@ -713,6 +723,12 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
     <div class="stat-divider"></div>
     <div class="stat"><span id="statTop">—</span><label>Top Region</label></div>
   </div>
+</div>
+
+<!-- LOADING BANNER -->
+<div class="loading-banner" id="loadingBanner">
+  <div class="loading-banner-spinner"></div>
+  <span id="loadingBannerMsg">Loading your cellar…</span>
 </div>
 
 <!-- MAIN -->
@@ -1208,9 +1224,11 @@ function showApp() {
     renderGrid();
     updateStats();
   } else {
-    // First load — show skeleton until DB responds, never show empty state
+    // Fresh login — show skeleton until DB responds, never show empty state
     _winesLoaded = false;
+    wines = [];
     showSkeletonGrid(4);
+    updateStats();
   }
 
   if (typeof loadWinesFromDB === 'function') loadWinesFromDB(cacheKey);
@@ -1641,16 +1659,28 @@ function showSkeletonGrid(count = 4) {
   for (let i = 0; i < count; i++) {
     const card = document.createElement('div');
     card.className = 'skeleton-card';
-    card.style.animationDelay = `${i * 0.06}s`;
+    card.style.animationDelay = `${i * 0.07}s`;
     card.innerHTML = `
       <div class="sk-img skeleton"></div>
       <div class="sk-body">
         <div class="sk-line wide skeleton"></div>
         <div class="sk-line mid skeleton"></div>
+        <div class="sk-tags">
+          <div class="sk-tag skeleton"></div>
+          <div class="sk-tag skeleton"></div>
+        </div>
         <div class="sk-line short skeleton"></div>
+      </div>
+      <div class="sk-footer">
+        <div class="sk-date skeleton"></div>
+        <div class="sk-btns">
+          <div class="sk-btn skeleton"></div>
+          <div class="sk-btn skeleton"></div>
+        </div>
       </div>`;
     wineGrid.appendChild(card);
   }
+  showLoadingBanner('Loading your cellar…');
 }
 
 function renderGrid() {
@@ -2552,6 +2582,14 @@ async function checkPublicWineView() {
 function getWineById(id) { return wines.find(w=>w.id===id); }
 
 function updateStats() {
+  if (!_winesLoaded) {
+    // Still loading — show dashes so it doesn't flash 0
+    document.getElementById('statTotal').textContent     = '—';
+    document.getElementById('statAvg').textContent       = '—';
+    document.getElementById('statCountries').textContent = '—';
+    document.getElementById('statTop').textContent       = '—';
+    return;
+  }
   const t=wines.length;
   const rated=wines.filter(w=>w.rating);
   const avg=rated.length?(rated.reduce((s,w)=>s+w.rating,0)/rated.length).toFixed(1):'—';
@@ -2786,6 +2824,18 @@ function formatDate(s) {
 function escHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;'); }
 function showToast(m){ const t=document.getElementById('toast'); t.textContent=m; t.classList.add('show'); clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove('show'),3000); }
 function flashAutofill(el){ el.classList.remove('autofilled'); void el.offsetWidth; el.classList.add('autofilled'); }
+
+/* ── Loading banner ──────────────────────────────────────── */
+function showLoadingBanner(msg) {
+  const el = document.getElementById('loadingBanner');
+  if (!el) return;
+  document.getElementById('loadingBannerMsg').textContent = msg || 'Loading…';
+  el.classList.add('show');
+}
+function hideLoadingBanner() {
+  const el = document.getElementById('loadingBanner');
+  if (el) el.classList.remove('show');
+}
 // Crypto-safe ID — no collisions across devices
 function generateId(){
   if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID();
@@ -2839,6 +2889,7 @@ async function loadWinesFromDB(cacheKey) {
     }));
 
     _winesLoaded = true;
+    hideLoadingBanner();
     renderGrid();
     updateStats();
 
@@ -2852,7 +2903,10 @@ async function loadWinesFromDB(cacheKey) {
 
   } catch(e) {
     console.error('loadWinesFromDB:', e);
-    showToast('Could not load wines from database');
+    hideLoadingBanner();
+    _winesLoaded = true;
+    renderGrid();
+    showToast('Could not load wines — check your connection');
   }
 }
 
