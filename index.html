@@ -1165,7 +1165,6 @@ const SUPABASE_URL = 'https://phcnswuwrqarikzjvfqd.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBoY25zd3V3cnFhcmlremp2ZnFkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM1OTI2NjEsImV4cCI6MjA4OTE2ODY2MX0.nW_aLGeiFNu6km1leeqTofcOqFQxe3dabNWfIPkc334';
 
 
-
 // These are set inside DOMContentLoaded — never at parse time
 var _sb = null;
 var _currentUser = null;
@@ -1443,8 +1442,7 @@ function showResetMsg(type, msg) {
 
 /* ── Sign out ────────────────────────────────────────────── */
 async function handleSignOut() {
-  if (_sb) await _sb.auth.signOut();
-  // Clear session cache for this user
+  // Clear UI immediately — don't wait for network
   try {
     const cacheKey = 'wwwCache_' + (_currentUser?.id || '');
     sessionStorage.removeItem(cacheKey);
@@ -1452,8 +1450,10 @@ async function handleSignOut() {
   } catch(_) {}
   wines = [];
   _winesLoaded = false;
-  // Auth screen will show — no need to renderGrid here
-  if (typeof updateStats === 'function') updateStats();
+  _currentUser = null;
+  hideApp();
+  // Sign out from Supabase in the background — UI already updated
+  if (_sb) _sb.auth.signOut().catch(() => {});
 }
 
 /* ── Helpers ─────────────────────────────────────────────── */
