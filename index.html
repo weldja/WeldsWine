@@ -1165,6 +1165,7 @@ const SUPABASE_URL = 'https://phcnswuwrqarikzjvfqd.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBoY25zd3V3cnFhcmlremp2ZnFkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM1OTI2NjEsImV4cCI6MjA4OTE2ODY2MX0.nW_aLGeiFNu6km1leeqTofcOqFQxe3dabNWfIPkc334';
 
 
+
 // These are set inside DOMContentLoaded — never at parse time
 var _sb = null;
 var _currentUser = null;
@@ -3359,6 +3360,84 @@ function updateHamburgerUser() {
     if (signOutEl) signOutEl.style.display = 'none';
   }
 }
+/* ── Back button / history management ───────────────────────
+   Pushes a state entry whenever any modal or panel opens.
+   On popstate (back button), closes the topmost open layer
+   instead of navigating away from the app.
+────────────────────────────────────────────────────────── */
+(function() {
+  // Push an initial state so there's always something to pop back to
+  history.replaceState({ app: true, layer: 0 }, '');
+
+  let _layerCount = 0;
+
+  function pushLayer() {
+    _layerCount++;
+    history.pushState({ app: true, layer: _layerCount }, '');
+  }
+
+  function popLayer() {
+    if (_layerCount > 0) {
+      _layerCount--;
+      history.replaceState({ app: true, layer: _layerCount }, '');
+    }
+  }
+
+  // Find and close whatever is currently open
+  function closeTopLayer() {
+    // Check each layer in priority order (top-most first)
+    if (document.getElementById('labelLightbox')) {
+      closeLightbox(); return;
+    }
+    const overlays = [
+      { id: 'keyOverlay',      close: closeKeyModal    },
+      { id: 'shareOverlay',    close: closeShareModal  },
+      { id: 'detailOverlay',   close: closeDetail      },
+      { id: 'scanOverlay',     close: closeScanModal   },
+      { id: 'modalOverlay',    close: closeModal       },
+      { id: 'quickAddOverlay', close: closeQuickAdd    },
+      { id: 'infoOverlay',     close: closeInfoModal   },
+      { id: 'hamburgerMenu',   close: closeHamburger   },
+    ];
+    for (const { id, close } of overlays) {
+      const el = document.getElementById(id);
+      if (el && (el.classList.contains('open') || el.classList.contains('show'))) {
+        close(); return;
+      }
+    }
+    // Nothing open — re-push state so next back press does the same
+    history.pushState({ app: true, layer: 0 }, '');
+  }
+
+  window.addEventListener('popstate', function(e) {
+    // Always intercept — close top layer and push state back
+    closeTopLayer();
+    // Re-push so the app always has a back-state available
+    setTimeout(() => {
+      history.pushState({ app: true, layer: _layerCount }, '');
+    }, 50);
+  });
+
+  // Patch lockScroll and unlockScroll to also manage history
+  const _origLockScroll   = window.lockScroll;
+  const _origUnlockScroll = window.unlockScroll;
+
+  // Override after DOMContentLoaded so the originals exist
+  document.addEventListener('DOMContentLoaded', function() {
+    const origLock   = lockScroll;
+    const origUnlock = unlockScroll;
+
+    window.lockScroll = function() {
+      pushLayer();
+      origLock();
+    };
+    window.unlockScroll = function() {
+      popLayer();
+      origUnlock();
+    };
+  }, { once: true });
+})();
+
 </script>
 
 </body>
