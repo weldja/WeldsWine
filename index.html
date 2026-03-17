@@ -1288,7 +1288,7 @@ async function handleSendLink() {
     // so we fall back to the known app URL to avoid Supabase rejecting the redirectTo value
     const redirectTo = (window.location.origin && window.location.origin !== 'null')
       ? window.location.origin + window.location.pathname
-      : 'https://james-weld.github.io/WeldsWine';
+      : 'https://weldja.github.io/WeldsWine/';
 
     // resetPasswordForEmail is the correct client-side method —
     // it sends a password reset link via Supabase SMTP (or custom SMTP if configured)
