@@ -710,7 +710,7 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
   <span class="footer-sep">·</span>
   <a href="#" class="footer-link" onclick="showFooterModal('privacy');return false">Privacy</a>
   <span class="footer-sep">·</span>
-  <a href="mailto:hello@weldswine.com" class="footer-link">Contact</a>
+  <a href="/cdn-cgi/l/email-protection#a3cbc6cfcfcce3d4c6cfc7d0d4cacdc68dc0ccce" class="footer-link">Contact</a>
   <span class="footer-sep">·</span>
   <button class="footer-admin-btn" id="openKeyModal" title="Settings">⚙</button>
 </footer>
@@ -1089,13 +1089,14 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
 </div>
 
 <!-- AUTH MODULE -->
-<script>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
 /* ══════════════════════════════════════════════════════════════
    SUPABASE CONFIG — replace with your project values
    supabase.com → your project → Settings → API
 ══════════════════════════════════════════════════════════════ */
 const SUPABASE_URL = 'https://phcnswuwrqarikzjvfqd.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBoY25zd3V3cnFhcmlremp2ZnFkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM1OTI2NjEsImV4cCI6MjA4OTE2ODY2MX0.nW_aLGeiFNu6km1leeqTofcOqFQxe3dabNWfIPkc334';
+
 
 // These are set inside DOMContentLoaded — never at parse time
 var _sb = null;
@@ -1283,7 +1284,11 @@ async function handleSendLink() {
   submitSpinner.style.display = 'inline';
 
   try {
-    const redirectTo = window.location.origin + window.location.pathname;
+    // iOS Safari (especially PWA/home-screen) can return null for window.location.origin
+    // so we fall back to the known app URL to avoid Supabase rejecting the redirectTo value
+    const redirectTo = (window.location.origin && window.location.origin !== 'null')
+      ? window.location.origin + window.location.pathname
+      : 'https://james-weld.github.io/WeldsWine';
 
     // resetPasswordForEmail is the correct client-side method —
     // it sends a password reset link via Supabase SMTP (or custom SMTP if configured)
@@ -3114,11 +3119,4 @@ function updateKeyBadge() {
   const has = Scanner.hasUrl();
   btn.textContent = has ? '⚙ Scan ✓' : '⚙ Scan Setup';
   btn.style.color = has ? 'var(--burgundy)' : '';
-  btn.style.borderColor = has ? 'rgba(107,39,55,.3)' : '';
-}
-
-/* ── No sample data — wines load from Supabase after login ── */
-
-</script>
-</body>
-</html>
+  btn.style.bor
