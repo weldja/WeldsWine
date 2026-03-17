@@ -1539,17 +1539,29 @@ function showResetMsg(type, msg) {
 
 /* ── Sign out ────────────────────────────────────────────── */
 async function handleSignOut() {
-  // Clear UI immediately — don't wait for network
+  // 1. Clear app cache immediately
   try {
     const cacheKey = 'wwwCache_' + (_currentUser?.id || '');
     sessionStorage.removeItem(cacheKey);
     localStorage.removeItem(cacheKey);
   } catch(_) {}
+
+  // 2. Nuke the Supabase session from localStorage RIGHT NOW —
+  //    this stops a page refresh restoring the session before
+  //    the network signOut call completes
+  try {
+    Object.keys(localStorage)
+      .filter(k => k.startsWith('sb-') && (k.includes('auth') || k.includes('session')))
+      .forEach(k => localStorage.removeItem(k));
+  } catch(_) {}
+
+  // 3. Clear app state and show login screen instantly
   wines = [];
   _winesLoaded = false;
   _currentUser = null;
   hideApp();
-  // Sign out from Supabase in the background — UI already updated
+
+  // 4. Tell Supabase server to invalidate the token (best-effort)
   if (_sb) _sb.auth.signOut().catch(() => {});
 }
 
