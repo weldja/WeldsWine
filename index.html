@@ -1284,12 +1284,8 @@ async function handleSendLink() {
   submitSpinner.style.display = 'inline';
 
   try {
-    // iOS Safari (especially PWA/home-screen) can return null for window.location.origin
-    // so we fall back to the known app URL to avoid Supabase rejecting the redirectTo value
-    const redirectTo = (window.location.origin && window.location.origin !== 'null')
-      ? window.location.origin + window.location.pathname
-      : 'https://weldja.github.io/WeldsWine/';
-
+    const redirectTo = (window.location.origin && window.location.origin !== "null") ? window.location.origin + window.location.pathname : "https://weldja.github.io/WeldsWine/";
+    console.log("redirectTo:", redirectTo); showResetMsg("info", "Trying: " + redirectTo);
     // resetPasswordForEmail is the correct client-side method —
     // it sends a password reset link via Supabase SMTP (or custom SMTP if configured)
     const { error } = await _sb.auth.resetPasswordForEmail(email, {
@@ -1311,7 +1307,7 @@ async function handleSendLink() {
 
   } catch(e) {
     console.error('handleSendLink:', e);
-    showResetMsg('err', 'Could not send reset link — please try again');
+    showResetMsg('err', 'Could not send reset link -- ' + (e?.message || JSON.stringify(e)));
   } finally {
     submitBtn.disabled          = false;
     submitLabel.style.display   = 'inline';
