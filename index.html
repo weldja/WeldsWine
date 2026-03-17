@@ -56,16 +56,17 @@
 .auth-msg{font-family:var(--font-b);font-size:.82rem;margin-top:12px;padding:8px 12px;border-radius:var(--r);text-align:center;display:none}
 .auth-msg.ok{background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0;display:block}
 .auth-msg.err{background:#fef2f2;color:#dc2626;border:1px solid #fca5a5;display:block}
+.auth-msg.info{background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe;display:block}
 .auth-footer{margin-top:16px;text-align:center;font-family:var(--font-b);font-size:.78rem;color:var(--warm-gray);font-style:italic}
 
 /* Mobile: stack vertically, hero collapses to compact banner */
 @media(max-width:700px){
   #authScreen{flex-direction:column;overflow-y:auto}
-  .auth-hero{padding:36px 24px 28px;flex:none}
-  .auth-hero-headline{font-size:1.7rem;margin-bottom:10px}
-  .auth-hero-sub{font-size:.95rem;margin-bottom:22px}
-  .auth-hero-features{gap:10px}
-  .auth-hero-features li{font-size:.88rem}
+  .auth-hero{padding:28px 24px 20px;flex:none}
+  .auth-hero-headline{font-size:1.5rem;margin-bottom:8px}
+  .auth-hero-sub{font-size:.88rem;margin-bottom:16px}
+  .auth-hero-features{gap:8px}
+  .auth-hero-features li{font-size:.84rem}
   .auth-panel{width:100%;padding:32px 24px 44px;flex:none}
   .auth-panel-logo{display:none}
 }
@@ -535,13 +536,13 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
       <span class="auth-hero-logo-icon">🍷</span>
       <span class="auth-hero-logo-text">Welds Wine Wisdoms</span>
     </div>
-    <h1 class="auth-hero-headline">Track and remember<br>every wine you taste.</h1>
-    <p class="auth-hero-sub">A personal wine journal. Scan labels, rate wines,<br>and build your tasting history.</p>
+    <h1 class="auth-hero-headline">Your personal<br>wine journal.</h1>
+    <p class="auth-hero-sub">Scan any label with your camera. AI reads the wine details instantly. Rate, note, and build your tasting history.</p>
     <ul class="auth-hero-features">
-      <li>Scan wine labels instantly with AI</li>
-      <li>Record tasting notes and star ratings</li>
-      <li>Map your wines from around the world</li>
-      <li>Share bottles with friends</li>
+      <li>📷 Scan any label — AI fills the details</li>
+      <li>★ Rate wines and write tasting notes</li>
+      <li>🗺 Map every bottle to where you tasted it</li>
+      <li>↗ Share wines with a single link</li>
     </ul>
   </div>
 
@@ -564,7 +565,7 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
 
         <div class="auth-form-group">
           <label for="authEmail">Email</label>
-          <input type="email" id="authEmail" placeholder="you@example.com" autocomplete="email"/>
+          <input type="email" id="authEmail" placeholder="you@example.com" autocomplete="email" inputmode="email"/>
         </div>
         <div class="auth-form-group" id="authPasswordGroup">
           <label for="authPassword">Password</label>
@@ -598,7 +599,7 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
         </div>
         <div class="auth-form-group">
           <label for="resetEmail">Email</label>
-          <input type="email" id="resetEmail" placeholder="you@example.com" autocomplete="email"/>
+          <input type="email" id="resetEmail" placeholder="you@example.com" autocomplete="email" inputmode="email"/>
         </div>
         <button class="auth-btn-primary" id="resetSubmitBtn" onclick="handleSendLink()">
           <span id="resetSubmitLabel">Send Reset Link</span>
@@ -624,7 +625,7 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
         </button>
       </div>
 
-      <div class="auth-footer" id="authFooter">Your wines, your history</div>
+      <div class="auth-footer" id="authFooter">Free to use · Your data stays private</div>
     </div>
   </div>
 </div>
@@ -642,7 +643,7 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
     <div class="header-actions">
       <div class="scan-cta">
         <button class="btn-scan-primary" id="openScanModal" aria-label="Scan wine label">📷 Scan Label</button>
-        <span class="scan-hint">AI label scanning</span>
+        <span class="scan-hint">AI powered</span>
       </div>
       <div class="scan-cta">
         <button class="btn-quick-add" id="openQuickAdd" aria-label="Quick add wine">⚡ Quick Add</button>
@@ -697,7 +698,7 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
     <!-- Row 3: search -->
     <div class="toolbar-search">
       <div class="search-wrap">
-        <input type="text" id="searchInput" placeholder="Search wines…" class="search-input-toolbar"/>
+        <input type="text" id="searchInput" placeholder="Search by name, region, grape…" class="search-input-toolbar"/>
       </div>
     </div>
   </div>
@@ -708,8 +709,8 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
   <div class="onboarding-inner">
     <span class="onboarding-icon">👋</span>
     <div class="onboarding-text">
-      <strong>Welcome to your wine journal.</strong>
-      Tap <em>Scan Wine Label</em> to photograph a bottle and AI will fill the details, or use <em>Add Wine</em> to enter manually. Rate wines, view them on the map, and share favourites.
+      <strong>Welcome! Start by scanning a label.</strong>
+      Point your camera at any wine bottle — AI reads the label and fills in the details automatically. Or tap <em>⚡ Quick Add</em> to log a wine in seconds.
     </div>
     <button class="onboarding-close" onclick="dismissOnboarding()" aria-label="Dismiss">✕</button>
   </div>
@@ -747,8 +748,8 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
   </div>
   <div class="empty-state" id="emptyState" style="display:none">
     <div class="empty-icon" id="emptyIcon">🍷</div>
-    <h2 id="emptyTitle">Your cellar is empty</h2>
-    <p id="emptyMsg">Start by scanning your first wine label or adding a wine manually.</p>
+    <h2 id="emptyTitle">No wines yet</h2>
+    <p id="emptyMsg">Scan a label to add your first wine — it only takes a few seconds.</p>
     <div id="emptyScanBtn" style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
       <button class="btn-primary" onclick="document.getElementById('openScanModal').click()" style="display:flex;align-items:center;gap:7px">📷 Scan Wine Label</button>
       <button class="btn-secondary" onclick="document.getElementById('openAddModal').click()" style="display:flex;align-items:center;gap:7px">+ Add Wine Manually</button>
@@ -776,7 +777,7 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
       <button class="modal-close" id="closeQuickAdd" aria-label="Close">✕</button>
     </div>
     <div class="modal-body">
-      <p style="font-family:var(--font-b);font-size:.85rem;color:var(--warm-gray);font-style:italic;margin-bottom:16px;line-height:1.5">Log a wine in seconds. You can add more details later.</p>
+      <p style="font-family:var(--font-b);font-size:.85rem;color:var(--warm-gray);font-style:italic;margin-bottom:16px;line-height:1.5">Log a wine in seconds — just a name is required. Add more details later.</p>
       <div class="form-row">
         <div class="form-group">
           <label for="qaName">Wine Name *</label>
@@ -1223,10 +1224,14 @@ document.addEventListener('DOMContentLoaded', function() {
   // Listen for auth changes
   _sb.auth.onAuthStateChange(function(event, session) {
     _currentUser = session ? session.user : null;
+    if (event === 'PASSWORD_RECOVERY') {
+      // User clicked reset link — show password update UI
+      showPasswordRecoveryUI();
+      return;
+    }
     if (_currentUser) {
       showApp();
     } else {
-      // Only hide on explicit sign-out — not on initial session events
       if (event === 'SIGNED_OUT' || event === 'USER_DELETED') {
         hideApp();
       }
@@ -1372,13 +1377,23 @@ async function handleAuthSubmit() {
           body: JSON.stringify({ type: 'welcome', email })
         });
       } catch(_) { /* non-fatal */ }
-      showAuthMsg('ok', 'Account created — you are now signed in.');
+      showAuthMsg('ok', 'Account created! Check your email to confirm, then sign in.');
     }
   } catch(e) {
     const msg = e.message || '';
-    if (msg.includes('Invalid login')) showAuthMsg('err', 'Incorrect email or password');
-    else if (msg.includes('already registered')) showAuthMsg('err', 'An account with that email already exists — sign in instead');
-    else showAuthMsg('err', msg || 'Something went wrong, please try again');
+    if (msg.includes('Invalid login') || msg.includes('invalid_credentials')) {
+      showAuthMsg('err', 'Incorrect email or password — please try again');
+    } else if (msg.includes('already registered') || msg.includes('already exists')) {
+      showAuthMsg('err', 'An account already exists with this email — sign in instead');
+    } else if (msg.includes('Email not confirmed')) {
+      showAuthMsg('err', 'Please confirm your email address first — check your inbox');
+    } else if (msg.includes('network') || msg.includes('fetch')) {
+      showAuthMsg('err', 'Network error — check your connection and try again');
+    } else if (msg.includes('rate') || msg.includes('429')) {
+      showAuthMsg('err', 'Too many attempts — please wait a minute and try again');
+    } else {
+      showAuthMsg('err', msg || 'Something went wrong — please try again');
+    }
   } finally {
     setAuthLoading(false);
   }
@@ -1398,18 +1413,18 @@ async function handleSendLink() {
   submitSpinner.style.display = 'inline';
 
   try {
-    const redirectTo = (window.location.origin && window.location.origin !== "null")
-      ? window.location.origin + window.location.pathname
-      : "https://weldja.github.io/WeldsWine/";
+    // Build redirectTo robustly — iOS Safari PWA can return 'null' for origin
+    const APP_URL = 'https://weldja.github.io/WeldsWine/';
+    const origin  = window.location.origin;
+    const redirectTo = (origin && origin !== 'null' && origin !== 'undefined' && origin.startsWith('http'))
+      ? (window.location.href.split('?')[0].split('#')[0])
+      : APP_URL;
 
-    // resetPasswordForEmail is the correct client-side method —
-    // it sends a password reset link via Supabase SMTP (or custom SMTP if configured)
-    const { error } = await _sb.auth.resetPasswordForEmail(email, {
-      redirectTo
-    });
+    const { error } = await _sb.auth.resetPasswordForEmail(email, { redirectTo });
 
-    // Don't expose whether the account exists — always show success
-    if (error && !error.message?.toLowerCase().includes('not found')) {
+    // Always show success — don't reveal if account exists
+    if (error && !error.message?.toLowerCase().includes('not found') &&
+        !error.message?.toLowerCase().includes('user not found')) {
       throw error;
     }
 
@@ -1423,7 +1438,16 @@ async function handleSendLink() {
 
   } catch(e) {
     console.error('handleSendLink:', e);
-    showResetMsg('err', 'Could not send reset link — ' + (e?.message || 'please try again'));
+    const errMsg = e?.message || '';
+    if (errMsg.includes('rate') || errMsg.includes('429')) {
+      showResetMsg('err', 'Too many attempts — please wait a minute and try again');
+    } else if (errMsg.includes('network') || errMsg.includes('fetch')) {
+      showResetMsg('err', 'Network error — check your connection and try again');
+    } else if (errMsg.includes('smtp') || errMsg.includes('sending') || errMsg.includes('500')) {
+      showResetMsg('err', 'Email could not be sent — please contact support');
+    } else {
+      showResetMsg('err', 'Could not send reset link — please try again');
+    }
   } finally {
     submitBtn.disabled          = false;
     submitLabel.style.display   = 'inline';
@@ -1433,6 +1457,79 @@ async function handleSendLink() {
 
 // Legacy alias
 function handleMagicLink() { showAuthState('reset'); }
+
+/* ── Password recovery (from email link) ─────────────────── */
+function showPasswordRecoveryUI() {
+  // Show the auth screen with a new password form
+  const authScreen = document.getElementById('authScreen');
+  const card = document.querySelector('.auth-card');
+  if (!authScreen || !card) return;
+  authScreen.classList.remove('hidden');
+  card.innerHTML = `
+    <div style="text-align:center;margin-bottom:20px">
+      <div style="font-size:2rem;margin-bottom:8px">🔑</div>
+      <div style="font-family:var(--font-d);font-size:1.05rem;color:var(--charcoal);margin-bottom:6px;font-weight:600">Set a new password</div>
+      <div style="font-family:var(--font-b);font-size:.85rem;color:var(--warm-gray);line-height:1.6">Choose a strong password of at least 8 characters.</div>
+    </div>
+    <div class="auth-form-group">
+      <label for="newPassword">New Password</label>
+      <div style="position:relative">
+        <input type="password" id="newPassword" placeholder="••••••••" autocomplete="new-password" style="width:100%"/>
+        <button type="button" onclick="toggleNewPasswordVisibility()" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--warm-gray);font-size:.8rem;padding:2px 4px">Show</button>
+      </div>
+    </div>
+    <div class="auth-form-group">
+      <label for="confirmPassword">Confirm Password</label>
+      <input type="password" id="confirmPassword" placeholder="••••••••" autocomplete="new-password" style="width:100%"/>
+    </div>
+    <button class="auth-btn-primary" id="updatePasswordBtn" onclick="handleUpdatePassword()" style="margin-top:4px">
+      <span id="updatePasswordLabel">Update Password</span>
+      <span id="updatePasswordSpinner" style="display:none">Updating…</span>
+    </button>
+    <div class="auth-msg" id="recoveryMsg"></div>
+  `;
+  // Wire enter key
+  ['newPassword','confirmPassword'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('keydown', e => { if (e.key === 'Enter') handleUpdatePassword(); });
+  });
+  setTimeout(() => document.getElementById('newPassword')?.focus(), 200);
+}
+
+function toggleNewPasswordVisibility() {
+  const input = document.getElementById('newPassword');
+  if (!input) return;
+  input.type = input.type === 'password' ? 'text' : 'password';
+}
+
+async function handleUpdatePassword() {
+  const pwd     = (document.getElementById('newPassword')?.value || '').trim();
+  const confirm = (document.getElementById('confirmPassword')?.value || '').trim();
+  const msgEl   = document.getElementById('recoveryMsg');
+  const btn     = document.getElementById('updatePasswordBtn');
+  const label   = document.getElementById('updatePasswordLabel');
+  const spinner = document.getElementById('updatePasswordSpinner');
+
+  if (!pwd) { if(msgEl){msgEl.className='auth-msg err';msgEl.textContent='Please enter a new password';} return; }
+  if (pwd.length < 8) { if(msgEl){msgEl.className='auth-msg err';msgEl.textContent='Password must be at least 8 characters';} return; }
+  if (pwd !== confirm) { if(msgEl){msgEl.className='auth-msg err';msgEl.textContent='Passwords do not match';} return; }
+
+  if (btn) btn.disabled = true;
+  if (label) label.style.display = 'none';
+  if (spinner) spinner.style.display = 'inline';
+
+  try {
+    const { error } = await _sb.auth.updateUser({ password: pwd });
+    if (error) throw error;
+    if (msgEl) { msgEl.className='auth-msg ok'; msgEl.textContent='Password updated — signing you in…'; }
+    setTimeout(() => showApp(), 1200);
+  } catch(e) {
+    if (msgEl) { msgEl.className='auth-msg err'; msgEl.textContent=e.message||'Failed to update password — please try again'; }
+    if (btn) btn.disabled = false;
+    if (label) label.style.display = 'inline';
+    if (spinner) spinner.style.display = 'none';
+  }
+}
 
 function showResetMsg(type, msg) {
   const el = document.getElementById('resetMsg');
@@ -1809,6 +1906,7 @@ function createCard(w) {
 
   const meta   = [w.winery, w.vintage, w.country].filter(Boolean).join(' · ');
   const tags   = [w.region, w.grape, w.style].filter(Boolean);
+  const priceTag = w.price ? w.price : null;
   const dateStr= w.dateTasted ? formatDate(w.dateTasted) : '';
 
   const body = document.createElement('div');
@@ -1824,8 +1922,7 @@ function createCard(w) {
         </div>
       </div>
       ${meta?`<div class="card-meta">${escHtml(meta)}</div>`:''}
-      ${tags.length?`<div class="card-tags">${tags.map(t=>`<span class="card-tag">${escHtml(t)}</span>`).join('')}${w.buyAgain?'<span class="card-buy-badge">↺ Buy again</span>':''}</div>`:''}
-      ${!tags.length && w.buyAgain?`<div class="card-tags"><span class="card-buy-badge">↺ Buy again</span></div>`:''}
+      ${tags.length||priceTag||w.buyAgain?`<div class="card-tags">${tags.map(t=>`<span class="card-tag">${escHtml(t)}</span>`).join('')}${priceTag?`<span class="card-tag" style="color:var(--burgundy);border-color:rgba(123,30,58,.25)">${escHtml(priceTag)}</span>`:''}${w.buyAgain?'<span class="card-buy-badge">↺ Buy again</span>':''}</div>`:''}
       ${w.notes?`<p class="card-notes">${escHtml(w.notes)}</p>`:''}
       ${w.locLabel?`<div class="card-location">📍 ${escHtml(w.locLabel)}</div>`:''}
     </div>
@@ -2271,7 +2368,7 @@ async function handleSave(e) {
   // Save to DB first — only update local state on success
   const ok = await saveWineToDB(entry);
   if (!ok) {
-    showToast('Failed to save — check your connection');
+    showToast('Save failed — check your internet connection and try again');
     saveBtn.disabled = false;
     saveBtn.textContent = 'Save Wine';
     return;
@@ -2476,10 +2573,12 @@ function showFooterModal(type) {
   document.getElementById('infoModalTitle').textContent = content.title;
   document.getElementById('infoModalBody').innerHTML = content.body;
   document.getElementById('infoOverlay').classList.add('open');
+  lockScroll();
 }
 
 function closeInfoModal() {
   document.getElementById('infoOverlay').classList.remove('open');
+  unlockScroll();
 }
 
 /* ── Quick Add ───────────────────────────────────────────── */
@@ -2529,7 +2628,7 @@ async function handleQuickAdd() {
 
   const ok = await saveWineToDB(entry);
   if (!ok) {
-    showToast('Failed to save — check your connection');
+    showToast('Save failed — check your internet connection and try again');
     btn.disabled = false;
     btn.textContent = 'Save Wine';
     return;
@@ -3134,9 +3233,9 @@ function showScanErrorUI(err) {
     NO_KEY:           ['Scan not configured',   'Click ⚙ Scan Setup in the toolbar and follow the 2-step instructions.'],
     NO_KEY_IN_WORKER: ['Key missing in Worker', 'You forgot to replace PASTE_YOUR_KEY_HERE in cloudflare-worker.js before deploying. Edit the file, add your key, and redeploy.'],
     BAD_KEY:          ['Invalid API key',        'The key in your cloudflare-worker.js was rejected. Check it at console.anthropic.com, update the Worker code, and redeploy.'],
-    RATE_LIMIT:  ['Rate limit reached', 'Too many requests. Wait a minute and try again.'],
+    RATE_LIMIT:  ['Rate limit reached', 'Too many scans in a short time. Wait a minute and try again.'],
     PARSE_ERROR: ['Could not read the label', 'Try a clearer, better-lit photo with the label filling the frame.'],
-    NETWORK_ERROR:['Could not reach proxy', 'Check the Worker URL in ⚙ Scan Setup is correct and that the Worker is deployed and running in Cloudflare.']
+    NETWORK_ERROR:['Could not connect', 'Check your internet connection, then verify the Worker URL in ⚙ is correct.']
   };
   const [title,detail]=msgs[m]||['Analysis failed', m||'Unexpected error. Please try again.'];
   document.getElementById('scanErrorMsg').textContent=title;
