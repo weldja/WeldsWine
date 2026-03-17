@@ -31,6 +31,7 @@
 .auth-hero-features{display:flex;flex-direction:column;gap:13px;list-style:none}
 .auth-hero-features li{display:flex;align-items:center;gap:12px;font-family:var(--font-b);font-size:.96rem;color:rgba(245,239,230,.85)}
 .auth-hero-features li::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--gold);flex-shrink:0}
+.auth-hero-cta-note{font-family:var(--font-b);font-size:.78rem;color:rgba(245,239,230,.45);margin-top:28px;letter-spacing:.04em}
 
 /* Right: form panel */
 .auth-panel{width:400px;flex-shrink:0;background:var(--ivory);display:flex;flex-direction:column;justify-content:center;padding:52px 40px;overflow-y:auto}
@@ -46,9 +47,9 @@
 .auth-tab.active{background:var(--ivory);color:var(--burgundy);box-shadow:0 1px 3px var(--shadow)}
 .auth-form-group{margin-bottom:14px}
 .auth-form-group label{display:block;font-family:var(--font-b);font-size:.74rem;letter-spacing:.08em;text-transform:uppercase;color:var(--warm-gray);margin-bottom:5px}
-.auth-form-group input{width:100%;border:1px solid var(--light-gray);border-radius:var(--r);padding:10px 12px;font-family:var(--font-b);font-size:16px;color:var(--charcoal);background:var(--cream);outline:none;transition:border-color .2s}
+.auth-form-group input{width:100%;border:1px solid var(--light-gray);border-radius:var(--r);padding:11px 13px;font-family:var(--font-b);font-size:16px;color:var(--charcoal);background:var(--cream);outline:none;transition:border-color .2s;min-height:44px}
 .auth-form-group input:focus{border-color:var(--burgundy);background:var(--ivory)}
-.auth-btn-primary{width:100%;background:var(--burgundy);color:var(--ivory);border:none;border-radius:var(--r);padding:12px;font-family:var(--font-d);font-size:.95rem;font-weight:600;letter-spacing:.05em;cursor:pointer;transition:var(--tr);margin-top:4px}
+.auth-btn-primary{width:100%;background:var(--burgundy);color:var(--ivory);border:none;border-radius:var(--r);padding:14px;font-family:var(--font-d);font-size:1rem;font-weight:600;letter-spacing:.05em;cursor:pointer;transition:var(--tr);margin-top:6px;min-height:48px}
 .auth-btn-primary:hover{background:var(--burgundy-lt)}
 .auth-btn-primary:disabled{opacity:.5;cursor:not-allowed}
 .auth-divider{display:flex;align-items:center;gap:10px;margin:16px 0;color:var(--light-gray);font-family:var(--font-b);font-size:.8rem}
@@ -536,14 +537,15 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
       <span class="auth-hero-logo-icon">🍷</span>
       <span class="auth-hero-logo-text">Welds Wine Wisdoms</span>
     </div>
-    <h1 class="auth-hero-headline">Your personal<br>wine journal.</h1>
-    <p class="auth-hero-sub">Scan any label with your camera. AI reads the wine details instantly. Rate, note, and build your tasting history.</p>
+    <h1 class="auth-hero-headline">Remember every<br>great wine.</h1>
+    <p class="auth-hero-sub">Point your camera at any label — AI identifies the wine in seconds. Build your personal tasting journal, map where you drank it, and share favourites.</p>
     <ul class="auth-hero-features">
-      <li>📷 Scan any label — AI fills the details</li>
-      <li>★ Rate wines and write tasting notes</li>
-      <li>🗺 Map every bottle to where you tasted it</li>
-      <li>↗ Share wines with a single link</li>
+      <li>📷 <strong>Scan any label</strong> — AI fills every detail</li>
+      <li>★ <strong>Rate &amp; note</strong> every bottle you taste</li>
+      <li>🗺 <strong>Map</strong> wines to where you tasted them</li>
+      <li>↗ <strong>Share</strong> a bottle with one tap</li>
     </ul>
+    <p class="auth-hero-cta-note">Free to use · Your data stays private</p>
   </div>
 
   <!-- Right: auth form -->
@@ -560,7 +562,7 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
       <div id="authStateMain">
         <div class="auth-tabs">
           <button class="auth-tab active" id="tabSignIn" onclick="switchAuthTab('signin')">Sign In</button>
-          <button class="auth-tab" id="tabSignUp" onclick="switchAuthTab('signup')">Create Account</button>
+          <button class="auth-tab" id="tabSignUp" onclick="switchAuthTab('signup')">New Account</button>
         </div>
 
         <div class="auth-form-group">
@@ -625,7 +627,7 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
         </button>
       </div>
 
-      <div class="auth-footer" id="authFooter">Free to use · Your data stays private</div>
+      
     </div>
   </div>
 </div>
@@ -649,7 +651,7 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
         <button class="btn-quick-add" id="openQuickAdd" aria-label="Quick add wine">⚡ Quick Add</button>
         <span class="scan-hint">Log in seconds</span>
       </div>
-      <button class="btn-add-subtle" id="openAddModal" aria-label="Add wine manually">+ Full Form</button>
+      <button class="btn-add-subtle" id="openAddModal" aria-label="Add wine manually">+ Add</button>
       <div class="user-badge" id="userBadge" style="display:none">
         <div class="user-badge-avatar" id="userAvatar">?</div>
       </div>
@@ -709,8 +711,8 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
   <div class="onboarding-inner">
     <span class="onboarding-icon">👋</span>
     <div class="onboarding-text">
-      <strong>Welcome! Start by scanning a label.</strong>
-      Point your camera at any wine bottle — AI reads the label and fills in the details automatically. Or tap <em>⚡ Quick Add</em> to log a wine in seconds.
+      <strong>Welcome to your wine journal!</strong>
+      Tap <em>📷 Scan Label</em> to photograph any bottle — AI fills in the details. Or use <em>⚡ Quick Add</em> to log a wine in seconds. Everything is saved to your account.
     </div>
     <button class="onboarding-close" onclick="dismissOnboarding()" aria-label="Dismiss">✕</button>
   </div>
@@ -748,8 +750,8 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
   </div>
   <div class="empty-state" id="emptyState" style="display:none">
     <div class="empty-icon" id="emptyIcon">🍷</div>
-    <h2 id="emptyTitle">No wines yet</h2>
-    <p id="emptyMsg">Scan a label to add your first wine — it only takes a few seconds.</p>
+    <h2 id="emptyTitle">Your cellar is empty</h2>
+    <p id="emptyMsg">Add your first wine by scanning a label — AI does the hard work.</p>
     <div id="emptyScanBtn" style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
       <button class="btn-primary" onclick="document.getElementById('openScanModal').click()" style="display:flex;align-items:center;gap:7px">📷 Scan Wine Label</button>
       <button class="btn-secondary" onclick="document.getElementById('openAddModal').click()" style="display:flex;align-items:center;gap:7px">+ Add Wine Manually</button>
@@ -1257,6 +1259,9 @@ document.addEventListener('DOMContentLoaded', function() {
 }); // end DOMContentLoaded
 
 function showApp() {
+  // Guard: don't re-init if already showing for same user
+  if (document.getElementById('authScreen').classList.contains('hidden') &&
+      _winesLoaded && wines.length > 0) return;
   document.getElementById('authScreen').classList.add('hidden');
   const badge = document.getElementById('userBadge');
   badge.style.display = 'flex';
@@ -1356,8 +1361,9 @@ async function handleAuthSubmit() {
   const password = document.getElementById('authPassword').value;
   const isSignIn = document.getElementById('tabSignIn').classList.contains('active');
 
-  if (!email)    { showAuthMsg('err', 'Please enter your email'); return; }
-  if (!password) { showAuthMsg('err', 'Please enter a password'); return; }
+  if (!email)    { showAuthMsg('err', 'Please enter your email address'); return; }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showAuthMsg('err', 'Please enter a valid email address'); return; }
+  if (!password) { showAuthMsg('err', 'Please enter your password'); return; }
   if (!isSignIn && password.length < 8) { showAuthMsg('err', 'Password must be at least 8 characters'); return; }
 
   setAuthLoading(true);
@@ -1401,57 +1407,80 @@ async function handleAuthSubmit() {
 
 /* ── Forgot password ─────────────────────────────────────── */
 async function handleSendLink() {
-  if (!_sb) { showResetMsg('err', 'Still loading — please wait a moment and try again'); return; }
-  const email = document.getElementById('resetEmail').value.trim();
+  if (!_sb) { showResetMsg('err', 'Still loading — please try again in a moment'); return; }
+
+  const email = (document.getElementById('resetEmail')?.value || '').trim();
   if (!email) { showResetMsg('err', 'Please enter your email address'); return; }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    showResetMsg('err', 'Please enter a valid email address'); return;
+  }
 
   const submitBtn     = document.getElementById('resetSubmitBtn');
   const submitLabel   = document.getElementById('resetSubmitLabel');
   const submitSpinner = document.getElementById('resetSubmitSpinner');
-  submitBtn.disabled         = true;
-  submitLabel.style.display  = 'none';
-  submitSpinner.style.display = 'inline';
+  if (submitBtn)     submitBtn.disabled          = true;
+  if (submitLabel)   submitLabel.style.display   = 'none';
+  if (submitSpinner) submitSpinner.style.display = 'inline';
 
   try {
-    // Build redirectTo robustly — iOS Safari PWA can return 'null' for origin
-    const APP_URL = 'https://weldja.github.io/WeldsWine/';
-    const origin  = window.location.origin;
-    const redirectTo = (origin && origin !== 'null' && origin !== 'undefined' && origin.startsWith('http'))
-      ? (window.location.href.split('?')[0].split('#')[0])
-      : APP_URL;
+    // Determine redirectTo — must exactly match Supabase allowed redirect URLs.
+    // iOS Safari PWA: window.location.origin can be 'null' or empty.
+    // We use the canonical app URL as the safe fallback.
+    const CANONICAL = 'https://weldja.github.io/WeldsWine/';
+    let redirectTo = CANONICAL;
+    try {
+      const o = window.location.origin;
+      if (o && o !== 'null' && o !== 'undefined' && o.startsWith('http')) {
+        // Strip any query string or hash — Supabase requires a clean URL
+        redirectTo = window.location.protocol + '//' + window.location.host + window.location.pathname;
+        // Ensure trailing slash matches Supabase config
+        if (!redirectTo.endsWith('/')) redirectTo += '/';
+      }
+    } catch (_) { redirectTo = CANONICAL; }
 
     const { error } = await _sb.auth.resetPasswordForEmail(email, { redirectTo });
 
-    // Always show success — don't reveal if account exists
-    if (error && !error.message?.toLowerCase().includes('not found') &&
-        !error.message?.toLowerCase().includes('user not found')) {
-      throw error;
-    }
+    // Supabase returns an error for unknown emails on some configs — treat as success
+    // to avoid revealing whether an account exists (security best practice)
+    const isHarmless = !error ||
+      (error.message || '').toLowerCase().includes('not found') ||
+      (error.message || '').toLowerCase().includes('user not found') ||
+      (error.message || '').toLowerCase().includes('no user');
 
+    if (!isHarmless) throw error;
+
+    // Show confirmation
     const sentMsg = document.getElementById('sentEmailMsg');
-    sentMsg.textContent = 'A password reset link has been sent to ';
-    const strong = document.createElement('strong');
-    strong.textContent = email;
-    sentMsg.appendChild(strong);
-    sentMsg.appendChild(document.createTextNode('. Check your inbox (and spam folder).'));
+    if (sentMsg) {
+      sentMsg.textContent = '';
+      sentMsg.appendChild(document.createTextNode('A reset link has been sent to '));
+      const strong = document.createElement('strong');
+      strong.textContent = email;
+      sentMsg.appendChild(strong);
+      sentMsg.appendChild(document.createTextNode('. Check your inbox and spam folder.'));
+    }
     showAuthState('sent');
 
   } catch(e) {
-    console.error('handleSendLink:', e);
-    const errMsg = e?.message || '';
-    if (errMsg.includes('rate') || errMsg.includes('429')) {
-      showResetMsg('err', 'Too many attempts — please wait a minute and try again');
-    } else if (errMsg.includes('network') || errMsg.includes('fetch')) {
-      showResetMsg('err', 'Network error — check your connection and try again');
-    } else if (errMsg.includes('smtp') || errMsg.includes('sending') || errMsg.includes('500')) {
-      showResetMsg('err', 'Email could not be sent — please contact support');
+    console.error('[reset]', e);
+    const m = (e?.message || '').toLowerCase();
+    let msg;
+    if (m.includes('rate') || m.includes('429') || m.includes('too many')) {
+      msg = 'Too many attempts — please wait a few minutes and try again';
+    } else if (m.includes('network') || m.includes('fetch') || m.includes('failed to fetch')) {
+      msg = 'No internet connection — please check your network and try again';
+    } else if (m.includes('smtp') || m.includes('email') || m.includes('send') || m.includes('500')) {
+      msg = 'The email service is temporarily unavailable — please try again shortly';
+    } else if (m.includes('invalid') && m.includes('email')) {
+      msg = 'Please enter a valid email address';
     } else {
-      showResetMsg('err', 'Could not send reset link — please try again');
+      msg = 'Could not send reset link — please try again';
     }
+    showResetMsg('err', msg);
   } finally {
-    submitBtn.disabled          = false;
-    submitLabel.style.display   = 'inline';
-    submitSpinner.style.display = 'none';
+    if (submitBtn)     submitBtn.disabled          = false;
+    if (submitLabel)   submitLabel.style.display   = 'inline';
+    if (submitSpinner) submitSpinner.style.display = 'none';
   }
 }
 
@@ -2390,7 +2419,7 @@ async function handleSave(e) {
   if (idx >= 0) { entry.createdAt = wines[idx].createdAt; wines[idx] = entry; }
   else { wines.unshift(entry); }
 
-  showToast(idx >= 0 ? 'Wine updated ✓' : 'Wine saved ✓');
+  showToast(idx >= 0 ? '✓ Wine updated' : '✓ Wine saved to your journal');
   closeModal();
 
   activeFilter = 'all';
@@ -3242,11 +3271,11 @@ function showScanErrorUI(err) {
   showScanScreen('scanError');
   const m=err.message||'';
   const msgs={
-    NO_KEY:           ['Scan not configured',   'Click ⚙ Scan Setup in the toolbar and follow the 2-step instructions.'],
+    NO_KEY:           ['Scan not set up',        'Tap ⚙ in the footer to add your Worker URL and enable AI scanning.'],
     NO_KEY_IN_WORKER: ['Key missing in Worker', 'You forgot to replace PASTE_YOUR_KEY_HERE in cloudflare-worker.js before deploying. Edit the file, add your key, and redeploy.'],
-    BAD_KEY:          ['Invalid API key',        'The key in your cloudflare-worker.js was rejected. Check it at console.anthropic.com, update the Worker code, and redeploy.'],
+    BAD_KEY:          ['API key rejected',        'The Anthropic key in your Worker was rejected. Check console.anthropic.com, update the Worker, and redeploy.'],
     RATE_LIMIT:  ['Rate limit reached', 'Too many scans in a short time. Wait a minute and try again.'],
-    PARSE_ERROR: ['Could not read the label', 'Try a clearer, better-lit photo with the label filling the frame.'],
+    PARSE_ERROR: ['Label not recognised',     'Try again with a clearer, well-lit photo — make sure the label fills the frame.'],
     NETWORK_ERROR:['Could not connect', 'Check your internet connection, then verify the Worker URL in ⚙ is correct.']
   };
   const [title,detail]=msgs[m]||['Analysis failed', m||'Unexpected error. Please try again.'];
@@ -3435,11 +3464,16 @@ function updateKeyBadge() {
 let _scrollLockCount = 0;
 function lockScroll() {
   _scrollLockCount++;
-  if (_scrollLockCount === 1) document.body.style.overflow = 'hidden';
+  if (_scrollLockCount === 1) {
+    document.body.style.overflow = 'hidden';
+  }
 }
 function unlockScroll() {
-  _scrollLockCount = Math.max(0, _scrollLockCount - 1);
-  if (_scrollLockCount === 0) document.body.style.overflow = '';
+  if (_scrollLockCount <= 0) return; // already unlocked — no-op
+  _scrollLockCount--;
+  if (_scrollLockCount === 0) {
+    document.body.style.overflow = '';
+  }
 }
 
 /* ── Hamburger ───────────────────────────────────────────── */
