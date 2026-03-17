@@ -459,9 +459,9 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
   .filter-tabs{flex-wrap:wrap}
   .logo-sub{display:none}
   .header-actions{gap:4px}
-  .btn-scan-primary{padding:6px 10px;font-size:.76rem}
+  .btn-scan-primary{padding:6px 8px;font-size:.74rem}
+  .btn-quick-add{padding:5px 8px;font-size:.74rem}
   .btn-add-subtle{display:none}
-  .btn-quick-add{display:none}
 }
 /* Larger touch targets on true touch devices */
 @media(hover:none){
@@ -641,11 +641,14 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
     </div>
     <div class="header-actions">
       <div class="scan-cta">
-        <button class="btn-scan-primary" id="openScanModal" aria-label="Scan wine label">📷 Scan Wine Label</button>
-        <span class="scan-hint">Fastest way to add a wine</span>
+        <button class="btn-scan-primary" id="openScanModal" aria-label="Scan wine label">📷 Scan Label</button>
+        <span class="scan-hint">AI label scanning</span>
       </div>
-      <button class="btn-add-subtle" id="openAddModal" aria-label="Add wine manually">+ Add Wine</button>
-      <button class="btn-quick-add" id="openQuickAdd" aria-label="Quick add wine" title="Log a wine in seconds">⚡ Quick Add</button>
+      <div class="scan-cta">
+        <button class="btn-quick-add" id="openQuickAdd" aria-label="Quick add wine">⚡ Quick Add</button>
+        <span class="scan-hint">Log in seconds</span>
+      </div>
+      <button class="btn-add-subtle" id="openAddModal" aria-label="Add wine manually">+ Full Form</button>
       <div class="user-badge" id="userBadge" style="display:none">
         <div class="user-badge-avatar" id="userAvatar">?</div>
       </div>
@@ -788,6 +791,20 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
         <div class="form-group">
           <label for="qaVintage">Vintage</label>
           <input type="number" id="qaVintage" placeholder="e.g. 2021" min="1900" max="2099"/>
+        </div>
+      </div>
+      <div class="form-row two-col">
+        <div class="form-group">
+          <label for="qaPrice">Price</label>
+          <input type="text" id="qaPrice" placeholder="e.g. £14.99" autocomplete="off"/>
+        </div>
+        <div class="form-group">
+          <label for="qaStyle">Style</label>
+          <select id="qaStyle">
+            <option value="">— select —</option>
+            <option>Red</option><option>White</option><option>Rosé</option>
+            <option>Sparkling</option><option>Dessert</option><option>Fortified</option>
+          </select>
         </div>
       </div>
       <div class="form-group" style="margin-bottom:18px">
@@ -1608,7 +1625,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('cancelQuickAdd').addEventListener('click', closeQuickAdd);
   document.getElementById('closeQuickAdd').addEventListener('click', closeQuickAdd);
   document.getElementById('quickAddOverlay').addEventListener('click', e => { if (e.target === document.getElementById('quickAddOverlay')) closeQuickAdd(); });
-  ['qaName','qaCountry','qaVintage'].forEach(id => {
+  ['qaName','qaCountry','qaVintage','qaPrice'].forEach(id => {
     document.getElementById(id).addEventListener('keydown', e => { if (e.key === 'Enter') handleQuickAdd(); });
   });
 });
@@ -2470,6 +2487,8 @@ function openQuickAdd() {
   document.getElementById('qaName').value    = '';
   document.getElementById('qaCountry').value = '';
   document.getElementById('qaVintage').value = '';
+  document.getElementById('qaPrice').value   = '';
+  document.getElementById('qaStyle').value   = '';
   document.getElementById('qaRating').value  = '0';
   document.querySelectorAll('#qaStarInput .star').forEach(s => s.classList.remove('filled'));
   document.getElementById('quickAddOverlay').classList.add('open');
@@ -2496,7 +2515,9 @@ async function handleQuickAdd() {
     country:     document.getElementById('qaCountry').value.trim() || null,
     vintage:     document.getElementById('qaVintage').value || null,
     rating:      parseInt(document.getElementById('qaRating').value, 10) || null,
-    winery:      null, region: null, grape: null, style: null,
+    price:       document.getElementById('qaPrice').value.trim() || null,
+    style:       document.getElementById('qaStyle').value || null,
+    winery:      null, region: null, grape: null,
     price:       null, purchasedFrom: null,
     dateTasted:  new Date().toISOString().slice(0, 10),
     notes:       null, isFavourite: false, buyAgain: false,
