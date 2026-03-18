@@ -477,8 +477,7 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
 .skeleton-card .sk-line.wide{width:80%}
 .skeleton-card .sk-line.mid{width:55%}
 .skeleton-card .sk-line.short{width:35%;height:10px}
-/* Mobile hamburger — visibility controlled entirely by JS */
-#mobileMenuBtn { display: none }
+
 </style>
 </head>
 <body>
@@ -636,8 +635,7 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
         <div class="user-badge-avatar" id="userAvatar">?</div>
         <button class="btn-signout" onclick="handleSignOut()">Sign out</button>
       </div>
-      <button onclick="openMobileMenu()" aria-label="Menu" id="mobileMenuBtn"
-        style="display:none;background:none;border:1px solid rgba(196,120,138,.3);border-radius:4px;color:rgba(245,239,230,.8);font-size:1.1rem;cursor:pointer;padding:5px 10px;line-height:1">☰</button>
+
     </div>
   </div>
 </header>
@@ -3316,6 +3314,15 @@ function closeMobileMenu() {
   document.body.style.overflow = '';
 }
 </script>
+
+<!-- MOBILE HAMBURGER FAB — fixed position, always on top -->
+<button id="mobileMenuBtn" onclick="openMobileMenu()" aria-label="Open menu"
+  style="display:none;position:fixed;bottom:24px;right:20px;z-index:350;
+         width:52px;height:52px;border-radius:50%;border:none;cursor:pointer;
+         background:var(--burgundy);color:var(--parchment);font-size:1.4rem;
+         box-shadow:0 4px 20px rgba(44,20,36,.4);
+         align-items:center;justify-content:center;
+         transition:transform .2s,box-shadow .2s">☰</button>
 
 </body>
 </html>
