@@ -1135,7 +1135,6 @@ var _isRecoveryFlow = false;
 (function() {
   var hash = window.location.hash;
   var search = window.location.search;
-  alert('DEBUG: hash=' + hash + ' search=' + search);
   if (hash.includes('type=recovery') || search.includes('type=recovery') ||
       (hash.includes('access_token') && hash.includes('recovery'))) {
     _isRecoveryFlow = true;
@@ -1168,7 +1167,6 @@ var _appReady = false;
 var _pendingShowApp = false;
 
 document.addEventListener('DOMContentLoaded', function() {
-  alert('DOMContentLoaded fired. isRecovery=' + _isRecoveryFlow);
 
   // DOMContentLoaded guarantees all external scripts have run
   if (!_ensureSb()) {
@@ -1191,12 +1189,15 @@ document.addEventListener('DOMContentLoaded', function() {
   // Listen for auth changes
   _sb.auth.onAuthStateChange(function(event, session) {
     console.log('onAuthStateChange:', event, 'isRecovery:', _isRecoveryFlow, session ? session.user?.id : 'no session');
-    alert('AUTH EVENT: ' + event + ' | isRecovery: ' + _isRecoveryFlow);
     if (event === 'PASSWORD_RECOVERY' || (event === 'SIGNED_IN' && _isRecoveryFlow)) {
       _isRecoveryFlow = false;
       _currentUser = session ? session.user : null;
       document.getElementById('authScreen').classList.remove('hidden');
       showAuthState('updatePassword');
+      return;
+    }
+    // During recovery flow, ignore SIGNED_OUT so we don't flash the login screen
+    if (event === 'SIGNED_OUT' && _isRecoveryFlow) {
       return;
     }
     _currentUser = session ? session.user : null;
