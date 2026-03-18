@@ -477,11 +477,8 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
 .skeleton-card .sk-line.wide{width:80%}
 .skeleton-card .sk-line.mid{width:55%}
 .skeleton-card .sk-line.short{width:35%;height:10px}
-/* Mobile hamburger — hidden until JS shows it */
-#mobileMenuBtn { display: none !important }
-@media(max-width:480px){
-  .btn-signout { display: none !important }
-}
+/* Mobile hamburger — visibility controlled entirely by JS */
+#mobileMenuBtn { display: none }
 </style>
 </head>
 <body>
@@ -640,7 +637,7 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
         <button class="btn-signout" onclick="handleSignOut()">Sign out</button>
       </div>
       <button onclick="openMobileMenu()" aria-label="Menu" id="mobileMenuBtn"
-        style="background:none;border:none;color:rgba(245,239,230,.7);font-size:1.3rem;cursor:pointer;padding:4px 8px;line-height:1">☰</button>
+        style="display:none;background:none;border:1px solid rgba(196,120,138,.3);border-radius:4px;color:rgba(245,239,230,.8);font-size:1.1rem;cursor:pointer;padding:5px 10px;line-height:1">☰</button>
     </div>
   </div>
 </header>
@@ -1212,54 +1209,32 @@ document.addEventListener('DOMContentLoaded', function() {
 }); // end DOMContentLoaded
 
 function showApp() {
+  // Show header and hamburger immediately — before any early returns
+  try {
+    document.getElementById('authScreen').classList.add('hidden');
+    var _badge = document.getElementById('userBadge');
+    if (_badge) _badge.style.display = 'flex';
+    var _eml = _currentUser ? (_currentUser.email || '') : '';
+    var _av  = document.getElementById('userAvatar');
+    if (_av) _av.textContent = _eml ? _eml[0].toUpperCase() : '✓';
+    var _mb  = document.getElementById('mobileMenuBtn');
+    if (_mb) _mb.style.display = 'block';
+  } catch(_e) { console.warn('showApp header error', _e); }
+
   if (!_appReady) {
     _pendingShowApp = true;
-    try {
-      document.getElementById('authScreen').classList.add('hidden');
-      const badge = document.getElementById('userBadge');
-      if (badge) badge.style.display = 'flex';
-      document.body.classList.add('app-ready');
-      var mb = document.getElementById('mobileMenuBtn');
-      if (mb) mb.style.setProperty('display', window.innerWidth <= 480 ? 'block' : 'none', 'important');
-      const email = _currentUser?.email || '';
-      const avatar = document.getElementById('userAvatar');
-      if (avatar) avatar.textContent = email ? email[0].toUpperCase() : '✓';
-    } catch(_) {}
     return;
   }
-  // If _currentUser was cleared by a second auth event, re-fetch from local session
-  if (!_currentUser && _sb) {
-    _sb.auth.getSession().then(({ data }) => {
-      if (data?.session?.user) {
-        _currentUser = data.session.user;
-        console.log('showApp: recovered user from getSession', _currentUser.id);
-        showApp();
-      } else {
-        console.warn('showApp: no session found, cannot show app');
-      }
-    });
-    return;
-  }
-  console.log('showApp: proceeding with user', _currentUser?.id);
-  _pendingShowApp = false;
 
-  document.getElementById('authScreen').classList.add('hidden');
-  const badge = document.getElementById('userBadge');
-  if (badge) badge.style.display = 'flex';
-  // Show hamburger on mobile — force via inline style so nothing can override
-  (function() {
-    var mb = document.getElementById('mobileMenuBtn');
-    if (mb) mb.style.setProperty('display', window.innerWidth <= 480 ? 'block' : 'none', 'important');
-    window.addEventListener('resize', function() {
-      var b = document.getElementById('mobileMenuBtn');
-      if (b && document.body.classList.contains('app-ready'))
-        b.style.setProperty('display', window.innerWidth <= 480 ? 'block' : 'none', 'important');
+  if (!_currentUser && _sb) {
+    _sb.auth.getSession().then(function(r) {
+      var u = r && r.data && r.data.session && r.data.session.user;
+      if (u) { _currentUser = u; showApp(); }
     });
-  })();
-  document.body.classList.add('app-ready');
-  const email = _currentUser?.email || '';
-  const avatar = document.getElementById('userAvatar');
-  if (avatar) avatar.textContent = email ? email[0].toUpperCase() : '✓';
+    return;
+  }
+
+  _pendingShowApp = false;
 
   const cacheKey = 'wwwCache_' + (_currentUser?.id || '');
   let hadCache = false;
@@ -1289,7 +1264,7 @@ function hideApp() {
   if (badge) badge.style.display = 'none';
   document.body.classList.remove('app-ready');
   var mb = document.getElementById('mobileMenuBtn');
-  if (mb) mb.style.setProperty('display', 'none', 'important');
+  if (mb) mb.style.display = 'none';
   const hint = document.getElementById('onboardingHint');
   if (hint) hint.style.display = 'none';
   if (!_appReady) return;
