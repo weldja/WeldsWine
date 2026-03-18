@@ -631,7 +631,7 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
       </div>
       <button class="btn-add-subtle" id="openAddModal" aria-label="Add wine manually">+ Add Wine</button>
       <button class="btn-quick-add" id="openQuickAdd" aria-label="Quick add wine" title="Log a wine in seconds">⚡ Quick Add</button>
-      <button id="userBadge" onclick="openMobileMenu()" aria-label="Menu"
+      <button id="userBadge" onclick="openMobileMenu(event)" aria-label="Menu"
         style="display:none;background:var(--burgundy);border:1px solid var(--blush);
                border-radius:50%;width:36px;height:36px;cursor:pointer;
                color:var(--parchment);font-size:1.1rem;flex-shrink:0;
@@ -1441,11 +1441,7 @@ function showResetMsg(type, msg) {
   el.className = 'auth-msg ' + type; el.textContent = msg;
 }
 
-function showResetMsg(type, msg) {
-  const el = document.getElementById('resetMsg');
-  el.className = 'auth-msg ' + type;
-  el.textContent = msg;
-}
+
 
 /* ── Sign out ────────────────────────────────────────────── */
 async function handleSignOut() {
@@ -3274,18 +3270,34 @@ function updateKeyBadge() {
 </div>
 
 <script>
-function openMobileMenu() {
-  const el = document.getElementById('mobileMenuOverlay');
+function openMobileMenu(e) {
+  if (e) e.stopPropagation();
+  var el = document.getElementById('mobileMenuOverlay');
   if (!el) return;
   var emailEl = document.getElementById('menuUserEmail');
   if (emailEl && _currentUser) emailEl.textContent = _currentUser.email || '';
+  el.style.display = 'flex';
+  el.style.opacity = '1';
+  el.style.pointerEvents = 'all';
+  el.style.position = 'fixed';
+  el.style.inset = '0';
+  el.style.zIndex = '9000';
+  el.style.background = 'rgba(44,36,32,.65)';
+  el.style.alignItems = 'flex-end';
+  el.style.padding = '0';
   el.classList.add('open');
   document.body.style.overflow = 'hidden';
-  el.addEventListener('click', function(e){ if(e.target===el) closeMobileMenu(); }, {once:true});
+  // Delay adding close listener so the opening click doesn't immediately close it
+  setTimeout(function() {
+    el.addEventListener('click', function(e){ if(e.target===el) closeMobileMenu(); }, {once:true});
+  }, 100);
 }
 function closeMobileMenu() {
-  const el = document.getElementById('mobileMenuOverlay');
+  var el = document.getElementById('mobileMenuOverlay');
   if (!el) return;
+  el.style.display = 'none';
+  el.style.opacity = '';
+  el.style.pointerEvents = '';
   el.classList.remove('open');
   document.body.style.overflow = '';
 }
