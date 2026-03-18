@@ -1174,9 +1174,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Listen for auth changes
   _sb.auth.onAuthStateChange(function(event, session) {
+    console.log('onAuthStateChange:', event, session ? session.user?.id : 'no session');
     if (event === 'PASSWORD_RECOVERY') {
-      // User clicked the reset link in their email — show the set-new-password form
-      // Do NOT call showApp() here; keep the auth screen visible
       _currentUser = session ? session.user : null;
       document.getElementById('authScreen').classList.remove('hidden');
       showAuthState('updatePassword');
@@ -1232,6 +1231,16 @@ function showApp() {
       const badge = document.getElementById('userBadge');
       if (badge) badge.style.display = 'flex';
     } catch(_) {}
+    return;
+  }
+  // Re-check _currentUser — if it was cleared by a second auth event, re-fetch from Supabase
+  if (!_currentUser && _sb) {
+    _sb.auth.getSession().then(({ data }) => {
+      if (data?.session?.user) {
+        _currentUser = data.session.user;
+        showApp();
+      }
+    });
     return;
   }
   _pendingShowApp = false;
@@ -1670,7 +1679,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Signal that MAIN APP is fully ready, then run any auth action that was waiting
   _appReady = true;
-  if (_pendingShowApp && _currentUser) showApp();
+  if (_pendingShowApp) showApp(); // showApp will re-fetch session if _currentUser is null
 });
 
 function setupEvents() {
@@ -2912,18 +2921,20 @@ function generateId(){
 
 async function loadWinesFromDB(cacheKey) {
   if (!_sb) { console.warn('loadWinesFromDB: _sb not ready'); return; }
-  if (!_currentUser) { console.warn('loadWinesFromDB: no current user'); return; }
-  console.log('loadWinesFromDB: fetching for user', _currentUser.id);
+  // Snapshot _currentUser immediately — it may change during the async await
+  const user = _currentUser || (_sb.auth.getUser ? (await _sb.auth.getUser()).data?.user : null);
+  if (!user) { console.warn('loadWinesFromDB: no current user'); return; }
+  console.log('loadWinesFromDB: fetching for user', user.id);
   try {
     // Run metadata and photo queries in parallel
     const [metaResult, photoResult] = await Promise.all([
       _sb.from('wines')
         .select('id,name,winery,vintage,country,region,grape,style,price,purchased_from,date_tasted,notes,rating,is_favourite,buy_again,loc_lat,loc_lng,loc_label,created_at')
-        .eq('user_id', _currentUser.id)
+        .eq('user_id', user.id)
         .order('created_at', { ascending: false }),
       _sb.from('wines')
         .select('id,photo_front,photo_back')
-        .eq('user_id', _currentUser.id)
+        .eq('user_id', user.id)
     ]);
 
     console.log('loadWinesFromDB: metaResult', metaResult);
