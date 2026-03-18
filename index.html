@@ -2,10 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="theme-color" content="#4A1424" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Welds Wine Wisdoms</title>
   <!-- Preconnect to all external origins to cut DNS/TLS time -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -31,7 +28,6 @@
 .auth-hero-features{display:flex;flex-direction:column;gap:13px;list-style:none}
 .auth-hero-features li{display:flex;align-items:center;gap:12px;font-family:var(--font-b);font-size:.96rem;color:rgba(245,239,230,.85)}
 .auth-hero-features li::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--gold);flex-shrink:0}
-.auth-hero-cta-note{font-family:var(--font-b);font-size:.78rem;color:rgba(245,239,230,.45);margin-top:28px;letter-spacing:.04em}
 
 /* Right: form panel */
 .auth-panel{width:400px;flex-shrink:0;background:var(--ivory);display:flex;flex-direction:column;justify-content:center;padding:52px 40px;overflow-y:auto}
@@ -47,9 +43,9 @@
 .auth-tab.active{background:var(--ivory);color:var(--burgundy);box-shadow:0 1px 3px var(--shadow)}
 .auth-form-group{margin-bottom:14px}
 .auth-form-group label{display:block;font-family:var(--font-b);font-size:.74rem;letter-spacing:.08em;text-transform:uppercase;color:var(--warm-gray);margin-bottom:5px}
-.auth-form-group input{width:100%;border:1px solid var(--light-gray);border-radius:var(--r);padding:11px 13px;font-family:var(--font-b);font-size:16px;color:var(--charcoal);background:var(--cream);outline:none;transition:border-color .2s;min-height:44px}
+.auth-form-group input{width:100%;border:1px solid var(--light-gray);border-radius:var(--r);padding:10px 12px;font-family:var(--font-b);font-size:.95rem;color:var(--charcoal);background:var(--cream);outline:none;transition:border-color .2s}
 .auth-form-group input:focus{border-color:var(--burgundy);background:var(--ivory)}
-.auth-btn-primary{width:100%;background:var(--burgundy);color:var(--ivory);border:none;border-radius:var(--r);padding:14px;font-family:var(--font-d);font-size:1rem;font-weight:600;letter-spacing:.05em;cursor:pointer;transition:var(--tr);margin-top:6px;min-height:48px}
+.auth-btn-primary{width:100%;background:var(--burgundy);color:var(--ivory);border:none;border-radius:var(--r);padding:12px;font-family:var(--font-d);font-size:.95rem;font-weight:600;letter-spacing:.05em;cursor:pointer;transition:var(--tr);margin-top:4px}
 .auth-btn-primary:hover{background:var(--burgundy-lt)}
 .auth-btn-primary:disabled{opacity:.5;cursor:not-allowed}
 .auth-divider{display:flex;align-items:center;gap:10px;margin:16px 0;color:var(--light-gray);font-family:var(--font-b);font-size:.8rem}
@@ -57,17 +53,16 @@
 .auth-msg{font-family:var(--font-b);font-size:.82rem;margin-top:12px;padding:8px 12px;border-radius:var(--r);text-align:center;display:none}
 .auth-msg.ok{background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0;display:block}
 .auth-msg.err{background:#fef2f2;color:#dc2626;border:1px solid #fca5a5;display:block}
-.auth-msg.info{background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe;display:block}
 .auth-footer{margin-top:16px;text-align:center;font-family:var(--font-b);font-size:.78rem;color:var(--warm-gray);font-style:italic}
 
 /* Mobile: stack vertically, hero collapses to compact banner */
 @media(max-width:700px){
   #authScreen{flex-direction:column;overflow-y:auto}
-  .auth-hero{padding:28px 24px 20px;flex:none}
-  .auth-hero-headline{font-size:1.5rem;margin-bottom:8px}
-  .auth-hero-sub{font-size:.88rem;margin-bottom:16px}
-  .auth-hero-features{gap:8px}
-  .auth-hero-features li{font-size:.84rem}
+  .auth-hero{padding:36px 24px 28px;flex:none}
+  .auth-hero-headline{font-size:1.7rem;margin-bottom:10px}
+  .auth-hero-sub{font-size:.95rem;margin-bottom:22px}
+  .auth-hero-features{gap:10px}
+  .auth-hero-features li{font-size:.88rem}
   .auth-panel{width:100%;padding:32px 24px 44px;flex:none}
   .auth-panel-logo{display:none}
 }
@@ -103,7 +98,7 @@
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html{font-size:16px;scroll-behavior:smooth}
-body{font-family:var(--font-b);background:var(--cream);color:var(--charcoal);min-height:100vh;line-height:1.6;-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent}
+body{font-family:var(--font-b);background:var(--cream);color:var(--charcoal);min-height:100vh;line-height:1.6;-webkit-font-smoothing:antialiased}
 .site-header{background:var(--burgundy-deep);border-bottom:1px solid var(--burgundy);position:sticky;top:0;z-index:200;box-shadow:0 2px 20px rgba(44,20,36,.35)}
 .header-inner{max-width:1200px;margin:0 auto;padding:0 20px;height:64px;display:flex;align-items:center;gap:12px}
 .logo{display:flex;align-items:center;gap:10px;flex-shrink:0}
@@ -150,7 +145,7 @@ body{font-family:var(--font-b);background:var(--cream);color:var(--charcoal);min
 .stat span{font-family:var(--font-d);font-size:1.5rem;font-weight:600;color:var(--burgundy);line-height:1}
 .stat label{font-family:var(--font-b);font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;color:var(--warm-gray);margin-top:3px;font-style:italic}
 .stat-divider{width:1px;height:30px;background:var(--light-gray);flex-shrink:0}
-.main-content{max-width:1200px;margin:0 auto;padding:28px 20px calc(60px + env(safe-area-inset-bottom))}
+.main-content{max-width:1200px;margin:0 auto;padding:28px 20px 60px}
 .wine-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:22px}
 .wine-card{background:var(--ivory);border:1px solid var(--light-gray);border-radius:var(--rl);overflow:hidden;transition:transform .2s,box-shadow .2s,border-color .2s;display:flex;flex-direction:column;animation:fadeUp .35s ease both}
 .wine-card:hover{transform:translateY(-3px);box-shadow:0 8px 28px var(--shadow-lg);border-color:var(--blush)}
@@ -242,7 +237,7 @@ body{font-family:var(--font-b);background:var(--cream);color:var(--charcoal);min
 .empty-state p{font-family:var(--font-b);font-style:italic;color:var(--warm-gray);font-size:.95rem;margin-bottom:22px;opacity:.8}
 .modal-overlay{position:fixed;inset:0;background:rgba(44,36,32,.65);backdrop-filter:blur(4px);z-index:300;display:flex;align-items:center;justify-content:center;padding:16px;opacity:0;pointer-events:none;transition:opacity .25s ease}
 .modal-overlay.open{opacity:1;pointer-events:all}
-.modal{background:var(--ivory);border-radius:var(--rl);width:100%;max-width:600px;max-height:92vh;max-height:92dvh;overflow-y:auto;-webkit-overflow-scrolling:touch;box-shadow:0 20px 60px rgba(44,20,36,.4);transform:translateY(18px);transition:transform .25s ease}
+.modal{background:var(--ivory);border-radius:var(--rl);width:100%;max-width:600px;max-height:92vh;overflow-y:auto;box-shadow:0 20px 60px rgba(44,20,36,.4);transform:translateY(18px);transition:transform .25s ease}
 .modal-overlay.open .modal{transform:translateY(0)}
 .modal-header{display:flex;justify-content:space-between;align-items:center;padding:20px 26px 16px;border-bottom:1px solid var(--light-gray);position:sticky;top:0;background:var(--ivory);z-index:10}
 .modal-title{font-family:var(--font-d);font-size:1.2rem;font-weight:600;color:var(--burgundy-deep);letter-spacing:.03em}
@@ -256,7 +251,7 @@ body{font-family:var(--font-b);background:var(--cream);color:var(--charcoal);min
 .form-row.two-col{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .form-group{display:flex;flex-direction:column;gap:4px}
 label{font-family:var(--font-b);font-size:.75rem;letter-spacing:.08em;text-transform:uppercase;color:var(--warm-gray)}
-input[type="text"],input[type="number"],input[type="date"],input[type="password"],textarea,select{border:1px solid var(--light-gray);border-radius:var(--r);padding:8px 11px;font-family:var(--font-b);font-size:16px;color:var(--charcoal);background:var(--cream);outline:none;transition:border-color .2s;width:100%}
+input[type="text"],input[type="number"],input[type="date"],input[type="password"],textarea,select{border:1px solid var(--light-gray);border-radius:var(--r);padding:8px 11px;font-family:var(--font-b);font-size:.95rem;color:var(--charcoal);background:var(--cream);outline:none;transition:border-color .2s;width:100%}
 input:focus,textarea:focus,select:focus{border-color:var(--burgundy);background:var(--ivory)}
 input::placeholder,textarea::placeholder{color:#bba9a3}
 textarea{resize:vertical;min-height:76px;line-height:1.6}
@@ -330,7 +325,7 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
 .scan-field.empty{opacity:.35}
 .scan-field-label{font-size:.63rem;letter-spacing:.1em;text-transform:uppercase;color:var(--warm-gray);margin-bottom:2px;display:flex;align-items:center;gap:4px}
 .uncertain-mark{color:var(--gold);font-size:.78rem}
-.scan-field-value{font-family:var(--font-b);font-size:.86rem;color:var(--charcoal);word-break:break-word;overflow-wrap:break-word}
+.scan-field-value{font-family:var(--font-b);font-size:.86rem;color:var(--charcoal);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .scan-field.empty .scan-field-value{color:var(--light-gray);font-style:italic}
 .scan-results-note{font-size:.72rem;font-family:var(--font-b);font-style:italic;color:var(--warm-gray);text-align:center;opacity:.8}
 .scan-conf-badge{display:inline-flex;align-items:center;font-size:.66rem;letter-spacing:.08em;text-transform:uppercase;padding:1px 7px;border-radius:20px;font-family:var(--font-b);margin-left:6px}
@@ -354,7 +349,7 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
 .photo-clear-btn{background:none;border:none;color:var(--warm-gray);font-family:var(--font-b);font-size:.74rem;cursor:pointer;padding:2px 0;text-decoration:underline;transition:color .2s;margin-top:3px}
 .photo-clear-btn:hover{color:#dc2626}
 
-.toast{position:fixed;bottom:calc(24px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%) translateY(70px);background:var(--charcoal);color:var(--parchment);padding:10px 22px;border-radius:30px;font-family:var(--font-b);font-size:.88rem;z-index:999;transition:transform .28s ease;white-space:nowrap;pointer-events:none;box-shadow:0 4px 18px rgba(0,0,0,.28)}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(70px);background:var(--charcoal);color:var(--parchment);padding:10px 22px;border-radius:30px;font-family:var(--font-b);font-size:.88rem;z-index:999;transition:transform .28s ease;white-space:nowrap;pointer-events:none;box-shadow:0 4px 18px rgba(0,0,0,.28)}
 .toast.show{transform:translateX(-50%) translateY(0)}
 ::-webkit-scrollbar{width:5px}
 ::-webkit-scrollbar-track{background:var(--cream)}
@@ -436,7 +431,7 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
   .stats-inner{flex-wrap:wrap}
   .stat{flex:0 0 50%;max-width:50%;padding:4px 0}
   .stat-divider{display:none}
-  .main-content{padding:16px 14px calc(48px + env(safe-area-inset-bottom))}
+  .main-content{padding:16px 14px 48px}
   .wine-grid{grid-template-columns:1fr}
   .form-row.two-col{grid-template-columns:1fr}
   .modal{max-width:100%;border-radius:var(--rl) var(--rl) 0 0}
@@ -461,66 +456,27 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
   .filter-tabs{flex-wrap:wrap}
   .logo-sub{display:none}
   .header-actions{gap:4px}
-  .btn-scan-primary{padding:6px 8px;font-size:.74rem}
+  .btn-scan-primary{padding:6px 10px;font-size:.76rem}
+  .btn-add-subtle{padding:4px 7px;font-size:.72rem}
   .btn-quick-add{padding:5px 8px;font-size:.74rem}
-  .btn-add-subtle{display:none}
 }
 /* Larger touch targets on true touch devices */
 @media(hover:none){
-  .card-btn{padding:8px 14px;min-height:40px}
-  .filter-tab{padding:9px 16px;min-height:42px}
-  .star-input .star{font-size:1.8rem;padding:0 4px}
-  .btn-locate{min-height:42px;padding:8px 16px}
-  .btn-scan-primary{min-height:42px}
-  .hamburger-btn{min-height:42px;min-width:42px}
-  .hamburger-menu-item{min-height:52px}
-  .modal-close{min-height:44px;min-width:44px}
-  .auth-btn-primary{min-height:48px;font-size:1rem}
-  select{min-height:40px}
+  .card-btn{padding:6px 12px;min-height:36px}
+  .filter-tab{padding:7px 14px;min-height:38px}
+  .star-input .star{font-size:1.6rem;padding:0 3px}
+  .btn-locate{min-height:38px}
 }
 /* ─── Loading skeleton ─────────────────────────────────── */
-@keyframes shimmer{0%{background-position:-600px 0}100%{background-position:600px 0}}
-.skeleton{background:linear-gradient(90deg,var(--light-gray) 25%,var(--cream) 50%,var(--light-gray) 75%);background-size:1200px 100%;animation:shimmer 1.6s ease-in-out infinite;border-radius:var(--r)}
+@keyframes shimmer{0%{background-position:-400px 0}100%{background-position:400px 0}}
+.skeleton{background:linear-gradient(90deg,var(--light-gray) 25%,var(--cream) 50%,var(--light-gray) 75%);background-size:800px 100%;animation:shimmer 1.4s infinite;border-radius:var(--r)}
 .skeleton-card{background:var(--ivory);border:1px solid var(--light-gray);border-radius:var(--rl);overflow:hidden;animation:fadeUp .35s ease both}
-.skeleton-card .sk-img{height:90px}
-.skeleton-card .sk-body{padding:16px 18px 14px}
-.skeleton-card .sk-line{height:14px;margin-bottom:10px;border-radius:3px}
-.skeleton-card .sk-line.wide{width:75%}
-.skeleton-card .sk-line.mid{width:50%}
-.skeleton-card .sk-line.short{width:30%;height:10px}
-.skeleton-card .sk-tags{display:flex;gap:6px;margin-bottom:10px}
-.skeleton-card .sk-tag{height:20px;width:52px;border-radius:20px}
-.skeleton-card .sk-footer{padding:8px 18px 12px;border-top:1px solid var(--light-gray);display:flex;justify-content:space-between;align-items:center}
-.skeleton-card .sk-date{height:10px;width:80px;border-radius:3px}
-.skeleton-card .sk-btns{display:flex;gap:4px}
-.skeleton-card .sk-btn{height:28px;width:44px;border-radius:var(--r)}
-/* Loading banner shown above grid while fetching */
-.loading-banner{display:none;align-items:center;justify-content:center;gap:10px;padding:14px 20px;background:var(--parchment);border-bottom:1px solid var(--light-gray);font-family:var(--font-b);font-size:.88rem;color:var(--warm-gray);font-style:italic}
-.loading-banner.show{display:flex}
-.loading-banner-spinner{width:16px;height:16px;border:2px solid var(--light-gray);border-top-color:var(--burgundy);border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0}
-
-/* ── Hamburger menu ──────────────────────────────────────── */
-.hamburger-btn{background:none;border:none;cursor:pointer;padding:6px 8px;display:flex;flex-direction:column;gap:5px;align-items:center;justify-content:center;border-radius:var(--r);transition:var(--tr);flex-shrink:0}
-.hamburger-btn:hover{background:rgba(245,239,230,.1)}
-.hamburger-btn span{display:block;width:22px;height:2px;background:rgba(245,239,230,.85);border-radius:2px;transition:var(--tr)}
-.hamburger-menu{position:fixed;top:0;right:-280px;width:280px;height:100%;min-height:100vh;background:var(--burgundy-deep);z-index:410;transition:right .28s ease;box-shadow:-4px 0 24px rgba(0,0,0,.35);display:flex;flex-direction:column;overflow-y:auto;-webkit-overflow-scrolling:touch}
-.hamburger-menu.open{right:0}
-.hamburger-menu-header{display:flex;align-items:center;justify-content:space-between;padding:18px 20px;border-bottom:1px solid rgba(196,120,138,.2)}
-.hamburger-menu-logo{display:flex;align-items:center;gap:8px;font-family:var(--font-d);font-size:1rem;font-weight:600;color:var(--parchment)}
-.hamburger-menu-close{background:none;border:none;color:rgba(245,239,230,.6);cursor:pointer;font-size:1.1rem;padding:4px 8px;border-radius:var(--r);transition:var(--tr)}
-.hamburger-menu-close:hover{color:var(--parchment);background:rgba(245,239,230,.1)}
-.hamburger-menu-user{padding:16px 20px;border-bottom:1px solid rgba(196,120,138,.15);display:flex;align-items:center;gap:10px}
-.hamburger-menu-avatar{width:36px;height:36px;border-radius:50%;background:var(--burgundy);border:1px solid var(--blush);display:flex;align-items:center;justify-content:center;font-size:.9rem;color:var(--parchment);flex-shrink:0}
-.hamburger-menu-email{font-family:var(--font-b);font-size:.82rem;color:rgba(245,239,230,.65);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.hamburger-menu-items{padding:10px 0;flex:1}
-.hamburger-menu-item{display:flex;align-items:center;gap:12px;padding:13px 20px;font-family:var(--font-b);font-size:.95rem;color:rgba(245,239,230,.85);cursor:pointer;transition:var(--tr);border:none;background:none;width:100%;text-align:left;text-decoration:none}
-.hamburger-menu-item:hover{background:rgba(245,239,230,.07);color:var(--parchment)}
-.hamburger-menu-item-icon{font-size:1.1rem;width:24px;text-align:center;flex-shrink:0}
-.hamburger-menu-divider{height:1px;background:rgba(196,120,138,.15);margin:8px 20px}
-.hamburger-menu-item.danger{color:rgba(196,120,138,.8)}
-.hamburger-menu-item.danger:hover{background:rgba(196,120,138,.1);color:var(--blush)}
-.hamburger-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:400;display:none}
-.hamburger-overlay.open{display:block}
+.skeleton-card .sk-img{height:80px}
+.skeleton-card .sk-body{padding:16px 18px 12px}
+.skeleton-card .sk-line{height:14px;margin-bottom:10px}
+.skeleton-card .sk-line.wide{width:80%}
+.skeleton-card .sk-line.mid{width:55%}
+.skeleton-card .sk-line.short{width:35%;height:10px}
 </style>
 </head>
 <body>
@@ -537,15 +493,14 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
       <span class="auth-hero-logo-icon">🍷</span>
       <span class="auth-hero-logo-text">Welds Wine Wisdoms</span>
     </div>
-    <h1 class="auth-hero-headline">Remember every<br>great wine.</h1>
-    <p class="auth-hero-sub">Point your camera at any label — AI identifies the wine in seconds. Build your personal tasting journal, map where you drank it, and share favourites.</p>
+    <h1 class="auth-hero-headline">Track and remember<br>every wine you taste.</h1>
+    <p class="auth-hero-sub">A personal wine journal. Scan labels, rate wines,<br>and build your tasting history.</p>
     <ul class="auth-hero-features">
-      <li>📷 <strong>Scan any label</strong> — AI fills every detail</li>
-      <li>★ <strong>Rate &amp; note</strong> every bottle you taste</li>
-      <li>🗺 <strong>Map</strong> wines to where you tasted them</li>
-      <li>↗ <strong>Share</strong> a bottle with one tap</li>
+      <li>Scan wine labels instantly with AI</li>
+      <li>Record tasting notes and star ratings</li>
+      <li>Map your wines from around the world</li>
+      <li>Share bottles with friends</li>
     </ul>
-    <p class="auth-hero-cta-note">Free to use · Your data stays private</p>
   </div>
 
   <!-- Right: auth form -->
@@ -562,12 +517,12 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
       <div id="authStateMain">
         <div class="auth-tabs">
           <button class="auth-tab active" id="tabSignIn" onclick="switchAuthTab('signin')">Sign In</button>
-          <button class="auth-tab" id="tabSignUp" onclick="switchAuthTab('signup')">New Account</button>
+          <button class="auth-tab" id="tabSignUp" onclick="switchAuthTab('signup')">Create Account</button>
         </div>
 
         <div class="auth-form-group">
           <label for="authEmail">Email</label>
-          <input type="email" id="authEmail" placeholder="you@example.com" autocomplete="email" inputmode="email"/>
+          <input type="email" id="authEmail" placeholder="you@example.com" autocomplete="email"/>
         </div>
         <div class="auth-form-group" id="authPasswordGroup">
           <label for="authPassword">Password</label>
@@ -601,7 +556,7 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
         </div>
         <div class="auth-form-group">
           <label for="resetEmail">Email</label>
-          <input type="email" id="resetEmail" placeholder="you@example.com" autocomplete="email" inputmode="email"/>
+          <input type="email" id="resetEmail" placeholder="you@example.com" autocomplete="email"/>
         </div>
         <button class="auth-btn-primary" id="resetSubmitBtn" onclick="handleSendLink()">
           <span id="resetSubmitLabel">Send Reset Link</span>
@@ -616,6 +571,28 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
         </div>
       </div>
 
+      <!-- State: set new password (recovery flow) -->
+      <div id="authStateSetPassword" style="display:none">
+        <div style="text-align:center;margin-bottom:20px">
+          <div style="font-size:1.6rem;margin-bottom:10px">🔐</div>
+          <div style="font-family:var(--font-d);font-size:1rem;color:var(--charcoal);margin-bottom:6px">Set a new password</div>
+          <div style="font-family:var(--font-b);font-size:.85rem;color:var(--warm-gray);line-height:1.6">Choose a new password for your account.</div>
+        </div>
+        <div class="auth-form-group">
+          <label for="newPassword">New Password</label>
+          <div style="position:relative">
+            <input type="password" id="newPassword" placeholder="••••••••" autocomplete="new-password" minlength="8"/>
+            <button type="button" id="toggleNewPassword" onclick="toggleNewPasswordVisibility()"
+              style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--warm-gray);font-size:.8rem;padding:2px 4px">Show</button>
+          </div>
+        </div>
+        <button class="auth-btn-primary" id="setPasswordBtn" onclick="handleSetNewPassword()">
+          <span id="setPasswordLabel">Set New Password</span>
+          <span id="setPasswordSpinner" style="display:none">Saving…</span>
+        </button>
+        <div class="auth-msg" id="setPasswordMsg"></div>
+      </div>
+
       <!-- State: link sent confirmation -->
       <div id="authStateSent" style="display:none;text-align:center">
         <div style="font-size:2.5rem;margin-bottom:14px">✉</div>
@@ -627,7 +604,7 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
         </button>
       </div>
 
-      
+      <div class="auth-footer" id="authFooter">Your wines, your history</div>
     </div>
   </div>
 </div>
@@ -644,20 +621,15 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
     </div>
     <div class="header-actions">
       <div class="scan-cta">
-        <button class="btn-scan-primary" id="openScanModal" aria-label="Scan wine label">📷 Scan Label</button>
-        <span class="scan-hint">AI powered</span>
+        <button class="btn-scan-primary" id="openScanModal" aria-label="Scan wine label">📷 Scan Wine Label</button>
+        <span class="scan-hint">Fastest way to add a wine</span>
       </div>
-      <div class="scan-cta">
-        <button class="btn-quick-add" id="openQuickAdd" aria-label="Quick add wine">⚡ Quick Add</button>
-        <span class="scan-hint">Log in seconds</span>
-      </div>
-      <button class="btn-add-subtle" id="openAddModal" aria-label="Add wine manually">+ Add</button>
+      <button class="btn-add-subtle" id="openAddModal" aria-label="Add wine manually">+ Add Wine</button>
+      <button class="btn-quick-add" id="openQuickAdd" aria-label="Quick add wine" title="Log a wine in seconds">⚡ Quick Add</button>
       <div class="user-badge" id="userBadge" style="display:none">
         <div class="user-badge-avatar" id="userAvatar">?</div>
+        <button class="btn-signout" onclick="handleSignOut()">Sign out</button>
       </div>
-      <button class="hamburger-btn" id="hamburgerBtn" aria-label="Open menu">
-        <span></span><span></span><span></span>
-      </button>
     </div>
   </div>
 </header>
@@ -700,7 +672,7 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
     <!-- Row 3: search -->
     <div class="toolbar-search">
       <div class="search-wrap">
-        <input type="text" id="searchInput" placeholder="Search by name, region, grape…" class="search-input-toolbar"/>
+        <input type="text" id="searchInput" placeholder="Search wines…" class="search-input-toolbar"/>
       </div>
     </div>
   </div>
@@ -711,8 +683,8 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
   <div class="onboarding-inner">
     <span class="onboarding-icon">👋</span>
     <div class="onboarding-text">
-      <strong>Welcome to your wine journal!</strong>
-      Tap <em>📷 Scan Label</em> to photograph any bottle — AI fills in the details. Or use <em>⚡ Quick Add</em> to log a wine in seconds. Everything is saved to your account.
+      <strong>Welcome to your wine journal.</strong>
+      Tap <em>Scan Wine Label</em> to photograph a bottle and AI will fill the details, or use <em>Add Wine</em> to enter manually. Rate wines, view them on the map, and share favourites.
     </div>
     <button class="onboarding-close" onclick="dismissOnboarding()" aria-label="Dismiss">✕</button>
   </div>
@@ -721,20 +693,14 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
 <!-- STATS BAR -->
 <div class="stats-bar">
   <div class="stats-inner">
-    <div class="stat"><span id="statTotal">—</span><label>Wines Tasted</label></div>
+    <div class="stat"><span id="statTotal">0</span><label>Wines Tasted</label></div>
     <div class="stat-divider"></div>
     <div class="stat"><span id="statAvg">—</span><label>Avg. Rating</label></div>
     <div class="stat-divider"></div>
-    <div class="stat"><span id="statCountries">—</span><label>Countries</label></div>
+    <div class="stat"><span id="statCountries">0</span><label>Countries</label></div>
     <div class="stat-divider"></div>
     <div class="stat"><span id="statTop">—</span><label>Top Region</label></div>
   </div>
-</div>
-
-<!-- LOADING BANNER -->
-<div class="loading-banner" id="loadingBanner">
-  <div class="loading-banner-spinner"></div>
-  <span id="loadingBannerMsg">Loading your cellar…</span>
 </div>
 
 <!-- MAIN -->
@@ -751,7 +717,7 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
   <div class="empty-state" id="emptyState" style="display:none">
     <div class="empty-icon" id="emptyIcon">🍷</div>
     <h2 id="emptyTitle">Your cellar is empty</h2>
-    <p id="emptyMsg">Add your first wine by scanning a label — AI does the hard work.</p>
+    <p id="emptyMsg">Start by scanning your first wine label or adding a wine manually.</p>
     <div id="emptyScanBtn" style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
       <button class="btn-primary" onclick="document.getElementById('openScanModal').click()" style="display:flex;align-items:center;gap:7px">📷 Scan Wine Label</button>
       <button class="btn-secondary" onclick="document.getElementById('openAddModal').click()" style="display:flex;align-items:center;gap:7px">+ Add Wine Manually</button>
@@ -766,7 +732,7 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
   <span class="footer-sep">·</span>
   <a href="#" class="footer-link" onclick="showFooterModal('privacy');return false">Privacy</a>
   <span class="footer-sep">·</span>
-  <a href="mailto:hello@weldswine.com" class="footer-link">Contact</a>
+  <a href="/cdn-cgi/l/email-protection#8be3eee7e7e4cbfceee7eff8fce2e5eea5e8e4e6" class="footer-link">Contact</a>
   <span class="footer-sep">·</span>
   <button class="footer-admin-btn" id="openKeyModal" title="Settings">⚙</button>
 </footer>
@@ -779,7 +745,7 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
       <button class="modal-close" id="closeQuickAdd" aria-label="Close">✕</button>
     </div>
     <div class="modal-body">
-      <p style="font-family:var(--font-b);font-size:.85rem;color:var(--warm-gray);font-style:italic;margin-bottom:16px;line-height:1.5">Log a wine in seconds — just a name is required. Add more details later.</p>
+      <p style="font-family:var(--font-b);font-size:.85rem;color:var(--warm-gray);font-style:italic;margin-bottom:16px;line-height:1.5">Log a wine in seconds. You can add more details later.</p>
       <div class="form-row">
         <div class="form-group">
           <label for="qaName">Wine Name *</label>
@@ -794,20 +760,6 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
         <div class="form-group">
           <label for="qaVintage">Vintage</label>
           <input type="number" id="qaVintage" placeholder="e.g. 2021" min="1900" max="2099"/>
-        </div>
-      </div>
-      <div class="form-row two-col">
-        <div class="form-group">
-          <label for="qaPrice">Price</label>
-          <input type="text" id="qaPrice" placeholder="e.g. £14.99" autocomplete="off"/>
-        </div>
-        <div class="form-group">
-          <label for="qaStyle">Style</label>
-          <select id="qaStyle">
-            <option value="">— select —</option>
-            <option>Red</option><option>White</option><option>Rosé</option>
-            <option>Sparkling</option><option>Dessert</option><option>Fortified</option>
-          </select>
         </div>
       </div>
       <div class="form-group" style="margin-bottom:18px">
@@ -945,7 +897,7 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
           <div class="form-group">
             <label>Front Label</label>
             <div class="photo-drop" id="photoDropFront">
-              <input type="file" id="photoInputFront" accept="image/*"/>
+              <input type="file" id="photoInputFront" accept="image/*" capture="environment"/>
               <div class="photo-drop-inner" id="photoDropFrontInner">
                 <span>📷</span>
                 <span>Add photo</span>
@@ -957,7 +909,7 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
           <div class="form-group">
             <label>Back Label</label>
             <div class="photo-drop" id="photoDropBack">
-              <input type="file" id="photoInputBack" accept="image/*"/>
+              <input type="file" id="photoInputBack" accept="image/*" capture="environment"/>
               <div class="photo-drop-inner" id="photoDropBackInner">
                 <span>📷</span>
                 <span>Add photo</span>
@@ -1159,7 +1111,7 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
 </div>
 
 <!-- AUTH MODULE -->
-<script>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
 /* ══════════════════════════════════════════════════════════════
    SUPABASE CONFIG — replace with your project values
    supabase.com → your project → Settings → API
@@ -1182,40 +1134,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (sbKey) {
       const token = JSON.parse(localStorage.getItem(sbKey));
       if (token?.access_token) {
-        // Hide auth screen immediately — no flash
         document.getElementById('authScreen').classList.add('hidden');
-        // Show skeleton grid immediately — before onAuthStateChange fires
-        // This prevents the 0-wines flash on refresh and re-login
-        _winesLoaded = false;
-        const gridEl = document.getElementById('wineGrid');
-        const emptyEl = document.getElementById('emptyState');
-        const bannerEl = document.getElementById('loadingBanner');
-        const bannerMsg = document.getElementById('loadingBannerMsg');
-        if (gridEl && emptyEl) {
-          emptyEl.style.display = 'none';
-          gridEl.style.display = 'grid';
-          gridEl.innerHTML = [0,1,2,3].map((i) => `
-            <div class="skeleton-card" style="animation-delay:${i*0.07}s">
-              <div class="sk-img skeleton"></div>
-              <div class="sk-body">
-                <div class="sk-line wide skeleton"></div>
-                <div class="sk-line mid skeleton"></div>
-                <div class="sk-tags"><div class="sk-tag skeleton"></div><div class="sk-tag skeleton"></div></div>
-                <div class="sk-line short skeleton"></div>
-              </div>
-              <div class="sk-footer">
-                <div class="sk-date skeleton"></div>
-                <div class="sk-btns"><div class="sk-btn skeleton"></div><div class="sk-btn skeleton"></div></div>
-              </div>
-            </div>`).join('');
-        }
-        if (bannerEl) { bannerEl.classList.add('show'); }
-        if (bannerMsg) { bannerMsg.textContent = 'Loading your cellar…'; }
-        // Stats show dashes immediately
-        ['statTotal','statAvg','statCountries','statTop'].forEach(id => {
-          const el = document.getElementById(id);
-          if (el) el.textContent = '—';
-        });
       }
     }
   } catch(_) {}
@@ -1226,17 +1145,20 @@ document.addEventListener('DOMContentLoaded', function() {
   // Listen for auth changes
   _sb.auth.onAuthStateChange(function(event, session) {
     _currentUser = session ? session.user : null;
+
     if (event === 'PASSWORD_RECOVERY') {
-      // User clicked reset link — show password update UI
-      showPasswordRecoveryUI();
+      // User landed via a password reset link — show the set-new-password form.
+      // Do NOT call showApp(); keep the auth screen visible.
+      document.getElementById('authScreen').classList.remove('hidden');
+      document.getElementById('userBadge').style.display = 'none';
+      showAuthState('setpassword');
       return;
     }
+
     if (_currentUser) {
       showApp();
     } else {
-      if (event === 'SIGNED_OUT' || event === 'USER_DELETED') {
-        hideApp();
-      }
+      hideApp();
     }
   });
 
@@ -1259,44 +1181,30 @@ document.addEventListener('DOMContentLoaded', function() {
 }); // end DOMContentLoaded
 
 function showApp() {
-  // Guard: don't re-init if already showing for same user
-  if (document.getElementById('authScreen').classList.contains('hidden') &&
-      _winesLoaded && wines.length > 0) return;
   document.getElementById('authScreen').classList.add('hidden');
   const badge = document.getElementById('userBadge');
   badge.style.display = 'flex';
   const email = _currentUser?.email || '';
   document.getElementById('userAvatar').textContent = email ? email[0].toUpperCase() : '✓';
-  if (typeof updateHamburgerUser === 'function') updateHamburgerUser();
 
   const cacheKey = 'wwwCache_' + (_currentUser?.id || '');
   let hadCache = false;
   try {
-    const raw = localStorage.getItem(cacheKey);
-    if (raw) {
-      const { ts, data } = JSON.parse(raw);
-      // Use cache if less than 5 minutes old
-      if (data && (Date.now() - ts) < 5 * 60 * 1000) {
-        wines = data;
-        hadCache = true;
-      }
+    const cached = sessionStorage.getItem(cacheKey);
+    if (cached) {
+      wines = JSON.parse(cached);
+      hadCache = true;
     }
   } catch(_) {}
 
   if (hadCache) {
-    // Fresh cache — show wines instantly, then silently refresh from DB
-    _winesLoaded = true;
-    hideLoadingBanner();
+    // Returning user — show cached wines instantly, DB will refresh silently
     renderGrid();
     updateStats();
   } else {
-    // No cache — skeleton is already showing from pre-check or showSkeletonGrid
+    // First load — show skeleton until DB responds, never show empty state
     _winesLoaded = false;
-    wines = [];
-    if (document.getElementById('wineGrid').innerHTML.indexOf('skeleton-card') === -1) {
-      showSkeletonGrid(4);
-    }
-    updateStats();
+    showSkeletonGrid(4);
   }
 
   if (typeof loadWinesFromDB === 'function') loadWinesFromDB(cacheKey);
@@ -1323,15 +1231,19 @@ function dismissOnboarding() {
 
 /* ── Auth state navigation ───────────────────────────────── */
 function showAuthState(state) {
-  document.getElementById('authStateMain').style.display  = state === 'main'  ? '' : 'none';
-  document.getElementById('authStateReset').style.display = state === 'reset' ? '' : 'none';
-  document.getElementById('authStateSent').style.display  = state === 'sent'  ? '' : 'none';
+  document.getElementById('authStateMain').style.display        = state === 'main'        ? '' : 'none';
+  document.getElementById('authStateReset').style.display       = state === 'reset'       ? '' : 'none';
+  document.getElementById('authStateSent').style.display        = state === 'sent'        ? '' : 'none';
+  document.getElementById('authStateSetPassword').style.display = state === 'setpassword' ? '' : 'none';
   clearAuthMsg();
   if (state === 'reset') {
     const email = document.getElementById('authEmail').value;
     const resetEl = document.getElementById('resetEmail');
     if (email && resetEl) resetEl.value = email;
     setTimeout(() => resetEl?.focus(), 100);
+  }
+  if (state === 'setpassword') {
+    setTimeout(() => document.getElementById('newPassword')?.focus(), 100);
   }
 }
 
@@ -1361,9 +1273,8 @@ async function handleAuthSubmit() {
   const password = document.getElementById('authPassword').value;
   const isSignIn = document.getElementById('tabSignIn').classList.contains('active');
 
-  if (!email)    { showAuthMsg('err', 'Please enter your email address'); return; }
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showAuthMsg('err', 'Please enter a valid email address'); return; }
-  if (!password) { showAuthMsg('err', 'Please enter your password'); return; }
+  if (!email)    { showAuthMsg('err', 'Please enter your email'); return; }
+  if (!password) { showAuthMsg('err', 'Please enter a password'); return; }
   if (!isSignIn && password.length < 8) { showAuthMsg('err', 'Password must be at least 8 characters'); return; }
 
   setAuthLoading(true);
@@ -1383,23 +1294,13 @@ async function handleAuthSubmit() {
           body: JSON.stringify({ type: 'welcome', email })
         });
       } catch(_) { /* non-fatal */ }
-      showAuthMsg('ok', 'Account created! Check your email to confirm, then sign in.');
+      showAuthMsg('ok', 'Account created — you are now signed in.');
     }
   } catch(e) {
     const msg = e.message || '';
-    if (msg.includes('Invalid login') || msg.includes('invalid_credentials')) {
-      showAuthMsg('err', 'Incorrect email or password — please try again');
-    } else if (msg.includes('already registered') || msg.includes('already exists')) {
-      showAuthMsg('err', 'An account already exists with this email — sign in instead');
-    } else if (msg.includes('Email not confirmed')) {
-      showAuthMsg('err', 'Please confirm your email address first — check your inbox');
-    } else if (msg.includes('network') || msg.includes('fetch')) {
-      showAuthMsg('err', 'Network error — check your connection and try again');
-    } else if (msg.includes('rate') || msg.includes('429')) {
-      showAuthMsg('err', 'Too many attempts — please wait a minute and try again');
-    } else {
-      showAuthMsg('err', msg || 'Something went wrong — please try again');
-    }
+    if (msg.includes('Invalid login')) showAuthMsg('err', 'Incorrect email or password');
+    else if (msg.includes('already registered')) showAuthMsg('err', 'An account with that email already exists — sign in instead');
+    else showAuthMsg('err', msg || 'Something went wrong, please try again');
   } finally {
     setAuthLoading(false);
   }
@@ -1407,157 +1308,96 @@ async function handleAuthSubmit() {
 
 /* ── Forgot password ─────────────────────────────────────── */
 async function handleSendLink() {
-  if (!_sb) { showResetMsg('err', 'Still loading — please try again in a moment'); return; }
-
-  const email = (document.getElementById('resetEmail')?.value || '').trim();
+  if (!_sb) { showResetMsg('err', 'Still loading — please wait a moment and try again'); return; }
+  const email = document.getElementById('resetEmail').value.trim();
   if (!email) { showResetMsg('err', 'Please enter your email address'); return; }
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    showResetMsg('err', 'Please enter a valid email address'); return;
-  }
 
   const submitBtn     = document.getElementById('resetSubmitBtn');
   const submitLabel   = document.getElementById('resetSubmitLabel');
   const submitSpinner = document.getElementById('resetSubmitSpinner');
-  if (submitBtn)     submitBtn.disabled          = true;
-  if (submitLabel)   submitLabel.style.display   = 'none';
-  if (submitSpinner) submitSpinner.style.display = 'inline';
+  submitBtn.disabled         = true;
+  submitLabel.style.display  = 'none';
+  submitSpinner.style.display = 'inline';
 
   try {
-    // Determine redirectTo — must exactly match Supabase allowed redirect URLs.
-    // iOS Safari PWA: window.location.origin can be 'null' or empty.
-    // We use the canonical app URL as the safe fallback.
-    const CANONICAL = 'https://weldja.github.io/WeldsWine/';
-    let redirectTo = CANONICAL;
-    try {
-      const o = window.location.origin;
-      if (o && o !== 'null' && o !== 'undefined' && o.startsWith('http')) {
-        // Strip any query string or hash — Supabase requires a clean URL
-        redirectTo = window.location.protocol + '//' + window.location.host + window.location.pathname;
-        // Ensure trailing slash matches Supabase config
-        if (!redirectTo.endsWith('/')) redirectTo += '/';
-      }
-    } catch (_) { redirectTo = CANONICAL; }
+    const redirectTo = window.location.origin + window.location.pathname;
 
-    const { error } = await _sb.auth.resetPasswordForEmail(email, { redirectTo });
+    // resetPasswordForEmail is the correct client-side method —
+    // it sends a password reset link via Supabase SMTP (or custom SMTP if configured)
+    const { error } = await _sb.auth.resetPasswordForEmail(email, {
+      redirectTo
+    });
 
-    // Supabase returns an error for unknown emails on some configs — treat as success
-    // to avoid revealing whether an account exists (security best practice)
-    const isHarmless = !error ||
-      (error.message || '').toLowerCase().includes('not found') ||
-      (error.message || '').toLowerCase().includes('user not found') ||
-      (error.message || '').toLowerCase().includes('no user');
-
-    if (!isHarmless) throw error;
-
-    // Show confirmation
-    const sentMsg = document.getElementById('sentEmailMsg');
-    if (sentMsg) {
-      sentMsg.textContent = '';
-      sentMsg.appendChild(document.createTextNode('A reset link has been sent to '));
-      const strong = document.createElement('strong');
-      strong.textContent = email;
-      sentMsg.appendChild(strong);
-      sentMsg.appendChild(document.createTextNode('. Check your inbox and spam folder.'));
+    // Don't expose whether the account exists — always show success
+    if (error && !error.message?.toLowerCase().includes('not found')) {
+      throw error;
     }
+
+    const sentMsg = document.getElementById('sentEmailMsg');
+    sentMsg.textContent = 'A password reset link has been sent to ';
+    const strong = document.createElement('strong');
+    strong.textContent = email;
+    sentMsg.appendChild(strong);
+    sentMsg.appendChild(document.createTextNode('. Check your inbox (and spam folder).'));
     showAuthState('sent');
 
   } catch(e) {
-    console.error('[reset]', e);
-    const m = (e?.message || '').toLowerCase();
-    let msg;
-    if (m.includes('rate') || m.includes('429') || m.includes('too many')) {
-      msg = 'Too many attempts — please wait a few minutes and try again';
-    } else if (m.includes('network') || m.includes('fetch') || m.includes('failed to fetch')) {
-      msg = 'No internet connection — please check your network and try again';
-    } else if (m.includes('smtp') || m.includes('email') || m.includes('send') || m.includes('500')) {
-      msg = 'The email service is temporarily unavailable — please try again shortly';
-    } else if (m.includes('invalid') && m.includes('email')) {
-      msg = 'Please enter a valid email address';
-    } else {
-      msg = 'Could not send reset link — please try again';
-    }
-    showResetMsg('err', msg);
+    console.error('handleSendLink:', e);
+    showResetMsg('err', 'Could not send reset link — please try again');
   } finally {
-    if (submitBtn)     submitBtn.disabled          = false;
-    if (submitLabel)   submitLabel.style.display   = 'inline';
-    if (submitSpinner) submitSpinner.style.display = 'none';
+    submitBtn.disabled          = false;
+    submitLabel.style.display   = 'inline';
+    submitSpinner.style.display = 'none';
   }
 }
 
 // Legacy alias
 function handleMagicLink() { showAuthState('reset'); }
 
-/* ── Password recovery (from email link) ─────────────────── */
-function showPasswordRecoveryUI() {
-  // Show the auth screen with a new password form
-  const authScreen = document.getElementById('authScreen');
-  const card = document.querySelector('.auth-card');
-  if (!authScreen || !card) return;
-  authScreen.classList.remove('hidden');
-  card.innerHTML = `
-    <div style="text-align:center;margin-bottom:20px">
-      <div style="font-size:2rem;margin-bottom:8px">🔑</div>
-      <div style="font-family:var(--font-d);font-size:1.05rem;color:var(--charcoal);margin-bottom:6px;font-weight:600">Set a new password</div>
-      <div style="font-family:var(--font-b);font-size:.85rem;color:var(--warm-gray);line-height:1.6">Choose a strong password of at least 8 characters.</div>
-    </div>
-    <div class="auth-form-group">
-      <label for="newPassword">New Password</label>
-      <div style="position:relative">
-        <input type="password" id="newPassword" placeholder="••••••••" autocomplete="new-password" style="width:100%"/>
-        <button type="button" onclick="toggleNewPasswordVisibility()" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--warm-gray);font-size:.8rem;padding:2px 4px">Show</button>
-      </div>
-    </div>
-    <div class="auth-form-group">
-      <label for="confirmPassword">Confirm Password</label>
-      <input type="password" id="confirmPassword" placeholder="••••••••" autocomplete="new-password" style="width:100%"/>
-    </div>
-    <button class="auth-btn-primary" id="updatePasswordBtn" onclick="handleUpdatePassword()" style="margin-top:4px">
-      <span id="updatePasswordLabel">Update Password</span>
-      <span id="updatePasswordSpinner" style="display:none">Updating…</span>
-    </button>
-    <div class="auth-msg" id="recoveryMsg"></div>
-  `;
-  // Wire enter key
-  ['newPassword','confirmPassword'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.addEventListener('keydown', e => { if (e.key === 'Enter') handleUpdatePassword(); });
-  });
-  setTimeout(() => document.getElementById('newPassword')?.focus(), 200);
+/* ── Set new password (recovery flow) ───────────────────── */
+async function handleSetNewPassword() {
+  if (!_sb) return;
+  const password = document.getElementById('newPassword').value;
+  if (!password || password.length < 8) {
+    showSetPasswordMsg('err', 'Password must be at least 8 characters');
+    return;
+  }
+
+  const btn     = document.getElementById('setPasswordBtn');
+  const label   = document.getElementById('setPasswordLabel');
+  const spinner = document.getElementById('setPasswordSpinner');
+  btn.disabled          = true;
+  label.style.display   = 'none';
+  spinner.style.display = 'inline';
+
+  try {
+    const { error } = await _sb.auth.updateUser({ password });
+    if (error) throw error;
+
+    showSetPasswordMsg('ok', 'Password updated! Signing you in…');
+    setTimeout(() => {
+      // Session is already active after updateUser — just show the app
+      showApp();
+    }, 1500);
+  } catch(e) {
+    showSetPasswordMsg('err', e.message || 'Could not update password — please try again');
+    btn.disabled          = false;
+    label.style.display   = 'inline';
+    spinner.style.display = 'none';
+  }
+}
+
+function showSetPasswordMsg(type, msg) {
+  const el = document.getElementById('setPasswordMsg');
+  el.className = 'auth-msg ' + type;
+  el.textContent = msg;
 }
 
 function toggleNewPasswordVisibility() {
   const input = document.getElementById('newPassword');
-  if (!input) return;
-  input.type = input.type === 'password' ? 'text' : 'password';
-}
-
-async function handleUpdatePassword() {
-  const pwd     = (document.getElementById('newPassword')?.value || '').trim();
-  const confirm = (document.getElementById('confirmPassword')?.value || '').trim();
-  const msgEl   = document.getElementById('recoveryMsg');
-  const btn     = document.getElementById('updatePasswordBtn');
-  const label   = document.getElementById('updatePasswordLabel');
-  const spinner = document.getElementById('updatePasswordSpinner');
-
-  if (!pwd) { if(msgEl){msgEl.className='auth-msg err';msgEl.textContent='Please enter a new password';} return; }
-  if (pwd.length < 8) { if(msgEl){msgEl.className='auth-msg err';msgEl.textContent='Password must be at least 8 characters';} return; }
-  if (pwd !== confirm) { if(msgEl){msgEl.className='auth-msg err';msgEl.textContent='Passwords do not match';} return; }
-
-  if (btn) btn.disabled = true;
-  if (label) label.style.display = 'none';
-  if (spinner) spinner.style.display = 'inline';
-
-  try {
-    const { error } = await _sb.auth.updateUser({ password: pwd });
-    if (error) throw error;
-    if (msgEl) { msgEl.className='auth-msg ok'; msgEl.textContent='Password updated — signing you in…'; }
-    setTimeout(() => showApp(), 1200);
-  } catch(e) {
-    if (msgEl) { msgEl.className='auth-msg err'; msgEl.textContent=e.message||'Failed to update password — please try again'; }
-    if (btn) btn.disabled = false;
-    if (label) label.style.display = 'inline';
-    if (spinner) spinner.style.display = 'none';
-  }
+  const btn   = document.getElementById('toggleNewPassword');
+  if (input.type === 'password') { input.type = 'text';     btn.textContent = 'Hide'; }
+  else                           { input.type = 'password'; btn.textContent = 'Show'; }
 }
 
 function showResetMsg(type, msg) {
@@ -1568,30 +1408,16 @@ function showResetMsg(type, msg) {
 
 /* ── Sign out ────────────────────────────────────────────── */
 async function handleSignOut() {
-  // 1. Clear app cache immediately
+  if (_sb) await _sb.auth.signOut();
+  // Clear session cache for this user
   try {
     const cacheKey = 'wwwCache_' + (_currentUser?.id || '');
     sessionStorage.removeItem(cacheKey);
-    localStorage.removeItem(cacheKey);
   } catch(_) {}
-
-  // 2. Nuke the Supabase session from localStorage RIGHT NOW —
-  //    this stops a page refresh restoring the session before
-  //    the network signOut call completes
-  try {
-    Object.keys(localStorage)
-      .filter(k => k.startsWith('sb-') && (k.includes('auth') || k.includes('session')))
-      .forEach(k => localStorage.removeItem(k));
-  } catch(_) {}
-
-  // 3. Clear app state and show login screen instantly
   wines = [];
   _winesLoaded = false;
-  _currentUser = null;
-  hideApp();
-
-  // 4. Tell Supabase server to invalidate the token (best-effort)
-  if (_sb) _sb.auth.signOut().catch(() => {});
+  // Auth screen will show — no need to renderGrid here
+  if (typeof updateStats === 'function') updateStats();
 }
 
 /* ── Helpers ─────────────────────────────────────────────── */
@@ -1764,7 +1590,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('cancelQuickAdd').addEventListener('click', closeQuickAdd);
   document.getElementById('closeQuickAdd').addEventListener('click', closeQuickAdd);
   document.getElementById('quickAddOverlay').addEventListener('click', e => { if (e.target === document.getElementById('quickAddOverlay')) closeQuickAdd(); });
-  ['qaName','qaCountry','qaVintage','qaPrice'].forEach(id => {
+  ['qaName','qaCountry','qaVintage'].forEach(id => {
     document.getElementById(id).addEventListener('keydown', e => { if (e.key === 'Enter') handleQuickAdd(); });
   });
 });
@@ -1808,10 +1634,7 @@ function setupEvents() {
   document.getElementById('shareOverlay').addEventListener('click', e=>{ if(e.target===document.getElementById('shareOverlay')) closeShareModal(); });
   document.getElementById('closeInfoModal').addEventListener('click', closeInfoModal);
   document.getElementById('infoOverlay').addEventListener('click', e=>{ if(e.target===document.getElementById('infoOverlay')) closeInfoModal(); });
-  document.addEventListener('keydown', e=>{ if(e.key==='Escape'){ closeModal(); closeDetail(); closeScanModal(); closeLightbox(); closeShareModal(); closeInfoModal(); closeQuickAdd(); closeHamburger(); } });
-  document.getElementById('hamburgerBtn').addEventListener('click', openHamburger);
-  document.getElementById('hamburgerClose').addEventListener('click', closeHamburger);
-  document.getElementById('hamburgerOverlay').addEventListener('click', closeHamburger);
+  document.addEventListener('keydown', e=>{ if(e.key==='Escape'){ closeModal(); closeDetail(); closeScanModal(); closeLightbox(); closeShareModal(); closeInfoModal(); closeQuickAdd(); } });
   // Check for public wine share link in URL
   checkPublicWineView();
 }
@@ -1857,28 +1680,16 @@ function showSkeletonGrid(count = 4) {
   for (let i = 0; i < count; i++) {
     const card = document.createElement('div');
     card.className = 'skeleton-card';
-    card.style.animationDelay = `${i * 0.07}s`;
+    card.style.animationDelay = `${i * 0.06}s`;
     card.innerHTML = `
       <div class="sk-img skeleton"></div>
       <div class="sk-body">
         <div class="sk-line wide skeleton"></div>
         <div class="sk-line mid skeleton"></div>
-        <div class="sk-tags">
-          <div class="sk-tag skeleton"></div>
-          <div class="sk-tag skeleton"></div>
-        </div>
         <div class="sk-line short skeleton"></div>
-      </div>
-      <div class="sk-footer">
-        <div class="sk-date skeleton"></div>
-        <div class="sk-btns">
-          <div class="sk-btn skeleton"></div>
-          <div class="sk-btn skeleton"></div>
-        </div>
       </div>`;
     wineGrid.appendChild(card);
   }
-  showLoadingBanner('Loading your cellar…');
 }
 
 function renderGrid() {
@@ -1947,7 +1758,6 @@ function createCard(w) {
 
   const meta   = [w.winery, w.vintage, w.country].filter(Boolean).join(' · ');
   const tags   = [w.region, w.grape, w.style].filter(Boolean);
-  const priceTag = w.price ? w.price : null;
   const dateStr= w.dateTasted ? formatDate(w.dateTasted) : '';
 
   const body = document.createElement('div');
@@ -1963,7 +1773,8 @@ function createCard(w) {
         </div>
       </div>
       ${meta?`<div class="card-meta">${escHtml(meta)}</div>`:''}
-      ${tags.length||priceTag||w.buyAgain?`<div class="card-tags">${tags.map(t=>`<span class="card-tag">${escHtml(t)}</span>`).join('')}${priceTag?`<span class="card-tag" style="color:var(--burgundy);border-color:rgba(123,30,58,.25)">${escHtml(priceTag)}</span>`:''}${w.buyAgain?'<span class="card-buy-badge">↺ Buy again</span>':''}</div>`:''}
+      ${tags.length?`<div class="card-tags">${tags.map(t=>`<span class="card-tag">${escHtml(t)}</span>`).join('')}${w.buyAgain?'<span class="card-buy-badge">↺ Buy again</span>':''}</div>`:''}
+      ${!tags.length && w.buyAgain?`<div class="card-tags"><span class="card-buy-badge">↺ Buy again</span></div>`:''}
       ${w.notes?`<p class="card-notes">${escHtml(w.notes)}</p>`:''}
       ${w.locLabel?`<div class="card-location">📍 ${escHtml(w.locLabel)}</div>`:''}
     </div>
@@ -2032,12 +1843,12 @@ async function openLightbox(id, e) {
 
   lb.addEventListener('click', e => { if (e.target === lb) closeLightbox(); });
   document.body.appendChild(lb);
-  lockScroll();
+  document.body.style.overflow = 'hidden';
 }
 
 function closeLightbox() {
   const lb = document.getElementById('labelLightbox');
-  if (lb) { lb.remove(); unlockScroll(); }
+  if (lb) { lb.remove(); document.body.style.overflow = ''; }
 }
 
 async function openDetail(w, e) {
@@ -2089,7 +1900,7 @@ async function openDetail(w, e) {
     </div>`;
 
   detailOverlay.classList.add('open');
-  lockScroll();
+  document.body.style.overflow='hidden';
 
   if (w.locLat && w.locLng) {
     const initMini = () => {
@@ -2110,7 +1921,7 @@ async function openDetail(w, e) {
   }
 }
 
-function closeDetail() { detailOverlay.classList.remove('open'); unlockScroll(); }
+function closeDetail() { detailOverlay.classList.remove('open'); document.body.style.overflow=''; }
 
 function initMapView() {
   // Lazy-load Leaflet only when map is first opened
@@ -2202,11 +2013,11 @@ function openModal(wine=null, injectFront=null, injectBack=null) {
   }
 
   modalOverlay.classList.add('open');
-  lockScroll();
+  document.body.style.overflow='hidden';
   setTimeout(()=>document.getElementById('wineName').focus(),200);
 }
 
-function closeModal() { modalOverlay.classList.remove('open'); unlockScroll(); }
+function closeModal() { modalOverlay.classList.remove('open'); document.body.style.overflow=''; }
 
 /* ── Location tracking ───────────────────────────────────────
    Started once after login. Keeps _appLocLat/Lng/Label fresh.
@@ -2409,7 +2220,7 @@ async function handleSave(e) {
   // Save to DB first — only update local state on success
   const ok = await saveWineToDB(entry);
   if (!ok) {
-    showToast('Save failed — check your internet connection and try again');
+    showToast('Failed to save — check your connection');
     saveBtn.disabled = false;
     saveBtn.textContent = 'Save Wine';
     return;
@@ -2419,7 +2230,7 @@ async function handleSave(e) {
   if (idx >= 0) { entry.createdAt = wines[idx].createdAt; wines[idx] = entry; }
   else { wines.unshift(entry); }
 
-  showToast(idx >= 0 ? '✓ Wine updated' : '✓ Wine saved to your journal');
+  showToast(idx >= 0 ? 'Wine updated ✓' : 'Wine saved ✓');
   closeModal();
 
   activeFilter = 'all';
@@ -2545,7 +2356,7 @@ async function shareWine(id, e) {
   document.getElementById('shareCopyBtn').classList.remove('copied');
 
   document.getElementById('shareOverlay').classList.add('open');
-  lockScroll();
+  document.body.style.overflow = 'hidden';
 }
 
 async function getOrCreateShareId(w) {
@@ -2583,7 +2394,7 @@ async function getOrCreateShareId(w) {
 
 function closeShareModal() {
   document.getElementById('shareOverlay').classList.remove('open');
-  unlockScroll();
+  document.body.style.overflow = '';
 }
 
 /* ── About / Privacy modals ──────────────────────────────── */
@@ -2614,12 +2425,10 @@ function showFooterModal(type) {
   document.getElementById('infoModalTitle').textContent = content.title;
   document.getElementById('infoModalBody').innerHTML = content.body;
   document.getElementById('infoOverlay').classList.add('open');
-  lockScroll();
 }
 
 function closeInfoModal() {
   document.getElementById('infoOverlay').classList.remove('open');
-  unlockScroll();
 }
 
 /* ── Quick Add ───────────────────────────────────────────── */
@@ -2628,18 +2437,16 @@ function openQuickAdd() {
   document.getElementById('qaName').value    = '';
   document.getElementById('qaCountry').value = '';
   document.getElementById('qaVintage').value = '';
-  document.getElementById('qaPrice').value   = '';
-  document.getElementById('qaStyle').value   = '';
   document.getElementById('qaRating').value  = '0';
   document.querySelectorAll('#qaStarInput .star').forEach(s => s.classList.remove('filled'));
   document.getElementById('quickAddOverlay').classList.add('open');
-  lockScroll();
+  document.body.style.overflow = 'hidden';
   setTimeout(() => document.getElementById('qaName').focus(), 200);
 }
 
 function closeQuickAdd() {
   document.getElementById('quickAddOverlay').classList.remove('open');
-  unlockScroll();
+  document.body.style.overflow = '';
 }
 
 async function handleQuickAdd() {
@@ -2656,9 +2463,7 @@ async function handleQuickAdd() {
     country:     document.getElementById('qaCountry').value.trim() || null,
     vintage:     document.getElementById('qaVintage').value || null,
     rating:      parseInt(document.getElementById('qaRating').value, 10) || null,
-    price:       document.getElementById('qaPrice').value.trim() || null,
-    style:       document.getElementById('qaStyle').value || null,
-    winery:      null, region: null, grape: null,
+    winery:      null, region: null, grape: null, style: null,
     price:       null, purchasedFrom: null,
     dateTasted:  new Date().toISOString().slice(0, 10),
     notes:       null, isFavourite: false, buyAgain: false,
@@ -2669,7 +2474,7 @@ async function handleQuickAdd() {
 
   const ok = await saveWineToDB(entry);
   if (!ok) {
-    showToast('Save failed — check your internet connection and try again');
+    showToast('Failed to save — check your connection');
     btn.disabled = false;
     btn.textContent = 'Save Wine';
     return;
@@ -2786,14 +2591,6 @@ async function checkPublicWineView() {
 function getWineById(id) { return wines.find(w=>w.id===id); }
 
 function updateStats() {
-  if (!_winesLoaded) {
-    // Still loading — show dashes so it doesn't flash 0
-    document.getElementById('statTotal').textContent     = '—';
-    document.getElementById('statAvg').textContent       = '—';
-    document.getElementById('statCountries').textContent = '—';
-    document.getElementById('statTop').textContent       = '—';
-    return;
-  }
   const t=wines.length;
   const rated=wines.filter(w=>w.rating);
   const avg=rated.length?(rated.reduce((s,w)=>s+w.rating,0)/rated.length).toFixed(1):'—';
@@ -3028,18 +2825,6 @@ function formatDate(s) {
 function escHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;'); }
 function showToast(m){ const t=document.getElementById('toast'); t.textContent=m; t.classList.add('show'); clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove('show'),3000); }
 function flashAutofill(el){ el.classList.remove('autofilled'); void el.offsetWidth; el.classList.add('autofilled'); }
-
-/* ── Loading banner ──────────────────────────────────────── */
-function showLoadingBanner(msg) {
-  const el = document.getElementById('loadingBanner');
-  if (!el) return;
-  document.getElementById('loadingBannerMsg').textContent = msg || 'Loading…';
-  el.classList.add('show');
-}
-function hideLoadingBanner() {
-  const el = document.getElementById('loadingBanner');
-  if (el) el.classList.remove('show');
-}
 // Crypto-safe ID — no collisions across devices
 function generateId(){
   if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID();
@@ -3093,25 +2878,20 @@ async function loadWinesFromDB(cacheKey) {
     }));
 
     _winesLoaded = true;
-    hideLoadingBanner();
     renderGrid();
     updateStats();
 
-    // Cache to localStorage with timestamp — persists across refresh/reload
-    // Strip photos to keep storage light
+    // Cache for next visit — strip photos to keep sessionStorage light
     if (cacheKey) {
       try {
         const slim = wines.map(w => ({...w, photoFront:null, photoBack:null, photo:null}));
-        localStorage.setItem(cacheKey, JSON.stringify({ ts: Date.now(), data: slim }));
+        sessionStorage.setItem(cacheKey, JSON.stringify(slim));
       } catch(_) {}
     }
 
   } catch(e) {
     console.error('loadWinesFromDB:', e);
-    hideLoadingBanner();
-    _winesLoaded = true;
-    renderGrid();
-    showToast('Could not load wines — check your connection');
+    showToast('Could not load wines from database');
   }
 }
 
@@ -3182,10 +2962,10 @@ function openScanModal() {
     {id:'scanGoBtn',label:'Analyse Labels ›',cls:'btn-primary',action:doScan,disabled:true}
   ]);
   document.getElementById('scanOverlay').classList.add('open');
-  lockScroll();
+  document.body.style.overflow='hidden';
 }
 
-function closeScanModal() { document.getElementById('scanOverlay').classList.remove('open'); unlockScroll(); }
+function closeScanModal() { document.getElementById('scanOverlay').classList.remove('open'); document.body.style.overflow=''; }
 
 function resetSide(side) {
   if(side==='front') scanFrontUrl=null; else scanBackUrl=null;
@@ -3271,12 +3051,12 @@ function showScanErrorUI(err) {
   showScanScreen('scanError');
   const m=err.message||'';
   const msgs={
-    NO_KEY:           ['Scan not set up',        'Tap ⚙ in the footer to add your Worker URL and enable AI scanning.'],
+    NO_KEY:           ['Scan not configured',   'Click ⚙ Scan Setup in the toolbar and follow the 2-step instructions.'],
     NO_KEY_IN_WORKER: ['Key missing in Worker', 'You forgot to replace PASTE_YOUR_KEY_HERE in cloudflare-worker.js before deploying. Edit the file, add your key, and redeploy.'],
-    BAD_KEY:          ['API key rejected',        'The Anthropic key in your Worker was rejected. Check console.anthropic.com, update the Worker, and redeploy.'],
-    RATE_LIMIT:  ['Rate limit reached', 'Too many scans in a short time. Wait a minute and try again.'],
-    PARSE_ERROR: ['Label not recognised',     'Try again with a clearer, well-lit photo — make sure the label fills the frame.'],
-    NETWORK_ERROR:['Could not connect', 'Check your internet connection, then verify the Worker URL in ⚙ is correct.']
+    BAD_KEY:          ['Invalid API key',        'The key in your cloudflare-worker.js was rejected. Check it at console.anthropic.com, update the Worker code, and redeploy.'],
+    RATE_LIMIT:  ['Rate limit reached', 'Too many requests. Wait a minute and try again.'],
+    PARSE_ERROR: ['Could not read the label', 'Try a clearer, better-lit photo with the label filling the frame.'],
+    NETWORK_ERROR:['Could not reach proxy', 'Check the Worker URL in ⚙ Scan Setup is correct and that the Worker is deployed and running in Cloudflare.']
   };
   const [title,detail]=msgs[m]||['Analysis failed', m||'Unexpected error. Please try again.'];
   document.getElementById('scanErrorMsg').textContent=title;
@@ -3391,13 +3171,13 @@ function openKeyModal(callback=null) {
   document.getElementById('keyInput').value = existing || '';
   document.getElementById('keyStatus').style.display='none';
   document.getElementById('keyOverlay').classList.add('open');
-  lockScroll();
+  document.body.style.overflow='hidden';
   setTimeout(()=>{ if(!existing) document.getElementById('keyInput').focus(); },200);
 }
 
 function closeKeyModal() {
   document.getElementById('keyOverlay').classList.remove('open');
-  unlockScroll();
+  document.body.style.overflow='';
   _keyCallback=null;
 }
 
@@ -3417,173 +3197,4 @@ function updateKeyBadge() {
   const has = Scanner.hasUrl();
   btn.textContent = has ? '⚙ Scan ✓' : '⚙ Scan Setup';
   btn.style.color = has ? 'var(--burgundy)' : '';
-  btn.style.borderColor = has ? 'var(--burgundy)' : '';
-}
-
-</script>
-
-<!-- HAMBURGER OVERLAY -->
-<div class="hamburger-overlay" id="hamburgerOverlay"></div>
-
-<!-- HAMBURGER SLIDE-OUT MENU -->
-<div class="hamburger-menu" id="hamburgerMenu">
-  <div class="hamburger-menu-header">
-    <div class="hamburger-menu-logo">🍷 Welds Wine Wisdoms</div>
-    <button class="hamburger-menu-close" id="hamburgerClose" aria-label="Close menu">✕</button>
-  </div>
-  <div class="hamburger-menu-user" id="hamburgerUser" style="display:none">
-    <div class="hamburger-menu-avatar" id="hamburgerAvatar">?</div>
-    <div class="hamburger-menu-email" id="hamburgerEmail"></div>
-  </div>
-  <div class="hamburger-menu-items">
-    <button class="hamburger-menu-item" onclick="closeHamburger();document.getElementById('openScanModal').click()">
-      <span class="hamburger-menu-item-icon">📷</span> Scan Wine Label
-    </button>
-    <button class="hamburger-menu-item" onclick="closeHamburger();document.getElementById('openAddModal').click()">
-      <span class="hamburger-menu-item-icon">➕</span> Add Wine
-    </button>
-    <button class="hamburger-menu-item" onclick="closeHamburger();document.getElementById('openQuickAdd').click()">
-      <span class="hamburger-menu-item-icon">⚡</span> Quick Add
-    </button>
-    <div class="hamburger-menu-divider"></div>
-    <button class="hamburger-menu-item" onclick="closeHamburger();showFooterModal('about')">
-      <span class="hamburger-menu-item-icon">ℹ️</span> About
-    </button>
-    <button class="hamburger-menu-item" onclick="closeHamburger();showFooterModal('privacy')">
-      <span class="hamburger-menu-item-icon">🔒</span> Privacy
-    </button>
-    <div class="hamburger-menu-divider"></div>
-    <button class="hamburger-menu-item danger" id="hamburgerSignOut" onclick="closeHamburger();handleSignOut()">
-      <span class="hamburger-menu-item-icon">🚪</span> Sign Out
-    </button>
-  </div>
-</div>
-
-<script>
-/* ── Scroll lock ─────────────────────────────────────────── */
-let _scrollLockCount = 0;
-function lockScroll() {
-  _scrollLockCount++;
-  if (_scrollLockCount === 1) {
-    document.body.style.overflow = 'hidden';
-  }
-}
-function unlockScroll() {
-  if (_scrollLockCount <= 0) return; // already unlocked — no-op
-  _scrollLockCount--;
-  if (_scrollLockCount === 0) {
-    document.body.style.overflow = '';
-  }
-}
-
-/* ── Hamburger ───────────────────────────────────────────── */
-function openHamburger() {
-  document.getElementById('hamburgerMenu').classList.add('open');
-  document.getElementById('hamburgerOverlay').classList.add('open');
-  lockScroll();
-}
-function closeHamburger() {
-  document.getElementById('hamburgerMenu').classList.remove('open');
-  document.getElementById('hamburgerOverlay').classList.remove('open');
-  unlockScroll();
-}
-function updateHamburgerUser() {
-  const user = _currentUser;
-  const userEl    = document.getElementById('hamburgerUser');
-  const avatarEl  = document.getElementById('hamburgerAvatar');
-  const emailEl   = document.getElementById('hamburgerEmail');
-  const signOutEl = document.getElementById('hamburgerSignOut');
-  if (!userEl) return;
-  if (user) {
-    userEl.style.display = 'flex';
-    if (signOutEl) signOutEl.style.display = '';
-    const email = user.email || '';
-    if (avatarEl) avatarEl.textContent = email ? email[0].toUpperCase() : '✓';
-    if (emailEl)  emailEl.textContent  = email;
-  } else {
-    userEl.style.display = 'none';
-    if (signOutEl) signOutEl.style.display = 'none';
-  }
-}
-/* ── Back button / history management ───────────────────────
-   Pushes a state entry whenever any modal or panel opens.
-   On popstate (back button), closes the topmost open layer
-   instead of navigating away from the app.
-────────────────────────────────────────────────────────── */
-(function() {
-  // Push an initial state so there's always something to pop back to
-  history.replaceState({ app: true, layer: 0 }, '');
-
-  let _layerCount = 0;
-
-  function pushLayer() {
-    _layerCount++;
-    history.pushState({ app: true, layer: _layerCount }, '');
-  }
-
-  function popLayer() {
-    if (_layerCount > 0) {
-      _layerCount--;
-      history.replaceState({ app: true, layer: _layerCount }, '');
-    }
-  }
-
-  // Find and close whatever is currently open
-  function closeTopLayer() {
-    // Check each layer in priority order (top-most first)
-    if (document.getElementById('labelLightbox')) {
-      closeLightbox(); return;
-    }
-    const overlays = [
-      { id: 'keyOverlay',      close: closeKeyModal    },
-      { id: 'shareOverlay',    close: closeShareModal  },
-      { id: 'detailOverlay',   close: closeDetail      },
-      { id: 'scanOverlay',     close: closeScanModal   },
-      { id: 'modalOverlay',    close: closeModal       },
-      { id: 'quickAddOverlay', close: closeQuickAdd    },
-      { id: 'infoOverlay',     close: closeInfoModal   },
-      { id: 'hamburgerMenu',   close: closeHamburger   },
-    ];
-    for (const { id, close } of overlays) {
-      const el = document.getElementById(id);
-      if (el && (el.classList.contains('open') || el.classList.contains('show'))) {
-        close(); return;
-      }
-    }
-    // Nothing open — re-push state so next back press does the same
-    history.pushState({ app: true, layer: 0 }, '');
-  }
-
-  window.addEventListener('popstate', function(e) {
-    // Always intercept — close top layer and push state back
-    closeTopLayer();
-    // Re-push so the app always has a back-state available
-    setTimeout(() => {
-      history.pushState({ app: true, layer: _layerCount }, '');
-    }, 50);
-  });
-
-  // Patch lockScroll and unlockScroll to also manage history
-  const _origLockScroll   = window.lockScroll;
-  const _origUnlockScroll = window.unlockScroll;
-
-  // Override after DOMContentLoaded so the originals exist
-  document.addEventListener('DOMContentLoaded', function() {
-    const origLock   = lockScroll;
-    const origUnlock = unlockScroll;
-
-    window.lockScroll = function() {
-      pushLayer();
-      origLock();
-    };
-    window.unlockScroll = function() {
-      popLayer();
-      origUnlock();
-    };
-  }, { once: true });
-})();
-
-</script>
-
-</body>
-</html>
+  btn.style.bor
