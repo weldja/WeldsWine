@@ -1132,14 +1132,20 @@ var _sbInitError = false;
 var _isRecoveryFlow = false;
 
 // Detect password recovery flow from URL before anything else runs
-// Works for both implicit flow (#type=recovery) and PKCE flow (?type=recovery)
 (function() {
   var hash = window.location.hash;
   var search = window.location.search;
   if (hash.includes('type=recovery') || search.includes('type=recovery') ||
-      hash.includes('access_token') && hash.includes('recovery')) {
+      (hash.includes('access_token') && hash.includes('recovery'))) {
     _isRecoveryFlow = true;
-    // Show auth screen immediately so user sees password form not app
+    // Clear any existing session from localStorage so Supabase doesn't
+    // restore it and skip the PASSWORD_RECOVERY event
+    try {
+      Object.keys(localStorage).forEach(function(k) {
+        if (k.startsWith('sb-')) localStorage.removeItem(k);
+      });
+    } catch(_) {}
+    // Keep auth screen visible
     document.getElementById('authScreen').classList.remove('hidden');
   }
 })();
@@ -1175,12 +1181,14 @@ document.addEventListener('DOMContentLoaded', function() {
     return;
   }
 
-  // Prevent auth screen flash for returning users
+  // Prevent auth screen flash for returning users — but NOT during password recovery
   try {
-    const sbKey = Object.keys(localStorage).find(k => k.startsWith('sb-') && k.endsWith('-auth-token'));
-    if (sbKey) {
-      const token = JSON.parse(localStorage.getItem(sbKey));
-      if (token?.access_token) document.getElementById('authScreen').classList.add('hidden');
+    if (!_isRecoveryFlow) {
+      const sbKey = Object.keys(localStorage).find(k => k.startsWith('sb-') && k.endsWith('-auth-token'));
+      if (sbKey) {
+        const token = JSON.parse(localStorage.getItem(sbKey));
+        if (token?.access_token) document.getElementById('authScreen').classList.add('hidden');
+      }
     }
   } catch(_) {}
 
