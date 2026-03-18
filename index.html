@@ -1135,6 +1135,7 @@ var _isRecoveryFlow = false;
 (function() {
   var hash = window.location.hash;
   var search = window.location.search;
+  alert('DEBUG: hash=' + hash + ' search=' + search);
   if (hash.includes('type=recovery') || search.includes('type=recovery') ||
       (hash.includes('access_token') && hash.includes('recovery'))) {
     _isRecoveryFlow = true;
