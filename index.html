@@ -1195,7 +1195,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Listen for auth changes
   _sb.auth.onAuthStateChange(function(event, session) {
-    console.log('onAuthStateChange:', event, session ? session.user?.id : 'no session');
+    console.log('onAuthStateChange:', event, 'isRecovery:', _isRecoveryFlow, session ? session.user?.id : 'no session');
+    alert('AUTH EVENT: ' + event + ' | isRecovery: ' + _isRecoveryFlow);
     if (event === 'PASSWORD_RECOVERY' || (event === 'SIGNED_IN' && _isRecoveryFlow)) {
       _isRecoveryFlow = false;
       _currentUser = session ? session.user : null;
