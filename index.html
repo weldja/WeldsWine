@@ -477,13 +477,11 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
 .skeleton-card .sk-line.wide{width:80%}
 .skeleton-card .sk-line.mid{width:55%}
 .skeleton-card .sk-line.short{width:35%;height:10px}
-/* Mobile hamburger — shown/hidden via JS; CSS hides sign-out on tiny screens */
+/* Mobile hamburger */
+#mobileMenuBtn { display: none }
 @media(max-width:480px){
-  .btn-signout{display:none !important}
-  #mobileMenuBtn{display:block !important}
-}
-@media(min-width:481px){
-  #mobileMenuBtn{display:none !important}
+  body.app-ready #mobileMenuBtn { display: block !important }
+  body.app-ready .btn-signout   { display: none }
 }
 </style>
 </head>
@@ -643,7 +641,7 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
         <button class="btn-signout" onclick="handleSignOut()">Sign out</button>
       </div>
       <button onclick="openMobileMenu()" aria-label="Menu" id="mobileMenuBtn"
-        style="display:none;background:none;border:none;color:rgba(245,239,230,.7);font-size:1.3rem;cursor:pointer;padding:4px 8px;line-height:1">☰</button>
+        style="background:none;border:none;color:rgba(245,239,230,.7);font-size:1.3rem;cursor:pointer;padding:4px 8px;line-height:1">☰</button>
     </div>
   </div>
 </header>
@@ -1221,6 +1219,7 @@ function showApp() {
       document.getElementById('authScreen').classList.add('hidden');
       const badge = document.getElementById('userBadge');
       if (badge) badge.style.display = 'flex';
+      document.body.classList.add('app-ready');
       const email = _currentUser?.email || '';
       const avatar = document.getElementById('userAvatar');
       if (avatar) avatar.textContent = email ? email[0].toUpperCase() : '✓';
@@ -1246,8 +1245,7 @@ function showApp() {
   document.getElementById('authScreen').classList.add('hidden');
   const badge = document.getElementById('userBadge');
   if (badge) badge.style.display = 'flex';
-  const menuBtn = document.getElementById('mobileMenuBtn');
-  if (menuBtn) menuBtn.style.display = '';  // CSS controls visibility via media query
+  document.body.classList.add('app-ready');
   const email = _currentUser?.email || '';
   const avatar = document.getElementById('userAvatar');
   if (avatar) avatar.textContent = email ? email[0].toUpperCase() : '✓';
@@ -1278,8 +1276,7 @@ function hideApp() {
   document.getElementById('authScreen').classList.remove('hidden');
   const badge = document.getElementById('userBadge');
   if (badge) badge.style.display = 'none';
-  const menuBtn = document.getElementById('mobileMenuBtn');
-  if (menuBtn) menuBtn.style.display = 'none';
+  document.body.classList.remove('app-ready');
   const hint = document.getElementById('onboardingHint');
   if (hint) hint.style.display = 'none';
   if (!_appReady) return;
