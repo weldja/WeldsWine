@@ -477,11 +477,7 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
 .skeleton-card .sk-line.wide{width:80%}
 .skeleton-card .sk-line.mid{width:55%}
 .skeleton-card .sk-line.short{width:35%;height:10px}
-/* Mobile hamburger — show only on small screens */
-@media(max-width:520px){
-  #mobileMenuBtn{display:block !important}
-  .btn-signout{display:none}
-}
+
 </style>
 </head>
 <body>
@@ -638,11 +634,7 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
       <div class="user-badge" id="userBadge" style="display:none">
         <div class="user-badge-avatar" id="userAvatar">?</div>
         <button class="btn-signout" onclick="handleSignOut()">Sign out</button>
-        <button id="mobileMenuBtn" onclick="openMobileMenu()" aria-label="Open menu"
-  style="position:fixed;bottom:24px;right:20px;z-index:9999;
-         width:56px;height:56px;border-radius:50%;border:none;cursor:pointer;
-         background:var(--burgundy);color:#fff;font-size:1.5rem;line-height:56px;
-         text-align:center;box-shadow:0 4px 20px rgba(44,20,36,.5)">☰</button>
+
       </div>
     </div>
   </div>
@@ -1222,6 +1214,7 @@ function showApp() {
       document.getElementById('authScreen').classList.add('hidden');
       const badge = document.getElementById('userBadge');
       if (badge) badge.style.display = 'flex';
+      var _f=document.getElementById('mobileMenuBtn'); if(_f)_f.style.display='flex';
       const email = _currentUser?.email || '';
       const avatar = document.getElementById('userAvatar');
       if (avatar) avatar.textContent = email ? email[0].toUpperCase() : '✓';
@@ -1240,6 +1233,7 @@ function showApp() {
   document.getElementById('authScreen').classList.add('hidden');
   const badge = document.getElementById('userBadge');
   if (badge) badge.style.display = 'flex';
+  var _fab=document.getElementById('mobileMenuBtn'); if(_fab)_fab.style.display='flex';
   const email = _currentUser?.email || '';
   const avatar = document.getElementById('userAvatar');
   if (avatar) avatar.textContent = email ? email[0].toUpperCase() : '✓';
@@ -1270,6 +1264,7 @@ function hideApp() {
   document.getElementById('authScreen').classList.remove('hidden');
   const badge = document.getElementById('userBadge');
   if (badge) badge.style.display = 'none';
+  var _fh=document.getElementById('mobileMenuBtn'); if(_fh)_fh.style.display='none';
   const hint = document.getElementById('onboardingHint');
   if (hint) hint.style.display = 'none';
   if (!_appReady) return;
@@ -3298,5 +3293,13 @@ function closeMobileMenu() {
 }
 </script>
 
+
+<!-- MOBILE HAMBURGER FAB -->
+<button id="mobileMenuBtn" onclick="openMobileMenu()" aria-label="Open menu"
+  style="position:fixed;bottom:24px;right:20px;z-index:9999;
+         width:56px;height:56px;border-radius:50%;border:none;cursor:pointer;
+         background:var(--burgundy);color:#fff;font-size:1.5rem;line-height:56px;
+         text-align:center;box-shadow:0 4px 20px rgba(44,20,36,.5);
+         display:none">☰</button>
 </body>
 </html>
