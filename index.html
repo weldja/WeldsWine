@@ -1132,11 +1132,15 @@ var _sbInitError = false;
 var _isRecoveryFlow = false;
 
 // Detect password recovery flow from URL before anything else runs
+// Works for both implicit flow (#type=recovery) and PKCE flow (?type=recovery)
 (function() {
   var hash = window.location.hash;
   var search = window.location.search;
-  if (hash.includes('type=recovery') || search.includes('type=recovery')) {
+  if (hash.includes('type=recovery') || search.includes('type=recovery') ||
+      hash.includes('access_token') && hash.includes('recovery')) {
     _isRecoveryFlow = true;
+    // Show auth screen immediately so user sees password form not app
+    document.getElementById('authScreen').classList.remove('hidden');
   }
 })();
 
@@ -1149,7 +1153,7 @@ function _ensureSb() {
       _sbInitError = true;
       return false;
     }
-    _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { flowType: 'implicit' } });
     return true;
   } catch(e) {
     console.error('Supabase init failed:', e);
