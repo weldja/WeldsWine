@@ -477,10 +477,13 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
 .skeleton-card .sk-line.wide{width:80%}
 .skeleton-card .sk-line.mid{width:55%}
 .skeleton-card .sk-line.short{width:35%;height:10px}
-/* Mobile hamburger — show only on small screens */
-@media(max-width:520px){
+/* Mobile hamburger — shown/hidden via JS; CSS hides sign-out on tiny screens */
+@media(max-width:480px){
+  .btn-signout{display:none !important}
   #mobileMenuBtn{display:block !important}
-  .btn-signout{display:none}
+}
+@media(min-width:481px){
+  #mobileMenuBtn{display:none !important}
 }
 </style>
 </head>
@@ -638,9 +641,9 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
       <div class="user-badge" id="userBadge" style="display:none">
         <div class="user-badge-avatar" id="userAvatar">?</div>
         <button class="btn-signout" onclick="handleSignOut()">Sign out</button>
-        <button onclick="openMobileMenu()" aria-label="Menu"
-          style="background:none;border:none;color:rgba(245,239,230,.7);font-size:1.2rem;cursor:pointer;padding:4px 6px;line-height:1;display:none" id="mobileMenuBtn">☰</button>
       </div>
+      <button onclick="openMobileMenu()" aria-label="Menu" id="mobileMenuBtn"
+        style="display:none;background:none;border:none;color:rgba(245,239,230,.7);font-size:1.3rem;cursor:pointer;padding:4px 8px;line-height:1">☰</button>
     </div>
   </div>
 </header>
@@ -1130,7 +1133,6 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
 const SUPABASE_URL = 'https://phcnswuwrqarikzjvfqd.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBoY25zd3V3cnFhcmlremp2ZnFkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM1OTI2NjEsImV4cCI6MjA4OTE2ODY2MX0.nW_aLGeiFNu6km1leeqTofcOqFQxe3dabNWfIPkc334';
 
-
 var _sb = null;
 var _currentUser = null;
 var _sbInitError = false;
@@ -1225,18 +1227,27 @@ function showApp() {
     } catch(_) {}
     return;
   }
-  // If _currentUser was cleared by a second auth event, re-fetch from Supabase
+  // If _currentUser was cleared by a second auth event, re-fetch from local session
   if (!_currentUser && _sb) {
     _sb.auth.getSession().then(({ data }) => {
-      if (data?.session?.user) { _currentUser = data.session.user; showApp(); }
+      if (data?.session?.user) {
+        _currentUser = data.session.user;
+        console.log('showApp: recovered user from getSession', _currentUser.id);
+        showApp();
+      } else {
+        console.warn('showApp: no session found, cannot show app');
+      }
     });
     return;
   }
+  console.log('showApp: proceeding with user', _currentUser?.id);
   _pendingShowApp = false;
 
   document.getElementById('authScreen').classList.add('hidden');
   const badge = document.getElementById('userBadge');
   if (badge) badge.style.display = 'flex';
+  const menuBtn = document.getElementById('mobileMenuBtn');
+  if (menuBtn) menuBtn.style.display = '';  // CSS controls visibility via media query
   const email = _currentUser?.email || '';
   const avatar = document.getElementById('userAvatar');
   if (avatar) avatar.textContent = email ? email[0].toUpperCase() : '✓';
@@ -1267,6 +1278,8 @@ function hideApp() {
   document.getElementById('authScreen').classList.remove('hidden');
   const badge = document.getElementById('userBadge');
   if (badge) badge.style.display = 'none';
+  const menuBtn = document.getElementById('mobileMenuBtn');
+  if (menuBtn) menuBtn.style.display = 'none';
   const hint = document.getElementById('onboardingHint');
   if (hint) hint.style.display = 'none';
   if (!_appReady) return;
@@ -1647,7 +1660,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Signal MAIN APP is ready; if auth already completed, run showApp now
   _appReady = true;
-  if (_pendingShowApp) showApp();
+  if (_pendingShowApp) {
+    if (_currentUser) {
+      showApp();
+    } else if (_sb) {
+      // Auth fired before _appReady but _currentUser got cleared — recover via session
+      _sb.auth.getSession().then(({ data }) => {
+        if (data?.session?.user) {
+          _currentUser = data.session.user;
+          showApp();
+        }
+      });
+    }
+  }
 });
 
 function setupEvents() {
@@ -2889,8 +2914,14 @@ function generateId(){
 
 async function loadWinesFromDB(cacheKey) {
   if (!_sb) { console.warn('loadWinesFromDB: _sb not ready'); return; }
-  const user = _currentUser || (await _sb.auth.getUser()).data?.user;
-  if (!user) { console.warn('loadWinesFromDB: no current user'); return; }
+  // getSession() reads from local storage — faster and works during hydration
+  // getUser() does a network round-trip and can fail if token not yet validated
+  let user = _currentUser;
+  if (!user) {
+    const { data } = await _sb.auth.getSession();
+    user = data?.session?.user || null;
+  }
+  if (!user) { console.warn('loadWinesFromDB: no current user after getSession'); return; }
   console.log('loadWinesFromDB: fetching for user', user.id);
   try {
     const [metaResult, photoResult] = await Promise.all([
