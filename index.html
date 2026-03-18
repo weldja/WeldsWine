@@ -631,11 +631,11 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
       </div>
       <button class="btn-add-subtle" id="openAddModal" aria-label="Add wine manually">+ Add Wine</button>
       <button class="btn-quick-add" id="openQuickAdd" aria-label="Quick add wine" title="Log a wine in seconds">⚡ Quick Add</button>
-      <div class="user-badge" id="userBadge" style="display:none">
-        <div class="user-badge-avatar" id="userAvatar">?</div>
-        <button class="btn-signout" onclick="handleSignOut()">Sign out</button>
-
-      </div>
+      <button id="userBadge" onclick="openMobileMenu()" aria-label="Menu"
+        style="display:none;background:var(--burgundy);border:1px solid var(--blush);
+               border-radius:50%;width:36px;height:36px;cursor:pointer;
+               color:var(--parchment);font-size:1.1rem;flex-shrink:0;
+               align-items:center;justify-content:center">☰</button>
     </div>
   </div>
 </header>
@@ -1214,10 +1214,7 @@ function showApp() {
       document.getElementById('authScreen').classList.add('hidden');
       const badge = document.getElementById('userBadge');
       if (badge) badge.style.display = 'flex';
-      var _f=document.getElementById('mobileMenuBtn'); if(_f)_f.style.display='flex';
       const email = _currentUser?.email || '';
-      const avatar = document.getElementById('userAvatar');
-      if (avatar) avatar.textContent = email ? email[0].toUpperCase() : '✓';
     } catch(_) {}
     return;
   }
@@ -1233,10 +1230,7 @@ function showApp() {
   document.getElementById('authScreen').classList.add('hidden');
   const badge = document.getElementById('userBadge');
   if (badge) badge.style.display = 'flex';
-  var _fab=document.getElementById('mobileMenuBtn'); if(_fab)_fab.style.display='flex';
   const email = _currentUser?.email || '';
-  const avatar = document.getElementById('userAvatar');
-  if (avatar) avatar.textContent = email ? email[0].toUpperCase() : '✓';
 
   const cacheKey = 'wwwCache_' + (_currentUser?.id || '');
   let hadCache = false;
@@ -1264,7 +1258,6 @@ function hideApp() {
   document.getElementById('authScreen').classList.remove('hidden');
   const badge = document.getElementById('userBadge');
   if (badge) badge.style.display = 'none';
-  var _fh=document.getElementById('mobileMenuBtn'); if(_fh)_fh.style.display='none';
   const hint = document.getElementById('onboardingHint');
   if (hint) hint.style.display = 'none';
   if (!_appReady) return;
@@ -3263,7 +3256,10 @@ function updateKeyBadge() {
 <div class="modal-overlay" id="mobileMenuOverlay" style="display:none;align-items:flex-end;padding:0">
   <div style="background:var(--ivory);border-radius:var(--rl) var(--rl) 0 0;width:100%;padding:20px 24px 36px;box-shadow:0 -8px 40px rgba(44,20,36,.25)">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
-      <div style="font-family:var(--font-d);font-size:1rem;font-weight:600;color:var(--burgundy-deep)">🍷 Welds Wine Wisdoms</div>
+      <div>
+        <div style="font-family:var(--font-d);font-size:1rem;font-weight:600;color:var(--burgundy-deep)">🍷 Welds Wine Wisdoms</div>
+        <div id="menuUserEmail" style="font-family:var(--font-b);font-size:.8rem;color:var(--warm-gray);font-style:italic;margin-top:2px"></div>
+      </div>
       <button onclick="closeMobileMenu()" style="background:none;border:none;font-size:1.1rem;color:var(--warm-gray);cursor:pointer;width:30px;height:30px;display:flex;align-items:center;justify-content:center">✕</button>
     </div>
     <div style="display:flex;flex-direction:column;gap:4px">
@@ -3281,6 +3277,8 @@ function updateKeyBadge() {
 function openMobileMenu() {
   const el = document.getElementById('mobileMenuOverlay');
   if (!el) return;
+  var emailEl = document.getElementById('menuUserEmail');
+  if (emailEl && _currentUser) emailEl.textContent = _currentUser.email || '';
   el.classList.add('open');
   document.body.style.overflow = 'hidden';
   el.addEventListener('click', function(e){ if(e.target===el) closeMobileMenu(); }, {once:true});
@@ -3293,13 +3291,5 @@ function closeMobileMenu() {
 }
 </script>
 
-
-<!-- MOBILE HAMBURGER FAB -->
-<button id="mobileMenuBtn" onclick="openMobileMenu()" aria-label="Open menu"
-  style="position:fixed;bottom:24px;right:20px;z-index:9999;
-         width:56px;height:56px;border-radius:50%;border:none;cursor:pointer;
-         background:var(--burgundy);color:#fff;font-size:1.5rem;line-height:56px;
-         text-align:center;box-shadow:0 4px 20px rgba(44,20,36,.5);
-         display:none">☰</button>
 </body>
 </html>
