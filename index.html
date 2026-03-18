@@ -1386,7 +1386,7 @@ async function handleSendLink() {
   submitSpinner.style.display = 'inline';
 
   try {
-    const redirectTo = window.location.origin + window.location.pathname;
+    const redirectTo = window.location.origin + window.location.pathname + '?type=recovery';
 
     // resetPasswordForEmail is the correct client-side method —
     // it sends a password reset link via Supabase SMTP (or custom SMTP if configured)
