@@ -638,8 +638,11 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
       <div class="user-badge" id="userBadge" style="display:none">
         <div class="user-badge-avatar" id="userAvatar">?</div>
         <button class="btn-signout" onclick="handleSignOut()">Sign out</button>
-        <button onclick="openMobileMenu()" aria-label="Menu"
-          style="background:none;border:none;color:rgba(245,239,230,.7);font-size:1.2rem;cursor:pointer;padding:4px 6px;line-height:1;display:none" id="mobileMenuBtn">☰</button>
+        <button id="mobileMenuBtn" onclick="openMobileMenu()" aria-label="Open menu"
+  style="position:fixed;bottom:24px;right:20px;z-index:9999;
+         width:56px;height:56px;border-radius:50%;border:none;cursor:pointer;
+         background:var(--burgundy);color:#fff;font-size:1.5rem;line-height:56px;
+         text-align:center;box-shadow:0 4px 20px rgba(44,20,36,.5)">☰</button>
       </div>
     </div>
   </div>
