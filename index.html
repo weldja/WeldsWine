@@ -2911,7 +2911,9 @@ function generateId(){
 }
 
 async function loadWinesFromDB(cacheKey) {
-  if (!_sb || !_currentUser) return;
+  if (!_sb) { console.warn('loadWinesFromDB: _sb not ready'); return; }
+  if (!_currentUser) { console.warn('loadWinesFromDB: no current user'); return; }
+  console.log('loadWinesFromDB: fetching for user', _currentUser.id);
   try {
     // Run metadata and photo queries in parallel
     const [metaResult, photoResult] = await Promise.all([
@@ -2924,6 +2926,7 @@ async function loadWinesFromDB(cacheKey) {
         .eq('user_id', _currentUser.id)
     ]);
 
+    console.log('loadWinesFromDB: metaResult', metaResult);
     if (metaResult.error) throw metaResult.error;
 
     // Build photo lookup
@@ -2968,8 +2971,10 @@ async function loadWinesFromDB(cacheKey) {
     }
 
   } catch(e) {
-    console.error('loadWinesFromDB:', e);
-    showToast('Could not load wines from database');
+    console.error('loadWinesFromDB error:', e);
+    _winesLoaded = true; // unblock renderGrid so empty state shows
+    renderGrid();
+    showToast('Could not load wines: ' + (e?.message || e));
   }
 }
 
