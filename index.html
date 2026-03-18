@@ -732,7 +732,7 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
   <span class="footer-sep">·</span>
   <a href="#" class="footer-link" onclick="showFooterModal('privacy');return false">Privacy</a>
   <span class="footer-sep">·</span>
-  <a href="/cdn-cgi/l/email-protection#8be3eee7e7e4cbfceee7eff8fce2e5eea5e8e4e6" class="footer-link">Contact</a>
+  <a href="#" class="footer-link" onclick="showFooterModal('contact');return false">Contact</a>
   <span class="footer-sep">·</span>
   <button class="footer-admin-btn" id="openKeyModal" title="Settings">⚙</button>
 </footer>
@@ -1111,7 +1111,7 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
 </div>
 
 <!-- AUTH MODULE -->
-<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+<script>
 /* ══════════════════════════════════════════════════════════════
    SUPABASE CONFIG — replace with your project values
    supabase.com → your project → Settings → API
@@ -2404,6 +2404,10 @@ const _infoContent = {
     body: `<p style="font-family:var(--font-b);font-size:.95rem;color:var(--charcoal);line-height:1.75;margin-bottom:14px">Welds Wine Wisdoms is a personal wine tasting journal built for wine enthusiasts who want to remember every bottle they've tasted.</p>
 <p style="font-family:var(--font-b);font-size:.95rem;color:var(--warm-gray);line-height:1.75;margin-bottom:14px">Scan a label with your phone camera and AI reads the wine details automatically. Add tasting notes, a star rating, and your location. Browse your collection in a visual grid or on an interactive map.</p>
 <p style="font-family:var(--font-b);font-size:.95rem;color:var(--warm-gray);line-height:1.75">Built with care for wine lovers.</p>`
+  },
+  contact: {
+    title: 'Contact',
+    body: `<p style="font-family:var(--font-b);font-size:.95rem;color:var(--charcoal);line-height:1.75;margin-bottom:14px">For questions or feedback about Welds Wine Wisdoms, please get in touch via GitHub or raise an issue on the project repository.</p>`
   },
   privacy: {
     title: 'Privacy',
