@@ -577,7 +577,7 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
         <div style="text-align:center;margin-bottom:20px">
           <div style="font-size:2rem;margin-bottom:10px">🔑</div>
           <div style="font-family:var(--font-d);font-size:1rem;color:var(--charcoal);margin-bottom:6px">Set a new password</div>
-          <div style="font-family:var(--font-b);font-size:.85rem;color:var(--warm-gray);line-height:1.6">Choose a new password for your account.</div>
+          <div style="font-family:var(--font-b);font-size:.85rem;color:var(--warm-gray);line-height:1.6">Choose a new password for your account. It must be different from your current password.</div>
         </div>
         <div class="auth-form-group">
           <label for="newPassword">New Password</label>
@@ -1458,7 +1458,12 @@ async function handleUpdatePassword() {
     setTimeout(() => { if (_currentUser) showApp(); }, 1800);
   } catch(e) {
     console.error('handleUpdatePassword:', e);
-    showUpdatePasswordMsg('err', e.message || 'Could not update password — please try again');
+    const msg = e.message || '';
+    if (msg.toLowerCase().includes('different') || msg.toLowerCase().includes('previous') || msg.toLowerCase().includes('same')) {
+      showUpdatePasswordMsg('err', 'Please choose a different password from your current one');
+    } else {
+      showUpdatePasswordMsg('err', msg || 'Could not update password — please try again');
+    }
     btn.disabled = false; lbl.style.display = 'inline'; spn.style.display = 'none';
   }
 }
