@@ -1139,14 +1139,8 @@ var _isRecoveryFlow = false;
   if (hash.includes('type=recovery') || search.includes('type=recovery') ||
       (hash.includes('access_token') && hash.includes('recovery'))) {
     _isRecoveryFlow = true;
-    // Clear any existing session from localStorage so Supabase doesn't
-    // restore it and skip the PASSWORD_RECOVERY event
-    try {
-      Object.keys(localStorage).forEach(function(k) {
-        if (k.startsWith('sb-')) localStorage.removeItem(k);
-      });
-    } catch(_) {}
-    // Keep auth screen visible
+    // Keep auth screen visible — do NOT clear session, Supabase needs it
+    // to fire onAuthStateChange which we intercept with _isRecoveryFlow
     document.getElementById('authScreen').classList.remove('hidden');
   }
 })();
