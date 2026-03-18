@@ -1189,17 +1189,24 @@ document.addEventListener('DOMContentLoaded', function() {
   // Listen for auth changes
   _sb.auth.onAuthStateChange(function(event, session) {
     console.log('onAuthStateChange:', event, 'isRecovery:', _isRecoveryFlow, session ? session.user?.id : 'no session');
-    if (event === 'PASSWORD_RECOVERY' || (event === 'SIGNED_IN' && _isRecoveryFlow)) {
-      _isRecoveryFlow = false;
+
+    // PASSWORD_RECOVERY is the definitive recovery event
+    if (event === 'PASSWORD_RECOVERY') {
       _currentUser = session ? session.user : null;
       document.getElementById('authScreen').classList.remove('hidden');
       showAuthState('updatePassword');
       return;
     }
-    // During recovery flow, ignore SIGNED_OUT so we don't flash the login screen
-    if (event === 'SIGNED_OUT' && _isRecoveryFlow) {
-      return;
+
+    // While recovery mode is active, suppress all other events
+    // that would log the user in or show the app
+    if (_isRecoveryFlow) {
+      if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN' || event === 'SIGNED_OUT') {
+        console.log('Suppressed during recovery:', event);
+        return;
+      }
     }
+
     _currentUser = session ? session.user : null;
     if (_currentUser) {
       showApp();
