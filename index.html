@@ -1215,13 +1215,26 @@ document.addEventListener('DOMContentLoaded', function() {
 
 }); // end DOMContentLoaded
 
+// Set by MAIN APP's DOMContentLoaded once all functions are ready
+var _appReady = false;
+var _pendingShowApp = false;
+
 function showApp() {
-  // onAuthStateChange can fire before DOMContentLoaded on the MAIN APP script,
-  // so defer all work that depends on MAIN APP functions/DOM until the next tick.
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => showApp(), { once: true });
+  // If MAIN APP hasn't initialised yet, set a flag — it will call showApp() itself
+  if (!_appReady) {
+    _pendingShowApp = true;
+    // Still update the header immediately so it doesn't flash
+    try {
+      document.getElementById('authScreen').classList.add('hidden');
+      const email = _currentUser?.email || '';
+      const avatar = document.getElementById('userAvatar');
+      if (avatar) avatar.textContent = email ? email[0].toUpperCase() : '\u2713';
+      const badge = document.getElementById('userBadge');
+      if (badge) badge.style.display = 'flex';
+    } catch(_) {}
     return;
   }
+  _pendingShowApp = false;
 
   document.getElementById('authScreen').classList.add('hidden');
   const badge = document.getElementById('userBadge');
@@ -1235,23 +1248,22 @@ function showApp() {
   try {
     const cached = sessionStorage.getItem(cacheKey);
     if (cached) {
-      if (typeof wines !== 'undefined') wines = JSON.parse(cached);
+      wines = JSON.parse(cached);
       hadCache = true;
     }
   } catch(_) {}
 
   if (hadCache) {
-    if (typeof renderGrid === 'function') renderGrid();
-    if (typeof updateStats === 'function') updateStats();
+    renderGrid();
+    updateStats();
   } else {
-    if (typeof _winesLoaded !== 'undefined') _winesLoaded = false;
-    if (typeof showSkeletonGrid === 'function') showSkeletonGrid(4);
+    _winesLoaded = false;
+    showSkeletonGrid(4);
   }
 
-  if (typeof loadWinesFromDB === 'function') loadWinesFromDB(cacheKey);
-  if (typeof startLocationTracking === 'function') setTimeout(startLocationTracking, 100);
+  loadWinesFromDB(cacheKey);
+  setTimeout(startLocationTracking, 100);
 
-  // Show onboarding hint once for new users
   try {
     if (!localStorage.getItem('wwwOnboardingDone')) {
       const hint = document.getElementById('onboardingHint');
@@ -1261,16 +1273,17 @@ function showApp() {
 }
 
 function hideApp() {
+  _pendingShowApp = false;
   document.getElementById('authScreen').classList.remove('hidden');
   const badge = document.getElementById('userBadge');
   if (badge) badge.style.display = 'none';
   const hint = document.getElementById('onboardingHint');
   if (hint) hint.style.display = 'none';
-  // Reset wine state safely — these variables live in the MAIN APP script block
-  if (typeof wines !== 'undefined') wines = [];
-  if (typeof _winesLoaded !== 'undefined') _winesLoaded = false;
-  if (typeof renderGrid === 'function') renderGrid();
-  if (typeof updateStats === 'function') updateStats();
+  if (!_appReady) return; // MAIN APP not ready yet, nothing to reset
+  wines = [];
+  _winesLoaded = false;
+  renderGrid();
+  updateStats();
 }
 
 function dismissOnboarding() {
@@ -1654,6 +1667,10 @@ document.addEventListener('DOMContentLoaded', () => {
   ['qaName','qaCountry','qaVintage'].forEach(id => {
     document.getElementById(id).addEventListener('keydown', e => { if (e.key === 'Enter') handleQuickAdd(); });
   });
+
+  // Signal that MAIN APP is fully ready, then run any auth action that was waiting
+  _appReady = true;
+  if (_pendingShowApp && _currentUser) showApp();
 });
 
 function setupEvents() {
