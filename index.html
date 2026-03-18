@@ -477,7 +477,11 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
 .skeleton-card .sk-line.wide{width:80%}
 .skeleton-card .sk-line.mid{width:55%}
 .skeleton-card .sk-line.short{width:35%;height:10px}
-
+/* Mobile hamburger — show only on small screens */
+@media(max-width:520px){
+  #mobileMenuBtn{display:block !important}
+  .btn-signout{display:none}
+}
 </style>
 </head>
 <body>
@@ -634,8 +638,9 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
       <div class="user-badge" id="userBadge" style="display:none">
         <div class="user-badge-avatar" id="userAvatar">?</div>
         <button class="btn-signout" onclick="handleSignOut()">Sign out</button>
+        <button onclick="openMobileMenu()" aria-label="Menu"
+          style="background:none;border:none;color:rgba(245,239,230,.7);font-size:1.2rem;cursor:pointer;padding:4px 6px;line-height:1;display:none" id="mobileMenuBtn">☰</button>
       </div>
-
     </div>
   </div>
 </header>
@@ -1125,6 +1130,7 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
 const SUPABASE_URL = 'https://phcnswuwrqarikzjvfqd.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBoY25zd3V3cnFhcmlremp2ZnFkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM1OTI2NjEsImV4cCI6MjA4OTE2ODY2MX0.nW_aLGeiFNu6km1leeqTofcOqFQxe3dabNWfIPkc334';
 
+
 var _sb = null;
 var _currentUser = null;
 var _sbInitError = false;
@@ -1207,32 +1213,33 @@ document.addEventListener('DOMContentLoaded', function() {
 }); // end DOMContentLoaded
 
 function showApp() {
-  // Show header and hamburger immediately — before any early returns
-  try {
-    document.getElementById('authScreen').classList.add('hidden');
-    var _badge = document.getElementById('userBadge');
-    if (_badge) _badge.style.display = 'flex';
-    var _eml = _currentUser ? (_currentUser.email || '') : '';
-    var _av  = document.getElementById('userAvatar');
-    if (_av) _av.textContent = _eml ? _eml[0].toUpperCase() : '✓';
-    var _mb  = document.getElementById('mobileMenuBtn');
-    if (_mb) _mb.style.display = 'block';
-  } catch(_e) { console.warn('showApp header error', _e); }
-
   if (!_appReady) {
     _pendingShowApp = true;
+    try {
+      document.getElementById('authScreen').classList.add('hidden');
+      const badge = document.getElementById('userBadge');
+      if (badge) badge.style.display = 'flex';
+      const email = _currentUser?.email || '';
+      const avatar = document.getElementById('userAvatar');
+      if (avatar) avatar.textContent = email ? email[0].toUpperCase() : '✓';
+    } catch(_) {}
     return;
   }
-
+  // If _currentUser was cleared by a second auth event, re-fetch from Supabase
   if (!_currentUser && _sb) {
-    _sb.auth.getSession().then(function(r) {
-      var u = r && r.data && r.data.session && r.data.session.user;
-      if (u) { _currentUser = u; showApp(); }
+    _sb.auth.getSession().then(({ data }) => {
+      if (data?.session?.user) { _currentUser = data.session.user; showApp(); }
     });
     return;
   }
-
   _pendingShowApp = false;
+
+  document.getElementById('authScreen').classList.add('hidden');
+  const badge = document.getElementById('userBadge');
+  if (badge) badge.style.display = 'flex';
+  const email = _currentUser?.email || '';
+  const avatar = document.getElementById('userAvatar');
+  if (avatar) avatar.textContent = email ? email[0].toUpperCase() : '✓';
 
   const cacheKey = 'wwwCache_' + (_currentUser?.id || '');
   let hadCache = false;
@@ -1260,9 +1267,6 @@ function hideApp() {
   document.getElementById('authScreen').classList.remove('hidden');
   const badge = document.getElementById('userBadge');
   if (badge) badge.style.display = 'none';
-  document.body.classList.remove('app-ready');
-  var mb = document.getElementById('mobileMenuBtn');
-  if (mb) mb.style.display = 'none';
   const hint = document.getElementById('onboardingHint');
   if (hint) hint.style.display = 'none';
   if (!_appReady) return;
@@ -1643,19 +1647,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Signal MAIN APP is ready; if auth already completed, run showApp now
   _appReady = true;
-  if (_pendingShowApp) {
-    if (_currentUser) {
-      showApp();
-    } else if (_sb) {
-      // Auth fired before _appReady but _currentUser got cleared — recover via session
-      _sb.auth.getSession().then(({ data }) => {
-        if (data?.session?.user) {
-          _currentUser = data.session.user;
-          showApp();
-        }
-      });
-    }
-  }
+  if (_pendingShowApp) showApp();
 });
 
 function setupEvents() {
@@ -2897,14 +2889,8 @@ function generateId(){
 
 async function loadWinesFromDB(cacheKey) {
   if (!_sb) { console.warn('loadWinesFromDB: _sb not ready'); return; }
-  // getSession() reads from local storage — faster and works during hydration
-  // getUser() does a network round-trip and can fail if token not yet validated
-  let user = _currentUser;
-  if (!user) {
-    const { data } = await _sb.auth.getSession();
-    user = data?.session?.user || null;
-  }
-  if (!user) { console.warn('loadWinesFromDB: no current user after getSession'); return; }
+  const user = _currentUser || (await _sb.auth.getUser()).data?.user;
+  if (!user) { console.warn('loadWinesFromDB: no current user'); return; }
   console.log('loadWinesFromDB: fetching for user', user.id);
   try {
     const [metaResult, photoResult] = await Promise.all([
@@ -3295,34 +3281,19 @@ function updateKeyBadge() {
 
 <script>
 function openMobileMenu() {
-  console.log('openMobileMenu called');
   const el = document.getElementById('mobileMenuOverlay');
-  if (!el) { console.error('mobileMenuOverlay not found!'); return; }
-  el.style.display = 'flex';
-  el.style.position = 'fixed';
-  el.style.inset = '0';
-  el.style.background = 'rgba(44,36,32,.65)';
-  el.style.backdropFilter = 'blur(4px)';
-  el.style.zIndex = '400';
-  el.style.alignItems = 'flex-end';
-  el.style.padding = '0';
+  if (!el) return;
+  el.classList.add('open');
   document.body.style.overflow = 'hidden';
   el.addEventListener('click', function(e){ if(e.target===el) closeMobileMenu(); }, {once:true});
 }
 function closeMobileMenu() {
-  document.getElementById('mobileMenuOverlay').style.display = 'none';
+  const el = document.getElementById('mobileMenuOverlay');
+  if (!el) return;
+  el.classList.remove('open');
   document.body.style.overflow = '';
 }
 </script>
-
-<!-- MOBILE HAMBURGER FAB — fixed position, always on top -->
-<button id="mobileMenuBtn" onclick="openMobileMenu()" aria-label="Open menu"
-  style="display:none;position:fixed;bottom:24px;right:20px;z-index:350;
-         width:52px;height:52px;border-radius:50%;border:none;cursor:pointer;
-         background:var(--burgundy);color:var(--parchment);font-size:1.4rem;
-         box-shadow:0 4px 20px rgba(44,20,36,.4);
-         align-items:center;justify-content:center;
-         transition:transform .2s,box-shadow .2s">☰</button>
 
 </body>
 </html>
