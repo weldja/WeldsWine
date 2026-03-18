@@ -1168,6 +1168,7 @@ var _appReady = false;
 var _pendingShowApp = false;
 
 document.addEventListener('DOMContentLoaded', function() {
+  alert('DOMContentLoaded fired. isRecovery=' + _isRecoveryFlow);
 
   // DOMContentLoaded guarantees all external scripts have run
   if (!_ensureSb()) {
