@@ -1117,18 +1117,45 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
 <!-- AUTH MODULE -->
 <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
 /* ══════════════════════════════════════════════════════════════
-   const SUPABASE_URL = 'https://phcnswuwrqarikzjvfqd.supabase.co';
+   SUPABASE CONFIG — replace with your project values
+   supabase.com → your project → Settings → API
+══════════════════════════════════════════════════════════════ */
+const SUPABASE_URL = 'https://phcnswuwrqarikzjvfqd.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBoY25zd3V3cnFhcmlremp2ZnFkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM1OTI2NjEsImV4cCI6MjA4OTE2ODY2MX0.nW_aLGeiFNu6km1leeqTofcOqFQxe3dabNWfIPkc334';
 
-══════════════════════════════════════════════════════════════ */
-const SUPABASE_URL = 'PASTE_SUPABASE_URL';
-const SUPABASE_KEY = 'PASTE_SUPABASE_ANON_KEY';
 
-// These are set inside DOMContentLoaded — never at parse time
 var _sb = null;
 var _currentUser = null;
+var _sbInitError = false;
+
+// Initialise Supabase as soon as the script tag has been parsed —
+// no need to wait for DOMContentLoaded since the <script> is already below the SDK tag.
+(function initSupabase() {
+  try {
+    if (!SUPABASE_URL || SUPABASE_URL === 'PASTE_SUPABASE_URL' ||
+        !SUPABASE_KEY || SUPABASE_KEY === 'PASTE_SUPABASE_ANON_KEY') {
+      console.error('Supabase credentials not configured in index.html');
+      _sbInitError = true;
+      return;
+    }
+    _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  } catch(e) {
+    console.error('Supabase init failed:', e);
+    _sbInitError = true;
+  }
+})();
 
 document.addEventListener('DOMContentLoaded', function() {
+
+  // Show a clear error banner if credentials are missing
+  if (_sbInitError || !_sb) {
+    const msg = document.getElementById('authMsg');
+    if (msg) {
+      msg.className = 'auth-msg err';
+      msg.textContent = 'Configuration error: Supabase credentials are not set. Please contact the site owner.';
+    }
+    return;
+  }
 
   // Prevent auth screen flash for returning users —
   // Supabase stores session in localStorage; if it's there, hide auth immediately
@@ -1142,9 +1169,6 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     }
   } catch(_) {}
-
-  // Initialise Supabase
-  _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
   // Listen for auth changes
   _sb.auth.onAuthStateChange(function(event, session) {
@@ -1281,6 +1305,7 @@ function switchAuthTab(tab) {
 
 /* ── Email / password ────────────────────────────────────── */
 async function handleAuthSubmit() {
+  if (_sbInitError) { showAuthMsg('err', 'Configuration error — Supabase credentials are not set. Please contact the site owner.'); return; }
   if (!_sb) { showAuthMsg('err', 'Still loading — please wait a moment and try again'); return; }
   const email    = document.getElementById('authEmail').value.trim();
   const password = document.getElementById('authPassword').value;
@@ -1321,6 +1346,7 @@ async function handleAuthSubmit() {
 
 /* ── Forgot password ─────────────────────────────────────── */
 async function handleSendLink() {
+  if (_sbInitError) { showResetMsg('err', 'Configuration error — Supabase credentials are not set.'); return; }
   if (!_sb) { showResetMsg('err', 'Still loading — please wait a moment and try again'); return; }
   const email = document.getElementById('resetEmail').value.trim();
   if (!email) { showResetMsg('err', 'Please enter your email address'); return; }
@@ -1376,6 +1402,7 @@ function toggleNewPasswordVisibility() {
 
 /* ── Update password (after PASSWORD_RECOVERY flow) ─────── */
 async function handleUpdatePassword() {
+  if (_sbInitError) { showUpdatePasswordMsg('err', 'Configuration error — please contact the site owner.'); return; }
   if (!_sb) { showUpdatePasswordMsg('err', 'Still loading — please wait a moment'); return; }
   const newPwd     = document.getElementById('newPassword').value;
   const confirmPwd = document.getElementById('confirmPassword').value;
