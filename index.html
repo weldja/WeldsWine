@@ -1129,6 +1129,16 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 var _sb = null;
 var _currentUser = null;
 var _sbInitError = false;
+var _isRecoveryFlow = false;
+
+// Detect password recovery flow from URL before anything else runs
+(function() {
+  var hash = window.location.hash;
+  var search = window.location.search;
+  if (hash.includes('type=recovery') || search.includes('type=recovery')) {
+    _isRecoveryFlow = true;
+  }
+})();
 
 function _ensureSb() {
   if (_sb) return true;
@@ -1173,7 +1183,8 @@ document.addEventListener('DOMContentLoaded', function() {
   // Listen for auth changes
   _sb.auth.onAuthStateChange(function(event, session) {
     console.log('onAuthStateChange:', event, session ? session.user?.id : 'no session');
-    if (event === 'PASSWORD_RECOVERY') {
+    if (event === 'PASSWORD_RECOVERY' || (event === 'SIGNED_IN' && _isRecoveryFlow)) {
+      _isRecoveryFlow = false;
       _currentUser = session ? session.user : null;
       document.getElementById('authScreen').classList.remove('hidden');
       showAuthState('updatePassword');
@@ -1423,6 +1434,10 @@ async function handleUpdatePassword() {
     showUpdatePasswordMsg('ok', 'Password updated! Taking you to your journal…');
     document.getElementById('newPassword').value = '';
     document.getElementById('confirmPassword').value = '';
+    // Clear the recovery token from URL so refreshing doesn't re-trigger the flow
+    if (window.history && window.history.replaceState) {
+      window.history.replaceState(null, '', window.location.pathname);
+    }
     setTimeout(() => { if (_currentUser) showApp(); }, 1800);
   } catch(e) {
     console.error('handleUpdatePassword:', e);
