@@ -147,17 +147,53 @@ body{font-family:var(--font-b);background:var(--cream);color:var(--charcoal);min
 .stat-divider{width:1px;height:30px;background:var(--light-gray);flex-shrink:0}
 .main-content{max-width:1200px;margin:0 auto;padding:28px 20px 60px}
 .wine-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:22px}
-.wine-card{background:var(--ivory);border:1px solid var(--light-gray);border-radius:var(--rl);overflow:hidden;transition:transform .2s,box-shadow .2s,border-color .2s;display:flex;flex-direction:column;animation:fadeUp .35s ease both}
-.wine-card:hover{transform:translateY(-3px);box-shadow:0 8px 28px var(--shadow-lg);border-color:var(--blush)}
+
+/* ── Card: rest state — warm soft shadow ── */
+.wine-card{
+  background:var(--ivory);
+  border:1px solid var(--light-gray);
+  border-radius:var(--rl);
+  overflow:hidden;
+  display:flex;flex-direction:column;
+  animation:fadeUp .35s ease both;
+  box-shadow:0 2px 8px rgba(44,36,32,.07);
+  transition:transform .25s ease,box-shadow .25s ease,border-color .25s ease;
+}
+/* ── Card: hover — lift + richer shadow + blush border glow ── */
+@media(hover:hover){
+  .wine-card:hover{
+    transform:translateY(-2px);
+    box-shadow:0 8px 28px rgba(44,36,32,.18),0 2px 8px rgba(196,120,138,.12);
+    border-color:var(--blush);
+  }
+  /* Image zoom triggered by card hover — contained by overflow:hidden on wrap */
+  .wine-card:hover .card-thumb-wrap img,
+  .wine-card:hover .card-thumb-single{
+    transform:scale(1.04);
+    opacity:1;
+  }
+}
+
 @keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
 .card-label-strip{height:4px;background:linear-gradient(90deg,var(--burgundy-deep),var(--blush))}
+
 /* ── GRID VIEW: portrait image area (3:4 ratio, ~50% width) ── */
-.card-thumb-wrap{position:relative;display:flex;gap:2px;aspect-ratio:3/4;max-height:160px;cursor:zoom-in;overflow:hidden;background:#f8f6f3}
-.card-thumb-wrap img{flex:1;min-width:0;height:100%;object-fit:contain;transition:opacity .2s;background:#f8f6f3}
-.card-thumb-wrap:hover img{opacity:.88}
+.card-thumb-wrap{
+  position:relative;display:flex;gap:2px;
+  aspect-ratio:3/4;max-height:160px;
+  cursor:zoom-in;overflow:hidden;background:#f8f6f3;
+}
+.card-thumb-wrap img{
+  flex:1;min-width:0;height:100%;
+  object-fit:contain;background:#f8f6f3;
+  transition:transform .35s ease,opacity .2s ease;
+}
 .card-thumb-badge{position:absolute;bottom:6px;right:6px;background:rgba(44,36,32,.55);color:#fff;font-size:.62rem;font-family:var(--font-b);padding:1px 6px;border-radius:10px;pointer-events:none;letter-spacing:.04em}
-.card-thumb-single{aspect-ratio:3/4;width:100%;max-height:160px;object-fit:contain;cursor:zoom-in;display:block;transition:opacity .2s;background:#f8f6f3}
-.card-thumb-single:hover{opacity:.88}
+.card-thumb-single{
+  aspect-ratio:3/4;width:100%;max-height:160px;
+  object-fit:contain;cursor:zoom-in;display:block;background:#f8f6f3;
+  transition:transform .35s ease,opacity .2s ease;
+}
 /* Lightbox */
 .label-lightbox{position:fixed;inset:0;background:rgba(10,5,8,.88);z-index:500;display:flex;align-items:center;justify-content:center;padding:20px;cursor:zoom-out;animation:lbIn .18s ease}
 @keyframes lbIn{from{opacity:0}to{opacity:1}}
@@ -166,23 +202,32 @@ body{font-family:var(--font-b);background:var(--cream);color:var(--charcoal);min
 .label-lightbox-inner img.single{max-width:80vw}
 .label-lightbox-close{position:fixed;top:16px;right:18px;background:rgba(255,255,255,.15);border:none;color:#fff;font-size:1.3rem;width:36px;height:36px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.2s}
 .label-lightbox-close:hover{background:rgba(255,255,255,.28)}
-.card-body{padding:12px 16px 10px;flex:1;display:flex;flex-direction:column}
-.card-header{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:4px}
-.card-vintage-badge{font-family:var(--font-d);font-size:.78rem;font-weight:600;color:var(--burgundy);background:var(--parchment);border:1px solid var(--light-gray);border-radius:3px;padding:1px 7px;display:inline-block;margin-bottom:2px}
-.card-name{font-family:var(--font-d);font-size:1.05rem;font-weight:600;color:var(--charcoal);line-height:1.2}
-.card-rating{color:var(--gold);font-size:.85rem;white-space:nowrap;flex-shrink:0}
-.card-meta{font-family:var(--font-b);font-size:.82rem;color:var(--warm-gray);font-style:italic;line-height:1.35;margin-bottom:5px}
-.card-tags{display:flex;flex-wrap:wrap;gap:3px;margin-bottom:5px}
-.card-tag{background:var(--parchment);border:1px solid var(--light-gray);border-radius:20px;padding:1px 9px;font-size:.7rem;font-family:var(--font-b);color:var(--warm-gray)}
-.card-notes{font-family:var(--font-s);font-style:italic;font-size:.83rem;color:var(--warm-gray);line-height:1.45;flex:1;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.card-location{font-size:.7rem;color:var(--blush);font-family:var(--font-b);margin-top:4px}
+.card-body{padding:12px 16px 10px;flex:1;display:flex;flex-direction:column;gap:3px}
+.card-header{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:2px}
+.card-vintage-badge{font-family:var(--font-d);font-size:.75rem;font-weight:600;color:var(--burgundy);background:var(--parchment);border:1px solid var(--light-gray);border-radius:3px;padding:1px 7px;display:inline-block;margin-bottom:3px;letter-spacing:.03em}
+.card-name{font-family:var(--font-d);font-size:1.1rem;font-weight:600;color:var(--charcoal);line-height:1.2;letter-spacing:.01em}
+.card-rating{color:var(--gold);font-size:.85rem;white-space:nowrap;flex-shrink:0;letter-spacing:1px}
+.card-meta{font-family:var(--font-b);font-size:.81rem;color:var(--warm-gray);font-style:italic;line-height:1.35;opacity:.85;margin-bottom:0}
+.card-tags{display:flex;flex-wrap:wrap;gap:3px;margin-bottom:0}
+.card-tag{background:var(--parchment);border:1px solid var(--light-gray);border-radius:20px;padding:1px 9px;font-size:.7rem;font-family:var(--font-b);color:var(--warm-gray);transition:background .2s,border-color .2s}
+.card-notes{font-family:var(--font-s);font-style:italic;font-size:.83rem;color:var(--warm-gray);line-height:1.45;flex:1;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;opacity:.8}
+.card-location{font-size:.7rem;color:var(--blush);font-family:var(--font-b)}
 .card-footer{display:flex;justify-content:space-between;align-items:center;padding:6px 16px 10px;border-top:1px solid var(--light-gray);margin-top:8px;gap:6px}
-.card-date{font-size:.74rem;color:var(--warm-gray);font-family:var(--font-b);flex:1}
+.card-date{font-size:.72rem;color:var(--warm-gray);font-family:var(--font-b);flex:1;opacity:.75}
 .card-actions{display:flex;gap:4px;flex-shrink:0}
-.card-btn{background:none;border:1px solid var(--light-gray);border-radius:var(--r);padding:4px 10px;font-size:.75rem;cursor:pointer;transition:var(--tr);color:var(--warm-gray);font-family:var(--font-b)}
-.card-btn:hover{background:var(--parchment);color:var(--charcoal);border-color:var(--warm-gray)}
+/* ── Buttons: polished hover states per action type ── */
+.card-btn{
+  background:none;border:1px solid var(--light-gray);border-radius:var(--r);
+  padding:4px 10px;font-size:.74rem;cursor:pointer;
+  color:var(--warm-gray);font-family:var(--font-b);
+  transition:background .18s ease,color .18s ease,border-color .18s ease,transform .15s ease;
+}
+.card-btn:hover{transform:translateY(-1px)}
+.card-btn.view:hover{background:rgba(123,30,58,.07);color:var(--burgundy);border-color:rgba(123,30,58,.3)}
+.card-btn.edit:hover{background:rgba(201,163,74,.1);color:var(--gold);border-color:rgba(201,163,74,.4)}
+.card-btn.delete:hover{background:rgba(220,38,38,.06);color:#dc2626;border-color:rgba(220,38,38,.3)}
 .card-btn.share{color:var(--blush);border-color:rgba(196,120,138,.3)}
-.card-btn.share:hover{background:rgba(196,120,138,.08);border-color:var(--blush)}
+.card-btn.share:hover{background:rgba(196,120,138,.1);border-color:var(--blush);color:var(--burgundy)}
 /* Share modal */
 .share-modal-body{padding:24px}
 .share-wine-card{background:linear-gradient(145deg,var(--burgundy-deep) 0%,#2d0a18 100%);border-radius:var(--rl);padding:24px;color:var(--parchment);margin-bottom:20px;position:relative;overflow:hidden;min-height:160px}
