@@ -146,10 +146,10 @@ body{font-family:var(--font-b);background:var(--cream);color:var(--charcoal);min
 .stat label{font-family:var(--font-b);font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;color:var(--warm-gray);margin-top:3px;font-style:italic}
 .stat-divider{width:1px;height:30px;background:var(--light-gray);flex-shrink:0}
 .main-content{max-width:1200px;margin:0 auto;padding:28px 20px 60px}
-/* ── Grid ── */
+/* ── Grid ──────────────────────────────────────────────── */
 .wine-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:18px}
 
-/* ── Card: horizontal layout, image-left ── */
+/* ── Card shell ────────────────────────────────────────── */
 .wine-card{
   background:var(--ivory);
   border:1px solid var(--light-gray);
@@ -165,21 +165,22 @@ body{font-family:var(--font-b);background:var(--cream);color:var(--charcoal);min
 @media(hover:hover){
   .wine-card:hover{
     transform:translateY(-2px);
-    box-shadow:0 10px 32px rgba(44,36,32,.16),0 2px 8px rgba(196,120,138,.1);
+    box-shadow:0 10px 32px rgba(44,36,32,.15),0 2px 8px rgba(196,120,138,.1);
     border-color:var(--blush);
   }
+  /* Image zoom triggered at card level — no JS needed */
   .wine-card:hover .card-thumb-wrap img,
   .wine-card:hover .card-thumb-single{ transform:scale(1.04); }
 }
 @keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
 
-/* ── Accent strip (shown when no image) ── */
-.card-label-strip{width:4px;align-self:stretch;background:linear-gradient(180deg,var(--burgundy-deep),var(--blush));flex-shrink:0}
+/* ── Accent strip when no image ────────────────────────── */
+.card-label-strip{width:4px;align-self:stretch;flex-shrink:0;background:linear-gradient(180deg,var(--burgundy-deep),var(--blush))}
 
-/* ── Portrait image — left column ── */
+/* ── Image — left column ───────────────────────────────── */
 .card-thumb-wrap{
   position:relative;width:115px;flex-shrink:0;
-  cursor:zoom-in;overflow:hidden;background:#f5f2ee;display:flex;
+  overflow:hidden;background:#f5f2ee;display:flex;cursor:zoom-in;
 }
 .card-thumb-wrap img{
   flex:1;min-width:0;height:100%;
@@ -193,13 +194,13 @@ body{font-family:var(--font-b);background:var(--cream);color:var(--charcoal);min
   pointer-events:none;letter-spacing:.04em;white-space:nowrap;
 }
 .card-thumb-single{
-  width:115px;flex-shrink:0;align-self:stretch;
-  object-fit:contain;cursor:zoom-in;display:block;background:#f5f2ee;
+  width:115px;flex-shrink:0;align-self:stretch;display:block;
+  object-fit:contain;cursor:zoom-in;background:#f5f2ee;
   transition:transform .34s ease,opacity .2s ease;
 }
 
-/* ── Content — right column ── */
-.card-body{padding:11px 14px 0;flex:1;display:flex;flex-direction:column;gap:4px;min-width:0}
+/* ── Content — right column ────────────────────────────── */
+.card-body{padding:11px 14px 0;flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
 .card-header{display:flex;justify-content:space-between;align-items:flex-start;gap:6px}
 .card-vintage-badge{
   font-family:var(--font-d);font-size:.72rem;font-weight:600;
@@ -207,35 +208,21 @@ body{font-family:var(--font-b);background:var(--cream);color:var(--charcoal);min
   border:1px solid var(--light-gray);border-radius:3px;
   padding:1px 6px;display:inline-block;margin-bottom:2px;letter-spacing:.03em;
 }
-/* Wine name — stronger hierarchy */
+/* Stronger name hierarchy */
 .card-name{font-family:var(--font-d);font-size:1.12rem;font-weight:600;color:var(--charcoal);line-height:1.2;letter-spacing:.01em}
-/* Rating — more prominent */
-.card-rating{color:var(--gold);font-size:.88rem;white-space:nowrap;flex-shrink:0;letter-spacing:2px}
-/* Secondary text — deliberately muted */
+/* More prominent rating */
+.card-rating{color:var(--gold);font-size:.9rem;white-space:nowrap;flex-shrink:0;letter-spacing:2px}
+/* Muted secondary text */
 .card-meta{font-family:var(--font-b);font-size:.8rem;color:var(--warm-gray);font-style:italic;line-height:1.35;opacity:.8}
 .card-tags{display:flex;flex-wrap:wrap;gap:3px}
-.card-tag{
-  background:var(--parchment);border:1px solid var(--light-gray);
-  border-radius:20px;padding:1px 8px;font-size:.68rem;
-  font-family:var(--font-b);color:var(--warm-gray);
-  transition:background .18s,border-color .18s;
-}
-.card-notes{
-  font-family:var(--font-b);font-style:italic;font-size:.8rem;
-  color:var(--warm-gray);line-height:1.4;flex:1;opacity:.75;
-  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
-}
+.card-tag{background:var(--parchment);border:1px solid var(--light-gray);border-radius:20px;padding:1px 8px;font-size:.68rem;font-family:var(--font-b);color:var(--warm-gray)}
+.card-notes{font-family:var(--font-b);font-style:italic;font-size:.8rem;color:var(--warm-gray);line-height:1.4;flex:1;opacity:.75;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .card-location{font-size:.68rem;color:var(--blush);font-family:var(--font-b)}
-
-/* ── Card footer ── */
-.card-footer{
-  display:flex;justify-content:space-between;align-items:center;
-  padding:7px 14px 10px;border-top:1px solid var(--light-gray);margin-top:6px;gap:4px;
-}
+.card-footer{display:flex;justify-content:space-between;align-items:center;padding:7px 14px 10px;border-top:1px solid var(--light-gray);margin-top:6px;gap:4px}
 .card-date{font-size:.7rem;color:var(--warm-gray);font-family:var(--font-b);flex:1;opacity:.7}
 .card-actions{display:flex;gap:3px;flex-shrink:0}
 
-/* ── Action buttons — semantic hover colours ── */
+/* ── Buttons — semantic hover colours ─────────────────── */
 .card-btn{
   background:none;border:1px solid var(--light-gray);border-radius:var(--r);
   padding:3px 9px;font-size:.72rem;cursor:pointer;
@@ -244,14 +231,14 @@ body{font-family:var(--font-b);background:var(--cream);color:var(--charcoal);min
 }
 .card-btn:hover{transform:translateY(-1px)}
 .card-btn.view:hover{background:rgba(123,30,58,.07);color:var(--burgundy);border-color:rgba(123,30,58,.3)}
-.card-btn.edit:hover{background:rgba(201,163,74,.1);color:#a07828;border-color:rgba(201,163,74,.45)}
-.card-btn.delete:hover{background:rgba(220,38,38,.06);color:#c92020;border-color:rgba(220,38,38,.3)}
+.card-btn.edit:hover{background:rgba(201,163,74,.1);color:#9a7520;border-color:rgba(201,163,74,.45)}
+.card-btn.delete:hover{background:rgba(220,38,38,.06);color:#c42020;border-color:rgba(220,38,38,.28)}
 .card-btn.share{color:var(--blush);border-color:rgba(196,120,138,.3)}
 .card-btn.share:hover{background:rgba(196,120,138,.09);border-color:var(--blush);color:var(--burgundy)}
 
-/* ── Favourite heart micro-interaction ── */
+/* ── Favourite heart micro-interaction ─────────────────── */
 .card-fav-btn{transition:color .15s ease,transform .15s ease}
-.card-fav-btn:hover{transform:scale(1.25) !important}
+.card-fav-btn:hover{transform:scale(1.28) !important}
 /* Lightbox */
 .label-lightbox{position:fixed;inset:0;background:rgba(10,5,8,.88);z-index:500;display:flex;align-items:center;justify-content:center;padding:20px;cursor:zoom-out;animation:lbIn .18s ease}
 @keyframes lbIn{from{opacity:0}to{opacity:1}}
@@ -819,7 +806,7 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
   <span class="footer-sep">·</span>
   <a href="#" class="footer-link" onclick="showFooterModal('privacy');return false">Privacy</a>
   <span class="footer-sep">·</span>
-  <a href="mailto:YOUR_EMAIL@example.com" class="footer-link">Contact</a>
+  <a href="mailto:james_weld@yahoo.com" class="footer-link">Contact</a>
   <span class="footer-sep">·</span>
   <button class="footer-admin-btn" id="openKeyModal" title="Settings">⚙</button>
 </footer>
@@ -1967,7 +1954,7 @@ function createCard(w) {
   });
 
   card.appendChild(body);
-  // Tap anywhere on the card to open full detail
+  // Tap anywhere on card → open detail view
   card.addEventListener('click', () => openDetail(getWineById(w.id), null));
   return card;
 }
@@ -2088,13 +2075,11 @@ async function openDetail(w, e) {
 function closeDetail() { detailOverlay.classList.remove('open'); document.body.style.overflow=''; }
 
 /* ── Back-button / history management ─────────────────────────────
-   Push a history state whenever a panel opens. Popstate closes the
-   top panel instead of leaving the app. On bare back with nothing
-   open, show a wine-themed "press again to leave" toast.          */
+   Push a history entry whenever a panel opens so the browser back
+   button closes it instead of leaving the app. On the last back
+   (nothing open) show a wine-themed exit prompt.                  */
 let _exitToastTimer = null;
-
 function _pushNavState() { history.pushState({ wwwPanel: true }, ''); }
-
 function _anyPanelOpen() {
   return (
     !!document.getElementById('labelLightbox') ||
@@ -2106,7 +2091,6 @@ function _anyPanelOpen() {
     document.getElementById('quickAddOverlay').classList.contains('open')
   );
 }
-
 function _closeTopPanel() {
   if (document.getElementById('labelLightbox'))                               { closeLightbox();   return; }
   if (document.getElementById('quickAddOverlay').classList.contains('open')) { closeQuickAdd();   return; }
@@ -2116,21 +2100,17 @@ function _closeTopPanel() {
   if (document.getElementById('modalOverlay').classList.contains('open'))    { closeModal();      return; }
   if (detailOverlay.classList.contains('open'))                               { closeDetail();     return; }
 }
-
 window.addEventListener('popstate', e => {
   if (e.state && e.state.wwwPanel) {
     _closeTopPanel();
     if (_anyPanelOpen()) history.pushState({ wwwPanel: true }, '');
     return;
   }
-  // Nothing open — intercept exit with branded toast
   if (_exitToastTimer) {
-    clearTimeout(_exitToastTimer);
-    _exitToastTimer = null;
-    history.back(); // second press — allow exit
-    return;
+    clearTimeout(_exitToastTimer); _exitToastTimer = null;
+    history.back(); return;
   }
-  history.pushState({ wwwPanel: false }, ''); // stay in app
+  history.pushState({ wwwPanel: false }, '');
   const t = document.getElementById('toast');
   const prev = t.textContent;
   t.textContent = '🍷 Press back again to leave your cellar';
@@ -2632,36 +2612,36 @@ const _infoContent = {
 <p style="font-family:var(--font-d);font-size:1rem;font-weight:600;color:var(--charcoal);margin-bottom:10px">Your data, your cellar.</p>
 <p style="font-family:var(--font-b);font-size:.92rem;color:var(--charcoal);line-height:1.75;margin-bottom:14px">Welds Wine Wisdoms is a personal wine journal. Your entries are private by default and visible only to you.</p>
 
-<p style="font-family:var(--font-d);font-size:.8rem;font-weight:600;color:var(--burgundy);letter-spacing:.08em;text-transform:uppercase;margin-bottom:6px">What we store</p>
-<ul style="font-family:var(--font-b);font-size:.9rem;color:var(--warm-gray);line-height:1.85;padding-left:18px;margin-bottom:16px">
+<p style="font-family:var(--font-d);font-size:.78rem;font-weight:600;color:var(--burgundy);letter-spacing:.08em;text-transform:uppercase;margin-bottom:6px">What we store</p>
+<ul style="font-family:var(--font-b);font-size:.9rem;color:var(--warm-gray);line-height:1.85;padding-left:18px;margin-bottom:14px">
   <li>Your email address (used for login only)</li>
-  <li>Wine entries you create, including notes, ratings, and photos</li>
+  <li>Wine entries you create: notes, ratings, and photos</li>
   <li>Optional location data attached to wine entries</li>
 </ul>
 
-<p style="font-family:var(--font-d);font-size:.8rem;font-weight:600;color:var(--burgundy);letter-spacing:.08em;text-transform:uppercase;margin-bottom:6px">What we do not do</p>
-<ul style="font-family:var(--font-b);font-size:.9rem;color:var(--warm-gray);line-height:1.85;padding-left:18px;margin-bottom:16px">
+<p style="font-family:var(--font-d);font-size:.78rem;font-weight:600;color:var(--burgundy);letter-spacing:.08em;text-transform:uppercase;margin-bottom:6px">What we do not do</p>
+<ul style="font-family:var(--font-b);font-size:.9rem;color:var(--warm-gray);line-height:1.85;padding-left:18px;margin-bottom:14px">
   <li>We do not sell, share, or monetise your data</li>
   <li>We do not serve advertising or track behaviour</li>
   <li>We do not share your data with third parties</li>
 </ul>
 
-<p style="font-family:var(--font-d);font-size:.8rem;font-weight:600;color:var(--burgundy);letter-spacing:.08em;text-transform:uppercase;margin-bottom:6px">Your rights (GDPR)</p>
-<ul style="font-family:var(--font-b);font-size:.9rem;color:var(--warm-gray);line-height:1.85;padding-left:18px;margin-bottom:16px">
-  <li><strong>Access</strong> — you can export all your data at any time via the Export button</li>
-  <li><strong>Rectification</strong> — you can edit any entry at any time</li>
-  <li><strong>Erasure</strong> — you can delete individual entries or your entire account</li>
+<p style="font-family:var(--font-d);font-size:.78rem;font-weight:600;color:var(--burgundy);letter-spacing:.08em;text-transform:uppercase;margin-bottom:6px">Your rights (GDPR / UK GDPR)</p>
+<ul style="font-family:var(--font-b);font-size:.9rem;color:var(--warm-gray);line-height:1.85;padding-left:18px;margin-bottom:14px">
+  <li><strong>Access</strong> — export all your data at any time via the Export button</li>
+  <li><strong>Rectification</strong> — edit any entry at any time</li>
+  <li><strong>Erasure</strong> — delete individual entries or your entire account</li>
   <li><strong>Portability</strong> — exported data is provided in JSON format</li>
   <li><strong>Objection</strong> — contact us to request removal of all stored data</li>
 </ul>
 
-<p style="font-family:var(--font-d);font-size:.8rem;font-weight:600;color:var(--burgundy);letter-spacing:.08em;text-transform:uppercase;margin-bottom:6px">Data storage</p>
-<p style="font-family:var(--font-b);font-size:.9rem;color:var(--warm-gray);line-height:1.75;margin-bottom:16px">Data is stored securely via Supabase (EU region). Authentication is handled by Supabase Auth. Label photos are stored in your private account storage and are never publicly accessible unless you explicitly share a wine entry.</p>
+<p style="font-family:var(--font-d);font-size:.78rem;font-weight:600;color:var(--burgundy);letter-spacing:.08em;text-transform:uppercase;margin-bottom:6px">Data storage</p>
+<p style="font-family:var(--font-b);font-size:.9rem;color:var(--warm-gray);line-height:1.75;margin-bottom:14px">Data is stored securely via Supabase (EU region). Authentication is handled by Supabase Auth. Label photos are stored in your private account and are never publicly accessible unless you explicitly share a wine entry.</p>
 
-<p style="font-family:var(--font-d);font-size:.8rem;font-weight:600;color:var(--burgundy);letter-spacing:.08em;text-transform:uppercase;margin-bottom:6px">Sharing</p>
-<p style="font-family:var(--font-b);font-size:.9rem;color:var(--warm-gray);line-height:1.75;margin-bottom:16px">Sharing a wine entry creates a public link for that single entry only. No other data is exposed. You can revoke sharing at any time by deleting the entry.</p>
+<p style="font-family:var(--font-d);font-size:.78rem;font-weight:600;color:var(--burgundy);letter-spacing:.08em;text-transform:uppercase;margin-bottom:6px">Sharing</p>
+<p style="font-family:var(--font-b);font-size:.9rem;color:var(--warm-gray);line-height:1.75;margin-bottom:14px">Sharing a wine creates a public link for that single entry only. No other data is exposed. You can stop sharing at any time by deleting the entry.</p>
 
-<p style="font-family:var(--font-b);font-size:.82rem;color:var(--warm-gray);font-style:italic;line-height:1.6;border-top:1px solid var(--light-gray);padding-top:12px;margin-top:4px">For any privacy enquiries or data removal requests, please use the Contact link in the footer. We aim to respond within 30 days as required by UK/EU GDPR.</p>`
+<p style="font-family:var(--font-b);font-size:.82rem;color:var(--warm-gray);font-style:italic;line-height:1.6;border-top:1px solid var(--light-gray);padding-top:12px">For privacy enquiries or data removal requests, use the Contact link in the footer. We aim to respond within 30 days as required by UK/EU GDPR.</p>`
   }
 };
 
