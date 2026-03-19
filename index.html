@@ -151,11 +151,12 @@ body{font-family:var(--font-b);background:var(--cream);color:var(--charcoal);min
 .wine-card:hover{transform:translateY(-3px);box-shadow:0 8px 28px var(--shadow-lg);border-color:var(--blush)}
 @keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
 .card-label-strip{height:4px;background:linear-gradient(90deg,var(--burgundy-deep),var(--blush))}
-.card-thumb-wrap{position:relative;display:flex;gap:2px;height:80px;cursor:zoom-in;overflow:hidden;background:var(--parchment)}
-.card-thumb-wrap img{flex:1;min-width:0;height:80px;object-fit:cover;transition:opacity .2s}
+/* ── GRID VIEW: portrait image area (3:4 ratio) ── */
+.card-thumb-wrap{position:relative;display:flex;gap:2px;aspect-ratio:3/4;cursor:zoom-in;overflow:hidden;background:#f8f6f3}
+.card-thumb-wrap img{flex:1;min-width:0;height:100%;object-fit:contain;transition:opacity .2s;background:#f8f6f3}
 .card-thumb-wrap:hover img{opacity:.88}
-.card-thumb-badge{position:absolute;bottom:4px;right:5px;background:rgba(44,36,32,.55);color:#fff;font-size:.62rem;font-family:var(--font-b);padding:1px 6px;border-radius:10px;pointer-events:none;letter-spacing:.04em}
-.card-thumb-single{height:80px;width:100%;object-fit:cover;cursor:zoom-in;display:block;transition:opacity .2s}
+.card-thumb-badge{position:absolute;bottom:6px;right:6px;background:rgba(44,36,32,.55);color:#fff;font-size:.62rem;font-family:var(--font-b);padding:1px 6px;border-radius:10px;pointer-events:none;letter-spacing:.04em}
+.card-thumb-single{aspect-ratio:3/4;width:100%;object-fit:contain;cursor:zoom-in;display:block;transition:opacity .2s;background:#f8f6f3}
 .card-thumb-single:hover{opacity:.88}
 /* Lightbox */
 .label-lightbox{position:fixed;inset:0;background:rgba(10,5,8,.88);z-index:500;display:flex;align-items:center;justify-content:center;padding:20px;cursor:zoom-out;animation:lbIn .18s ease}
@@ -165,17 +166,17 @@ body{font-family:var(--font-b);background:var(--cream);color:var(--charcoal);min
 .label-lightbox-inner img.single{max-width:80vw}
 .label-lightbox-close{position:fixed;top:16px;right:18px;background:rgba(255,255,255,.15);border:none;color:#fff;font-size:1.3rem;width:36px;height:36px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.2s}
 .label-lightbox-close:hover{background:rgba(255,255,255,.28)}
-.card-body{padding:16px 18px 12px;flex:1;display:flex;flex-direction:column}
-.card-header{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:6px}
-.card-vintage-badge{font-family:var(--font-d);font-size:.78rem;font-weight:600;color:var(--burgundy);background:var(--parchment);border:1px solid var(--light-gray);border-radius:3px;padding:1px 7px;display:inline-block;margin-bottom:3px}
-.card-name{font-family:var(--font-d);font-size:1.08rem;font-weight:600;color:var(--charcoal);line-height:1.25}
+.card-body{padding:12px 16px 10px;flex:1;display:flex;flex-direction:column}
+.card-header{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:4px}
+.card-vintage-badge{font-family:var(--font-d);font-size:.78rem;font-weight:600;color:var(--burgundy);background:var(--parchment);border:1px solid var(--light-gray);border-radius:3px;padding:1px 7px;display:inline-block;margin-bottom:2px}
+.card-name{font-family:var(--font-d);font-size:1.05rem;font-weight:600;color:var(--charcoal);line-height:1.2}
 .card-rating{color:var(--gold);font-size:.85rem;white-space:nowrap;flex-shrink:0}
-.card-meta{font-family:var(--font-b);font-size:.84rem;color:var(--warm-gray);font-style:italic;line-height:1.4;margin-bottom:8px}
-.card-tags{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px}
-.card-tag{background:var(--parchment);border:1px solid var(--light-gray);border-radius:20px;padding:1px 9px;font-size:.72rem;font-family:var(--font-b);color:var(--warm-gray)}
-.card-notes{font-family:var(--font-s);font-style:italic;font-size:.86rem;color:var(--warm-gray);line-height:1.5;flex:1;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.card-location{font-size:.72rem;color:var(--blush);font-family:var(--font-b);margin-top:5px}
-.card-footer{display:flex;justify-content:space-between;align-items:center;padding:8px 18px 12px;border-top:1px solid var(--light-gray);margin-top:10px;gap:6px}
+.card-meta{font-family:var(--font-b);font-size:.82rem;color:var(--warm-gray);font-style:italic;line-height:1.35;margin-bottom:5px}
+.card-tags{display:flex;flex-wrap:wrap;gap:3px;margin-bottom:5px}
+.card-tag{background:var(--parchment);border:1px solid var(--light-gray);border-radius:20px;padding:1px 9px;font-size:.7rem;font-family:var(--font-b);color:var(--warm-gray)}
+.card-notes{font-family:var(--font-s);font-style:italic;font-size:.83rem;color:var(--warm-gray);line-height:1.45;flex:1;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.card-location{font-size:.7rem;color:var(--blush);font-family:var(--font-b);margin-top:4px}
+.card-footer{display:flex;justify-content:space-between;align-items:center;padding:6px 16px 10px;border-top:1px solid var(--light-gray);margin-top:8px;gap:6px}
 .card-date{font-size:.74rem;color:var(--warm-gray);font-family:var(--font-b);flex:1}
 .card-actions{display:flex;gap:4px;flex-shrink:0}
 .card-btn{background:none;border:1px solid var(--light-gray);border-radius:var(--r);padding:4px 10px;font-size:.75rem;cursor:pointer;transition:var(--tr);color:var(--warm-gray);font-family:var(--font-b)}
@@ -471,12 +472,16 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
 @keyframes shimmer{0%{background-position:-400px 0}100%{background-position:400px 0}}
 .skeleton{background:linear-gradient(90deg,var(--light-gray) 25%,var(--cream) 50%,var(--light-gray) 75%);background-size:800px 100%;animation:shimmer 1.4s infinite;border-radius:var(--r)}
 .skeleton-card{background:var(--ivory);border:1px solid var(--light-gray);border-radius:var(--rl);overflow:hidden;animation:fadeUp .35s ease both}
-.skeleton-card .sk-img{height:80px}
-.skeleton-card .sk-body{padding:16px 18px 12px}
+.skeleton-card .sk-img{aspect-ratio:3/4;width:100%}
+.skeleton-card .sk-body{padding:12px 16px 10px}
 .skeleton-card .sk-line{height:14px;margin-bottom:10px}
 .skeleton-card .sk-line.wide{width:80%}
 .skeleton-card .sk-line.mid{width:55%}
 .skeleton-card .sk-line.short{width:35%;height:10px}
+/* On mobile: softer 2:3 ratio keeps cards from becoming excessively tall */
+@media(max-width:768px){
+  .card-thumb-wrap,.card-thumb-single,.skeleton-card .sk-img{aspect-ratio:2/3}
+}
 
 </style>
 </head>
