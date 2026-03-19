@@ -147,61 +147,17 @@ body{font-family:var(--font-b);background:var(--cream);color:var(--charcoal);min
 .stat-divider{width:1px;height:30px;background:var(--light-gray);flex-shrink:0}
 .main-content{max-width:1200px;margin:0 auto;padding:28px 20px 60px}
 .wine-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:18px}
-
-/* ── Card: horizontal layout — image left, content right ── */
-.wine-card{
-  background:var(--ivory);
-  border:1px solid var(--light-gray);
-  border-radius:var(--rl);
-  overflow:hidden;
-  display:flex;
-  flex-direction:row;
-  cursor:pointer;
-  animation:fadeUp .35s ease both;
-  box-shadow:0 2px 8px rgba(44,36,32,.07);
-  transition:transform .25s ease,box-shadow .25s ease,border-color .25s ease;
-}
+.wine-card{background:var(--ivory);border:1px solid var(--light-gray);border-radius:var(--rl);overflow:hidden;display:flex;flex-direction:row;cursor:pointer;animation:fadeUp .35s ease both;box-shadow:0 2px 8px rgba(44,36,32,.07);transition:transform .25s ease,box-shadow .25s ease,border-color .25s ease}
 @media(hover:hover){
-  .wine-card:hover{
-    transform:translateY(-2px);
-    box-shadow:0 8px 28px rgba(44,36,32,.18),0 2px 8px rgba(196,120,138,.12);
-    border-color:var(--blush);
-  }
-  .wine-card:hover .card-thumb-wrap img,
-  .wine-card:hover .card-thumb-single{transform:scale(1.04)}
+  .wine-card:hover{transform:translateY(-2px);box-shadow:0 8px 28px rgba(44,36,32,.18),0 2px 8px rgba(196,120,138,.12);border-color:var(--blush)}
+  .wine-card:hover .card-thumb-wrap img,.wine-card:hover .card-thumb-single{transform:scale(1.04)}
 }
-
 @keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
 .card-label-strip{width:4px;min-height:100%;background:linear-gradient(180deg,var(--burgundy-deep),var(--blush));flex-shrink:0}
-
-/* ── Portrait image: left column, fixed width, full card height ── */
-.card-thumb-wrap{
-  position:relative;
-  width:120px;
-  flex-shrink:0;
-  cursor:zoom-in;
-  overflow:hidden;
-  background:#f8f6f3;
-  display:flex;
-}
-.card-thumb-wrap img{
-  flex:1;min-width:0;
-  width:50%;height:100%;
-  object-fit:contain;
-  background:#f8f6f3;
-  transition:transform .35s ease,opacity .2s ease;
-}
+.card-thumb-wrap{position:relative;width:120px;flex-shrink:0;cursor:zoom-in;overflow:hidden;background:#f8f6f3;display:flex}
+.card-thumb-wrap img{flex:1;min-width:0;width:50%;height:100%;object-fit:contain;background:#f8f6f3;transition:transform .35s ease,opacity .2s ease}
 .card-thumb-badge{position:absolute;bottom:5px;left:50%;transform:translateX(-50%);background:rgba(44,36,32,.55);color:#fff;font-size:.58rem;font-family:var(--font-b);padding:1px 5px;border-radius:10px;pointer-events:none;letter-spacing:.04em;white-space:nowrap}
-.card-thumb-single{
-  width:120px;
-  flex-shrink:0;
-  align-self:stretch;
-  object-fit:contain;
-  cursor:zoom-in;
-  display:block;
-  background:#f8f6f3;
-  transition:transform .35s ease,opacity .2s ease;
-}
+.card-thumb-single{width:120px;flex-shrink:0;align-self:stretch;object-fit:contain;cursor:zoom-in;display:block;background:#f8f6f3;transition:transform .35s ease,opacity .2s ease}
 /* Lightbox */
 .label-lightbox{position:fixed;inset:0;background:rgba(10,5,8,.88);z-index:500;display:flex;align-items:center;justify-content:center;padding:20px;cursor:zoom-out;animation:lbIn .18s ease}
 @keyframes lbIn{from{opacity:0}to{opacity:1}}
@@ -223,12 +179,7 @@ body{font-family:var(--font-b);background:var(--cream);color:var(--charcoal);min
 .card-footer{display:flex;justify-content:space-between;align-items:center;padding:8px 14px 10px;border-top:1px solid var(--light-gray);margin-top:8px;gap:4px}
 .card-date{font-size:.7rem;color:var(--warm-gray);font-family:var(--font-b);flex:1;opacity:.75}
 .card-actions{display:flex;gap:3px;flex-shrink:0}
-.card-btn{
-  background:none;border:1px solid var(--light-gray);border-radius:var(--r);
-  padding:3px 8px;font-size:.72rem;cursor:pointer;
-  color:var(--warm-gray);font-family:var(--font-b);
-  transition:background .18s ease,color .18s ease,border-color .18s ease,transform .15s ease;
-}
+.card-btn{background:none;border:1px solid var(--light-gray);border-radius:var(--r);padding:3px 8px;font-size:.72rem;cursor:pointer;color:var(--warm-gray);font-family:var(--font-b);transition:background .18s ease,color .18s ease,border-color .18s ease,transform .15s ease}
 .card-btn:hover{transform:translateY(-1px)}
 .card-btn.view:hover{background:rgba(123,30,58,.07);color:var(--burgundy);border-color:rgba(123,30,58,.3)}
 .card-btn.edit:hover{background:rgba(201,163,74,.1);color:var(--gold);border-color:rgba(201,163,74,.4)}
@@ -794,7 +745,7 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
   <span class="footer-sep">·</span>
   <a href="#" class="footer-link" onclick="showFooterModal('privacy');return false">Privacy</a>
   <span class="footer-sep">·</span>
-  <a href="/cdn-cgi/l/email-protection#0c64696060634c7b6960687f7b656269226f6361" class="footer-link">Contact</a>
+  <a href="mailto:james_weld@yahoo.com" class="footer-link">james@weldswine.co.uk</a>
   <span class="footer-sep">·</span>
   <button class="footer-admin-btn" id="openKeyModal" title="Settings">⚙</button>
 </footer>
@@ -1173,7 +1124,7 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
 </div>
 
 <!-- AUTH MODULE -->
-<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+<script>
 /* ══════════════════════════════════════════════════════════════
    SUPABASE CONFIG — replace with your project values
    supabase.com → your project → Settings → API
@@ -1942,10 +1893,7 @@ function createCard(w) {
   });
 
   card.appendChild(body);
-
-  // Clicking anywhere on the card opens the detail view
   card.addEventListener('click', () => openDetail(getWineById(w.id), null));
-
   return card;
 }
 
@@ -2064,12 +2012,7 @@ async function openDetail(w, e) {
 
 function closeDetail() { detailOverlay.classList.remove('open'); document.body.style.overflow=''; }
 
-/* ── Back-button & history management ──────────────────────────────
-   Strategy: push a history entry whenever a panel opens so the
-   browser back button closes the panel instead of leaving the app.
-   On the last back (nothing open), show a "press again to leave"
-   toast — friendly and on-brand.                                   */
-
+/* ── Back-button & history management ── */
 let _exitToastTimer = null;
 
 function _anyPanelOpen() {
@@ -2084,44 +2027,38 @@ function _anyPanelOpen() {
   );
 }
 
-function _pushNavState() {
-  history.pushState({ wwwPanel: true }, '');
-}
+function _pushNavState() { history.pushState({ wwwPanel: true }, ''); }
 
 function _closeTopPanel() {
-  if (document.getElementById('labelLightbox'))                                { closeLightbox(); return; }
-  if (document.getElementById('quickAddOverlay').classList.contains('open'))  { closeQuickAdd(); return; }
-  if (document.getElementById('shareOverlay').classList.contains('open'))     { closeShareModal(); return; }
-  if (document.getElementById('infoOverlay').classList.contains('open'))      { closeInfoModal(); return; }
-  if (document.getElementById('scanOverlay').classList.contains('open'))      { closeScanModal(); return; }
-  if (document.getElementById('modalOverlay').classList.contains('open'))     { closeModal(); return; }
-  if (detailOverlay.classList.contains('open'))                                { closeDetail(); return; }
+  if (document.getElementById('labelLightbox'))                               { closeLightbox(); return; }
+  if (document.getElementById('quickAddOverlay').classList.contains('open')) { closeQuickAdd(); return; }
+  if (document.getElementById('shareOverlay').classList.contains('open'))    { closeShareModal(); return; }
+  if (document.getElementById('infoOverlay').classList.contains('open'))     { closeInfoModal(); return; }
+  if (document.getElementById('scanOverlay').classList.contains('open'))     { closeScanModal(); return; }
+  if (document.getElementById('modalOverlay').classList.contains('open'))    { closeModal(); return; }
+  if (detailOverlay.classList.contains('open'))                               { closeDetail(); return; }
 }
 
 window.addEventListener('popstate', e => {
   if (e.state && e.state.wwwPanel) {
     _closeTopPanel();
-    // Re-push so next back still hits us
     if (_anyPanelOpen()) history.pushState({ wwwPanel: true }, '');
     return;
   }
-  // Nothing left open — "press again to exit" prompt
   if (_exitToastTimer) {
-    // Second press: actually navigate away
     clearTimeout(_exitToastTimer);
     _exitToastTimer = null;
-    history.back(); // allow exit
+    history.back();
     return;
   }
-  // First press: intercept and show toast
-  history.pushState({ wwwPanel: false }, ''); // stay in app
+  history.pushState({ wwwPanel: false }, '');
   const t = document.getElementById('toast');
   const prev = t.textContent;
   t.textContent = '🍷 Press back again to leave your cellar';
   t.classList.add('show');
   _exitToastTimer = setTimeout(() => {
     t.classList.remove('show');
-    setTimeout(() => { if(t.textContent.includes('cellar')) t.textContent = prev; }, 300);
+    setTimeout(() => { if (t.textContent.includes('cellar')) t.textContent = prev; }, 300);
     _exitToastTimer = null;
   }, 2200);
 });
@@ -2611,16 +2548,50 @@ const _infoContent = {
 <p style="font-family:var(--font-b);font-size:.95rem;color:var(--warm-gray);line-height:1.75">Built with care for wine lovers.</p>`
   },
   privacy: {
-    title: 'Privacy',
-    body: `<p style="font-family:var(--font-b);font-size:.95rem;color:var(--charcoal);line-height:1.75;margin-bottom:14px">Your wine journal is private by default. Only you can see your entries.</p>
-<ul style="font-family:var(--font-b);font-size:.92rem;color:var(--warm-gray);line-height:1.9;padding-left:18px;margin-bottom:14px">
-  <li>Your data is stored securely and never shared with third parties.</li>
-  <li>Label photos are stored in your account only.</li>
-  <li>Sharing a wine creates a public link for that single entry only.</li>
-  <li>Location is optional and used only for your personal map.</li>
-  <li>You can export or delete your data at any time.</li>
+    title: '🔒 Privacy & Data Protection',
+    body: `
+<p style="font-family:var(--font-b);font-size:.88rem;color:var(--warm-gray);font-style:italic;line-height:1.6;margin-bottom:18px">Last updated: March 2026 &nbsp;·&nbsp; Welds Wine Wisdoms is operated by James Weld as a personal project.</p>
+
+<p style="font-family:var(--font-d);font-size:.92rem;font-weight:600;color:var(--burgundy);margin-bottom:6px">Who is responsible for your data?</p>
+<p style="font-family:var(--font-b);font-size:.92rem;color:var(--charcoal);line-height:1.75;margin-bottom:16px">James Weld is the data controller for personal data processed through this app. You can reach him at <a href="mailto:james_weld@yahoo.com" style="color:var(--burgundy);text-decoration:none;font-style:italic">james@weldswine.co.uk</a>.</p>
+
+<p style="font-family:var(--font-d);font-size:.92rem;font-weight:600;color:var(--burgundy);margin-bottom:6px">What data we collect</p>
+<ul style="font-family:var(--font-b);font-size:.92rem;color:var(--warm-gray);line-height:1.9;padding-left:18px;margin-bottom:16px">
+  <li>Your email address and password (used for account authentication only)</li>
+  <li>Wine entries you create: name, vintage, notes, ratings, and related details</li>
+  <li>Label photos you upload (stored securely in your account)</li>
+  <li>Optional location data attached to wine entries (only if you choose to add it)</li>
 </ul>
-<p style="font-family:var(--font-b);font-size:.88rem;color:var(--warm-gray);font-style:italic;line-height:1.6">We do not advertise, sell data, or track behaviour beyond what is needed to operate the app.</p>`
+
+<p style="font-family:var(--font-d);font-size:.92rem;font-weight:600;color:var(--burgundy);margin-bottom:6px">Legal basis for processing (GDPR Article 6)</p>
+<ul style="font-family:var(--font-b);font-size:.92rem;color:var(--warm-gray);line-height:1.9;padding-left:18px;margin-bottom:16px">
+  <li><strong style="color:var(--charcoal)">Contract</strong> — processing your account and journal entries to provide the service</li>
+  <li><strong style="color:var(--charcoal)">Legitimate interest</strong> — basic analytics to keep the app working correctly</li>
+  <li><strong style="color:var(--charcoal)">Consent</strong> — optional location data, which you can withdraw at any time</li>
+</ul>
+
+<p style="font-family:var(--font-d);font-size:.92rem;font-weight:600;color:var(--burgundy);margin-bottom:6px">How your data is used</p>
+<ul style="font-family:var(--font-b);font-size:.92rem;color:var(--warm-gray);line-height:1.9;padding-left:18px;margin-bottom:16px">
+  <li>To provide and operate your personal wine journal</li>
+  <li>To allow you to share individual wine entries via a public link (only entries you explicitly share)</li>
+  <li>Your data is never sold, rented, or shared with third parties for marketing</li>
+</ul>
+
+<p style="font-family:var(--font-d);font-size:.92rem;font-weight:600;color:var(--burgundy);margin-bottom:6px">Data storage & security</p>
+<p style="font-family:var(--font-b);font-size:.92rem;color:var(--warm-gray);line-height:1.75;margin-bottom:16px">Data is stored using Supabase, hosted on secure cloud infrastructure within the EU/EEA. Access is protected by row-level security — only your account can read your data.</p>
+
+<p style="font-family:var(--font-d);font-size:.92rem;font-weight:600;color:var(--burgundy);margin-bottom:6px">Your rights under GDPR</p>
+<ul style="font-family:var(--font-b);font-size:.92rem;color:var(--warm-gray);line-height:1.9;padding-left:18px;margin-bottom:16px">
+  <li><strong style="color:var(--charcoal)">Access</strong> — request a copy of your personal data</li>
+  <li><strong style="color:var(--charcoal)">Rectification</strong> — correct any inaccurate data</li>
+  <li><strong style="color:var(--charcoal)">Erasure</strong> — request deletion of your account and all associated data</li>
+  <li><strong style="color:var(--charcoal)">Portability</strong> — export your wine data at any time via the Export Data button</li>
+  <li><strong style="color:var(--charcoal)">Objection</strong> — object to processing based on legitimate interest</li>
+  <li><strong style="color:var(--charcoal)">Withdrawal of consent</strong> — remove location data from any entry at any time</li>
+</ul>
+<p style="font-family:var(--font-b);font-size:.92rem;color:var(--warm-gray);line-height:1.75;margin-bottom:16px">To exercise any of these rights, email <a href="mailto:james_weld@yahoo.com" style="color:var(--burgundy);text-decoration:none;font-style:italic">james@weldswine.co.uk</a>. We will respond within 30 days. You also have the right to lodge a complaint with the <a href="https://ico.org.uk" target="_blank" style="color:var(--burgundy);text-decoration:none">ICO</a> (UK supervisory authority).</p>
+
+<p style="font-family:var(--font-b);font-size:.82rem;color:var(--warm-gray);font-style:italic;line-height:1.6;border-top:1px solid var(--light-gray);padding-top:14px;margin-top:4px">We do not use cookies for tracking or advertising. We do not profile users. This app contains no ads.</p>`
   }
 };
 
