@@ -148,7 +148,7 @@ body{font-family:var(--font-b);background:var(--cream);color:var(--charcoal);min
 .main-content{max-width:1200px;margin:0 auto;padding:28px 20px 60px}
 .wine-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:22px}
 
-/* ── Card: rest state — warm soft shadow ── */
+/* ── Card: rest + hover polish ── */
 .wine-card{
   background:var(--ivory);
   border:1px solid var(--light-gray);
@@ -159,14 +159,12 @@ body{font-family:var(--font-b);background:var(--cream);color:var(--charcoal);min
   box-shadow:0 2px 8px rgba(44,36,32,.07);
   transition:transform .25s ease,box-shadow .25s ease,border-color .25s ease;
 }
-/* ── Card: hover — lift + richer shadow + blush border glow ── */
 @media(hover:hover){
   .wine-card:hover{
     transform:translateY(-2px);
     box-shadow:0 8px 28px rgba(44,36,32,.18),0 2px 8px rgba(196,120,138,.12);
     border-color:var(--blush);
   }
-  /* Image zoom triggered by card hover — contained by overflow:hidden on wrap */
   .wine-card:hover .card-thumb-wrap img,
   .wine-card:hover .card-thumb-single{
     transform:scale(1.04);
@@ -177,7 +175,7 @@ body{font-family:var(--font-b);background:var(--cream);color:var(--charcoal);min
 @keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
 .card-label-strip{height:4px;background:linear-gradient(90deg,var(--burgundy-deep),var(--blush))}
 
-/* ── GRID VIEW: portrait image area (3:4 ratio, ~50% width) ── */
+/* ── Portrait image area (3:4, capped at 160px) ── */
 .card-thumb-wrap{
   position:relative;display:flex;gap:2px;
   aspect-ratio:3/4;max-height:160px;
@@ -207,15 +205,14 @@ body{font-family:var(--font-b);background:var(--cream);color:var(--charcoal);min
 .card-vintage-badge{font-family:var(--font-d);font-size:.75rem;font-weight:600;color:var(--burgundy);background:var(--parchment);border:1px solid var(--light-gray);border-radius:3px;padding:1px 7px;display:inline-block;margin-bottom:3px;letter-spacing:.03em}
 .card-name{font-family:var(--font-d);font-size:1.1rem;font-weight:600;color:var(--charcoal);line-height:1.2;letter-spacing:.01em}
 .card-rating{color:var(--gold);font-size:.85rem;white-space:nowrap;flex-shrink:0;letter-spacing:1px}
-.card-meta{font-family:var(--font-b);font-size:.81rem;color:var(--warm-gray);font-style:italic;line-height:1.35;opacity:.85;margin-bottom:0}
-.card-tags{display:flex;flex-wrap:wrap;gap:3px;margin-bottom:0}
+.card-meta{font-family:var(--font-b);font-size:.81rem;color:var(--warm-gray);font-style:italic;line-height:1.35;opacity:.85}
+.card-tags{display:flex;flex-wrap:wrap;gap:3px}
 .card-tag{background:var(--parchment);border:1px solid var(--light-gray);border-radius:20px;padding:1px 9px;font-size:.7rem;font-family:var(--font-b);color:var(--warm-gray);transition:background .2s,border-color .2s}
 .card-notes{font-family:var(--font-s);font-style:italic;font-size:.83rem;color:var(--warm-gray);line-height:1.45;flex:1;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;opacity:.8}
 .card-location{font-size:.7rem;color:var(--blush);font-family:var(--font-b)}
 .card-footer{display:flex;justify-content:space-between;align-items:center;padding:6px 16px 10px;border-top:1px solid var(--light-gray);margin-top:8px;gap:6px}
 .card-date{font-size:.72rem;color:var(--warm-gray);font-family:var(--font-b);flex:1;opacity:.75}
 .card-actions{display:flex;gap:4px;flex-shrink:0}
-/* ── Buttons: polished hover states per action type ── */
 .card-btn{
   background:none;border:1px solid var(--light-gray);border-radius:var(--r);
   padding:4px 10px;font-size:.74rem;cursor:pointer;
@@ -523,7 +520,6 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
 .skeleton-card .sk-line.wide{width:80%}
 .skeleton-card .sk-line.mid{width:55%}
 .skeleton-card .sk-line.short{width:35%;height:10px}
-/* On mobile: softer 2:3 ratio keeps cards from becoming excessively tall */
 @media(max-width:768px){
   .card-thumb-wrap,.card-thumb-single,.skeleton-card .sk-img{aspect-ratio:2/3}
 }
