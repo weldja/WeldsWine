@@ -156,6 +156,7 @@ body{font-family:var(--font-b);background:var(--cream);color:var(--charcoal);min
   overflow:hidden;
   display:flex;
   flex-direction:row;
+  cursor:pointer;
   animation:fadeUp .35s ease both;
   box-shadow:0 2px 8px rgba(44,36,32,.07);
   transition:transform .25s ease,box-shadow .25s ease,border-color .25s ease;
@@ -1874,7 +1875,7 @@ function createCard(w) {
   if (front && back) {
     const wrap = document.createElement('div');
     wrap.className = 'card-thumb-wrap';
-    wrap.addEventListener('click', e => openLightbox(w.id, e));
+    wrap.addEventListener('click', e => { e.stopPropagation(); openLightbox(w.id, e); });
     const imgF = document.createElement('img'); imgF.src = front; imgF.loading = 'lazy'; wrap.appendChild(imgF);
     const imgB = document.createElement('img'); imgB.src = back;  imgB.loading = 'lazy'; wrap.appendChild(imgB);
     const badge = document.createElement('span'); badge.className = 'card-thumb-badge'; badge.textContent = 'front · back'; wrap.appendChild(badge);
@@ -1882,7 +1883,7 @@ function createCard(w) {
   } else if (front) {
     const img = document.createElement('img');
     img.className = 'card-thumb-single'; img.src = front; img.loading = 'lazy';
-    img.addEventListener('click', e => openLightbox(w.id, e));
+    img.addEventListener('click', e => { e.stopPropagation(); openLightbox(w.id, e); });
     card.appendChild(img);
   } else {
     const strip = document.createElement('div');
@@ -1941,6 +1942,10 @@ function createCard(w) {
   });
 
   card.appendChild(body);
+
+  // Clicking anywhere on the card opens the detail view
+  card.addEventListener('click', () => openDetail(getWineById(w.id), null));
+
   return card;
 }
 
@@ -1978,6 +1983,7 @@ async function openLightbox(id, e) {
   lb.addEventListener('click', e => { if (e.target === lb) closeLightbox(); });
   document.body.appendChild(lb);
   document.body.style.overflow = 'hidden';
+  _pushNavState();
 }
 
 function closeLightbox() {
@@ -2035,6 +2041,7 @@ async function openDetail(w, e) {
 
   detailOverlay.classList.add('open');
   document.body.style.overflow='hidden';
+  _pushNavState();
 
   if (w.locLat && w.locLng) {
     const initMini = () => {
@@ -2056,6 +2063,68 @@ async function openDetail(w, e) {
 }
 
 function closeDetail() { detailOverlay.classList.remove('open'); document.body.style.overflow=''; }
+
+/* ── Back-button & history management ──────────────────────────────
+   Strategy: push a history entry whenever a panel opens so the
+   browser back button closes the panel instead of leaving the app.
+   On the last back (nothing open), show a "press again to leave"
+   toast — friendly and on-brand.                                   */
+
+let _exitToastTimer = null;
+
+function _anyPanelOpen() {
+  return (
+    !!document.getElementById('labelLightbox') ||
+    detailOverlay.classList.contains('open') ||
+    document.getElementById('modalOverlay').classList.contains('open') ||
+    document.getElementById('scanOverlay').classList.contains('open') ||
+    document.getElementById('shareOverlay').classList.contains('open') ||
+    document.getElementById('infoOverlay').classList.contains('open') ||
+    document.getElementById('quickAddOverlay').classList.contains('open')
+  );
+}
+
+function _pushNavState() {
+  history.pushState({ wwwPanel: true }, '');
+}
+
+function _closeTopPanel() {
+  if (document.getElementById('labelLightbox'))                                { closeLightbox(); return; }
+  if (document.getElementById('quickAddOverlay').classList.contains('open'))  { closeQuickAdd(); return; }
+  if (document.getElementById('shareOverlay').classList.contains('open'))     { closeShareModal(); return; }
+  if (document.getElementById('infoOverlay').classList.contains('open'))      { closeInfoModal(); return; }
+  if (document.getElementById('scanOverlay').classList.contains('open'))      { closeScanModal(); return; }
+  if (document.getElementById('modalOverlay').classList.contains('open'))     { closeModal(); return; }
+  if (detailOverlay.classList.contains('open'))                                { closeDetail(); return; }
+}
+
+window.addEventListener('popstate', e => {
+  if (e.state && e.state.wwwPanel) {
+    _closeTopPanel();
+    // Re-push so next back still hits us
+    if (_anyPanelOpen()) history.pushState({ wwwPanel: true }, '');
+    return;
+  }
+  // Nothing left open — "press again to exit" prompt
+  if (_exitToastTimer) {
+    // Second press: actually navigate away
+    clearTimeout(_exitToastTimer);
+    _exitToastTimer = null;
+    history.back(); // allow exit
+    return;
+  }
+  // First press: intercept and show toast
+  history.pushState({ wwwPanel: false }, ''); // stay in app
+  const t = document.getElementById('toast');
+  const prev = t.textContent;
+  t.textContent = '🍷 Press back again to leave your cellar';
+  t.classList.add('show');
+  _exitToastTimer = setTimeout(() => {
+    t.classList.remove('show');
+    setTimeout(() => { if(t.textContent.includes('cellar')) t.textContent = prev; }, 300);
+    _exitToastTimer = null;
+  }, 2200);
+});
 
 function initMapView() {
   // Lazy-load Leaflet only when map is first opened
@@ -2148,6 +2217,7 @@ function openModal(wine=null, injectFront=null, injectBack=null) {
 
   modalOverlay.classList.add('open');
   document.body.style.overflow='hidden';
+  _pushNavState();
   setTimeout(()=>document.getElementById('wineName').focus(),200);
 }
 
@@ -2491,6 +2561,7 @@ async function shareWine(id, e) {
 
   document.getElementById('shareOverlay').classList.add('open');
   document.body.style.overflow = 'hidden';
+  _pushNavState();
 }
 
 async function getOrCreateShareId(w) {
@@ -2559,6 +2630,7 @@ function showFooterModal(type) {
   document.getElementById('infoModalTitle').textContent = content.title;
   document.getElementById('infoModalBody').innerHTML = content.body;
   document.getElementById('infoOverlay').classList.add('open');
+  _pushNavState();
 }
 
 function closeInfoModal() {
@@ -2575,6 +2647,7 @@ function openQuickAdd() {
   document.querySelectorAll('#qaStarInput .star').forEach(s => s.classList.remove('filled'));
   document.getElementById('quickAddOverlay').classList.add('open');
   document.body.style.overflow = 'hidden';
+  _pushNavState();
   setTimeout(() => document.getElementById('qaName').focus(), 200);
 }
 
@@ -3102,6 +3175,7 @@ function openScanModal() {
   ]);
   document.getElementById('scanOverlay').classList.add('open');
   document.body.style.overflow='hidden';
+  _pushNavState();
 }
 
 function closeScanModal() { document.getElementById('scanOverlay').classList.remove('open'); document.body.style.overflow=''; }
