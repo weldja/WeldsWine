@@ -3517,6 +3517,7 @@ async function checkPublicWineView() {
   view.classList.add('show');
   document.getElementById('authScreen').classList.add('hidden');
 
+
   if (!_sb) {
     await new Promise(res => {
       let t = 0;
@@ -3532,6 +3533,7 @@ async function checkPublicWineView() {
     document.getElementById('publicWineContent').innerHTML = '<p style="color:var(--warm-gray);font-family:var(--font-b);text-align:center;padding:20px">Could not load wine details.</p>';
     return true;
   }
+
 
   const { data: w, error } = await _sb
     .from('shared_wines')
