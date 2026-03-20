@@ -3323,7 +3323,8 @@ async function getOrCreateShareId(w) {
     .from('shared_wines')
     .select('id')
     .eq('wine_id', w.id)
-    .single();
+    .limit(1)
+    .maybeSingle();
   if (existing) return existing.id;
 
   // Create share record
@@ -3510,21 +3511,13 @@ async function nativeShare() {
 async function checkPublicWineView() {
   const params  = new URLSearchParams(window.location.search);
   const shareId = params.get('wine');
-  if (!shareId || !/^[a-zA-Z0-9\-]{8,64}$/.test(shareId)) return false;
+  if (!shareId || !/^[a-zA-Z0-9]{8,64}$/.test(shareId)) return false;
 
   const view = document.getElementById('publicWineView');
   view.classList.add('show');
   document.getElementById('authScreen').classList.add('hidden');
 
-  function dbg(msg) {
-    document.getElementById('publicWineContent').innerHTML =
-      `<p style="color:var(--warm-gray);font-family:var(--font-b);font-size:.8rem;padding:20px;text-align:center">${msg}</p>`;
-  }
-
-  dbg('Loading… shareId: ' + shareId);
-
   if (!_sb) {
-    dbg('Waiting for Supabase…');
     await new Promise(res => {
       let t = 0;
       const poll = setInterval(() => {
@@ -3536,20 +3529,19 @@ async function checkPublicWineView() {
   }
 
   if (!_sb) {
-    dbg('FAIL: Supabase never initialised — CDN script may have failed to load. _sbInitError=' + _sbInitError);
+    document.getElementById('publicWineContent').innerHTML = '<p style="color:var(--warm-gray);font-family:var(--font-b);text-align:center;padding:20px">Could not load wine details.</p>';
     return true;
   }
-
-  dbg('Supabase ready, querying shared_wines for id=' + shareId);
 
   const { data: w, error } = await _sb
     .from('shared_wines')
     .select('*')
     .eq('id', shareId)
-    .single();
+    .limit(1)
+    .maybeSingle();
 
   if (error || !w) {
-    dbg('FAIL: error.message=' + (error?.message||'none') + ' error.code=' + (error?.code||'none') + ' data=' + JSON.stringify(w));
+    document.getElementById('publicWineContent').innerHTML = '<p style="color:var(--warm-gray);font-family:var(--font-b);text-align:center;padding:20px">Wine not found — the link may have expired.</p>';
     return true;
   }
 
@@ -3818,7 +3810,7 @@ function showToast(m){ const t=document.getElementById('toast'); t.textContent=m
 function flashAutofill(el){ el.classList.remove('autofilled'); void el.offsetWidth; el.classList.add('autofilled'); }
 // Crypto-safe ID — no collisions across devices
 function generateId(){
-  if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID();
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID().replace(/-/g,'');
   // Fallback for very old browsers
   return Date.now().toString(36) + Math.random().toString(36).slice(2,9) + Math.random().toString(36).slice(2,9);
 }
