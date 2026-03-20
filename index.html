@@ -11,11 +11,11 @@
   <link rel="preconnect" href="https://unpkg.com">
   <link rel="preconnect" href="https://api.bigdatacloud.net">
   <!-- 2 font families only, fewer weights — EB Garamond removed -->
-  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,600;0,9..144,700;1,9..144,300;1,9..144,400&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Cormorant+Garamond:ital,wght@0,400;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,500;0,600;1,500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
   <style>
 /* ── Auth / Landing screen ───────────────────────────────── */
-#authScreen{position:fixed;inset:0;background:linear-gradient(135deg,var(--burgundy-deep) 0%,#3d1020 60%,#5a1a2e 100%);z-index:1000;display:flex;align-items:stretch;overflow-y:auto}
+#authScreen{position:fixed;inset:0;background:var(--burgundy-deep);z-index:1000;display:flex;align-items:stretch;overflow-y:auto}
 #authScreen.hidden{display:none}
 
 /* Left: hero panel */
@@ -78,37 +78,37 @@
    Welds Wine Wisdoms — main styles
    ============================================================ */
 :root {
-  --burgundy:      #7B1E3A;
-  --burgundy-deep: #4A1424;
-  --burgundy-lt:   #9B3050;
+  --burgundy:      #8B2439;
+  --burgundy-deep: #5C1525;
+  --burgundy-lt:   #A63350;
   --blush:         #C4788A;
-  --parchment:     #F5EFE6;
-  --cream:         #FAF7F2;
-  --ivory:         #FFFEF9;
-  --charcoal:      #2C2420;
-  --warm-gray:     #6B5D58;
-  --light-gray:    #E8DDD6;
+  --parchment:     #F7F0E8;
+  --cream:         #FBF8F4;
+  --ivory:         #FFFFFF;
+  --charcoal:      #2D2420;
+  --warm-gray:     #7A6E6A;
+  --light-gray:    #EDE5DC;
   --gold:          #C9A34A;
   --gold-lt:       #E2C070;
-  --shadow:        rgba(44,36,32,0.12);
-  --shadow-lg:     rgba(44,36,32,0.22);
-  --font-d: 'Fraunces', 'Playfair Display', Georgia, serif;
-  --font-b: 'DM Sans', 'Cormorant Garamond', Georgia, sans-serif;
-  --font-i: 'Cormorant Garamond', Georgia, serif;
-  --r: 6px; --rl: 12px; --tr: 0.22s ease;
+  --shadow:        rgba(44,36,32,0.10);
+  --shadow-lg:     rgba(44,36,32,0.18);
+  --font-d: 'Lora', Georgia, serif;
+  --font-b: 'Inter', system-ui, sans-serif;
+  --font-i: 'Lora', Georgia, serif;
+  --r: 10px; --rl: 14px; --tr: 0.18s ease;
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html{font-size:16px;scroll-behavior:smooth}
-body{font-family:var(--font-b);background:var(--cream);color:var(--charcoal);min-height:100vh;line-height:1.6;-webkit-font-smoothing:antialiased;background-image:radial-gradient(ellipse at 20% 0%,rgba(123,30,58,0.04) 0%,transparent 60%),radial-gradient(ellipse at 80% 100%,rgba(201,163,74,0.05) 0%,transparent 55%)}
-.site-header{background:linear-gradient(135deg,var(--burgundy-deep) 0%,#3d1020 100%);border-bottom:1px solid rgba(123,30,58,0.5);position:sticky;top:0;z-index:200;box-shadow:0 4px 24px rgba(44,20,36,.4),0 1px 0 rgba(201,163,74,.15)}
+body{font-family:var(--font-b);background:var(--cream);color:var(--charcoal);min-height:100vh;line-height:1.6;-webkit-font-smoothing:antialiased}
+.site-header{background:var(--burgundy-deep);border-bottom:none;position:sticky;top:0;z-index:200;box-shadow:0 2px 16px rgba(44,20,36,.25)}
 .header-inner{max-width:1200px;margin:0 auto;padding:0 20px;height:64px;display:flex;align-items:center;gap:12px}
 .logo{display:flex;align-items:center;gap:10px;flex-shrink:0}
 .logo-icon{font-size:24px;line-height:1}
-.logo-title{font-family:var(--font-d);font-size:1.3rem;font-weight:600;color:var(--parchment);letter-spacing:.02em;line-height:1}
+.logo-title{font-family:var(--font-d);font-size:1.2rem;font-weight:600;color:var(--parchment);letter-spacing:.01em;line-height:1}
 .logo-sub{font-family:var(--font-b);font-size:.65rem;color:var(--blush);letter-spacing:.14em;text-transform:uppercase;font-style:italic;line-height:1;margin-top:2px}
 .header-actions{display:flex;align-items:center;gap:8px;flex:1;justify-content:flex-end}
 .scan-cta{display:flex;flex-direction:column;align-items:center;gap:2px}
-.btn-scan-primary{background:linear-gradient(135deg,var(--gold),#b8903e);color:var(--burgundy-deep);border:none;border-radius:30px;padding:10px 22px;font-family:var(--font-b);font-size:.9rem;font-weight:600;letter-spacing:.03em;cursor:pointer;transition:var(--tr);white-space:nowrap;flex-shrink:0;box-shadow:0 2px 12px rgba(201,168,76,.4),0 1px 0 rgba(255,255,255,.15) inset}
+.btn-scan-primary{background:var(--gold);color:var(--burgundy-deep);border:none;border-radius:30px;padding:10px 20px;font-family:var(--font-b);font-size:.88rem;font-weight:600;cursor:pointer;transition:var(--tr);white-space:nowrap;flex-shrink:0;box-shadow:0 2px 8px rgba(201,163,74,.35)}
 .btn-scan-primary:hover{background:var(--gold-lt);transform:translateY(-1px);box-shadow:0 4px 16px rgba(201,168,76,.5)}
 .scan-hint{font-family:var(--font-b);font-size:.62rem;color:var(--blush);letter-spacing:.08em;font-style:italic;white-space:nowrap;opacity:.85}
 .btn-add-subtle{background:none;color:rgba(245,239,230,.45);border:none;border-radius:30px;padding:6px 10px;font-family:var(--font-b);font-size:.78rem;cursor:pointer;transition:var(--tr);white-space:nowrap;flex-shrink:0;text-decoration:underline;text-underline-offset:2px;text-decoration-color:rgba(196,120,138,.25)}
@@ -153,77 +153,73 @@ body{font-family:var(--font-b);background:var(--cream);color:var(--charcoal);min
 /* ── Card shell ────────────────────────────────────────── */
 .wine-card{
   background:var(--ivory);
-  border:1px solid rgba(232,221,214,0.7);
-  border-radius:16px;
+  border:1px solid var(--light-gray);
+  border-radius:var(--rl);
   overflow:hidden;
   display:flex;
   flex-direction:row;
   cursor:pointer;
-  box-shadow:0 2px 12px rgba(44,36,32,.06),0 1px 3px rgba(44,36,32,.04);
-  animation:fadeUp .35s ease both;
-  transition:transform .28s cubic-bezier(.34,1.56,.64,1),box-shadow .28s ease,border-color .24s ease;
+  box-shadow:0 1px 6px rgba(44,36,32,.06);
+  animation:fadeUp .3s ease both;
+  transition:transform .2s ease,box-shadow .2s ease;
 }
 @media(hover:hover){
   .wine-card:hover{
-    transform:translateY(-4px) scale(1.005);
-    box-shadow:0 16px 40px rgba(44,36,32,.14),0 4px 12px rgba(123,30,58,.08);
-    border-color:rgba(196,120,138,0.4);
+    transform:translateY(-3px);
+    box-shadow:0 8px 24px rgba(44,36,32,.12);
   }
   .wine-card:hover .card-thumb-wrap img,
-  .wine-card:hover .card-thumb-single{ transform:scale(1.06); }
+  .wine-card:hover .card-thumb-single{ transform:scale(1.04); }
 }
-@keyframes fadeUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
 
 /* ── Accent strip when no image ────────────────────────── */
-.card-label-strip{width:5px;align-self:stretch;flex-shrink:0;background:linear-gradient(180deg,var(--burgundy-deep),var(--blush),var(--gold))}
+.card-label-strip{width:4px;align-self:stretch;flex-shrink:0;background:var(--burgundy)}
 
 /* ── Image — left column ───────────────────────────────── */
 .card-thumb-wrap{
-  position:relative;width:120px;flex-shrink:0;
-  overflow:hidden;background:linear-gradient(160deg,#f5f0ea,#ede5dc);display:flex;cursor:zoom-in;
+  position:relative;width:110px;flex-shrink:0;
+  overflow:hidden;background:#f0ebe3;display:flex;cursor:zoom-in;
 }
 .card-thumb-wrap img{
   flex:1;min-width:0;height:100%;
   object-fit:contain;background:transparent;
-  transition:transform .38s cubic-bezier(.34,1.56,.64,1),opacity .2s ease;
+  transition:transform .25s ease;
 }
 .card-thumb-badge{
-  position:absolute;bottom:6px;left:50%;transform:translateX(-50%);
-  background:rgba(44,36,32,.58);color:#fff;font-size:.58rem;
-  font-family:var(--font-b);padding:2px 7px;border-radius:10px;
-  pointer-events:none;letter-spacing:.04em;white-space:nowrap;backdrop-filter:blur(4px);
+  position:absolute;bottom:5px;left:50%;transform:translateX(-50%);
+  background:rgba(44,36,32,.5);color:#fff;font-size:.56rem;
+  font-family:var(--font-b);padding:2px 6px;border-radius:8px;
+  pointer-events:none;white-space:nowrap;
 }
 .card-thumb-single{
-  width:120px;flex-shrink:0;align-self:stretch;display:block;
-  object-fit:contain;cursor:zoom-in;background:linear-gradient(160deg,#f5f0ea,#ede5dc);
-  transition:transform .38s cubic-bezier(.34,1.56,.64,1),opacity .2s ease;
+  width:110px;flex-shrink:0;align-self:stretch;display:block;
+  object-fit:contain;cursor:zoom-in;background:#f0ebe3;
+  transition:transform .25s ease;
 }
 
 /* ── Content — right column ────────────────────────────── */
-.card-body{padding:14px 16px 0;flex:1;min-width:0;display:flex;flex-direction:column;gap:5px}
+.card-body{padding:14px 16px 0;flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
 .card-header{display:flex;justify-content:space-between;align-items:flex-start;gap:6px}
 .card-vintage-badge{
-  font-family:var(--font-b);font-size:.7rem;font-weight:500;
+  font-family:var(--font-b);font-size:.68rem;font-weight:500;
   color:var(--warm-gray);background:var(--parchment);
   border:1px solid var(--light-gray);border-radius:20px;
-  padding:1px 8px;display:inline-block;margin-bottom:3px;letter-spacing:.02em;
+  padding:1px 8px;display:inline-block;margin-bottom:3px;
 }
-/* Stronger name hierarchy */
-.card-name{font-family:var(--font-d);font-size:1.1rem;font-weight:600;color:var(--charcoal);line-height:1.25;letter-spacing:-.01em}
-/* More prominent rating */
-.card-rating{color:var(--gold);font-size:.88rem;white-space:nowrap;flex-shrink:0;letter-spacing:1px}
-/* Muted secondary text */
-.card-meta{font-family:var(--font-i);font-size:.82rem;color:var(--warm-gray);font-style:italic;line-height:1.35;opacity:.85}
+.card-name{font-family:var(--font-d);font-size:1rem;font-weight:600;color:var(--charcoal);line-height:1.25}
+.card-rating{color:var(--gold);font-size:.85rem;white-space:nowrap;flex-shrink:0}
+.card-meta{font-family:var(--font-b);font-size:.78rem;color:var(--warm-gray);line-height:1.35}
 /* Taste descriptor */
-.card-descriptor{font-family:var(--font-b);font-size:.76rem;color:var(--burgundy);font-weight:500;letter-spacing:.02em;opacity:.8}
-.card-tags{display:flex;flex-wrap:wrap;gap:4px}
+.card-descriptor{font-family:var(--font-b);font-size:.78rem;color:var(--burgundy);font-weight:500}
+.card-tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:1px}
 .card-tag{
-  background:linear-gradient(135deg,rgba(123,30,58,.07),rgba(201,163,74,.07));
-  border:1px solid rgba(123,30,58,.12);
-  border-radius:20px;padding:2px 9px;font-size:.67rem;font-family:var(--font-b);
-  color:var(--burgundy);font-weight:500;letter-spacing:.01em;
+  background:var(--parchment);
+  border:1px solid var(--light-gray);
+  border-radius:20px;padding:2px 9px;font-size:.68rem;font-family:var(--font-b);
+  color:var(--warm-gray);font-weight:500;
 }
-.card-notes{font-family:var(--font-i);font-style:italic;font-size:.82rem;color:var(--warm-gray);line-height:1.5;flex:1;opacity:.8;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.card-notes{font-family:var(--font-b);font-size:.78rem;color:var(--warm-gray);line-height:1.45;flex:1;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .card-location{font-size:.68rem;color:var(--blush);font-family:var(--font-b)}
 .card-footer{display:flex;justify-content:space-between;align-items:center;padding:8px 16px 12px;border-top:1px solid rgba(232,221,214,0.6);margin-top:8px;gap:4px}
 .card-date{font-size:.7rem;color:var(--warm-gray);font-family:var(--font-b);flex:1;opacity:.7}
@@ -517,13 +513,12 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
   .detail-dual-photo img:last-child{display:none}
   .detail-dual-photo img:first-child{border-radius:var(--rl) var(--rl) 0 0;height:200px}
   /* Hero responsive */
-  .hero-section{flex-direction:column;padding:28px 24px 32px;gap:20px;border-radius:14px}
-  .hero-headline{font-size:1.9rem}
-  .hero-sub{font-size:.88rem;margin-bottom:18px}
-  .hero-badge-inner{padding:16px 28px}
-  .hero-badge-stat{font-size:2.4rem}
+  .hero-section{flex-direction:column;padding:24px 20px;gap:16px;border-radius:var(--r)}
+  .hero-headline{font-size:1.5rem}
+  .hero-sub{font-size:.88rem;margin-bottom:16px}
+  .hero-count{display:none}
   .curated-grid{grid-template-columns:1fr}
-  .curated-title{font-size:1.1rem}
+  .curated-title{font-size:1.05rem}
 }
 @media(max-width:520px){
   .scan-hint{display:none}
@@ -552,49 +547,33 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
 }
 /* ─── Hero Section ─────────────────────────────────────── */
 .hero-section{
-  display:flex;align-items:center;justify-content:space-between;gap:24px;
-  background:linear-gradient(135deg,var(--burgundy-deep) 0%,#3d1020 60%,#5a1a2e 100%);
-  border-radius:20px;padding:40px 44px;margin-bottom:36px;
-  position:relative;overflow:hidden;
+  display:flex;align-items:center;justify-content:space-between;gap:20px;
+  background:var(--burgundy-deep);
+  border-radius:var(--rl);padding:32px 36px;margin-bottom:32px;
 }
-.hero-section::before{
-  content:'';position:absolute;inset:0;
-  background:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23C9A34A' fill-opacity='0.04'%3E%3Ccircle cx='30' cy='30' r='1'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
-  pointer-events:none;
-}
-.hero-section::after{
-  content:'🍷';position:absolute;right:-20px;bottom:-20px;font-size:9rem;opacity:.06;line-height:1;pointer-events:none;
-}
-.hero-text{flex:1;min-width:0;position:relative;z-index:1}
-.hero-eyebrow{font-family:var(--font-b);font-size:.72rem;font-weight:500;letter-spacing:.18em;text-transform:uppercase;color:var(--gold);opacity:.85;margin-bottom:10px}
-.hero-headline{font-family:var(--font-d);font-size:2.6rem;font-weight:700;line-height:1.1;color:var(--ivory);margin-bottom:14px;letter-spacing:-.02em}
-.hero-headline em{font-style:italic;font-weight:300;color:var(--gold-lt)}
-.hero-sub{font-family:var(--font-b);font-size:.95rem;color:rgba(245,239,230,.65);line-height:1.65;margin-bottom:24px;max-width:360px}
+.hero-text{flex:1;min-width:0}
+.hero-headline{font-family:var(--font-d);font-size:2rem;font-weight:600;line-height:1.2;color:#fff;margin-bottom:8px}
+.hero-sub{font-family:var(--font-b);font-size:.95rem;color:rgba(255,255,255,.7);line-height:1.6;margin-bottom:20px}
 .hero-actions{display:flex;gap:10px;flex-wrap:wrap}
-.hero-btn-primary{background:linear-gradient(135deg,var(--gold),#b8903e);color:var(--burgundy-deep);border:none;border-radius:30px;padding:11px 24px;font-family:var(--font-b);font-size:.9rem;font-weight:600;cursor:pointer;transition:var(--tr);box-shadow:0 4px 16px rgba(201,163,74,.35);letter-spacing:.02em}
-.hero-btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(201,163,74,.45)}
-.hero-btn-secondary{background:rgba(245,239,230,.1);color:var(--parchment);border:1px solid rgba(245,239,230,.2);border-radius:30px;padding:10px 20px;font-family:var(--font-b);font-size:.88rem;cursor:pointer;transition:var(--tr);backdrop-filter:blur(4px)}
-.hero-btn-secondary:hover{background:rgba(245,239,230,.18);border-color:rgba(245,239,230,.35)}
-.hero-badge{flex-shrink:0;position:relative;z-index:1}
-.hero-badge-inner{background:rgba(255,255,255,.07);border:1px solid rgba(201,163,74,.25);border-radius:16px;padding:24px 32px;text-align:center;backdrop-filter:blur(8px)}
-.hero-badge-icon{font-size:2.2rem;margin-bottom:8px;line-height:1}
-.hero-badge-stat{font-family:var(--font-d);font-size:3rem;font-weight:700;color:var(--ivory);line-height:1}
-.hero-badge-label{font-family:var(--font-b);font-size:.72rem;color:var(--blush);letter-spacing:.1em;text-transform:uppercase;margin-top:4px}
+.hero-btn-primary{background:var(--gold);color:var(--burgundy-deep);border:none;border-radius:30px;padding:11px 22px;font-family:var(--font-b);font-size:.9rem;font-weight:600;cursor:pointer;transition:var(--tr)}
+.hero-btn-primary:hover{background:var(--gold-lt);transform:translateY(-1px)}
+.hero-btn-secondary{background:rgba(255,255,255,.12);color:#fff;border:1px solid rgba(255,255,255,.25);border-radius:30px;padding:10px 20px;font-family:var(--font-b);font-size:.88rem;cursor:pointer;transition:var(--tr)}
+.hero-btn-secondary:hover{background:rgba(255,255,255,.2)}
+.hero-count{flex-shrink:0;text-align:center;color:#fff}
+.hero-count span{display:block;font-family:var(--font-d);font-size:2.8rem;font-weight:600;line-height:1}
+.hero-count small{font-family:var(--font-b);font-size:.72rem;color:rgba(255,255,255,.6);text-transform:uppercase;letter-spacing:.08em}
 
 /* ─── Curated Sections ─────────────────────────────────── */
-.curated-section{margin-bottom:36px}
+.curated-section{margin-bottom:40px}
 .curated-header{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--light-gray)}
-.curated-title{font-family:var(--font-d);font-size:1.3rem;font-weight:600;color:var(--charcoal);letter-spacing:-.01em;margin-bottom:3px}
-.curated-sub{font-family:var(--font-i);font-size:.82rem;color:var(--warm-gray);font-style:italic}
+.curated-title{font-family:var(--font-d);font-size:1.2rem;font-weight:600;color:var(--charcoal);margin-bottom:2px}
+.curated-sub{font-family:var(--font-b);font-size:.8rem;color:var(--warm-gray)}
 .curated-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
-.section-divider{display:flex;align-items:center;gap:16px;margin:8px 0 28px;color:var(--warm-gray)}
+.section-divider{display:flex;align-items:center;gap:16px;margin:8px 0 28px}
 .section-divider::before,.section-divider::after{content:'';flex:1;height:1px;background:var(--light-gray)}
-.section-divider span{font-family:var(--font-i);font-size:.8rem;font-style:italic;white-space:nowrap;color:var(--warm-gray);opacity:.7;letter-spacing:.08em}
+.section-divider span{font-family:var(--font-b);font-size:.78rem;white-space:nowrap;color:var(--warm-gray);letter-spacing:.06em}
 
-/* ─── Taste descriptor on cards ────────────────────────── */
-.card-descriptor{font-family:var(--font-b);font-size:.74rem;color:rgba(123,30,58,.75);font-weight:500;letter-spacing:.01em;margin-top:1px}
-
-/* ─── Stats bar upgrade ────────────────────────────────── */
+/* ─── Loading skeleton ────────────────────────────────── */
 @keyframes shimmer{0%{background-position:-400px 0}100%{background-position:400px 0}}
 .skeleton{background:linear-gradient(90deg,var(--light-gray) 25%,var(--cream) 50%,var(--light-gray) 75%);background-size:800px 100%;animation:shimmer 1.4s infinite;border-radius:var(--r)}
 .skeleton-card{background:var(--ivory);border:1px solid var(--light-gray);border-radius:var(--rl);overflow:hidden;animation:fadeUp .35s ease both;display:flex;flex-direction:row}
@@ -621,13 +600,13 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
       <span class="auth-hero-logo-icon">🍷</span>
       <span class="auth-hero-logo-text">Welds Wine Wisdoms</span>
     </div>
-    <h1 class="auth-hero-headline">Track and remember<br>every wine you taste.</h1>
-    <p class="auth-hero-sub">A personal wine journal. Scan labels, rate wines,<br>and build your tasting history.</p>
+    <h1 class="auth-hero-headline">Wine made easy. 🍷</h1>
+    <p class="auth-hero-sub">Your personal wine journal. Scan labels, rate wines, and remember what you love.</p>
     <ul class="auth-hero-features">
-      <li>Scan wine labels instantly with AI</li>
-      <li>Record tasting notes and star ratings</li>
-      <li>Map your wines from around the world</li>
-      <li>Share bottles with friends</li>
+      <li>Scan any wine label with your camera</li>
+      <li>Rate wines and jot down what you think</li>
+      <li>See where your wines come from on a map</li>
+      <li>Share a bottle with friends</li>
     </ul>
   </div>
 
@@ -816,8 +795,8 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
   <div class="onboarding-inner">
     <span class="onboarding-icon">👋</span>
     <div class="onboarding-text">
-      <strong>Welcome to your wine journal.</strong>
-      Tap <em>Scan Wine Label</em> to photograph a bottle and AI will fill the details, or use <em>Add Wine</em> to enter manually. Rate wines, view them on the map, and share favourites.
+      <strong>Welcome! 👋</strong>
+      Tap <em>Scan Wine Label</em> to photograph a bottle — we'll fill in all the details automatically. Or tap <em>Add Wine</em> to do it yourself.
     </div>
     <button class="onboarding-close" onclick="dismissOnboarding()" aria-label="Dismiss">✕</button>
   </div>
@@ -826,13 +805,13 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
 <!-- STATS BAR -->
 <div class="stats-bar">
   <div class="stats-inner">
-    <div class="stat"><span id="statTotal">0</span><label>Wines Tasted</label></div>
+    <div class="stat"><span id="statTotal">0</span><label>Wines tried</label></div>
     <div class="stat-divider"></div>
-    <div class="stat"><span id="statAvg">—</span><label>Avg. Rating</label></div>
+    <div class="stat"><span id="statAvg">—</span><label>Avg. rating</label></div>
     <div class="stat-divider"></div>
     <div class="stat"><span id="statCountries">0</span><label>Countries</label></div>
     <div class="stat-divider"></div>
-    <div class="stat"><span id="statTop">—</span><label>Top Region</label></div>
+    <div class="stat"><span id="statTop">—</span><label>Top region</label></div>
   </div>
 </div>
 
@@ -843,20 +822,16 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
   <div id="heroSection" style="display:none">
     <div class="hero-section">
       <div class="hero-text">
-        <p class="hero-eyebrow">Your personal cellar</p>
-        <h2 class="hero-headline">Every bottle<br><em>tells a story.</em></h2>
-        <p class="hero-sub">Scan, rate, and remember wines you love. Your tasting history, beautifully kept.</p>
+        <h2 class="hero-headline">Wine made easy. 🍷</h2>
+        <p class="hero-sub">Find wines you'll actually enjoy. No jargon, no guesswork.</p>
         <div class="hero-actions">
-          <button class="hero-btn-primary" onclick="document.getElementById('openScanModal').click()">📷 Scan a Label</button>
-          <button class="hero-btn-secondary" onclick="document.getElementById('openAddModal').click()">+ Add Wine</button>
+          <button class="hero-btn-primary" onclick="document.getElementById('openScanModal').click()">📷 Scan a label</button>
+          <button class="hero-btn-secondary" onclick="document.getElementById('openAddModal').click()">+ Add wine</button>
         </div>
       </div>
-      <div class="hero-badge">
-        <div class="hero-badge-inner">
-          <div class="hero-badge-icon">🍷</div>
-          <div class="hero-badge-stat" id="heroBadgeStat">0</div>
-          <div class="hero-badge-label">wines tasted</div>
-        </div>
+      <div class="hero-count">
+        <span id="heroBadgeStat">0</span>
+        <small>wines in your cellar</small>
       </div>
     </div>
   </div>
@@ -867,8 +842,8 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
     <div class="curated-section" id="sectionTopRated">
       <div class="curated-header">
         <div>
-          <h3 class="curated-title">⭐ Your Top Rated</h3>
-          <p class="curated-sub">Five-star favourites from your cellar</p>
+          <h3 class="curated-title">⭐ Your favourites</h3>
+          <p class="curated-sub">Wines you've loved most</p>
         </div>
       </div>
       <div class="curated-grid" id="curatedTopRated"></div>
@@ -878,7 +853,7 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
     <div class="curated-section" id="sectionRecent">
       <div class="curated-header">
         <div>
-          <h3 class="curated-title">🕐 Recently Tasted</h3>
+          <h3 class="curated-title">🕐 Recently tried</h3>
           <p class="curated-sub">Your latest discoveries</p>
         </div>
       </div>
@@ -902,8 +877,8 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
   </div>
   <div class="empty-state" id="emptyState" style="display:none">
     <div class="empty-icon" id="emptyIcon">🍷</div>
-    <h2 id="emptyTitle">Your cellar is empty</h2>
-    <p id="emptyMsg">Start by scanning your first wine label or adding a wine manually.</p>
+    <h2 id="emptyTitle">No wines yet — let's fix that!</h2>
+    <p id="emptyMsg">Scan a label with your camera and we'll fill in the details for you.</p>
     <div id="emptyScanBtn" style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
       <button class="btn-primary" onclick="document.getElementById('openScanModal').click()" style="display:flex;align-items:center;gap:7px">📷 Scan Wine Label</button>
       <button class="btn-secondary" onclick="document.getElementById('openAddModal').click()" style="display:flex;align-items:center;gap:7px">+ Add Wine Manually</button>
@@ -2054,8 +2029,8 @@ function renderGrid() {
     if (_winesLoaded) {
       // DB has responded — truly empty cellar
       document.getElementById('emptyIcon').textContent  = '🍷';
-      document.getElementById('emptyTitle').textContent = 'Your cellar is empty';
-      document.getElementById('emptyMsg').textContent   = 'Start by scanning your first wine label or adding a wine manually.';
+      document.getElementById('emptyTitle').textContent = 'No wines yet — let\'s fix that!';
+      document.getElementById('emptyMsg').textContent   = 'Scan a label with your camera and we\'ll fill in all the details automatically.';
       document.getElementById('emptyScanBtn').style.display = 'flex';
     } else {
       // Still waiting for DB — show loading message
