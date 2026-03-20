@@ -3500,7 +3500,7 @@ async function nativeShare() {
   try {
     await navigator.share({
       title: w ? `${w.name}${w.vintage?' '+w.vintage:''}` : 'Wine recommendation',
-      text:  w ? `Check out this wine on Welds Wine Wisdoms: ${w.name}${w.winery?' by '+w.winery:''}${w.rating?' — '+('★'.repeat(w.rating)):''}` : '',
+      text:  w ? `${w.name}${w.winery?' by '+w.winery:''}${w.rating?' — '+('★'.repeat(w.rating)):''}` : '',
       url:   link
     });
   } catch(e) {
@@ -3520,12 +3520,12 @@ async function checkPublicWineView() {
   document.getElementById('authScreen').classList.add('hidden');
 
   if (!_sb) {
-    // Wait for Supabase to init (up to 3s)
+    // Wait for Supabase to init (up to 8s — increased from 3s to handle slow connections)
     await new Promise(res => {
       let t = 0;
       const poll = setInterval(() => {
         t++;
-        if (_sb || t > 30) { clearInterval(poll); res(); }
+        if (_sb || t > 80) { clearInterval(poll); res(); }
       }, 100);
     });
   }
@@ -3542,7 +3542,15 @@ async function checkPublicWineView() {
     .single();
 
   if (error || !w) {
-    document.getElementById('publicWineContent').innerHTML = '<p style="color:var(--warm-gray);font-family:var(--font-b);text-align:center;padding:20px">Wine not found — the link may have expired.</p>';
+    // RLS policy on shared_wines may be blocking anonymous reads.
+    // Fix in Supabase: SQL Editor → run:
+    //   create policy "public can read shared_wines"
+    //   on shared_wines for select to anon using (true);
+    console.error('Share lookup failed:', error?.message, error?.code);
+    const msg = (error?.code === 'PGRST301' || error?.message?.includes('permission'))
+      ? 'This wine cannot be displayed — a sharing permission needs to be enabled. Please contact the owner.'
+      : 'Wine not found — the link may have expired.';
+    document.getElementById('publicWineContent').innerHTML = `<p style="color:var(--warm-gray);font-family:var(--font-b);text-align:center;padding:20px">${msg}</p>`;
     return true;
   }
 
