@@ -3306,7 +3306,7 @@ async function shareWine(id, e) {
 
   // Create/fetch share record in Supabase and get link
   const shareId = await getOrCreateShareId(w);
-  const link    = `${window.location.origin}/?wine=${shareId}`;
+  const link    = `${window.location.origin}${window.location.pathname}?wine=${shareId}`;
   document.getElementById('shareLinkInput').value = link;
   document.getElementById('shareCopyBtn').textContent = 'Copy Link';
   document.getElementById('shareCopyBtn').classList.remove('copied');
@@ -3520,11 +3520,13 @@ async function checkPublicWineView() {
   document.getElementById('authScreen').classList.add('hidden');
 
   if (!_sb) {
-    // Wait for Supabase to init (up to 8s — increased from 3s to handle slow connections)
+    // Wait for Supabase to init (up to 8s) — retry _ensureSb each tick
+    // to handle slow mobile networks where the CDN script loads late
     await new Promise(res => {
       let t = 0;
       const poll = setInterval(() => {
         t++;
+        if (!_sb) _ensureSb();
         if (_sb || t > 80) { clearInterval(poll); res(); }
       }, 100);
     });
