@@ -4245,4 +4245,9 @@ function closeMobileMenu() {
   var el = document.getElementById('mobileMenuOverlay');
   if (!el) return;
   el.style.display = 'none';
-  el.style.o
+  el.style.opacity = '';
+  el.style.pointerEvents = '';
+  el.classList.remove('open');
+  document.body.style.overflow = '';
+}
+</script>
