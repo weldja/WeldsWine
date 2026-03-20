@@ -1661,6 +1661,13 @@ var _pendingShowApp = false;
 
 document.addEventListener('DOMContentLoaded', function() {
 
+  // If this is a public shared wine link, show the public view immediately
+  // and skip showing the auth screen — checkPublicWineView() handles the rest async
+  if (new URLSearchParams(window.location.search).get('wine')) {
+    document.getElementById('authScreen').classList.add('hidden');
+    checkPublicWineView();
+  }
+
   // DOMContentLoaded guarantees all external scripts have run
   if (!_ensureSb()) {
     const msg = document.getElementById('authMsg');
@@ -1776,7 +1783,11 @@ function showApp() {
 
 function hideApp() {
   _pendingShowApp = false;
-  document.getElementById('authScreen').classList.remove('hidden');
+  // Don't show auth screen if we're displaying a public shared wine link
+  const _isPublicView = new URLSearchParams(window.location.search).get('wine');
+  if (!_isPublicView) {
+    document.getElementById('authScreen').classList.remove('hidden');
+  }
   const badge = document.getElementById('userBadge');
   if (badge) badge.style.display = 'none';
   const hint = document.getElementById('onboardingHint');
@@ -2207,8 +2218,7 @@ function setupEvents() {
   document.getElementById('closeInfoModal').addEventListener('click', closeInfoModal);
   document.getElementById('infoOverlay').addEventListener('click', e=>{ if(e.target===document.getElementById('infoOverlay')) closeInfoModal(); });
   document.addEventListener('keydown', e=>{ if(e.key==='Escape'){ closeModal(); closeDetail(); closeScanModal(); closeLightbox(); closeShareModal(); closeInfoModal(); closeQuickAdd(); } });
-  // Check for public wine share link in URL
-  checkPublicWineView();
+  // Public wine share link is handled early in DOMContentLoaded — no need to call again here
 }
 
 function setView(v) {
