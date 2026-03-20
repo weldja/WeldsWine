@@ -135,6 +135,7 @@ body{font-family:var(--font-b);background:var(--cream);color:var(--charcoal);min
 .btn-hamburger:hover{background:var(--burgundy-lt)}
 .btn-primary{background:var(--burgundy);color:var(--ivory);border:none;border-radius:var(--r);padding:10px 24px;font-family:var(--font-d);font-size:.88rem;font-weight:600;letter-spacing:.05em;cursor:pointer;transition:var(--tr)}
 .btn-primary:hover{background:var(--burgundy-lt);transform:translateY(-1px)}
+.btn-primary:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
 .btn-primary:disabled{opacity:.4;cursor:not-allowed;transform:none}
 .btn-secondary{background:transparent;color:var(--warm-gray);border:1px solid var(--light-gray);border-radius:var(--r);padding:9px 20px;font-family:var(--font-b);font-size:.88rem;cursor:pointer;transition:var(--tr)}
 .btn-secondary:hover{border-color:var(--warm-gray);color:var(--charcoal)}
@@ -1229,7 +1230,7 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
   <span class="footer-sep">·</span>
   <a href="#" class="footer-link" onclick="showFooterModal('privacy');return false">Privacy</a>
   <span class="footer-sep">·</span>
-  <a href="mailto:james_weld@yahoo.com" class="footer-link">Contact</a>
+  <a href="/cdn-cgi/l/email-protection#254f444840567a52404941655c444d4a4a0b464a48" class="footer-link">Contact</a>
   <span class="footer-sep">·</span>
   <button class="footer-admin-btn" id="openKeyModal" title="Settings">⚙</button>
 </footer>
@@ -1608,7 +1609,7 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
 </div>
 
 <!-- AUTH MODULE -->
-<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
 /* ══════════════════════════════════════════════════════════════
    SUPABASE CONFIG — replace with your project values
    supabase.com → your project → Settings → API
@@ -4080,6 +4081,12 @@ function importToForm() {
     if(region){ const e=document.getElementById('region'); e.value=region; flashAutofill(e); }
     if(scanResult.style){ const s=document.getElementById('style'); [...s.options].forEach(o=>{ if(o.value===scanResult.style) s.value=scanResult.style; }); }
     showToast('Label imported — add your rating and save ✓');
+    // Focus Save Wine so user can press Enter or tap immediately
+    const saveBtn = document.getElementById('saveWineBtn');
+    if (saveBtn) {
+      saveBtn.focus();
+      saveBtn.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
   },260);
 }
 
@@ -4238,11 +4245,4 @@ function closeMobileMenu() {
   var el = document.getElementById('mobileMenuOverlay');
   if (!el) return;
   el.style.display = 'none';
-  el.style.opacity = '0';
-  el.style.pointerEvents = 'none';
-  el.classList.remove('open');
-  document.body.style.overflow = '';
-}
-</script>
-</body>
-</html>
+  el.style.o
