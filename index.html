@@ -1729,6 +1729,7 @@ document.addEventListener('DOMContentLoaded', function() {
 }); // end DOMContentLoaded
 
 function showApp() {
+  if (document.getElementById('publicWineView')?.classList.contains('show')) return;
   if (!_appReady) {
     _pendingShowApp = true;
     try {
@@ -1775,6 +1776,7 @@ function showApp() {
 }
 
 function hideApp() {
+  if (document.getElementById('publicWineView')?.classList.contains('show')) return;
   _pendingShowApp = false;
   document.getElementById('authScreen').classList.remove('hidden');
   const badge = document.getElementById('userBadge');
