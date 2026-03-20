@@ -3663,4 +3663,11 @@ function closeMobileMenu() {
   var el = document.getElementById('mobileMenuOverlay');
   if (!el) return;
   el.style.display = 'none';
-  el.styl
+  el.style.opacity = '0';
+  el.style.pointerEvents = 'none';
+  el.classList.remove('open');
+  document.body.style.overflow = '';
+}
+</script>
+</body>
+</html>
