@@ -102,18 +102,37 @@
 html{font-size:16px;scroll-behavior:smooth}
 body{font-family:var(--font-b);background:var(--cream);color:var(--charcoal);min-height:100vh;line-height:1.6;-webkit-font-smoothing:antialiased}
 .site-header{background:var(--burgundy-deep);border-bottom:none;position:sticky;top:0;z-index:200;box-shadow:0 2px 16px rgba(44,20,36,.25)}
-.header-inner{max-width:1200px;margin:0 auto;padding:0 20px;height:64px;display:flex;align-items:center;gap:12px}
-.logo{display:flex;align-items:center;gap:10px;flex-shrink:0}
-.logo-icon{font-size:24px;line-height:1}
-.logo-title{font-family:var(--font-d);font-size:1.2rem;font-weight:600;color:var(--parchment);letter-spacing:.01em;line-height:1}
+.header-inner{max-width:1200px;margin:0 auto;padding:0 16px;height:64px;display:flex;align-items:center;gap:12px;overflow:hidden}
+.logo{display:flex;align-items:center;gap:10px;flex-shrink:0;min-width:0}
+.logo-icon{font-size:24px;line-height:1;flex-shrink:0}
+.logo-title{font-family:var(--font-d);font-size:1.2rem;font-weight:600;color:var(--parchment);letter-spacing:.01em;line-height:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .logo-sub{font-family:var(--font-b);font-size:.65rem;color:var(--blush);letter-spacing:.14em;text-transform:uppercase;font-style:italic;line-height:1;margin-top:2px}
-.header-actions{display:flex;align-items:center;gap:8px;flex:1;justify-content:flex-end}
+.header-actions{display:flex;align-items:center;gap:8px;flex:1;justify-content:flex-end;min-width:0;overflow:hidden}
 .scan-cta{display:flex;flex-direction:column;align-items:center;gap:2px}
 .btn-scan-primary{background:var(--gold);color:var(--burgundy-deep);border:none;border-radius:30px;padding:10px 20px;font-family:var(--font-b);font-size:.88rem;font-weight:600;cursor:pointer;transition:var(--tr);white-space:nowrap;flex-shrink:0;box-shadow:0 2px 8px rgba(201,163,74,.35)}
 .btn-scan-primary:hover{background:var(--gold-lt);transform:translateY(-1px);box-shadow:0 4px 16px rgba(201,168,76,.5)}
 .scan-hint{font-family:var(--font-b);font-size:.62rem;color:var(--blush);letter-spacing:.08em;font-style:italic;white-space:nowrap;opacity:.85}
 .btn-add-subtle{background:none;color:rgba(245,239,230,.45);border:none;border-radius:30px;padding:6px 10px;font-family:var(--font-b);font-size:.78rem;cursor:pointer;transition:var(--tr);white-space:nowrap;flex-shrink:0;text-decoration:underline;text-underline-offset:2px;text-decoration-color:rgba(196,120,138,.25)}
 .btn-add-subtle:hover{color:var(--parchment);text-decoration-color:var(--blush)}
+/* Hamburger button */
+.btn-hamburger{
+  background:var(--burgundy);
+  border:1px solid var(--blush);
+  border-radius:50%;
+  width:38px;height:38px;
+  min-width:38px;
+  cursor:pointer;
+  color:var(--parchment);
+  font-size:1.1rem;
+  flex-shrink:0;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  transition:var(--tr);
+  line-height:1;
+  padding:0;
+}
+.btn-hamburger:hover{background:var(--burgundy-lt)}
 .btn-primary{background:var(--burgundy);color:var(--ivory);border:none;border-radius:var(--r);padding:10px 24px;font-family:var(--font-d);font-size:.88rem;font-weight:600;letter-spacing:.05em;cursor:pointer;transition:var(--tr)}
 .btn-primary:hover{background:var(--burgundy-lt);transform:translateY(-1px)}
 .btn-primary:disabled{opacity:.4;cursor:not-allowed;transform:none}
@@ -491,8 +510,16 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
 .onboarding-close{background:none;border:none;color:var(--warm-gray);cursor:pointer;font-size:.9rem;padding:2px 6px;border-radius:var(--r);flex-shrink:0;transition:var(--tr);margin-top:1px}
 .onboarding-close:hover{background:var(--light-gray);color:var(--charcoal)}
 @media(max-width:768px){
-  .header-inner{flex-wrap:wrap;height:auto;padding:10px 14px;gap:8px}
-  .header-actions{gap:6px}
+  /* Header — single clean row, no wrapping */
+  .header-inner{height:56px;padding:0 14px;gap:10px;flex-wrap:nowrap}
+  .header-actions{gap:6px;overflow:visible}
+  /* Hide desktop-only header buttons on mobile (hamburger replaces them) */
+  .scan-cta{display:none}
+  .btn-add-subtle{display:none}
+  .btn-quick-add{display:none}
+  /* Hamburger always fits */
+  .btn-hamburger{display:flex !important}
+  /* Toolbar */
   .toolbar{position:static}
   .toolbar-inner{padding:0;gap:0}
   /* Row 1: filter tabs — horizontally scrollable on mobile */
@@ -540,22 +567,16 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
   .start-here-chips{grid-template-columns:repeat(2,1fr)}
 }
 @media(max-width:520px){
-  .scan-hint{display:none}
-  .header-actions{gap:5px}
-  .btn-scan-primary{padding:7px 12px;font-size:.8rem;letter-spacing:0}
-  .btn-add-subtle{font-size:.75rem;padding:5px 8px}
-  .btn-quick-add{padding:6px 10px;font-size:.78rem}
+  .header-inner{padding:0 12px}
+  .logo-title{font-size:1rem}
   .card-actions{gap:2px}
   .card-btn{padding:3px 7px;font-size:.7rem}
   .auth-card{padding:28px 20px}
+  .start-here-chips{grid-template-columns:1fr}
 }
 @media(max-width:420px){
   .filter-tabs{flex-wrap:wrap}
   .logo-sub{display:none}
-  .header-actions{gap:4px}
-  .btn-scan-primary{padding:6px 10px;font-size:.76rem}
-  .btn-add-subtle{padding:4px 7px;font-size:.72rem}
-  .btn-quick-add{padding:5px 8px;font-size:.74rem}
 }
 /* Larger touch targets on true touch devices */
 @media(hover:none){
@@ -1001,11 +1022,7 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
       </div>
       <button class="btn-add-subtle" id="openAddModal" aria-label="Add wine manually">+ Add Wine</button>
       <button class="btn-quick-add" id="openQuickAdd" aria-label="Quick add wine" title="Log a wine in seconds">⚡ Quick Add</button>
-      <button id="userBadge" onclick="openMobileMenu(event)" aria-label="Menu"
-        style="display:none;background:var(--burgundy);border:1px solid var(--blush);
-               border-radius:50%;width:36px;height:36px;cursor:pointer;
-               color:var(--parchment);font-size:1.1rem;flex-shrink:0;
-               align-items:center;justify-content:center">☰</button>
+      <button id="userBadge" onclick="openMobileMenu(event)" aria-label="Menu" class="btn-hamburger" style="display:none">☰</button>
     </div>
   </div>
 </header>
@@ -1199,7 +1216,7 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
   <span class="footer-sep">·</span>
   <a href="#" class="footer-link" onclick="showFooterModal('privacy');return false">Privacy</a>
   <span class="footer-sep">·</span>
-  <a href="mailto:james_weld@yahoo.com" class="footer-link">Contact</a>
+  <a href="/cdn-cgi/l/email-protection#a8c2c9c5cddbf7dfcdc4cce8d1c9c0c7c786cbc7c5" class="footer-link">Contact</a>
   <span class="footer-sep">·</span>
   <button class="footer-admin-btn" id="openKeyModal" title="Settings">⚙</button>
 </footer>
@@ -1578,7 +1595,7 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
 </div>
 
 <!-- AUTH MODULE -->
-<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
 /* ══════════════════════════════════════════════════════════════
    SUPABASE CONFIG — replace with your project values
    supabase.com → your project → Settings → API
@@ -1703,7 +1720,7 @@ function showApp() {
     try {
       document.getElementById('authScreen').classList.add('hidden');
       const badge = document.getElementById('userBadge');
-      if (badge) badge.style.display = 'flex';
+      if (badge) badge.style.removeProperty('display');
       const email = _currentUser?.email || '';
     } catch(_) {}
     return;
@@ -1719,7 +1736,7 @@ function showApp() {
 
   document.getElementById('authScreen').classList.add('hidden');
   const badge = document.getElementById('userBadge');
-  if (badge) badge.style.display = 'flex';
+  if (badge) badge.style.removeProperty('display');
   const email = _currentUser?.email || '';
 
   const cacheKey = 'wwwCache_' + (_currentUser?.id || '');
