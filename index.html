@@ -1661,15 +1661,18 @@ var _pendingShowApp = false;
 
 document.addEventListener('DOMContentLoaded', function() {
 
-  // If this is a public shared wine link, show the public view immediately
-  // and skip showing the auth screen — checkPublicWineView() handles the rest async
+  // DOMContentLoaded guarantees all external scripts have run — init Supabase first
+  _ensureSb();
+
+  // If this is a public shared wine link, handle it entirely here and bail out.
+  // checkPublicWineView uses its own anon client, so no auth listener needed.
   if (new URLSearchParams(window.location.search).get('wine')) {
     document.getElementById('authScreen').classList.add('hidden');
     checkPublicWineView();
+    return;
   }
 
-  // DOMContentLoaded guarantees all external scripts have run
-  if (!_ensureSb()) {
+  if (!_sb) {
     const msg = document.getElementById('authMsg');
     if (msg) { msg.className = 'auth-msg err'; msg.textContent = 'Configuration error: Supabase credentials are not set.'; }
     return;
@@ -3527,25 +3530,21 @@ async function checkPublicWineView() {
   view.classList.add('show');
   document.getElementById('authScreen').classList.add('hidden');
 
-
-  if (!_sb) {
-    await new Promise(res => {
-      let t = 0;
-      const poll = setInterval(() => {
-        t++;
-        if (!_sb) _ensureSb();
-        if (_sb || t > 80) { clearInterval(poll); res(); }
-      }, 100);
-    });
-  }
-
-  if (!_sb) {
+  // Always use a fresh anon client with no persisted session.
+  // This means Supabase sees an unauthenticated (anon) request, so the
+  // public RLS policy on shared_wines applies — works for both logged-in
+  // and logged-out visitors.
+  if (!SUPABASE_URL || !SUPABASE_KEY ||
+      SUPABASE_URL === 'PASTE_SUPABASE_URL' ||
+      SUPABASE_KEY === 'PASTE_SUPABASE_ANON_KEY') {
     document.getElementById('publicWineContent').innerHTML = '<p style="color:var(--warm-gray);font-family:var(--font-b);text-align:center;padding:20px">Could not load wine details.</p>';
     return true;
   }
+  const _anonSb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+    auth: { persistSession: false, autoRefreshToken: false }
+  });
 
-
-  const { data: w, error } = await _sb
+  const { data: w, error } = await _anonSb
     .from('shared_wines')
     .select('*')
     .eq('id', shareId)
