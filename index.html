@@ -3306,7 +3306,7 @@ async function shareWine(id, e) {
 
   // Create/fetch share record in Supabase and get link
   const shareId = await getOrCreateShareId(w);
-  const link    = `${window.location.origin}${window.location.pathname}?wine=${shareId}`;
+  const link    = `${window.location.origin}/?wine=${shareId}`;
   document.getElementById('shareLinkInput').value = link;
   document.getElementById('shareCopyBtn').textContent = 'Copy Link';
   document.getElementById('shareCopyBtn').classList.remove('copied');
