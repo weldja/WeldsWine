@@ -212,8 +212,12 @@ body{font-family:var(--font-b);background:var(--cream);color:var(--charcoal);min
 .card-name{font-family:var(--font-d);font-size:1.05rem;font-weight:600;color:var(--charcoal);line-height:1.3}
 .card-rating{color:var(--gold);font-size:.88rem;white-space:nowrap;flex-shrink:0;letter-spacing:1px}
 .card-meta{font-family:var(--font-b);font-size:.76rem;color:var(--warm-gray);line-height:1.35}
-/* Taste descriptor — friendly short line under name */
-.card-descriptor{font-family:var(--font-b);font-size:.78rem;color:var(--burgundy);font-weight:500;opacity:.85}
+/* Taste descriptor — the key human line */
+.card-descriptor{
+  font-family:var(--font-b);font-size:.8rem;
+  color:var(--burgundy);font-weight:600;
+  margin-top:1px;line-height:1.3;
+}
 .card-tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:2px}
 .card-tag{
   background:var(--parchment);
@@ -567,14 +571,14 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
 .hero-count small{font-family:var(--font-b);font-size:.7rem;color:rgba(255,255,255,.55);text-transform:uppercase;letter-spacing:.1em}
 
 /* ─── Curated Sections ─────────────────────────────────── */
-.curated-section{margin-bottom:48px}
+.curated-section{margin-bottom:52px}
 .curated-header{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:18px;padding-bottom:14px;border-bottom:2px solid var(--light-gray)}
-.curated-title{font-family:var(--font-d);font-size:1.2rem;font-weight:600;color:var(--charcoal);margin-bottom:3px}
-.curated-sub{font-family:var(--font-b);font-size:.78rem;color:var(--warm-gray)}
+.curated-title{font-family:var(--font-d);font-size:1.25rem;font-weight:600;color:var(--charcoal);margin-bottom:4px}
+.curated-sub{font-family:var(--font-b);font-size:.8rem;color:var(--warm-gray);line-height:1.4}
 .curated-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px}
-.section-divider{display:flex;align-items:center;gap:16px;margin:4px 0 32px}
+.section-divider{display:flex;align-items:center;gap:16px;margin:4px 0 36px}
 .section-divider::before,.section-divider::after{content:'';flex:1;height:1px;background:var(--light-gray)}
-.section-divider span{font-family:var(--font-b);font-size:.76rem;white-space:nowrap;color:var(--warm-gray);letter-spacing:.07em;opacity:.8}
+.section-divider span{font-family:var(--font-b);font-size:.75rem;white-space:nowrap;color:var(--warm-gray);letter-spacing:.07em;opacity:.75}
 
 /* ─── Loading skeleton ────────────────────────────────── */
 @keyframes shimmer{0%{background-position:-400px 0}100%{background-position:400px 0}}
@@ -603,8 +607,8 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
       <span class="auth-hero-logo-icon">🍷</span>
       <span class="auth-hero-logo-text">Welds Wine Wisdoms</span>
     </div>
-    <h1 class="auth-hero-headline">Wine made easy. 🍷</h1>
-    <p class="auth-hero-sub">Your personal wine journal. Scan labels, rate wines, and remember what you love.</p>
+    <h1 class="auth-hero-headline">Wine made easy.</h1>
+    <p class="auth-hero-sub">Find bottles you'll actually enjoy. No jargon, no guesswork — just wines you'll love.</p>
     <ul class="auth-hero-features">
       <li>Scan any wine label with your camera</li>
       <li>Rate wines and jot down what you think</li>
@@ -825,11 +829,11 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
   <div id="heroSection" style="display:none">
     <div class="hero-section">
       <div class="hero-text">
-        <h2 class="hero-headline">Wine made easy. 🍷</h2>
-        <p class="hero-sub">Find wines you'll actually enjoy. No jargon, no guesswork.</p>
+        <h2 class="hero-headline">Wine made easy.</h2>
+        <p class="hero-sub">Find bottles you'll actually enjoy. No jargon, no guesswork.</p>
         <div class="hero-actions">
-          <button class="hero-btn-primary" onclick="document.getElementById('openScanModal').click()">📷 Scan a label</button>
-          <button class="hero-btn-secondary" onclick="document.getElementById('openAddModal').click()">+ Add wine</button>
+          <button class="hero-btn-primary" onclick="document.getElementById('wineGrid').scrollIntoView({behavior:'smooth',block:'start'})">Browse wines</button>
+          <button class="hero-btn-secondary" onclick="document.getElementById('openScanModal').click()">📷 Scan a label</button>
         </div>
       </div>
       <div class="hero-count">
@@ -841,31 +845,42 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
 
   <!-- CURATED SECTIONS (shown when wines exist) -->
   <div id="curatedSections" style="display:none">
-    <!-- Section: Top Rated -->
+    <!-- Section: Easy picks -->
+    <div class="curated-section" id="sectionEasyPicks">
+      <div class="curated-header">
+        <div>
+          <h3 class="curated-title">😊 Easy picks</h3>
+          <p class="curated-sub">Wines anyone will enjoy — no thinking required</p>
+        </div>
+      </div>
+      <div class="curated-grid" id="curatedEasyPicks"></div>
+    </div>
+
+    <!-- Section: Great with food -->
+    <div class="curated-section" id="sectionWithFood">
+      <div class="curated-header">
+        <div>
+          <h3 class="curated-title">🍽️ Great with food</h3>
+          <p class="curated-sub">Bottles that really come alive at the dinner table</p>
+        </div>
+      </div>
+      <div class="curated-grid" id="curatedWithFood"></div>
+    </div>
+
+    <!-- Section: Your top rated -->
     <div class="curated-section" id="sectionTopRated">
       <div class="curated-header">
         <div>
           <h3 class="curated-title">⭐ Your favourites</h3>
-          <p class="curated-sub">Wines you've loved most</p>
+          <p class="curated-sub">The ones you've loved most</p>
         </div>
       </div>
       <div class="curated-grid" id="curatedTopRated"></div>
     </div>
 
-    <!-- Section: Most Recent -->
-    <div class="curated-section" id="sectionRecent">
-      <div class="curated-header">
-        <div>
-          <h3 class="curated-title">🕐 Recently tried</h3>
-          <p class="curated-sub">Your latest discoveries</p>
-        </div>
-      </div>
-      <div class="curated-grid" id="curatedRecent"></div>
-    </div>
-
     <!-- Section divider before full cellar -->
     <div class="section-divider">
-      <span>Your Full Cellar</span>
+      <span>Everything in your cellar</span>
     </div>
   </div>
 
@@ -1282,6 +1297,7 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
 ══════════════════════════════════════════════════════════════ */
 const SUPABASE_URL = 'https://phcnswuwrqarikzjvfqd.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBoY25zd3V3cnFhcmlremp2ZnFkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM1OTI2NjEsImV4cCI6MjA4OTE2ODY2MX0.nW_aLGeiFNu6km1leeqTofcOqFQxe3dabNWfIPkc334';
+
 
 
 
@@ -1939,24 +1955,28 @@ function getTasteDescriptor(w) {
   const all    = notes + ' ' + grape + ' ' + name;
 
   const profiles = [
-    { kw:['chocolate','cocoa','dark fruit','blackberry','plum','cab','cabernet','merlot','shiraz','syrah','malbec','rioja'],  label:'Rich, bold & dark' },
-    { kw:['cherry','raspberry','strawberry','pinot','light','silky','elegant','burgundy','beaujolais'],                      label:'Silky & cherry-bright' },
-    { kw:['oak','vanilla','toasty','barrel','smoke','cedar','spice','tempranillo','rioja'],                                  label:'Oaky & spiced' },
-    { kw:['citrus','lemon','lime','green apple','crisp','fresh','sauvignon','blanc','albariño','chablis','zesty','zingy'],   label:'Crisp & zesty' },
-    { kw:['tropical','mango','pineapple','peach','viognier','gewürz','riesling','aromatic'],                                 label:'Tropical & aromatic' },
-    { kw:['butter','creamy','chardonnay','full-bod','full bod','rich white'],                                               label:'Buttery & full-bodied' },
-    { kw:['floral','rose','violet','delicate','ethereal'],                                                                   label:'Floral & delicate' },
-    { kw:['mineral','earthy','terroir','loire','chablis'],                                                                   label:'Mineral & earthy' },
-    { kw:['sweet','dessert','port','sauternes','honey','late harvest'],                                                      label:'Sweet & luscious' },
-    { kw:['sparkling','champagne','prosecco','cava','bubbles'],                                                              label:'Effervescent & festive' },
-    { kw:['rosé','rose','blush','provence'],                                                                                 label:'Fresh & summery' },
+    { kw:['chocolate','cocoa','dark fruit','blackberry','plum','cab','cabernet','merlot','shiraz','syrah','malbec'],  label:'Rich and great with steak' },
+    { kw:['cherry','raspberry','strawberry','pinot','beaujolais','light','silky'],                                    label:'Light and easy to drink' },
+    { kw:['oak','vanilla','toasty','barrel','smoke','cedar','tempranillo','rioja'],                                   label:'Smooth with a hint of spice' },
+    { kw:['citrus','lemon','lime','green apple','crisp','fresh','sauvignon','blanc','albariño','zesty','zingy'],      label:'Fresh and great with fish' },
+    { kw:['tropical','mango','pineapple','peach','viognier','riesling','aromatic'],                                   label:'Fruity and easy going' },
+    { kw:['butter','creamy','chardonnay','full-bod','full bod'],                                                      label:'Smooth and full flavoured' },
+    { kw:['floral','rose','violet','delicate','ethereal','gewürz'],                                                   label:'Light, floral and delicate' },
+    { kw:['mineral','earthy','terroir','loire','chablis'],                                                            label:'Dry and goes with most food' },
+    { kw:['sweet','dessert','port','sauternes','honey','late harvest'],                                               label:'Sweet and great after dinner' },
+    { kw:['sparkling','champagne','prosecco','cava','bubbles'],                                                       label:'Bubbly and great to celebrate' },
+    { kw:['rosé','rose','blush','provence'],                                                                          label:'Light pink and very drinkable' },
   ];
-  if (style === 'sparkling') return 'Effervescent & festive';
-  if (style === 'dessert' || style === 'fortified') return 'Sweet & luscious';
+  if (style === 'sparkling') return 'Bubbly and great to celebrate';
+  if (style === 'rosé')      return 'Light pink and very drinkable';
+  if (style === 'dessert' || style === 'fortified') return 'Sweet and great after dinner';
 
   for (const p of profiles) {
     if (p.kw.some(k => all.includes(k))) return p.label;
   }
+  // Fallback by style
+  if (style === 'red')   return 'Smooth and easy drinking';
+  if (style === 'white') return 'Crisp and refreshing';
   return '';
 }
 
@@ -1979,44 +1999,56 @@ function renderCuratedSections() {
     if (statEl) statEl.textContent = wines.length;
   }
 
-  // Top rated (5★, up to 4)
-  const topRated = [...wines].filter(w => w.rating === 5).slice(0, 4);
-  const sectionTopRated  = document.getElementById('sectionTopRated');
-  const curatedTopRated  = document.getElementById('curatedTopRated');
-  if (topRated.length >= 2) {
-    sectionTopRated.style.display = 'block';
-    curatedTopRated.innerHTML = '';
-    topRated.forEach((w, i) => {
-      const c = createCard(w);
-      c.style.animationDelay = `${i * 0.05}s`;
-      curatedTopRated.appendChild(c);
-    });
-  } else {
-    sectionTopRated.style.display = 'none';
+  // Helper: fill a section grid
+  function fillSection(sectionId, gridId, list) {
+    const section = document.getElementById(sectionId);
+    const grid    = document.getElementById(gridId);
+    if (!section || !grid) return;
+    if (list.length >= 2) {
+      section.style.display = 'block';
+      grid.innerHTML = '';
+      list.slice(0, 4).forEach((w, i) => {
+        const c = createCard(w);
+        c.style.animationDelay = `${i * 0.05}s`;
+        grid.appendChild(c);
+      });
+    } else {
+      section.style.display = 'none';
+    }
   }
 
-  // Recently tasted (newest 4, not already in top rated)
-  const topIds = new Set(topRated.map(w => w.id));
-  const recent = [...wines]
-    .sort((a,b) => new Date(b.dateTasted||b.createdAt||0) - new Date(a.dateTasted||a.createdAt||0))
-    .filter(w => !topIds.has(w.id))
+  // Keywords that signal "easy / approachable / crowd pleasing"
+  const easyKw = ['pinot','beaujolais','light','easy','smooth','fruity','rosé','rose','prosecco','cava','sparkling','merlot','riesling'];
+  // Keywords that signal "food matching"
+  const foodKw = ['steak','meat','red','cabernet','shiraz','syrah','rioja','tempranillo','chardonnay','sauvignon','fish','seafood','pasta','beef','lamb','chicken'];
+
+  function matchesKw(w, kws) {
+    const all = ([w.notes,w.grape,w.style,w.name,w.region].filter(Boolean).join(' ')).toLowerCase();
+    return kws.some(k => all.includes(k));
+  }
+
+  // Easy picks: light/fruity/sparkling wines rated 3+
+  const easyPicks = [...wines]
+    .filter(w => (w.rating||0) >= 3 && matchesKw(w, easyKw))
+    .sort((a,b) => (b.rating||0) - (a.rating||0));
+
+  // Great with food: bold/tannic/food-friendly wines rated 3+
+  const withFood = [...wines]
+    .filter(w => (w.rating||0) >= 3 && matchesKw(w, foodKw) && !easyPicks.slice(0,4).find(e => e.id === w.id))
+    .sort((a,b) => (b.rating||0) - (a.rating||0));
+
+  // Top rated: 5-star wines not already shown above
+  const easyIds = new Set(easyPicks.slice(0,4).map(w => w.id));
+  const foodIds = new Set(withFood.slice(0,4).map(w => w.id));
+  const topRated = [...wines]
+    .filter(w => w.rating === 5 && !easyIds.has(w.id) && !foodIds.has(w.id))
     .slice(0, 4);
-  const sectionRecent  = document.getElementById('sectionRecent');
-  const curatedRecent  = document.getElementById('curatedRecent');
-  if (recent.length >= 2) {
-    sectionRecent.style.display = 'block';
-    curatedRecent.innerHTML = '';
-    recent.forEach((w, i) => {
-      const c = createCard(w);
-      c.style.animationDelay = `${i * 0.05}s`;
-      curatedRecent.appendChild(c);
-    });
-  } else {
-    sectionRecent.style.display = 'none';
-  }
 
-  // Only show curated container if at least one section is shown
-  const anySection = topRated.length >= 2 || recent.length >= 2;
+  fillSection('sectionEasyPicks', 'curatedEasyPicks', easyPicks);
+  fillSection('sectionWithFood',  'curatedWithFood',  withFood);
+  fillSection('sectionTopRated',  'curatedTopRated',  topRated);
+
+  const anySection = easyPicks.length >= 2 || withFood.length >= 2 || topRated.length >= 2;
   if (curatedSections) curatedSections.style.display = anySection ? 'block' : 'none';
 }
 
@@ -2097,13 +2129,13 @@ function createCard(w) {
         <div>
           ${w.vintage?`<div class="card-vintage-badge">${escHtml(String(w.vintage))}</div>`:''}
           <div class="card-name">${escHtml(w.name)}</div>
+          ${descriptor?`<div class="card-descriptor">${escHtml(descriptor)}</div>`:''}
         </div>
         <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
           ${w.rating?`<div class="card-rating">${renderStars(w.rating)}</div>`:''}
         </div>
       </div>
       ${meta?`<div class="card-meta">${escHtml(meta)}</div>`:''}
-      ${descriptor?`<div class="card-descriptor">${escHtml(descriptor)}</div>`:''}
       ${tags.length?`<div class="card-tags">${tags.map(t=>`<span class="card-tag">${escHtml(t)}</span>`).join('')}${w.buyAgain?'<span class="card-buy-badge">↺ Buy again</span>':''}</div>`:''}
       ${!tags.length && w.buyAgain?`<div class="card-tags"><span class="card-buy-badge">↺ Buy again</span></div>`:''}
       ${w.notes?`<p class="card-notes">${escHtml(w.notes)}</p>`:''}
