@@ -509,16 +509,25 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
 .onboarding-text em{font-style:normal;font-weight:600}
 .onboarding-close{background:none;border:none;color:var(--warm-gray);cursor:pointer;font-size:.9rem;padding:2px 6px;border-radius:var(--r);flex-shrink:0;transition:var(--tr);margin-top:1px}
 .onboarding-close:hover{background:var(--light-gray);color:var(--charcoal)}
+/* Scan button label swap */
+.scan-label-short{display:none}
+.scan-label-full{display:inline}
+
 @media(max-width:768px){
   /* Header — single clean row, no wrapping */
-  .header-inner{height:56px;padding:0 14px;gap:10px;flex-wrap:nowrap}
-  .header-actions{gap:6px;overflow:visible}
+  .header-inner{height:56px;padding:0 14px;gap:8px;flex-wrap:nowrap}
+  .header-actions{gap:6px;overflow:visible;flex-shrink:0}
+  /* Logo truncates if needed */
+  .logo{min-width:0;flex-shrink:1}
+  .logo-title{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:160px}
   /* Hide secondary header buttons on mobile (hamburger replaces them) */
   .scan-hint{display:none}
   .btn-add-subtle{display:none}
   .btn-quick-add{display:none}
-  /* Keep scan button but make it compact */
-  .btn-scan-primary{padding:8px 14px;font-size:.8rem}
+  /* Short scan label on mobile */
+  .scan-label-full{display:none}
+  .scan-label-short{display:inline}
+  .btn-scan-primary{padding:8px 14px;font-size:.8rem;white-space:nowrap}
   /* Hamburger always fits */
   .btn-hamburger{display:flex !important}
   /* Toolbar */
@@ -1019,7 +1028,7 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
     </div>
     <div class="header-actions">
       <div class="scan-cta">
-        <button class="btn-scan-primary" id="openScanModal" aria-label="Scan wine label">📷 Scan Wine Label</button>
+        <button class="btn-scan-primary" id="openScanModal" aria-label="Scan wine label"><span class="scan-label-full">📷 Scan Wine Label</span><span class="scan-label-short">📷 Scan</span></button>
         <span class="scan-hint">Fastest way to add a wine</span>
       </div>
       <button class="btn-add-subtle" id="openAddModal" aria-label="Add wine manually">+ Add Wine</button>
