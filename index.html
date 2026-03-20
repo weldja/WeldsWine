@@ -3510,18 +3510,21 @@ async function nativeShare() {
 async function checkPublicWineView() {
   const params  = new URLSearchParams(window.location.search);
   const shareId = params.get('wine');
-  // Validate — only allow alphanumeric and hyphen (UUID format)
   if (!shareId || !/^[a-zA-Z0-9\-]{8,64}$/.test(shareId)) return false;
 
   const view = document.getElementById('publicWineView');
   view.classList.add('show');
-
-  // Hide auth screen while loading
   document.getElementById('authScreen').classList.add('hidden');
 
+  function dbg(msg) {
+    document.getElementById('publicWineContent').innerHTML =
+      `<p style="color:var(--warm-gray);font-family:var(--font-b);font-size:.8rem;padding:20px;text-align:center">${msg}</p>`;
+  }
+
+  dbg('Loading… shareId: ' + shareId);
+
   if (!_sb) {
-    // Wait for Supabase to init (up to 8s) — retry _ensureSb each tick
-    // to handle slow mobile networks where the CDN script loads late
+    dbg('Waiting for Supabase…');
     await new Promise(res => {
       let t = 0;
       const poll = setInterval(() => {
@@ -3533,9 +3536,11 @@ async function checkPublicWineView() {
   }
 
   if (!_sb) {
-    document.getElementById('publicWineContent').innerHTML = '<p style="color:var(--warm-gray);font-family:var(--font-b);text-align:center;padding:20px">Could not load wine details.</p>';
+    dbg('FAIL: Supabase never initialised — CDN script may have failed to load. _sbInitError=' + _sbInitError);
     return true;
   }
+
+  dbg('Supabase ready, querying shared_wines for id=' + shareId);
 
   const { data: w, error } = await _sb
     .from('shared_wines')
@@ -3544,15 +3549,7 @@ async function checkPublicWineView() {
     .single();
 
   if (error || !w) {
-    // RLS policy on shared_wines may be blocking anonymous reads.
-    // Fix in Supabase: SQL Editor → run:
-    //   create policy "public can read shared_wines"
-    //   on shared_wines for select to anon using (true);
-    console.error('Share lookup failed:', error?.message, error?.code);
-    const msg = (error?.code === 'PGRST301' || error?.message?.includes('permission'))
-      ? 'This wine cannot be displayed — a sharing permission needs to be enabled. Please contact the owner.'
-      : 'Wine not found — the link may have expired.';
-    document.getElementById('publicWineContent').innerHTML = `<p style="color:var(--warm-gray);font-family:var(--font-b);text-align:center;padding:20px">${msg}</p>`;
+    dbg('FAIL: error.message=' + (error?.message||'none') + ' error.code=' + (error?.code||'none') + ' data=' + JSON.stringify(w));
     return true;
   }
 
