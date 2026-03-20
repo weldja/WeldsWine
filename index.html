@@ -598,30 +598,30 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
 }
 /* ─── Recommended Tonight ─────────────────────────────── */
 .rec-tonight{
-  margin-bottom:28px;
+  margin-bottom:36px;
 }
 .rec-tonight-header{
-  margin-bottom:18px;
+  margin-bottom:20px;
 }
 .rec-tonight-title{
   font-family:var(--font-d);
-  font-size:1.4rem;
+  font-size:1.5rem;
   font-weight:600;
   color:var(--charcoal);
-  margin-bottom:4px;
+  margin-bottom:6px;
 }
 .rec-tonight-sub{
   font-family:var(--font-b);
-  font-size:.82rem;
+  font-size:.85rem;
   color:var(--warm-gray);
 }
 .rec-tonight-body{
   display:grid;
   grid-template-columns:1fr 1fr;
-  gap:14px;
+  gap:16px;
   align-items:start;
 }
-/* Primary pick — takes full left column */
+/* Primary pick — dominant left column */
 .rec-primary{
   grid-row: 1 / 3;
 }
@@ -631,57 +631,57 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
   border-radius:var(--rl);
   overflow:hidden;
   cursor:pointer;
-  box-shadow:0 4px 20px rgba(139,36,57,.14);
+  box-shadow:0 6px 28px rgba(139,36,57,.18), 0 2px 8px rgba(139,36,57,.08);
   transition:transform .2s ease,box-shadow .2s ease;
   height:100%;
 }
 .rec-primary-card:hover{
   transform:translateY(-3px);
-  box-shadow:0 10px 32px rgba(139,36,57,.2);
+  box-shadow:0 14px 40px rgba(139,36,57,.24), 0 4px 12px rgba(139,36,57,.1);
 }
 .rec-primary-img{
   width:100%;
-  height:180px;
+  height:200px;
   object-fit:contain;
   background:#ece5db;
   display:block;
 }
 .rec-primary-img-placeholder{
   width:100%;
-  height:140px;
+  height:150px;
   background:linear-gradient(135deg,var(--burgundy-deep),var(--burgundy));
   display:flex;
   align-items:center;
   justify-content:center;
-  font-size:3rem;
+  font-size:3.5rem;
 }
 .rec-primary-body{
-  padding:18px 20px 16px;
+  padding:20px 22px 18px;
 }
 .rec-primary-badge{
   display:inline-flex;align-items:center;gap:5px;
   background:var(--burgundy);
   color:#fff;
   font-family:var(--font-b);
-  font-size:.65rem;font-weight:700;
-  letter-spacing:.07em;text-transform:uppercase;
-  padding:4px 10px;border-radius:4px;
-  margin-bottom:10px;
+  font-size:.64rem;font-weight:700;
+  letter-spacing:.08em;text-transform:uppercase;
+  padding:5px 11px;border-radius:4px;
+  margin-bottom:12px;
 }
 .rec-primary-name{
   font-family:var(--font-d);
-  font-size:1.15rem;font-weight:600;
+  font-size:1.2rem;font-weight:600;
   color:var(--charcoal);
   line-height:1.25;
-  margin-bottom:6px;
+  margin-bottom:8px;
 }
 .rec-primary-reason{
   font-family:var(--font-b);
-  font-size:.85rem;
+  font-size:.9rem;
   color:var(--burgundy);
   font-weight:600;
-  margin-bottom:8px;
-  line-height:1.3;
+  margin-bottom:10px;
+  line-height:1.4;
 }
 .rec-primary-meta{
   font-family:var(--font-b);
@@ -691,25 +691,26 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
 }
 .rec-primary-stars{
   color:var(--gold);
-  font-size:.9rem;
+  font-size:.95rem;
   letter-spacing:1px;
 }
 .rec-primary-cta{
   display:block;width:100%;
   background:var(--burgundy);color:#fff;
   border:none;border-radius:var(--r);
-  padding:10px 16px;
-  font-family:var(--font-b);font-size:.84rem;font-weight:600;
+  padding:12px 16px;
+  font-family:var(--font-b);font-size:.88rem;font-weight:600;
   cursor:pointer;transition:background .15s ease;
-  margin-top:14px;
+  margin-top:16px;
+  letter-spacing:.01em;
 }
 .rec-primary-cta:hover{ background:var(--burgundy-lt) }
 
-/* Alternative picks — right column */
+/* Alternative picks — right column, clearly secondary */
 .rec-alts{
   display:flex;
   flex-direction:column;
-  gap:10px;
+  gap:12px;
 }
 .rec-alt-card{
   background:var(--ivory);
@@ -729,43 +730,44 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
   transform:translateY(-1px);
 }
 .rec-alt-img{
-  width:44px;height:56px;
+  width:46px;height:58px;
   object-fit:contain;
   background:#ece5db;
   border-radius:6px;
   flex-shrink:0;
 }
 .rec-alt-img-placeholder{
-  width:44px;height:56px;
+  width:46px;height:58px;
   background:var(--parchment);
   border-radius:6px;
   display:flex;align-items:center;justify-content:center;
-  font-size:1.3rem;flex-shrink:0;
+  font-size:1.4rem;flex-shrink:0;
 }
 .rec-alt-info{ flex:1;min-width:0 }
 .rec-alt-label{
   font-family:var(--font-b);
-  font-size:.65rem;font-weight:600;
+  font-size:.64rem;font-weight:600;
   letter-spacing:.07em;text-transform:uppercase;
-  color:var(--warm-gray);margin-bottom:3px;
+  color:var(--warm-gray);margin-bottom:4px;
 }
 .rec-alt-name{
   font-family:var(--font-d);
-  font-size:.9rem;font-weight:600;
-  color:var(--charcoal);line-height:1.2;margin-bottom:4px;
+  font-size:.92rem;font-weight:600;
+  color:var(--charcoal);line-height:1.2;margin-bottom:5px;
 }
 .rec-alt-reason{
   font-family:var(--font-b);
-  font-size:.76rem;
+  font-size:.78rem;
   color:var(--burgundy);
   font-weight:500;
-  line-height:1.3;
+  line-height:1.35;
 }
 
 /* Responsive */
 @media(max-width:640px){
   .rec-tonight-body{ grid-template-columns:1fr }
   .rec-primary{ grid-row:auto }
+  .rec-tonight-title{ font-size:1.25rem }
 }
 
 /* ─── Start Here ──────────────────────────────────────── */
@@ -1115,11 +1117,10 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
     <div class="hero-section">
       <div class="hero-text">
         <h2 class="hero-headline">What are you drinking tonight?</h2>
-        <p class="hero-sub">Pick a mood below and we'll point you straight to the right bottle.</p>
+        <p class="hero-sub">We'll pick the right bottle for you — no thinking needed.</p>
         <div class="hero-actions">
-          <button class="hero-btn-primary" onclick="document.getElementById('startHereSection').scrollIntoView({behavior:'smooth',block:'start'})">Help me choose</button>
+          <button class="hero-btn-primary" onclick="document.getElementById('recTonightBlock').scrollIntoView({behavior:'smooth',block:'start'})">👇 Show me what to drink</button>
           <button class="hero-btn-secondary" onclick="document.getElementById('openScanModal').click()">📷 Scan a new bottle</button>
-          <button class="hero-btn-secondary" onclick="document.getElementById('wineGrid').scrollIntoView({behavior:'smooth',block:'start'})">Browse all</button>
         </div>
       </div>
       <div class="hero-count">
@@ -1136,8 +1137,8 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
     <div id="recTonightBlock" style="display:none">
       <div class="rec-tonight">
         <div class="rec-tonight-header">
-          <h2 class="rec-tonight-title">Recommended for tonight</h2>
-          <p class="rec-tonight-sub">Based on what you've enjoyed most</p>
+          <h2 class="rec-tonight-title">🍷 Tonight's recommendation</h2>
+          <p class="rec-tonight-sub">Based on what you've loved most — just open this one.</p>
         </div>
         <div class="rec-tonight-body">
           <!-- Primary pick — filled by JS -->
@@ -1166,8 +1167,8 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
     <div class="curated-section" id="sectionEasyPicks">
       <div class="curated-header">
         <div>
-          <h3 class="curated-title">😊 Easy picks</h3>
-          <p class="curated-sub">Wines anyone will enjoy — no thinking required</p>
+          <h3 class="curated-title">😊 Easy picks — just open one</h3>
+          <p class="curated-sub">No wrong choices here. Any of these work for tonight.</p>
         </div>
       </div>
       <div class="curated-grid" id="curatedEasyPicks"></div>
@@ -1177,8 +1178,8 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
     <div class="curated-section" id="sectionWithFood">
       <div class="curated-header">
         <div>
-          <h3 class="curated-title">🍽️ Great with food</h3>
-          <p class="curated-sub">Bottles that really come alive at the dinner table</p>
+          <h3 class="curated-title">🍽️ If you're eating tonight</h3>
+          <p class="curated-sub">These come alive with food — good with most meals.</p>
         </div>
       </div>
       <div class="curated-grid" id="curatedWithFood"></div>
@@ -1188,8 +1189,8 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
     <div class="curated-section" id="sectionTopRated">
       <div class="curated-header">
         <div>
-          <h3 class="curated-title">⭐ Your favourites</h3>
-          <p class="curated-sub">The ones you've loved most</p>
+          <h3 class="curated-title">⭐ Your highest-rated bottles</h3>
+          <p class="curated-sub">You've tried these and loved them — always a safe bet.</p>
         </div>
       </div>
       <div class="curated-grid" id="curatedTopRated"></div>
@@ -1197,7 +1198,7 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
 
     <!-- Section divider before full cellar -->
     <div class="section-divider">
-      <span>Everything in your cellar</span>
+      <span>Everything in your cellar — scroll to explore</span>
     </div>
   </div>
 
@@ -2271,21 +2272,21 @@ function getTasteDescriptor(w) {
   const all    = notes + ' ' + grape + ' ' + name;
 
   const profiles = [
-    { kw:['chocolate','cocoa','dark fruit','blackberry','plum','cab','cabernet','merlot','shiraz','syrah','malbec'],  label:'Rich and great with steak' },
-    { kw:['cherry','raspberry','strawberry','pinot','beaujolais','light','silky'],                                    label:'Light and easy to drink' },
-    { kw:['oak','vanilla','toasty','barrel','smoke','cedar','tempranillo','rioja'],                                   label:'Smooth with a hint of spice' },
-    { kw:['citrus','lemon','lime','green apple','crisp','fresh','sauvignon','blanc','albariño','zesty','zingy'],      label:'Fresh and great with fish' },
-    { kw:['tropical','mango','pineapple','peach','viognier','riesling','aromatic'],                                   label:'Fruity and easy going' },
-    { kw:['butter','creamy','chardonnay','full-bod','full bod'],                                                      label:'Smooth and full flavoured' },
-    { kw:['floral','rose','violet','delicate','ethereal','gewürz'],                                                   label:'Light, floral and delicate' },
-    { kw:['mineral','earthy','terroir','loire','chablis'],                                                            label:'Dry and goes with most food' },
-    { kw:['sweet','dessert','port','sauternes','honey','late harvest'],                                               label:'Sweet and great after dinner' },
-    { kw:['sparkling','champagne','prosecco','cava','bubbles'],                                                       label:'Bubbly and great to celebrate' },
-    { kw:['rosé','rose','blush','provence'],                                                                          label:'Light pink and very drinkable' },
+    { kw:['chocolate','cocoa','dark fruit','blackberry','plum','cab','cabernet','merlot','shiraz','syrah','malbec'],  label:'Great with steak or a hearty meal' },
+    { kw:['cherry','raspberry','strawberry','pinot','beaujolais','light','silky'],                                    label:'Easy, no-thinking red for tonight' },
+    { kw:['oak','vanilla','toasty','barrel','smoke','cedar','tempranillo','rioja'],                                   label:'Safe choice — works with most food' },
+    { kw:['citrus','lemon','lime','green apple','crisp','fresh','sauvignon','blanc','albariño','zesty','zingy'],      label:'Crisp and refreshing — great chilled' },
+    { kw:['tropical','mango','pineapple','peach','viognier','riesling','aromatic'],                                   label:'Fruity and easy — crowd-pleaser' },
+    { kw:['butter','creamy','chardonnay','full-bod','full bod'],                                                      label:'Rich and smooth — good with fish or pasta' },
+    { kw:['floral','rose','violet','delicate','ethereal','gewürz'],                                                   label:'Light and delicate — good on its own' },
+    { kw:['mineral','earthy','terroir','loire','chablis'],                                                            label:'Dry and food-friendly all-rounder' },
+    { kw:['sweet','dessert','port','sauternes','honey','late harvest'],                                               label:'Sweet treat — perfect after dinner' },
+    { kw:['sparkling','champagne','prosecco','cava','bubbles'],                                                       label:'Celebratory — open it tonight' },
+    { kw:['rosé','rose','blush','provence'],                                                                          label:'Light and summery — easy crowd-pleaser' },
   ];
-  if (style === 'sparkling') return 'Bubbly and great to celebrate';
-  if (style === 'rosé')      return 'Light pink and very drinkable';
-  if (style === 'dessert' || style === 'fortified') return 'Sweet and great after dinner';
+  if (style === 'sparkling') return 'Celebratory — open it tonight';
+  if (style === 'rosé')      return 'Light and summery — easy crowd-pleaser';
+  if (style === 'dessert' || style === 'fortified') return 'Sweet treat — perfect after dinner';
 
   for (const p of profiles) {
     if (p.kw.some(k => all.includes(k))) return p.label;
@@ -2293,8 +2294,8 @@ function getTasteDescriptor(w) {
   // Fallback by style
   if (style === 'red')   return 'Easy, no-thinking red for tonight';
   if (style === 'white') return 'Crisp and refreshing — great chilled';
-  if (style === 'rosé')  return 'Light pink and very drinkable';
-  return 'Good all-rounder — hard to go wrong';
+  if (style === 'rosé')  return 'Light and summery — easy crowd-pleaser';
+  return 'Reliable choice — hard to go wrong';
 }
 
 /* ── Recommended Tonight ──────────────────────────────────── */
@@ -2317,22 +2318,22 @@ function renderRecommendedTonight() {
   function getTonightReason(w, isPrimary) {
     const all = ([w.notes, w.grape, w.style, w.name, w.region].filter(Boolean).join(' ')).toLowerCase();
     if (isPrimary) {
-      if (all.includes('cab') || all.includes('syrah') || all.includes('shiraz') || all.includes('rioja')) return 'Rich and bold — great with a big meal';
-      if (all.includes('pinot') || all.includes('merlot') || all.includes('beaujolais')) return 'Smooth and easy — works for any occasion';
-      if (all.includes('chardonnay') || all.includes('butter') || all.includes('creamy')) return 'Full-bodied white — lovely with pasta or fish';
-      if (all.includes('sauvignon') || all.includes('crisp') || all.includes('fresh')) return 'Crisp and refreshing — great chilled tonight';
-      if ((w.style||'').toLowerCase() === 'sparkling') return 'Bubbly and celebratory — open it tonight';
-      if ((w.style||'').toLowerCase() === 'rosé')      return 'Light and summery — great on its own';
-      if ((w.rating||0) === 5) return 'Your top-rated bottle — safe, reliable choice';
-      return 'A tried and tested favourite — hard to go wrong';
+      if (all.includes('cab') || all.includes('syrah') || all.includes('shiraz') || all.includes('rioja')) return 'Rich and bold — perfect with a big meal tonight';
+      if (all.includes('pinot') || all.includes('merlot') || all.includes('beaujolais')) return 'Easy drinking — just open it and relax';
+      if (all.includes('chardonnay') || all.includes('butter') || all.includes('creamy')) return 'Smooth and full — lovely with dinner tonight';
+      if (all.includes('sauvignon') || all.includes('crisp') || all.includes('fresh')) return 'Crisp and refreshing — chill it and open it now';
+      if ((w.style||'').toLowerCase() === 'sparkling') return 'Celebratory — why not open the bubbles tonight?';
+      if ((w.style||'').toLowerCase() === 'rosé')      return 'Light and summery — great on its own tonight';
+      if ((w.rating||0) === 5) return 'You\'ve loved this one before — open it again tonight';
+      return 'A proven favourite — you\'ve tried it and it works';
     }
-    // Alt reasons
-    if (all.includes('sauvignon') || all.includes('blanc') || all.includes('white') || (w.style||'').toLowerCase()==='white') return 'Light and fresh alternative';
-    if (all.includes('cab') || all.includes('syrah') || all.includes('shiraz')) return 'Rich and bold — great with food';
-    if (all.includes('pinot') || all.includes('merlot')) return 'Smooth and easy-drinking option';
-    if ((w.style||'').toLowerCase() === 'sparkling') return 'Bubbly if you want something fun';
-    if ((w.style||'').toLowerCase() === 'rosé')      return 'Light pink — easy crowd-pleaser';
-    return 'Good all-rounder — reliable choice';
+    // Alt reasons — always use context
+    if (all.includes('sauvignon') || all.includes('blanc') || all.includes('white') || (w.style||'').toLowerCase()==='white') return 'Lighter option — good if you want something fresh';
+    if (all.includes('cab') || all.includes('syrah') || all.includes('shiraz')) return 'Bolder option — great if you\'re having food';
+    if (all.includes('pinot') || all.includes('merlot')) return 'Softer option — easy and crowd-pleasing';
+    if ((w.style||'').toLowerCase() === 'sparkling') return 'Bubbly option — if you feel like celebrating';
+    if ((w.style||'').toLowerCase() === 'rosé')      return 'Rosé option — light and refreshing alternative';
+    return 'Solid alternative — different but just as reliable';
   }
 
   // Build primary card
@@ -2356,7 +2357,7 @@ function renderRecommendedTonight() {
     const body = document.createElement('div');
     body.className = 'rec-primary-body';
     body.innerHTML = `
-      <div class="rec-primary-badge">⭐ Top pick tonight</div>
+      <div class="rec-primary-badge">✓ Tonight's pick</div>
       <div class="rec-primary-name">${escHtml(primary.name)}</div>
       <div class="rec-primary-reason">${escHtml(getTonightReason(primary, true))}</div>
       ${meta ? `<div class="rec-primary-meta">${escHtml(meta)}</div>` : ''}
@@ -2364,7 +2365,7 @@ function renderRecommendedTonight() {
     `;
     const cta = document.createElement('button');
     cta.className = 'rec-primary-cta';
-    cta.textContent = 'See full details →';
+    cta.textContent = 'This is the one — see details →';
     cta.addEventListener('click', () => openDetail(getWineById(primary.id), null));
     body.appendChild(cta);
     card.appendChild(body);
@@ -2503,14 +2504,14 @@ function renderCuratedSections() {
     const moods = [
       {
         emoji: '🍷',
-        label: 'Easy red for tonight',
-        desc:  'No thinking needed — just open and enjoy',
+        label: 'Just an easy red',
+        desc:  'No thinking — open and enjoy',
         kws:   ['merlot','pinot','beaujolais','easy','light','smooth','red'],
         style: 'red'
       },
       {
         emoji: '🥩',
-        label: 'Great with dinner',
+        label: 'Good with dinner',
         desc:  'Bold enough to stand up to food',
         kws:   ['cabernet','shiraz','syrah','rioja','tempranillo','steak','beef','lamb'],
         style: 'red'
@@ -2518,14 +2519,14 @@ function renderCuratedSections() {
       {
         emoji: '🌿',
         label: 'Light and refreshing',
-        desc:  'Crisp, easy white — great chilled',
+        desc:  'Crisp white — brilliant chilled',
         kws:   ['sauvignon','blanc','crisp','fresh','citrus','lemon','fish','seafood','white'],
         style: 'white'
       },
       {
         emoji: '✅',
-        label: 'Safe choice',
-        desc:  'Your highest-rated bottle — always works',
+        label: 'Safe, reliable choice',
+        desc:  'Your top-rated bottle — never fails',
         kws:   [],
         isSafe: true
       }
