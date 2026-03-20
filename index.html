@@ -564,6 +564,178 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
   .star-input .star{font-size:1.6rem;padding:0 3px}
   .btn-locate{min-height:38px}
 }
+/* ─── Recommended Tonight ─────────────────────────────── */
+.rec-tonight{
+  margin-bottom:28px;
+}
+.rec-tonight-header{
+  margin-bottom:18px;
+}
+.rec-tonight-title{
+  font-family:var(--font-d);
+  font-size:1.4rem;
+  font-weight:600;
+  color:var(--charcoal);
+  margin-bottom:4px;
+}
+.rec-tonight-sub{
+  font-family:var(--font-b);
+  font-size:.82rem;
+  color:var(--warm-gray);
+}
+.rec-tonight-body{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:14px;
+  align-items:start;
+}
+/* Primary pick — takes full left column */
+.rec-primary{
+  grid-row: 1 / 3;
+}
+.rec-primary-card{
+  background:var(--ivory);
+  border:2px solid var(--burgundy);
+  border-radius:var(--rl);
+  overflow:hidden;
+  cursor:pointer;
+  box-shadow:0 4px 20px rgba(139,36,57,.14);
+  transition:transform .2s ease,box-shadow .2s ease;
+  height:100%;
+}
+.rec-primary-card:hover{
+  transform:translateY(-3px);
+  box-shadow:0 10px 32px rgba(139,36,57,.2);
+}
+.rec-primary-img{
+  width:100%;
+  height:180px;
+  object-fit:contain;
+  background:#ece5db;
+  display:block;
+}
+.rec-primary-img-placeholder{
+  width:100%;
+  height:140px;
+  background:linear-gradient(135deg,var(--burgundy-deep),var(--burgundy));
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:3rem;
+}
+.rec-primary-body{
+  padding:18px 20px 16px;
+}
+.rec-primary-badge{
+  display:inline-flex;align-items:center;gap:5px;
+  background:var(--burgundy);
+  color:#fff;
+  font-family:var(--font-b);
+  font-size:.65rem;font-weight:700;
+  letter-spacing:.07em;text-transform:uppercase;
+  padding:4px 10px;border-radius:4px;
+  margin-bottom:10px;
+}
+.rec-primary-name{
+  font-family:var(--font-d);
+  font-size:1.15rem;font-weight:600;
+  color:var(--charcoal);
+  line-height:1.25;
+  margin-bottom:6px;
+}
+.rec-primary-reason{
+  font-family:var(--font-b);
+  font-size:.85rem;
+  color:var(--burgundy);
+  font-weight:600;
+  margin-bottom:8px;
+  line-height:1.3;
+}
+.rec-primary-meta{
+  font-family:var(--font-b);
+  font-size:.76rem;
+  color:var(--warm-gray);
+  margin-bottom:10px;
+}
+.rec-primary-stars{
+  color:var(--gold);
+  font-size:.9rem;
+  letter-spacing:1px;
+}
+.rec-primary-cta{
+  display:block;width:100%;
+  background:var(--burgundy);color:#fff;
+  border:none;border-radius:var(--r);
+  padding:10px 16px;
+  font-family:var(--font-b);font-size:.84rem;font-weight:600;
+  cursor:pointer;transition:background .15s ease;
+  margin-top:14px;
+}
+.rec-primary-cta:hover{ background:var(--burgundy-lt) }
+
+/* Alternative picks — right column */
+.rec-alts{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+.rec-alt-card{
+  background:var(--ivory);
+  border:1px solid var(--light-gray);
+  border-radius:var(--rl);
+  padding:14px 16px;
+  cursor:pointer;
+  display:flex;
+  gap:12px;
+  align-items:flex-start;
+  transition:border-color .15s ease,box-shadow .15s ease,transform .15s ease;
+  box-shadow:0 1px 5px var(--shadow);
+}
+.rec-alt-card:hover{
+  border-color:var(--blush);
+  box-shadow:0 4px 14px var(--shadow-md);
+  transform:translateY(-1px);
+}
+.rec-alt-img{
+  width:44px;height:56px;
+  object-fit:contain;
+  background:#ece5db;
+  border-radius:6px;
+  flex-shrink:0;
+}
+.rec-alt-img-placeholder{
+  width:44px;height:56px;
+  background:var(--parchment);
+  border-radius:6px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:1.3rem;flex-shrink:0;
+}
+.rec-alt-info{ flex:1;min-width:0 }
+.rec-alt-label{
+  font-family:var(--font-b);
+  font-size:.65rem;font-weight:600;
+  letter-spacing:.07em;text-transform:uppercase;
+  color:var(--warm-gray);margin-bottom:3px;
+}
+.rec-alt-name{
+  font-family:var(--font-d);
+  font-size:.9rem;font-weight:600;
+  color:var(--charcoal);line-height:1.2;margin-bottom:4px;
+}
+.rec-alt-reason{
+  font-family:var(--font-b);
+  font-size:.76rem;
+  color:var(--burgundy);
+  font-weight:500;
+  line-height:1.3;
+}
+
+/* Responsive */
+@media(max-width:640px){
+  .rec-tonight-body{ grid-template-columns:1fr }
+  .rec-primary{ grid-row:auto }
+}
+
 /* ─── Start Here ──────────────────────────────────────── */
 .start-here{
   margin-bottom:40px;
@@ -930,6 +1102,24 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
 
   <!-- START HERE (shown when wines exist) -->
   <div id="startHereSection" style="display:none">
+
+    <!-- RECOMMENDED TONIGHT block -->
+    <div id="recTonightBlock" style="display:none">
+      <div class="rec-tonight">
+        <div class="rec-tonight-header">
+          <h2 class="rec-tonight-title">Recommended for tonight</h2>
+          <p class="rec-tonight-sub">Based on what you've enjoyed most</p>
+        </div>
+        <div class="rec-tonight-body">
+          <!-- Primary pick — filled by JS -->
+          <div id="recPrimary" class="rec-primary"></div>
+          <!-- Alternatives — filled by JS -->
+          <div id="recAlts" class="rec-alts"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MOOD CHIPS block -->
     <div class="start-here">
       <div class="start-here-header">
         <p class="start-here-label">Not sure? Start here.</p>
@@ -2078,6 +2268,116 @@ function getTasteDescriptor(w) {
   return 'Good all-rounder — hard to go wrong';
 }
 
+/* ── Recommended Tonight ──────────────────────────────────── */
+function renderRecommendedTonight() {
+  const block = document.getElementById('recTonightBlock');
+  if (!block) return;
+
+  // Need at least 2 wines to show this section
+  if (wines.length < 2) { block.style.display = 'none'; return; }
+
+  const sorted = [...wines].sort((a,b) => (b.rating||0) - (a.rating||0));
+
+  // Primary recommendation: highest rated. Tiebreak: most recently tasted.
+  const primary = sorted[0];
+
+  // Alternatives: next 2 wines that are different styles or different enough
+  const alts = sorted.slice(1).filter(w => w.id !== primary.id).slice(0, 2);
+
+  // Reason labels — richer than the card descriptor, more personal
+  function getTonightReason(w, isPrimary) {
+    const all = ([w.notes, w.grape, w.style, w.name, w.region].filter(Boolean).join(' ')).toLowerCase();
+    if (isPrimary) {
+      if (all.includes('cab') || all.includes('syrah') || all.includes('shiraz') || all.includes('rioja')) return 'Rich and bold — great with a big meal';
+      if (all.includes('pinot') || all.includes('merlot') || all.includes('beaujolais')) return 'Smooth and easy — works for any occasion';
+      if (all.includes('chardonnay') || all.includes('butter') || all.includes('creamy')) return 'Full-bodied white — lovely with pasta or fish';
+      if (all.includes('sauvignon') || all.includes('crisp') || all.includes('fresh')) return 'Crisp and refreshing — great chilled tonight';
+      if ((w.style||'').toLowerCase() === 'sparkling') return 'Bubbly and celebratory — open it tonight';
+      if ((w.style||'').toLowerCase() === 'rosé')      return 'Light and summery — great on its own';
+      if ((w.rating||0) === 5) return 'Your top-rated bottle — safe, reliable choice';
+      return 'A tried and tested favourite — hard to go wrong';
+    }
+    // Alt reasons
+    if (all.includes('sauvignon') || all.includes('blanc') || all.includes('white') || (w.style||'').toLowerCase()==='white') return 'Light and fresh alternative';
+    if (all.includes('cab') || all.includes('syrah') || all.includes('shiraz')) return 'Rich and bold — great with food';
+    if (all.includes('pinot') || all.includes('merlot')) return 'Smooth and easy-drinking option';
+    if ((w.style||'').toLowerCase() === 'sparkling') return 'Bubbly if you want something fun';
+    if ((w.style||'').toLowerCase() === 'rosé')      return 'Light pink — easy crowd-pleaser';
+    return 'Good all-rounder — reliable choice';
+  }
+
+  // Build primary card
+  const primaryEl = document.getElementById('recPrimary');
+  if (primaryEl) {
+    const frontUrl = safePhotoSrc(primary.photoFront || primary.photo);
+    const meta = [primary.winery, primary.vintage, primary.country].filter(Boolean).join(' · ');
+    const stars = primary.rating ? '★'.repeat(primary.rating) + '☆'.repeat(5 - primary.rating) : '';
+    primaryEl.innerHTML = '';
+    const card = document.createElement('div');
+    card.className = 'rec-primary-card';
+
+    const imgEl = document.createElement('div');
+    if (frontUrl) {
+      imgEl.innerHTML = `<img class="rec-primary-img" src="${frontUrl}" alt="${escHtml(primary.name)}" loading="lazy">`;
+    } else {
+      imgEl.innerHTML = `<div class="rec-primary-img-placeholder">🍷</div>`;
+    }
+    card.appendChild(imgEl);
+
+    const body = document.createElement('div');
+    body.className = 'rec-primary-body';
+    body.innerHTML = `
+      <div class="rec-primary-badge">⭐ Top pick tonight</div>
+      <div class="rec-primary-name">${escHtml(primary.name)}</div>
+      <div class="rec-primary-reason">${escHtml(getTonightReason(primary, true))}</div>
+      ${meta ? `<div class="rec-primary-meta">${escHtml(meta)}</div>` : ''}
+      ${stars ? `<div class="rec-primary-stars">${stars}</div>` : ''}
+    `;
+    const cta = document.createElement('button');
+    cta.className = 'rec-primary-cta';
+    cta.textContent = 'See full details →';
+    cta.addEventListener('click', () => openDetail(getWineById(primary.id), null));
+    body.appendChild(cta);
+    card.appendChild(body);
+    card.addEventListener('click', () => openDetail(getWineById(primary.id), null));
+    primaryEl.appendChild(card);
+  }
+
+  // Build alt cards
+  const altsEl = document.getElementById('recAlts');
+  if (altsEl) {
+    altsEl.innerHTML = '';
+    const altLabels = ['Good alternative', 'Or try this'];
+    alts.forEach((w, i) => {
+      const frontUrl = safePhotoSrc(w.photoFront || w.photo);
+      const card = document.createElement('div');
+      card.className = 'rec-alt-card';
+      card.addEventListener('click', () => openDetail(getWineById(w.id), null));
+
+      const imgDiv = document.createElement('div');
+      if (frontUrl) {
+        imgDiv.innerHTML = `<img class="rec-alt-img" src="${frontUrl}" alt="${escHtml(w.name)}" loading="lazy">`;
+      } else {
+        imgDiv.innerHTML = `<div class="rec-alt-img-placeholder">🍷</div>`;
+      }
+
+      const info = document.createElement('div');
+      info.className = 'rec-alt-info';
+      info.innerHTML = `
+        <div class="rec-alt-label">${altLabels[i] || 'Alternative'}</div>
+        <div class="rec-alt-name">${escHtml(w.name)}</div>
+        <div class="rec-alt-reason">${escHtml(getTonightReason(w, false))}</div>
+      `;
+
+      card.appendChild(imgDiv);
+      card.appendChild(info);
+      altsEl.appendChild(card);
+    });
+  }
+
+  block.style.display = 'block';
+}
+
 /* ── Curated sections ─────────────────────────────────────── */
 function renderCuratedSections() {
   const heroSection      = document.getElementById('heroSection');
@@ -2098,6 +2398,9 @@ function renderCuratedSections() {
     const statEl = document.getElementById('heroBadgeStat');
     if (statEl) statEl.textContent = wines.length;
   }
+
+  // ── Recommended Tonight ──────────────────────────────────
+  renderRecommendedTonight();
 
   // Helper: fill a curated grid
   function fillSection(sectionId, gridId, list, featuredId) {
