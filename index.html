@@ -125,12 +125,12 @@ body{font-family:var(--font-b);background:var(--cream);color:var(--charcoal);min
   color:var(--parchment);
   font-size:1.1rem;
   flex-shrink:0;
-  display:none;
   align-items:center;
   justify-content:center;
   transition:var(--tr);
   line-height:1;
   padding:0;
+  display:flex;
 }
 .btn-hamburger:hover{background:var(--burgundy-lt)}
 .btn-primary{background:var(--burgundy);color:var(--ivory);border:none;border-radius:var(--r);padding:10px 24px;font-family:var(--font-d);font-size:.88rem;font-weight:600;letter-spacing:.05em;cursor:pointer;transition:var(--tr)}
@@ -529,7 +529,7 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
   .scan-label-short{display:inline}
   .btn-scan-primary{padding:8px 14px;font-size:.8rem;white-space:nowrap}
   /* Hamburger always fits */
-  .btn-hamburger{display:flex !important}
+  .btn-hamburger{display:flex}
   /* Toolbar */
   .toolbar{position:static}
   .toolbar-inner{padding:0;gap:0}
@@ -1615,6 +1615,7 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
 ══════════════════════════════════════════════════════════════ */
 const SUPABASE_URL = 'https://phcnswuwrqarikzjvfqd.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBoY25zd3V3cnFhcmlremp2ZnFkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM1OTI2NjEsImV4cCI6MjA4OTE2ODY2MX0.nW_aLGeiFNu6km1leeqTofcOqFQxe3dabNWfIPkc334';
+
 
 
 var _sb = null;
