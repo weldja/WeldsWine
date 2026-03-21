@@ -366,10 +366,12 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
 .btn-locate{background:var(--burgundy);color:var(--ivory);border:none;border-radius:var(--r);padding:5px 12px;font-family:var(--font-b);font-size:.78rem;cursor:pointer;transition:var(--tr);white-space:nowrap;flex-shrink:0}
 .btn-locate:hover{background:var(--burgundy-lt)}
 .btn-locate:disabled{opacity:.5;cursor:not-allowed}
-.star-input{display:flex;gap:4px;font-size:1.4rem;cursor:pointer;padding-top:2px}
-.star-input .star{color:var(--light-gray);transition:color .15s,transform .15s;user-select:none}
-.star-input .star.filled{color:var(--gold)}
-.star-input .star:hover{transform:scale(1.15)}
+.star-input{display:flex;flex-wrap:wrap;gap:5px;padding-top:2px}
+.star-input .star{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:50%;border:2px solid var(--light-gray);background:var(--cream);color:var(--warm-gray);font-family:var(--font-b);font-size:.8rem;font-weight:600;cursor:pointer;transition:background .13s,border-color .13s,color .13s,transform .13s;user-select:none;line-height:1}
+.star-input .star.filled.low{background:#7A6E6A;border-color:#7A6E6A;color:#fff}
+.star-input .star.filled.mid{background:var(--burgundy);border-color:var(--burgundy);color:#fff}
+.star-input .star.filled.high{background:#16a34a;border-color:#16a34a;color:#fff}
+.star-input .star:hover{transform:scale(1.1);border-color:var(--gold);color:var(--gold)}
 .rating-save-row{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:end}
 .save-group .btn-primary{width:100%;white-space:nowrap}
 .ai-banner{display:flex;align-items:center;gap:8px;background:rgba(201,168,76,.1);border:1px solid rgba(201,168,76,.3);border-radius:var(--r);padding:8px 12px;margin-bottom:14px;font-family:var(--font-b);font-size:.84rem;color:var(--warm-gray);font-style:italic}
@@ -594,7 +596,7 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
 @media(hover:none){
   .card-btn{padding:6px 12px;min-height:36px}
   .filter-tab{padding:7px 14px;min-height:38px}
-  .star-input .star{font-size:1.6rem;padding:0 3px}
+  .star-input .star{width:28px;height:28px;font-size:.75rem}
   .btn-locate{min-height:38px}
 }
 /* ─── Recommended Tonight ─────────────────────────────── */
@@ -1049,8 +1051,8 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
       <div class="filter-tabs">
         <button class="filter-tab active" data-filter="all">All</button>
         <button class="filter-tab" data-filter="fav">♥ Favs</button>
-        <button class="filter-tab" data-filter="5">★★★★★</button>
-        <button class="filter-tab" data-filter="4">★★★★+</button>
+        <button class="filter-tab" data-filter="9">9–10</button>
+        <button class="filter-tab" data-filter="7">7+</button>
         <button class="filter-tab" data-filter="recent">Recent</button>
       </div>
     </div>
@@ -1263,11 +1265,16 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
       <div class="form-group" style="margin-bottom:18px">
         <label>Rating</label>
         <div class="star-input" id="qaStarInput">
-          <span class="star" data-val="1">★</span>
-          <span class="star" data-val="2">★</span>
-          <span class="star" data-val="3">★</span>
-          <span class="star" data-val="4">★</span>
-          <span class="star" data-val="5">★</span>
+          <span class="star low" data-val="1">1</span>
+          <span class="star low" data-val="2">2</span>
+          <span class="star low" data-val="3">3</span>
+          <span class="star mid" data-val="4">4</span>
+          <span class="star mid" data-val="5">5</span>
+          <span class="star mid" data-val="6">6</span>
+          <span class="star mid" data-val="7">7</span>
+          <span class="star high" data-val="8">8</span>
+          <span class="star high" data-val="9">9</span>
+          <span class="star high" data-val="10">10</span>
         </div>
         <input type="hidden" id="qaRating" value="0"/>
       </div>
@@ -1308,11 +1315,16 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
           <div class="form-group">
             <label>Rating</label>
             <div class="star-input" id="starInput">
-              <span class="star" data-val="1">★</span>
-              <span class="star" data-val="2">★</span>
-              <span class="star" data-val="3">★</span>
-              <span class="star" data-val="4">★</span>
-              <span class="star" data-val="5">★</span>
+              <span class="star low" data-val="1">1</span>
+              <span class="star low" data-val="2">2</span>
+              <span class="star low" data-val="3">3</span>
+              <span class="star mid" data-val="4">4</span>
+              <span class="star mid" data-val="5">5</span>
+              <span class="star mid" data-val="6">6</span>
+              <span class="star mid" data-val="7">7</span>
+              <span class="star high" data-val="8">8</span>
+              <span class="star high" data-val="9">9</span>
+              <span class="star high" data-val="10">10</span>
             </div>
             <input type="hidden" id="rating" value="0"/>
             <button type="button" class="btn-primary" id="saveWineBtn" style="margin-top:8px;width:100%">Save Wine</button>
@@ -2244,8 +2256,8 @@ function getList() {
     [w.name,w.winery,w.region,w.country,w.grape,w.purchasedFrom].some(v=>(v||'').toLowerCase().includes(searchQuery))
   );
   if (activeFilter==='fav')    list=list.filter(w=>w.isFavourite);
-  else if (activeFilter==='5') list=list.filter(w=>w.rating===5);
-  else if (activeFilter==='4') list=list.filter(w=>w.rating>=4);
+  else if (activeFilter==='9') list=list.filter(w=>w.rating>=9);
+  else if (activeFilter==='7') list=list.filter(w=>w.rating>=7);
   else if (activeFilter==='recent') { const c=Date.now()-30*86400000; list=list.filter(w=>new Date(w.dateTasted||w.createdAt)>c); }
   list.sort((a,b)=>{
     if(activeSort==='date-desc')   return new Date(b.dateTasted||0)-new Date(a.dateTasted||0);
@@ -2338,7 +2350,7 @@ function renderRecommendedTonight() {
       if (all.includes('sauvignon') || all.includes('crisp') || all.includes('fresh')) return 'Crisp and refreshing — chill it and open it now';
       if ((w.style||'').toLowerCase() === 'sparkling') return 'Celebratory — why not open the bubbles tonight?';
       if ((w.style||'').toLowerCase() === 'rosé')      return 'Light and summery — great on its own tonight';
-      if ((w.rating||0) === 5) return 'You\'ve loved this one before — open it again tonight';
+      if ((w.rating||0) >= 9) return 'You\'ve loved this one before — open it again tonight';
       return 'A proven favourite — you\'ve tried it and it works';
     }
     // Alt reasons — always use context
@@ -2355,7 +2367,7 @@ function renderRecommendedTonight() {
   if (primaryEl) {
     const frontUrl = safePhotoSrc(primary.photoFront || primary.photo);
     const meta = [primary.winery, primary.vintage, primary.country].filter(Boolean).join(' · ');
-    const stars = primary.rating ? '★'.repeat(primary.rating) + '☆'.repeat(5 - primary.rating) : '';
+    const stars = primary.rating ? renderStarsLarge(primary.rating) : '';
     primaryEl.innerHTML = '';
     const card = document.createElement('div');
     card.className = 'rec-primary-card';
@@ -2484,17 +2496,17 @@ function renderCuratedSections() {
   }
 
   const easyPicks = [...wines]
-    .filter(w => (w.rating||0) >= 3 && matchesKw(w, easyKw))
+    .filter(w => (w.rating||0) >= 6 && matchesKw(w, easyKw))
     .sort((a,b) => (b.rating||0) - (a.rating||0));
 
   const withFood = [...wines]
-    .filter(w => (w.rating||0) >= 3 && matchesKw(w, foodKw) && !easyPicks.slice(0,4).find(e => e.id === w.id))
+    .filter(w => (w.rating||0) >= 6 && matchesKw(w, foodKw) && !easyPicks.slice(0,4).find(e => e.id === w.id))
     .sort((a,b) => (b.rating||0) - (a.rating||0));
 
   const easyIds = new Set(easyPicks.slice(0,4).map(w => w.id));
   const foodIds = new Set(withFood.slice(0,4).map(w => w.id));
   const topRated = [...wines]
-    .filter(w => w.rating === 5 && !easyIds.has(w.id) && !foodIds.has(w.id))
+    .filter(w => (w.rating||0) >= 9 && !easyIds.has(w.id) && !foodIds.has(w.id))
     .slice(0, 4);
 
   // Top pick = highest-rated wine overall (featured badge)
@@ -2920,7 +2932,7 @@ function _initMapViewInner() {
     mk.bindPopup(`
       <div class="map-popup-name">${escHtml(w.name)}</div>
       <div class="map-popup-meta">${escHtml([w.winery,w.vintage].filter(Boolean).join(' · '))}</div>
-      ${w.rating?`<div class="map-popup-stars">${'★'.repeat(w.rating)}${'☆'.repeat(5-w.rating)}</div>`:''}
+      ${w.rating?`<div class="map-popup-stars">${renderStars(w.rating)}</div>`:''}
       <button class="map-popup-btn" onclick="(function(){openDetail(getWineById('${w.id}'));})()">View Details</button>
     `);
     mk.addTo(leafletMap); mapMarkers.push(mk);
@@ -3306,7 +3318,7 @@ async function shareWine(id, e) {
   document.getElementById('shareCardVintage').textContent = w.vintage || '';
   document.getElementById('shareCardName').textContent    = w.name;
   document.getElementById('shareCardWinery').textContent  = w.winery || '';
-  document.getElementById('shareCardRating').innerHTML    = w.rating ? '★'.repeat(w.rating) + '☆'.repeat(5-w.rating) : '';
+  document.getElementById('shareCardRating').innerHTML    = w.rating ? renderStarsLarge(w.rating) : '';
   const tags = [w.style, w.grape, w.region].filter(Boolean);
   document.getElementById('shareCardTags').innerHTML = tags.map(t=>`<span class="share-card-tag">${escHtml(t)}</span>`).join('');
   const photo = document.getElementById('shareCardPhoto');
@@ -3514,7 +3526,7 @@ async function nativeShare() {
   try {
     await navigator.share({
       title: w ? `${w.name}${w.vintage?' '+w.vintage:''}` : 'Wine recommendation',
-      text:  w ? `${w.name}${w.winery?' by '+w.winery:''}${w.rating?' — '+('★'.repeat(w.rating)):''}` : '',
+      text:  w ? `${w.name}${w.winery?' by '+w.winery:''}${w.rating?' — '+w.rating+'/10':''}` : '',
       url:   link
     });
   } catch(e) {
@@ -3556,7 +3568,7 @@ async function checkPublicWineView() {
     return true;
   }
 
-  const stars   = w.rating ? '★'.repeat(w.rating)+'☆'.repeat(5-w.rating) : '';
+  const stars   = w.rating ? renderStarsLarge(w.rating) : '';
   const tags    = [w.style, w.grape, w.region, w.country].filter(Boolean);
   const details = [
     ['Winery',   w.winery],['Vintage', w.vintage],
@@ -3592,7 +3604,7 @@ function updateStats() {
   const rc={}; wines.forEach(w=>{ if(w.region) rc[w.region]=(rc[w.region]||0)+1; });
   const top=Object.keys(rc).sort((a,b)=>rc[b]-rc[a])[0]||'—';
   document.getElementById('statTotal').textContent=t;
-  document.getElementById('statAvg').textContent=avg==='—'?'—':`${avg} ★`;
+  document.getElementById('statAvg').textContent=avg==='—'?'—':`${avg}/10`;
   document.getElementById('statCountries').textContent=countries;
   document.getElementById('statTop').textContent=top.length>12?top.slice(0,12)+'…':top;
 }
@@ -3662,7 +3674,7 @@ function renderInsights() {
     wines.length === 1 ? '1 bottle logged' : `${wines.length} bottles logged`, d++);
 
   // 2. Average rating
-  statCard('★', 'Average Rating', avg ? `${avg} ★` : '—',
+  statCard('🔢', 'Average Rating', avg ? `${avg}/10` : '—',
     rated.length ? `From ${rated.length} rated wine${rated.length > 1 ? 's' : ''}` : 'No rated wines yet', d++);
 
   // 3. Countries explored
@@ -3688,7 +3700,7 @@ function renderInsights() {
     .filter(w => w.rating)
     .sort((a, b) => (b.rating - a.rating) || (new Date(b.dateTasted||0) - new Date(a.dateTasted||0)))
     .slice(0, 5)
-    .map(w => ({ name: w.name, meta: '★'.repeat(w.rating) + (w.vintage ? ` · ${w.vintage}` : '') }));
+    .map(w => ({ name: w.name, meta: `${w.rating}/10` + (w.vintage ? ` · ${w.vintage}` : '') }));
   listCard('🏆', 'Top Rated Wines', topRated, d++);
 
   // 7. Buy again list
@@ -3731,7 +3743,12 @@ function initStarInput() {
     s.addEventListener('click',()=>{ ratingInput.value=s.dataset.val; highlightStars(+s.dataset.val); });
   });
 }
-function highlightStars(v){ starInput.querySelectorAll('.star').forEach(s=>s.classList.toggle('filled',+s.dataset.val<=v)); }
+function highlightStars(v){
+  starInput.querySelectorAll('.star').forEach(s=>{
+    const on = +s.dataset.val<=v;
+    s.classList.toggle('filled',on);
+  });
+}
 function setStars(v){ ratingInput.value=v; highlightStars(v); }
 
 function initPhotoUpload() {
@@ -3788,25 +3805,20 @@ function exportCSV() {
   URL.revokeObjectURL(url); showToast('CSV exported ✓');
 }
 
-// Pre-built star strings — no DOM allocation per card render
-const _starsCache = {
-  0: '',
-  1: '<span style="color:#C9A84C">★</span><span style="color:#E8DDD6">★</span><span style="color:#E8DDD6">★</span><span style="color:#E8DDD6">★</span><span style="color:#E8DDD6">★</span>',
-  2: '<span style="color:#C9A84C">★</span><span style="color:#C9A84C">★</span><span style="color:#E8DDD6">★</span><span style="color:#E8DDD6">★</span><span style="color:#E8DDD6">★</span>',
-  3: '<span style="color:#C9A84C">★</span><span style="color:#C9A84C">★</span><span style="color:#C9A84C">★</span><span style="color:#E8DDD6">★</span><span style="color:#E8DDD6">★</span>',
-  4: '<span style="color:#C9A84C">★</span><span style="color:#C9A84C">★</span><span style="color:#C9A84C">★</span><span style="color:#C9A84C">★</span><span style="color:#E8DDD6">★</span>',
-  5: '<span style="color:#C9A84C">★</span><span style="color:#C9A84C">★</span><span style="color:#C9A84C">★</span><span style="color:#C9A84C">★</span><span style="color:#C9A84C">★</span>'
-};
-const _starsLargeCache = {
-  0: '',
-  1: '<span style="color:#C9A84C;font-size:1.25rem">★</span><span style="color:#E8DDD6;font-size:1.25rem">★</span><span style="color:#E8DDD6;font-size:1.25rem">★</span><span style="color:#E8DDD6;font-size:1.25rem">★</span><span style="color:#E8DDD6;font-size:1.25rem">★</span>',
-  2: '<span style="color:#C9A84C;font-size:1.25rem">★</span><span style="color:#C9A84C;font-size:1.25rem">★</span><span style="color:#E8DDD6;font-size:1.25rem">★</span><span style="color:#E8DDD6;font-size:1.25rem">★</span><span style="color:#E8DDD6;font-size:1.25rem">★</span>',
-  3: '<span style="color:#C9A84C;font-size:1.25rem">★</span><span style="color:#C9A84C;font-size:1.25rem">★</span><span style="color:#C9A84C;font-size:1.25rem">★</span><span style="color:#E8DDD6;font-size:1.25rem">★</span><span style="color:#E8DDD6;font-size:1.25rem">★</span>',
-  4: '<span style="color:#C9A84C;font-size:1.25rem">★</span><span style="color:#C9A84C;font-size:1.25rem">★</span><span style="color:#C9A84C;font-size:1.25rem">★</span><span style="color:#C9A84C;font-size:1.25rem">★</span><span style="color:#E8DDD6;font-size:1.25rem">★</span>',
-  5: '<span style="color:#C9A84C;font-size:1.25rem">★</span><span style="color:#C9A84C;font-size:1.25rem">★</span><span style="color:#C9A84C;font-size:1.25rem">★</span><span style="color:#C9A84C;font-size:1.25rem">★</span><span style="color:#C9A84C;font-size:1.25rem">★</span>'
-};
-function renderStars(r)     { return _starsCache[r||0]      || ''; }
-function renderStarsLarge(r){ return _starsLargeCache[r||0] || ''; }
+// Score badge renderer — coloured circle with number (grey=1-3, burgundy=4-7, green=8-10)
+function _ratingColor(r){
+  return r>=8 ? '#16a34a' : r>=4 ? '#8B2439' : '#7A6E6A';
+}
+function renderStars(r){
+  if(!r) return '';
+  const c=_ratingColor(r);
+  return '<span style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:'+c+';color:#fff;font-family:var(--font-b);font-size:.7rem;font-weight:700;line-height:1;flex-shrink:0">'+r+'</span>';
+}
+function renderStarsLarge(r){
+  if(!r) return '';
+  const c=_ratingColor(r);
+  return '<span style="display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:50%;background:'+c+';color:#fff;font-family:var(--font-b);font-size:1rem;font-weight:700;line-height:1;flex-shrink:0">'+r+'</span>';
+}
 
 // formatDate with memo cache — toLocaleDateString is slow, only call it once per unique value
 const _dateCache = {};
