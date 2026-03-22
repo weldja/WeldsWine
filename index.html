@@ -4096,7 +4096,7 @@ async function loadWinesFromDB(cacheKey) {
   try {
     const [metaResult, photoResult] = await Promise.all([
       _sb.from('wines')
-        .select('id,name,winery,vintage,country,region,grape,style,price,purchased_from,date_tasted,notes,rating,is_favourite,buy_again,loc_lat,loc_lng,loc_label,created_at')
+        .select('id,name,winery,vintage,country,region,grape,style,price,purchased_from,date_tasted,notes,rating,is_favourite,buy_again,loc_lat,loc_lng,loc_label,created_at,shared_by')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false }),
       _sb.from('wines')
