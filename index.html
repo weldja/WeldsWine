@@ -1264,7 +1264,7 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
   <span class="footer-sep">·</span>
   <a href="#" class="footer-link" onclick="showFooterModal('privacy');return false">Privacy</a>
   <span class="footer-sep">·</span>
-  <a href="mailto:hello@weldswine.co.uk" class="footer-link">Contact</a>
+  <a href="/cdn-cgi/l/email-protection#afc7cac3c3c0efd8cac3cbdcd8c6c1ca81ccc081dac4" class="footer-link">Contact</a>
   <span class="footer-sep">·</span>
   <button class="footer-admin-btn" id="openKeyModal" title="Settings">⚙</button>
 </footer>
@@ -1653,7 +1653,7 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
 </div>
 
 <!-- AUTH MODULE -->
-<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
 /* ══════════════════════════════════════════════════════════════
    SUPABASE CONFIG — replace with your project values
    supabase.com → your project → Settings → API
@@ -3176,7 +3176,7 @@ function setLocDisplay(label) {
 async function compressForStorage(dataUrl) {
   if (!dataUrl) return null;
   // Only accept valid image data URLs
-  if (!dataUrl.match(/^data:image\/(jpeg|jpg|png|webp);base64,/)) return null;
+  if (!dataUrl.match(/^data:image\/(jpeg|jpg|png|webp|heic|heif);base64,/)) return null;
   return new Promise(res => {
     const img = new Image();
     img.onload = () => {
@@ -3203,6 +3203,7 @@ async function handleSave(e) {
   const saveBtn = document.getElementById('saveWineBtn');
   saveBtn.disabled = true;
   saveBtn.textContent = 'Saving…';
+  try {
   const id=document.getElementById('wineId').value||generateId();
 
   // Compress photos to ~400px before storing (prevents localStorage quota errors)
@@ -3282,6 +3283,13 @@ async function handleSave(e) {
 
   updateStats();
   window.scrollTo({ top: 0, behavior: 'smooth' });
+  } catch(err) {
+    console.error('Save error:', err);
+    showToast('Something went wrong — please try again');
+  } finally {
+    saveBtn.disabled = false;
+    saveBtn.textContent = 'Save Wine';
+  }
 }
 
 async function editWine(id,e) {
@@ -4302,12 +4310,4 @@ function openMobileMenu(e) {
 function closeMobileMenu() {
   var el = document.getElementById('mobileMenuOverlay');
   if (!el) return;
-  el.style.display = 'none';
-  el.style.opacity = '';
-  el.style.pointerEvents = '';
-  el.classList.remove('open');
-  document.body.style.overflow = '';
-}
-
-
-</script>
+  el.style.display = '
