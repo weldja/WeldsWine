@@ -2762,7 +2762,7 @@ function createCard(w) {
         </div>
         <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
           ${w.rating?`<div class="card-rating">${renderStars(w.rating)}</div>`:''}
-          ${w.sharedBy?`<div class="shared-by-badge">🤝 Shared wine</div>`:''}
+          ${w.sharedBy?`<div class="shared-by-badge">🤝 From ${escHtml(w.sharedBy)}</div>`:''}
         </div>
       </div>
       ${meta?`<div class="card-meta">${escHtml(meta)}</div>`:''}
@@ -2884,7 +2884,7 @@ async function openDetail(w, e) {
       <div class="detail-title">${escHtml(w.name)}</div>
       ${w.winery?`<div class="detail-winery">${escHtml(w.winery)}</div>`:''}
       ${w.rating?`<div class="detail-stars">${renderStarsLarge(w.rating)}</div>`:''}
-      ${w.sharedBy?`<div class="shared-by-badge" style="margin-bottom:12px">🤝 Shared wine</div>`:''}
+      ${w.sharedBy?`<div class="shared-by-badge" style="margin-bottom:12px">🤝 Shared by ${escHtml(w.sharedBy)}</div>`:''}
       <div class="detail-grid">
         ${fields.map(([l,v])=>`<div class="detail-field"><label>${l}</label><p>${escHtml(String(v))}</p></div>`).join('')}
       </div>
@@ -3549,7 +3549,8 @@ function processPendingImport(data) {
     document.getElementById('modalTitle').textContent = 'Add Wine';
     document.getElementById('wineId').value = '';
     document.getElementById('dateTasted').valueAsDate = new Date();
-    showToast('Shared wine imported — review and save');
+    const sharedByName = data.sharedBy && data.sharedBy !== 'a friend' ? data.sharedBy : null;
+    showToast(sharedByName ? `Shared by ${sharedByName} — review and save` : 'Shared wine imported — review and save');
   }, 300);
 }
 
@@ -3784,7 +3785,7 @@ function importSharedWine(w) {
     dateTasted: w.date_tasted|| null,
     locLabel:   w.loc_label  || null,
     photoFront: w.photo_front|| null,
-    sharedBy:   w.shared_by_email || 'shared',
+    sharedBy:   friendlyName(w.shared_by_email),
   };
   try { sessionStorage.setItem('wwwImportWine', JSON.stringify(importData)); } catch(_) {}
   // Also encode core fields (no photo) in URL for cross-tab reliability
@@ -3793,7 +3794,7 @@ function importSharedWine(w) {
     region:w.region, grape:w.grape, style:w.style, rating:w.rating||null,
     notes:w.notes||null, price:w.price||null,
     dateTasted:w.date_tasted||null, locLabel:w.loc_label||null,
-    sharedBy:w.shared_by_email||'shared'
+    sharedBy:friendlyName(w.shared_by_email)
   };
   try {
     const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(urlData))));
@@ -3804,6 +3805,12 @@ function importSharedWine(w) {
 }
 
 function getWineById(id) { return wines.find(w=>w.id===id); }
+
+function friendlyName(email) {
+  if (!email || email === 'shared') return 'a friend';
+  const local = email.split('@')[0];
+  return local.split(/[_.\-]/).map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(' ').trim();
+}
 
 /* ── Loading progress bar ────────────────────────────────── */
 let _loadBarTimer = null;
