@@ -3516,10 +3516,12 @@ function processPendingImport(data) {
     showToast('Sign in to add this wine to your journal ↑');
     return;
   }
-  // Open the Add Wine form — pass rating via wine-like object so openModal
-  // sets it synchronously (avoids race with wineForm.reset())
-  openModal({ rating: data.rating || 0 }, data.photoFront || null, null);
+  // Open the Add Wine form with photo injected directly
+  // Do NOT pass a wine object — it would overwrite currentPhotoFront with null (line ~3039)
+  openModal(null, data.photoFront || null, null);
   setTimeout(() => {
+    // Set rating here — after wineForm.reset() has completed
+    if (data.rating) setStars(data.rating);
     // Text fields
     const map = {name:'wineName', winery:'winery', vintage:'vintage', country:'country',
                  region:'region', grape:'grape', notes:'notes', price:'price'};
@@ -3533,8 +3535,7 @@ function processPendingImport(data) {
       [...s.options].forEach(o => { if (o.value === data.style) s.value = data.style; });
     }
     // Date tasted — keep today's date (don't import sender's tasting date)
-    // Rating already set via openModal above
-    // Photo already set via openModal above
+    // Photo already set via openModal injectFront
     // Mark as shared
     if (data.sharedBy) {
       document.getElementById('aiBanner').style.display = 'flex';
