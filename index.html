@@ -1916,7 +1916,11 @@ async function handleAuthSubmit() {
           body: JSON.stringify({ type: 'welcome', email })
         });
       } catch(_) { /* non-fatal */ }
-      showAuthMsg('ok', 'Account created — you are now signed in.');
+      // Supabase requires email confirmation before the session is active —
+      // show the correct message and stay on the auth screen
+      showAuthMsg('ok', 'Account created! Please check your email and click the confirmation link to sign in.');
+      setAuthLoading(false);
+      return;
     }
   } catch(e) {
     const msg = e.message || '';
