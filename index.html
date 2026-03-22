@@ -1084,6 +1084,7 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
       <div class="filter-tabs">
         <button class="filter-tab active" data-filter="all">All</button>
         <button class="filter-tab" data-filter="fav">♥ Favs</button>
+        <button class="filter-tab" data-filter="shared">🤝 Shared</button>
         <button class="filter-tab" data-filter="9">9–10</button>
         <button class="filter-tab" data-filter="7">7+</button>
         <button class="filter-tab" data-filter="recent">Recent</button>
@@ -1265,7 +1266,7 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
   <span class="footer-sep">·</span>
   <a href="#" class="footer-link" onclick="showFooterModal('privacy');return false">Privacy</a>
   <span class="footer-sep">·</span>
-  <a href="mailto:hello@weldswine.co.uk" class="footer-link">Contact</a>
+  <a href="/cdn-cgi/l/email-protection#6e060b0202012e190b020a1d1907000b400d01401b05" class="footer-link">Contact</a>
   <span class="footer-sep">·</span>
   <button class="footer-admin-btn" id="openKeyModal" title="Settings">⚙</button>
 </footer>
@@ -1658,7 +1659,7 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
 </div>
 
 <!-- AUTH MODULE -->
-<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
 /* ══════════════════════════════════════════════════════════════
    SUPABASE CONFIG — replace with your project values
    supabase.com → your project → Settings → API
@@ -1829,6 +1830,12 @@ function showApp() {
   const badge = document.getElementById('userBadge');
   if (badge) badge.style.display = 'flex';
   const email = _currentUser?.email || '';
+
+  // Check for pending import from share link (user just logged in)
+  try {
+    const raw = sessionStorage.getItem('wwwImportWine');
+    if (raw) { window._pendingImport = JSON.parse(raw); sessionStorage.removeItem('wwwImportWine'); }
+  } catch(_) {}
 
   const cacheKey = 'wwwCache_' + (_currentUser?.id || '');
   let hadCache = false;
@@ -2242,13 +2249,6 @@ document.addEventListener('DOMContentLoaded', () => {
   // Signal MAIN APP is ready; if auth already completed, run showApp now
   _appReady = true;
   if (_pendingShowApp) showApp();
-  // Process any pending wine import from a share link
-  if (window._pendingImport) {
-    setTimeout(() => {
-      processPendingImport(window._pendingImport);
-      window._pendingImport = null;
-    }, 600);
-  }
 });
 
 function setupEvents() {
@@ -2314,6 +2314,7 @@ function getList() {
     [w.name,w.winery,w.region,w.country,w.grape,w.purchasedFrom].some(v=>(v||'').toLowerCase().includes(searchQuery))
   );
   if (activeFilter==='fav')    list=list.filter(w=>w.isFavourite);
+  else if (activeFilter==='shared') list=list.filter(w=>w.sharedBy);
   else if (activeFilter==='9') list=list.filter(w=>w.rating>=9);
   else if (activeFilter==='7') list=list.filter(w=>w.rating>=7);
   else if (activeFilter==='recent') { const c=Date.now()-30*86400000; list=list.filter(w=>new Date(w.dateTasted||w.createdAt)>c); }
@@ -3510,9 +3511,9 @@ function showFooterModal(type) {
 /* ── Import shared wine ─────────────────────────────────── */
 function processPendingImport(data) {
   if (!_currentUser) {
-    // Not logged in — store and prompt to sign in
+    // Not logged in — re-store and wait for login
     try { sessionStorage.setItem('wwwImportWine', JSON.stringify(data)); } catch(_) {}
-    showToast('Sign in to add this wine to your journal');
+    showToast('Sign in to add this wine to your journal ↑');
     return;
   }
   // Open the Add Wine form pre-populated with shared data
@@ -3782,6 +3783,13 @@ function importSharedWine(w) {
 }
 
 function getWineById(id) { return wines.find(w=>w.id===id); }
+
+function _checkPendingImport() {
+  if (!window._pendingImport) return;
+  const data = window._pendingImport;
+  window._pendingImport = null;
+  setTimeout(() => processPendingImport(data), 400);
+}
 
 function updateStats() {
   const t=wines.length;
@@ -4077,6 +4085,7 @@ async function loadWinesFromDB(cacheKey) {
     _winesLoaded = true;
     renderGrid();
     updateStats();
+    _checkPendingImport();
 
     // Cache for next visit — strip photos to keep sessionStorage light
     if (cacheKey) {
