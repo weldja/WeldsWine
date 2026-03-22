@@ -14,9 +14,10 @@
 const ANTHROPIC_API_KEY = 'PASTE_YOUR_ANTHROPIC_KEY_HERE';
 const RESEND_API_KEY    = 'PASTE_YOUR_RESEND_KEY_HERE';
 
-const EMAIL_FROM = 'Welds Wine Wisdoms <onboarding@resend.dev>';
-const APP_NAME   = 'Welds Wine Wisdoms';
-const APP_URL    = 'https://james-weld.github.io/WeldsWine';
+const EMAIL_FROM    = 'Welds Wine Wisdoms <hello@weldswine.co.uk>';
+const EMAIL_TO      = 'hello@weldswine.co.uk';
+const APP_NAME      = 'Welds Wine Wisdoms';
+const APP_URL       = 'https://weldswine.co.uk';
 
 // ── Email templates ───────────────────────────────────────────
 
@@ -68,18 +69,34 @@ const templates = {
       <p style="font-family:Georgia,serif;font-size:1rem;color:#2C2420;line-height:1.6;margin:0 0 12px">Welcome to ${APP_NAME} — your personal wine journal.</p>
       <p style="font-family:Georgia,serif;font-size:.92rem;color:#6B5D58;line-height:1.7;margin:0 0 24px">Scan labels, track tastings, build your collection. Every bottle tells a story.</p>
       ${btn(APP_URL, 'Open My Journal')}`)
+  }),
+  contact: (_, name, senderEmail, message) => ({
+    subject: `Contact form message${name ? ' from ' + name : ''}`,
+    html: baseEmail(`
+      <p style="font-family:Georgia,serif;font-size:1rem;color:#2C2420;font-weight:600;margin:0 0 20px">New contact form message</p>
+      <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:20px">
+        <tr><td style="font-family:Georgia,serif;font-size:.85rem;color:#6B5D58;padding:6px 0;width:80px">Name</td>
+            <td style="font-family:Georgia,serif;font-size:.85rem;color:#2C2420;padding:6px 0">${name || 'Not provided'}</td></tr>
+        <tr><td style="font-family:Georgia,serif;font-size:.85rem;color:#6B5D58;padding:6px 0">Email</td>
+            <td style="font-family:Georgia,serif;font-size:.85rem;color:#2C2420;padding:6px 0">${senderEmail || 'Not provided'}</td></tr>
+      </table>
+      <p style="font-family:Georgia,serif;font-size:.85rem;color:#6B5D58;margin:0 0 8px">Message</p>
+      <div style="background:#F5EFE6;border-radius:4px;padding:16px;font-family:Georgia,serif;font-size:.92rem;color:#2C2420;line-height:1.7;white-space:pre-wrap">${message}</div>
+      ${senderEmail ? `<p style="font-family:Georgia,serif;font-size:.78rem;color:#6B5D58;font-style:italic;margin:20px 0 0">Reply directly to: ${senderEmail}</p>` : ''}`)
   })
 };
 
 // ── Resend sender ─────────────────────────────────────────────
 
-async function sendEmail(env, { to, subject, html }) {
+async function sendEmail(env, { to, replyTo, subject, html }) {
   const key = env?.RESEND_API_KEY || RESEND_API_KEY;
   if (!key || key === 'PASTE_YOUR_RESEND_KEY_HERE') throw new Error('RESEND_KEY_NOT_SET');
+  const payload = { from: EMAIL_FROM, to, subject, html };
+  if (replyTo) payload.reply_to = replyTo;
   const r = await fetch('https://api.resend.com/emails', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
-    body: JSON.stringify({ from: EMAIL_FROM, to, subject, html })
+    body: JSON.stringify(payload)
   });
   if (!r.ok) { const e = await r.json().catch(()=>({})); throw new Error(e?.message || `Resend ${r.status}`); }
   return r.json();
@@ -124,23 +141,37 @@ export default {
 
       // Restrict to known app origins to prevent email abuse
       const origin = request.headers.get('Origin') || '';
-      const allowedOrigins = [APP_URL, 'http://localhost', 'http://127.0.0.1'];
+      const allowedOrigins = [
+        'https://weldswine.co.uk',
+        'https://www.weldswine.co.uk',
+        'https://weldja.github.io',
+        'http://localhost',
+        'http://127.0.0.1'
+      ];
       const originAllowed = allowedOrigins.some(o => origin.startsWith(o)) || origin === '';
       if (!originAllowed) {
         return new Response(JSON.stringify({ error: 'Forbidden' }), { status: 403, headers: cors });
       }
+
       let body;
       try { body = await request.json(); } catch { return new Response(JSON.stringify({ error: 'Invalid JSON' }), { status: 400, headers: cors }); }
 
-      const { type, email, url: linkUrl } = body;
-      if (!type || !email) return new Response(JSON.stringify({ error: 'type and email required' }), { status: 400, headers: cors });
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return new Response(JSON.stringify({ error: 'Invalid email' }), { status: 400, headers: cors });
+      const { type, email, url: linkUrl, name, message } = body;
+      if (!type) return new Response(JSON.stringify({ error: 'type required' }), { status: 400, headers: cors });
+
+      // contact type doesn't require email
+      if (type !== 'contact' && !email) return new Response(JSON.stringify({ error: 'email required' }), { status: 400, headers: cors });
+      if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return new Response(JSON.stringify({ error: 'Invalid email' }), { status: 400, headers: cors });
       if (!templates[type]) return new Response(JSON.stringify({ error: `Unknown type: ${type}` }), { status: 400, headers: cors });
       if ((type === 'magic_link' || type === 'reset_password') && !linkUrl) return new Response(JSON.stringify({ error: 'url required' }), { status: 400, headers: cors });
+      if (type === 'contact' && !message) return new Response(JSON.stringify({ error: 'message required' }), { status: 400, headers: cors });
 
       try {
-        const { subject, html } = templates[type](linkUrl);
-        await sendEmail(env, { to: email, subject, html });
+        const { subject, html } = templates[type](linkUrl, name, email, message);
+        // contact emails go to the app owner; all others go to the user
+        const to      = type === 'contact' ? EMAIL_TO : email;
+        const replyTo = type === 'contact' && email ? email : undefined;
+        await sendEmail(env, { to, replyTo, subject, html });
         return new Response(JSON.stringify({ ok: true }), { status: 200, headers: cors });
       } catch(e) {
         const msg = e.message || '';
