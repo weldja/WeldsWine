@@ -162,7 +162,7 @@ body{font-family:var(--font-b);background:var(--cream);color:var(--charcoal);min
   transition:var(--tr);
   line-height:1;
   padding:0;
-  display:flex;
+  display:none;
 }
 .btn-hamburger:hover{background:var(--burgundy-lt)}
 .btn-primary{background:var(--burgundy);color:var(--ivory);border:none;border-radius:var(--r);padding:10px 24px;font-family:var(--font-d);font-size:.88rem;font-weight:600;letter-spacing:.05em;cursor:pointer;transition:var(--tr)}
@@ -1653,7 +1653,7 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
 </div>
 
 <!-- AUTH MODULE -->
-<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
 /* ══════════════════════════════════════════════════════════════
    SUPABASE CONFIG — replace with your project values
    supabase.com → your project → Settings → API
@@ -1788,7 +1788,7 @@ function showApp() {
     try {
       document.getElementById('authScreen').classList.add('hidden');
       const badge = document.getElementById('userBadge');
-      if (badge) badge.style.removeProperty('display');
+      if (badge) badge.style.display = 'flex';
       const email = _currentUser?.email || '';
     } catch(_) {}
     return;
@@ -1804,7 +1804,7 @@ function showApp() {
 
   document.getElementById('authScreen').classList.add('hidden');
   const badge = document.getElementById('userBadge');
-  if (badge) badge.style.removeProperty('display');
+  if (badge) badge.style.display = 'flex';
   const email = _currentUser?.email || '';
 
   const cacheKey = 'wwwCache_' + (_currentUser?.id || '');
@@ -2905,7 +2905,8 @@ function _anyPanelOpen() {
     document.getElementById('scanOverlay').classList.contains('open') ||
     document.getElementById('shareOverlay').classList.contains('open') ||
     document.getElementById('infoOverlay').classList.contains('open') ||
-    document.getElementById('quickAddOverlay').classList.contains('open')
+    document.getElementById('quickAddOverlay').classList.contains('open') ||
+    document.getElementById('mobileMenuOverlay').classList.contains('open')
   );
 }
 function _closeTopPanel() {
@@ -2916,6 +2917,7 @@ function _closeTopPanel() {
   if (document.getElementById('scanOverlay').classList.contains('open'))     { closeScanModal();  return; }
   if (document.getElementById('modalOverlay').classList.contains('open'))    { closeModal();      return; }
   if (detailOverlay.classList.contains('open'))                               { closeDetail();     return; }
+  if (document.getElementById('mobileMenuOverlay').classList.contains('open')) { closeMobileMenu(); return; }
 }
 window.addEventListener('popstate', e => {
   if (e.state && e.state.wwwPanel) {
@@ -3176,7 +3178,7 @@ function setLocDisplay(label) {
 async function compressForStorage(dataUrl) {
   if (!dataUrl) return null;
   // Only accept valid image data URLs
-  if (!dataUrl.match(/^data:image\/(jpeg|jpg|png|webp);base64,/)) return null;
+  if (!dataUrl.match(/^data:image\/(jpeg|jpg|png|webp|heic|heif);base64,/)) return null;
   return new Promise(res => {
     const img = new Image();
     img.onload = () => {
@@ -3203,6 +3205,7 @@ async function handleSave(e) {
   const saveBtn = document.getElementById('saveWineBtn');
   saveBtn.disabled = true;
   saveBtn.textContent = 'Saving…';
+  try {
   const id=document.getElementById('wineId').value||generateId();
 
   // Compress photos to ~400px before storing (prevents localStorage quota errors)
@@ -3282,6 +3285,13 @@ async function handleSave(e) {
 
   updateStats();
   window.scrollTo({ top: 0, behavior: 'smooth' });
+  } catch(err) {
+    console.error('Save error:', err);
+    showToast('Something went wrong — please try again');
+  } finally {
+    saveBtn.disabled = false;
+    saveBtn.textContent = 'Save Wine';
+  }
 }
 
 async function editWine(id,e) {
@@ -4065,7 +4075,9 @@ async function doScan() {
 
   try {
     scanResult=await Scanner.analyzeLabel(scanFrontUrl,scanBackUrl);
-    clearInterval(t); showScanResultsUI(scanResult);
+    clearInterval(t);
+    // Go straight to form — skip results review screen
+    importToForm();
   } catch(err) { clearInterval(t); showScanErrorUI(err); }
 }
 
@@ -4266,7 +4278,7 @@ function updateKeyBadge() {
       <button onclick="closeMobileMenu()" style="background:none;border:none;font-size:1.1rem;color:var(--warm-gray);cursor:pointer;width:30px;height:30px;display:flex;align-items:center;justify-content:center">✕</button>
     </div>
     <div style="display:flex;flex-direction:column;gap:4px">
-      <button onclick="document.getElementById('openScanModal').click();closeMobileMenu()" style="background:var(--gold);color:var(--burgundy-deep);border:none;border-radius:var(--r);padding:13px 16px;font-family:var(--font-d);font-size:.95rem;font-weight:600;cursor:pointer;text-align:left;display:flex;align-items:center;gap:10px">📷 Scan Wine Label</button>
+      <button onclics:var(--r);padding:13px 16px;font-family:var(--font-d);font-size:.95rem;font-weight:600;cursor:pointer;text-align:left;display:flex;align-items:center;gap:10px">📷 Scan Wine Label</button>
       <button onclick="document.getElementById('openAddModal').click();closeMobileMenu()" style="background:none;border:1px solid var(--light-gray);border-radius:var(--r);padding:12px 16px;font-family:var(--font-b);font-size:.95rem;color:var(--charcoal);cursor:pointer;text-align:left;margin-top:4px">➕ Add Wine</button>
       <button onclick="document.getElementById('openQuickAdd').click();closeMobileMenu()" style="background:none;border:1px solid var(--light-gray);border-radius:var(--r);padding:12px 16px;font-family:var(--font-b);font-size:.95rem;color:var(--charcoal);cursor:pointer;text-align:left">⚡ Quick Add</button>
       <button onclick="showFooterModal('about');closeMobileMenu()" style="background:none;border:none;padding:12px 16px;font-family:var(--font-b);font-size:.95rem;color:var(--warm-gray);cursor:pointer;text-align:left">ℹ️ About</button>
@@ -4294,6 +4306,7 @@ function openMobileMenu(e) {
   el.style.padding = '0';
   el.classList.add('open');
   document.body.style.overflow = 'hidden';
+  _pushNavState();
   // Delay adding close listener so the opening click doesn't immediately close it
   setTimeout(function() {
     el.addEventListener('click', function(e){ if(e.target===el) closeMobileMenu(); }, {once:true});
