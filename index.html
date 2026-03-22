@@ -3571,7 +3571,7 @@ async function handleContactSubmit() {
     setTimeout(() => closeContactModal(), 2000);
   } catch(err) {
     console.error('Contact form error:', err.message);
-    _showContactStatus('err', `Could not send (${err.message}) — please email hello@weldswine.co.uk directly`);
+    _showContactStatus('err', 'Could not send — please email hello@weldswine.co.uk directly');
     btn.disabled = false;
     btn.textContent = 'Send Message';
   }
