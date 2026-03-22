@@ -3516,28 +3516,39 @@ function processPendingImport(data) {
     showToast('Sign in to add this wine to your journal ↑');
     return;
   }
-  // Open the Add Wine form pre-populated with shared data
+  // Open the Add Wine form pre-populated with all shared data
   openModal();
   setTimeout(() => {
-    const map = {name:'wineName', winery:'winery', vintage:'vintage', country:'country', region:'region', grape:'grape'};
+    // Text fields
+    const map = {name:'wineName', winery:'winery', vintage:'vintage', country:'country',
+                 region:'region', grape:'grape', notes:'notes', price:'price'};
     Object.entries(map).forEach(([src, dest]) => {
       const el = document.getElementById(dest);
       if (el && data[src]) { el.value = String(data[src]); flashAutofill(el); }
     });
+    // Style dropdown
     if (data.style) {
       const s = document.getElementById('style');
       [...s.options].forEach(o => { if (o.value === data.style) s.value = data.style; });
     }
-    // Store sharedBy so it gets saved with the wine
-    if (data.sharedBy) {
-      document.getElementById('aiBanner').style.display = 'flex';
-      window._importSharedBy = data.sharedBy || 'shared';
+    // Date tasted
+    if (data.dateTasted) {
+      const d = document.getElementById('dateTasted');
+      if (d) { d.value = data.dateTasted; flashAutofill(d); }
     }
+    // Rating
+    if (data.rating) { setStars(data.rating); }
+    // Photo
     if (data.photoFront) {
       currentPhotoFront = data.photoFront;
       setPhotoPreview('Front', data.photoFront);
     }
-    showToast('Shared wine added — add your rating and save');
+    // Mark as shared
+    if (data.sharedBy) {
+      document.getElementById('aiBanner').style.display = 'flex';
+      window._importSharedBy = data.sharedBy || 'shared';
+    }
+    showToast('Shared wine imported — review and save');
   }, 300);
 }
 
@@ -3766,14 +3777,23 @@ function importSharedWine(w) {
     region:     w.region,
     grape:      w.grape,
     style:      w.style,
-    notes:      w.notes,
-    photoFront: w.photo_front,
+    rating:     w.rating     || null,
+    notes:      w.notes      || null,
+    price:      w.price      || null,
+    dateTasted: w.date_tasted|| null,
+    locLabel:   w.loc_label  || null,
+    photoFront: w.photo_front|| null,
     sharedBy:   w.shared_by_email || 'shared',
   };
   try { sessionStorage.setItem('wwwImportWine', JSON.stringify(importData)); } catch(_) {}
   // Also encode core fields (no photo) in URL for cross-tab reliability
-  const urlData = { name:w.name, winery:w.winery, vintage:w.vintage, country:w.country,
-                    region:w.region, grape:w.grape, style:w.style };
+  const urlData = {
+    name:w.name, winery:w.winery, vintage:w.vintage, country:w.country,
+    region:w.region, grape:w.grape, style:w.style, rating:w.rating||null,
+    notes:w.notes||null, price:w.price||null,
+    dateTasted:w.date_tasted||null, locLabel:w.loc_label||null,
+    sharedBy:w.shared_by_email||'shared'
+  };
   try {
     const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(urlData))));
     window.location.href = window.location.pathname + '?import=1&d=' + encoded;
