@@ -3563,12 +3563,15 @@ async function handleContactSubmit() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ type: 'contact', name, email, message })
     });
-    if (!r.ok) throw new Error('SEND_FAILED');
+    const data = await r.json().catch(() => ({}));
+    console.log('Contact form response:', r.status, data);
+    if (!r.ok) throw new Error(data.error || `HTTP ${r.status}`);
     _showContactStatus('ok', "Message sent — we'll be in touch soon!");
     btn.textContent = 'Sent ✓';
     setTimeout(() => closeContactModal(), 2000);
   } catch(err) {
-    _showContactStatus('err', 'Could not send — please email hello@weldswine.co.uk directly');
+    console.error('Contact form error:', err.message);
+    _showContactStatus('err', `Could not send (${err.message}) — please email hello@weldswine.co.uk directly`);
     btn.disabled = false;
     btn.textContent = 'Send Message';
   }
