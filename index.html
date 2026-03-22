@@ -1909,14 +1909,6 @@ async function handleAuthSubmit() {
     if (error) throw error;
 
     if (!isSignIn) {
-      // Send welcome email via Worker/Resend
-      try {
-        await fetch(`${Scanner.getProxyUrl()}/email`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ type: 'welcome', email })
-        });
-      } catch(_) { /* non-fatal */ }
       // Supabase requires email confirmation before the session is active —
       // show the correct message and stay on the auth screen
       showAuthMsg('ok', 'Account created! Please check your email and click the confirmation link to sign in.');
