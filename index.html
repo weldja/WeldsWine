@@ -3176,7 +3176,7 @@ function setLocDisplay(label) {
 async function compressForStorage(dataUrl) {
   if (!dataUrl) return null;
   // Only accept valid image data URLs
-  if (!dataUrl.match(/^data:image\/(jpeg|jpg|png|webp|heic|heif);base64,/)) return null;
+  if (!dataUrl.match(/^data:image\/(jpeg|jpg|png|webp);base64,/)) return null;
   return new Promise(res => {
     const img = new Image();
     img.onload = () => {
@@ -3203,7 +3203,6 @@ async function handleSave(e) {
   const saveBtn = document.getElementById('saveWineBtn');
   saveBtn.disabled = true;
   saveBtn.textContent = 'Saving…';
-  try {
   const id=document.getElementById('wineId').value||generateId();
 
   // Compress photos to ~400px before storing (prevents localStorage quota errors)
@@ -3283,13 +3282,6 @@ async function handleSave(e) {
 
   updateStats();
   window.scrollTo({ top: 0, behavior: 'smooth' });
-  } catch(err) {
-    console.error('Save error:', err);
-    showToast('Something went wrong — please try again');
-  } finally {
-    saveBtn.disabled = false;
-    saveBtn.textContent = 'Save Wine';
-  }
 }
 
 async function editWine(id,e) {
@@ -4073,7 +4065,9 @@ async function doScan() {
 
   try {
     scanResult=await Scanner.analyzeLabel(scanFrontUrl,scanBackUrl);
-    clearInterval(t); showScanResultsUI(scanResult);
+    clearInterval(t);
+    // Skip results screen — go straight to the form
+    importToForm();
   } catch(err) { clearInterval(t); showScanErrorUI(err); }
 }
 
