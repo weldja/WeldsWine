@@ -3564,7 +3564,7 @@ async function handleContactSubmit() {
       body: JSON.stringify({ type: 'contact', name, email, message })
     });
     if (!r.ok) throw new Error('SEND_FAILED');
-    _showContactStatus('ok', 'Message sent — we'll be in touch soon!');
+    _showContactStatus('ok', "Message sent — we'll be in touch soon!");
     btn.textContent = 'Sent ✓';
     setTimeout(() => closeContactModal(), 2000);
   } catch(err) {
