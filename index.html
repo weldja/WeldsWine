@@ -162,7 +162,7 @@ body{font-family:var(--font-b);background:var(--cream);color:var(--charcoal);min
   transition:var(--tr);
   line-height:1;
   padding:0;
-  display:none;
+  display:flex;
 }
 .btn-hamburger:hover{background:var(--burgundy-lt)}
 .btn-primary{background:var(--burgundy);color:var(--ivory);border:none;border-radius:var(--r);padding:10px 24px;font-family:var(--font-d);font-size:.88rem;font-weight:600;letter-spacing:.05em;cursor:pointer;transition:var(--tr)}
@@ -1264,7 +1264,7 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
   <span class="footer-sep">·</span>
   <a href="#" class="footer-link" onclick="showFooterModal('privacy');return false">Privacy</a>
   <span class="footer-sep">·</span>
-  <a href="/cdn-cgi/l/email-protection#b5ddd0d9d9daf5c2d0d9d1c6c2dcdbd09bd6da9bc0de" class="footer-link">Contact</a>
+  <a href="mailto:hello@weldswine.co.uk" class="footer-link">Contact</a>
   <span class="footer-sep">·</span>
   <button class="footer-admin-btn" id="openKeyModal" title="Settings">⚙</button>
 </footer>
@@ -1653,7 +1653,7 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
 </div>
 
 <!-- AUTH MODULE -->
-<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
 /* ══════════════════════════════════════════════════════════════
    SUPABASE CONFIG — replace with your project values
    supabase.com → your project → Settings → API
@@ -1788,7 +1788,7 @@ function showApp() {
     try {
       document.getElementById('authScreen').classList.add('hidden');
       const badge = document.getElementById('userBadge');
-      if (badge) badge.style.display = 'flex';
+      if (badge) badge.style.removeProperty('display');
       const email = _currentUser?.email || '';
     } catch(_) {}
     return;
@@ -1804,7 +1804,7 @@ function showApp() {
 
   document.getElementById('authScreen').classList.add('hidden');
   const badge = document.getElementById('userBadge');
-  if (badge) badge.style.display = 'flex';
+  if (badge) badge.style.removeProperty('display');
   const email = _currentUser?.email || '';
 
   const cacheKey = 'wwwCache_' + (_currentUser?.id || '');
@@ -2905,8 +2905,7 @@ function _anyPanelOpen() {
     document.getElementById('scanOverlay').classList.contains('open') ||
     document.getElementById('shareOverlay').classList.contains('open') ||
     document.getElementById('infoOverlay').classList.contains('open') ||
-    document.getElementById('quickAddOverlay').classList.contains('open') ||
-    document.getElementById('mobileMenuOverlay').classList.contains('open')
+    document.getElementById('quickAddOverlay').classList.contains('open')
   );
 }
 function _closeTopPanel() {
@@ -2917,7 +2916,6 @@ function _closeTopPanel() {
   if (document.getElementById('scanOverlay').classList.contains('open'))     { closeScanModal();  return; }
   if (document.getElementById('modalOverlay').classList.contains('open'))    { closeModal();      return; }
   if (detailOverlay.classList.contains('open'))                               { closeDetail();     return; }
-  if (document.getElementById('mobileMenuOverlay').classList.contains('open')) { closeMobileMenu(); return; }
 }
 window.addEventListener('popstate', e => {
   if (e.state && e.state.wwwPanel) {
@@ -4296,7 +4294,6 @@ function openMobileMenu(e) {
   el.style.padding = '0';
   el.classList.add('open');
   document.body.style.overflow = 'hidden';
-  _pushNavState();
   // Delay adding close listener so the opening click doesn't immediately close it
   setTimeout(function() {
     el.addEventListener('click', function(e){ if(e.target===el) closeMobileMenu(); }, {once:true});
@@ -4305,4 +4302,12 @@ function openMobileMenu(e) {
 function closeMobileMenu() {
   var el = document.getElementById('mobileMenuOverlay');
   if (!el) return;
-  el.style.display = '
+  el.style.display = 'none';
+  el.style.opacity = '';
+  el.style.pointerEvents = '';
+  el.classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+
+</script>
