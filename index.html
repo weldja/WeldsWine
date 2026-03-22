@@ -1521,7 +1521,7 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
             <div class="scan-panel-title">Back Label</div>
             <div class="scan-panel-sub">optional but recommended</div>
             <div class="scan-upload-area" id="backUploadArea">
-              <input type="file" id="backFileInput" accept="image/*"/>
+              <input type="file" id="backFileInput" accept="image/*" capture="environment"/>
               <div class="scan-upload-inner" id="backInner">
                 <div class="scan-upload-icon">📸</div>
                 <div class="scan-upload-title">Tap to photograph</div>
@@ -4045,6 +4045,14 @@ function initScanner() {
     document.getElementById('frontFileInput').addEventListener(evt, e=>{ if(e.target.files&&e.target.files[0]) loadScanFile(e.target.files[0],'front'); });
     document.getElementById('backFileInput').addEventListener(evt,  e=>{ if(e.target.files&&e.target.files[0]) loadScanFile(e.target.files[0],'back'); });
   });
+  // iOS fix: reset input value before each camera open so iOS always fires
+  // the change event and opens the camera fresh (not photo library)
+  document.getElementById('frontUploadArea').addEventListener('click', ()=>{
+    const inp = document.getElementById('frontFileInput'); if(inp) inp.value='';
+  });
+  document.getElementById('backUploadArea').addEventListener('click', ()=>{
+    const inp = document.getElementById('backFileInput'); if(inp) inp.value='';
+  });
   document.getElementById('frontRetake').addEventListener('click', ()=>resetSide('front'));
   document.getElementById('backRetake').addEventListener('click',  ()=>resetSide('back'));
 }
@@ -4068,9 +4076,9 @@ function openScanModal() {
 function closeScanModal() { document.getElementById('scanOverlay').classList.remove('open'); document.body.style.overflow=''; }
 
 function resetSide(side) {
-  // Clear file input value so iOS fires change event on retake
+  // Clear file input value so iOS always fires change event on retake
   const inp = document.getElementById(side+'FileInput');
-  if (inp) inp.value = '';
+  if (inp) { inp.value = ''; }
   if(side==='front') scanFrontUrl=null; else scanBackUrl=null;
   document.getElementById(side+'Thumb').classList.remove('visible');
   document.getElementById(side+'Retake').style.display='none';
