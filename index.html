@@ -133,6 +133,10 @@
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html{font-size:16px;scroll-behavior:smooth}
 body{font-family:var(--font-b);background:var(--cream);color:var(--charcoal);min-height:100vh;line-height:1.6;-webkit-font-smoothing:antialiased}
+.load-bar{position:fixed;top:0;left:0;width:100%;height:3px;z-index:9999;pointer-events:none;opacity:0;transition:opacity .2s}
+.load-bar-inner{height:100%;width:0%;background:var(--gold);transition:width .4s ease;border-radius:0 2px 2px 0}
+.load-bar.active{opacity:1}
+.load-bar.done{opacity:0;transition:opacity .4s .2s}
 .site-header{background:var(--burgundy-deep);border-bottom:none;position:sticky;top:0;z-index:200;box-shadow:0 2px 16px rgba(44,20,36,.25)}
 .header-inner{max-width:1200px;margin:0 auto;padding:0 16px;height:64px;display:flex;align-items:center;gap:12px;overflow:hidden}
 .logo{display:flex;align-items:center;gap:10px;flex-shrink:0;min-width:0}
@@ -1055,6 +1059,7 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
 </div>
 
 <!-- HEADER -->
+<div class="load-bar" id="loadBar"><div class="load-bar-inner" id="loadBarInner"></div></div>
 <header class="site-header">
   <div class="header-inner">
     <div class="logo">
@@ -3800,6 +3805,34 @@ function importSharedWine(w) {
 
 function getWineById(id) { return wines.find(w=>w.id===id); }
 
+/* ── Loading progress bar ────────────────────────────────── */
+let _loadBarTimer = null;
+function showLoadBar() {
+  const bar = document.getElementById('loadBar');
+  const inner = document.getElementById('loadBarInner');
+  if (!bar || !inner) return;
+  bar.classList.remove('done');
+  bar.classList.add('active');
+  inner.style.width = '0%';
+  inner.style.transition = 'none';
+  requestAnimationFrame(() => {
+    inner.style.transition = 'width 2s ease';
+    inner.style.width = '75%';
+  });
+}
+function hideLoadBar() {
+  const bar = document.getElementById('loadBar');
+  const inner = document.getElementById('loadBarInner');
+  if (!bar || !inner) return;
+  inner.style.transition = 'width .15s ease';
+  inner.style.width = '100%';
+  setTimeout(() => {
+    bar.classList.remove('active');
+    bar.classList.add('done');
+    setTimeout(() => { inner.style.width = '0%'; bar.classList.remove('done'); }, 500);
+  }, 150);
+}
+
 function _checkPendingImport() {
   if (!window._pendingImport) return;
   const data = window._pendingImport;
@@ -4050,7 +4083,8 @@ function generateId(){
 }
 
 async function loadWinesFromDB(cacheKey) {
-  if (!_sb) { console.warn('loadWinesFromDB: _sb not ready'); return; }
+  showLoadBar();
+  if (!_sb) { console.warn('loadWinesFromDB: _sb not ready'); hideLoadBar(); return; }
   const user = _currentUser || (await _sb.auth.getUser()).data?.user;
   if (!user) { console.warn('loadWinesFromDB: no current user'); return; }
   console.log('loadWinesFromDB: fetching for user', user.id);
@@ -4101,6 +4135,7 @@ async function loadWinesFromDB(cacheKey) {
     _winesLoaded = true;
     renderGrid();
     updateStats();
+    hideLoadBar();
     _checkPendingImport();
 
     // Cache for next visit — strip photos to keep sessionStorage light
@@ -4114,6 +4149,7 @@ async function loadWinesFromDB(cacheKey) {
   } catch(e) {
     console.error('loadWinesFromDB error:', e);
     _winesLoaded = true;
+    hideLoadBar();
     renderGrid();
     showToast('Could not load wines: ' + (e?.message || e));
   }
