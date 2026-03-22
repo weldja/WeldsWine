@@ -162,7 +162,7 @@ body{font-family:var(--font-b);background:var(--cream);color:var(--charcoal);min
   transition:var(--tr);
   line-height:1;
   padding:0;
-  display:flex;
+  display:none;
 }
 .btn-hamburger:hover{background:var(--burgundy-lt)}
 .btn-primary{background:var(--burgundy);color:var(--ivory);border:none;border-radius:var(--r);padding:10px 24px;font-family:var(--font-d);font-size:.88rem;font-weight:600;letter-spacing:.05em;cursor:pointer;transition:var(--tr)}
@@ -1789,7 +1789,7 @@ function showApp() {
     try {
       document.getElementById('authScreen').classList.add('hidden');
       const badge = document.getElementById('userBadge');
-      if (badge) badge.style.removeProperty('display');
+      if (badge) badge.style.display = 'flex';
       const email = _currentUser?.email || '';
     } catch(_) {}
     return;
@@ -1805,7 +1805,7 @@ function showApp() {
 
   document.getElementById('authScreen').classList.add('hidden');
   const badge = document.getElementById('userBadge');
-  if (badge) badge.style.removeProperty('display');
+  if (badge) badge.style.display = 'flex';
   const email = _currentUser?.email || '';
 
   const cacheKey = 'wwwCache_' + (_currentUser?.id || '');
@@ -4354,3 +4354,15 @@ function closeMobileMenu() {
   var el = document.getElementById('mobileMenuOverlay');
   if (!el) return;
   el.style.display = 'none';
+  el.style.opacity = '';
+  el.style.pointerEvents = '';
+  el.classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+// FILE INTEGRITY CHECK — if this line is missing the file is truncated
+if (typeof closeMobileMenu !== 'function') console.error('CRITICAL: index.html is truncated — closeMobileMenu missing');
+
+</script>
+</body>
+</html>
