@@ -355,6 +355,7 @@ body{font-family:var(--font-b);background:var(--cream);color:var(--charcoal);min
 .public-wine-detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px 16px;margin-bottom:16px}
 .public-wine-detail{font-family:var(--font-b);font-size:.85rem;color:var(--warm-gray)}
 .public-wine-detail b{color:var(--charcoal);font-weight:600;display:block;font-size:.72rem;text-transform:uppercase;letter-spacing:.07em;margin-bottom:1px}
+.shared-by-badge{display:inline-flex;align-items:center;gap:5px;background:rgba(201,163,74,.12);border:1px solid rgba(201,163,74,.3);border-radius:20px;padding:2px 10px 2px 7px;font-family:var(--font-b);font-size:.7rem;color:var(--gold);font-style:italic;margin-top:4px}
 .public-cta{background:var(--burgundy);color:var(--ivory);border:none;border-radius:var(--r);padding:12px 24px;font-family:var(--font-d);font-size:.92rem;font-weight:600;cursor:pointer;transition:var(--tr);width:100%;letter-spacing:.04em}
 .public-cta:hover{background:var(--burgundy-lt)}
 .map-view{display:none}
@@ -1264,7 +1265,7 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
   <span class="footer-sep">·</span>
   <a href="#" class="footer-link" onclick="showFooterModal('privacy');return false">Privacy</a>
   <span class="footer-sep">·</span>
-  <a href="/cdn-cgi/l/email-protection#2149444d4d4e6156444d455256484f440f424e0f544a" class="footer-link">Contact</a>
+  <a href="mailto:hello@weldswine.co.uk" class="footer-link">Contact</a>
   <span class="footer-sep">·</span>
   <button class="footer-admin-btn" id="openKeyModal" title="Settings">⚙</button>
 </footer>
@@ -1623,7 +1624,10 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
   <div class="public-wine-wrap">
     <div class="public-branding">🍷 Welds Wine Wisdoms</div>
     <div id="publicWineContent"></div>
-    <button class="public-cta" onclick="window.location.href=window.location.pathname">
+    <button class="public-cta" id="importSharedWineBtn" style="display:none;margin-bottom:10px">
+      ＋ Add this wine to my journal
+    </button>
+    <button class="public-cta" style="background:var(--warm-gray)" onclick="window.location.href=window.location.pathname">
       Open my wine journal →
     </button>
   </div>
@@ -1715,6 +1719,24 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('authScreen').classList.add('hidden');
     checkPublicWineView();
     return;
+  }
+
+  // If returning from a share link import, open the form with the imported data
+  if (new URLSearchParams(window.location.search).get('import')) {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      // Try sessionStorage first (same tab, has photo)
+      const raw = sessionStorage.getItem('wwwImportWine');
+      if (raw) {
+        sessionStorage.removeItem('wwwImportWine');
+        window._pendingImport = JSON.parse(raw);
+      } else if (params.get('d')) {
+        // Fallback: decode from URL (cross-tab, no photo)
+        const decoded = JSON.parse(decodeURIComponent(escape(atob(params.get('d')))));
+        window._pendingImport = decoded;
+      }
+      window.history.replaceState({}, '', window.location.pathname);
+    } catch(_) {}
   }
 
   if (!_sb) {
@@ -2220,6 +2242,13 @@ document.addEventListener('DOMContentLoaded', () => {
   // Signal MAIN APP is ready; if auth already completed, run showApp now
   _appReady = true;
   if (_pendingShowApp) showApp();
+  // Process any pending wine import from a share link
+  if (window._pendingImport) {
+    setTimeout(() => {
+      processPendingImport(window._pendingImport);
+      window._pendingImport = null;
+    }, 600);
+  }
 });
 
 function setupEvents() {
@@ -2727,6 +2756,7 @@ function createCard(w) {
         </div>
         <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
           ${w.rating?`<div class="card-rating">${renderStars(w.rating)}</div>`:''}
+          ${w.sharedBy?`<div class="shared-by-badge">🤝 Shared wine</div>`:''}
         </div>
       </div>
       ${meta?`<div class="card-meta">${escHtml(meta)}</div>`:''}
@@ -2848,6 +2878,7 @@ async function openDetail(w, e) {
       <div class="detail-title">${escHtml(w.name)}</div>
       ${w.winery?`<div class="detail-winery">${escHtml(w.winery)}</div>`:''}
       ${w.rating?`<div class="detail-stars">${renderStarsLarge(w.rating)}</div>`:''}
+      ${w.sharedBy?`<div class="shared-by-badge" style="margin-bottom:12px">🤝 Shared wine</div>`:''}
       <div class="detail-grid">
         ${fields.map(([l,v])=>`<div class="detail-field"><label>${l}</label><p>${escHtml(String(v))}</p></div>`).join('')}
       </div>
@@ -3216,6 +3247,7 @@ async function handleSave(e) {
     dateTasted:   document.getElementById('dateTasted').value||null,
     notes:        document.getElementById('notes').value.trim()||null,
     rating:       parseInt(ratingInput.value,10)||null,
+    sharedBy:     window._importSharedBy || null,
     isFavourite:  document.getElementById('isFavourite').checked,
     buyAgain:     document.getElementById('buyAgain').checked,
     photoFront:   storedFront,
@@ -3242,6 +3274,7 @@ async function handleSave(e) {
   else { wines.unshift(entry); }
 
   showToast(idx >= 0 ? 'Wine updated ✓' : 'Wine saved ✓');
+  window._importSharedBy = null;
   closeModal();
 
   activeFilter = 'all';
@@ -3395,6 +3428,7 @@ async function getOrCreateShareId(w) {
     id:       shareId,
     wine_id:  w.id,
     user_id:  _currentUser?.id,
+    shared_by_email: _currentUser?.email || null,
     name:     w.name,
     winery:   w.winery,
     vintage:  w.vintage,
@@ -3471,6 +3505,39 @@ function showFooterModal(type) {
   document.getElementById('infoModalBody').innerHTML = content.body;
   document.getElementById('infoOverlay').classList.add('open');
   _pushNavState();
+}
+
+/* ── Import shared wine ─────────────────────────────────── */
+function processPendingImport(data) {
+  if (!_currentUser) {
+    // Not logged in — store and prompt to sign in
+    try { sessionStorage.setItem('wwwImportWine', JSON.stringify(data)); } catch(_) {}
+    showToast('Sign in to add this wine to your journal');
+    return;
+  }
+  // Open the Add Wine form pre-populated with shared data
+  openModal();
+  setTimeout(() => {
+    const map = {name:'wineName', winery:'winery', vintage:'vintage', country:'country', region:'region', grape:'grape'};
+    Object.entries(map).forEach(([src, dest]) => {
+      const el = document.getElementById(dest);
+      if (el && data[src]) { el.value = String(data[src]); flashAutofill(el); }
+    });
+    if (data.style) {
+      const s = document.getElementById('style');
+      [...s.options].forEach(o => { if (o.value === data.style) s.value = data.style; });
+    }
+    // Store sharedBy so it gets saved with the wine
+    if (data.sharedBy) {
+      document.getElementById('aiBanner').style.display = 'flex';
+      window._importSharedBy = data.sharedBy || 'shared';
+    }
+    if (data.photoFront) {
+      currentPhotoFront = data.photoFront;
+      setPhotoPreview('Front', data.photoFront);
+    }
+    showToast('Shared wine added — add your rating and save');
+  }, 300);
 }
 
 function closeInfoModal() {
@@ -3676,7 +3743,42 @@ async function checkPublicWineView() {
     ${details.length ? `<div class="public-wine-detail-grid">${details.map(([k,v])=>`<div class="public-wine-detail"><b>${k}</b>${escHtml(String(v))}</div>`).join('')}</div>` : ''}
     <p style="font-family:var(--font-b);font-size:.78rem;color:var(--warm-gray);font-style:italic;text-align:center;margin-bottom:16px">Shared from Welds Wine Wisdoms</p>
   `;
+
+  // Wire up import button — show if user is logged in
+  const importBtn = document.getElementById('importSharedWineBtn');
+  if (importBtn) {
+    importBtn.style.display = 'block';
+    importBtn.onclick = () => importSharedWine(w);
+  }
+
   return true;
+}
+
+function importSharedWine(w) {
+  // Pass import data via URL so it works across tabs (WhatsApp/email open new tabs)
+  // Photo is too large for URL — store only in sessionStorage as fallback
+  const importData = {
+    name:       w.name,
+    winery:     w.winery,
+    vintage:    w.vintage,
+    country:    w.country,
+    region:     w.region,
+    grape:      w.grape,
+    style:      w.style,
+    notes:      w.notes,
+    photoFront: w.photo_front,
+    sharedBy:   w.shared_by_email || 'shared',
+  };
+  try { sessionStorage.setItem('wwwImportWine', JSON.stringify(importData)); } catch(_) {}
+  // Also encode core fields (no photo) in URL for cross-tab reliability
+  const urlData = { name:w.name, winery:w.winery, vintage:w.vintage, country:w.country,
+                    region:w.region, grape:w.grape, style:w.style };
+  try {
+    const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(urlData))));
+    window.location.href = window.location.pathname + '?import=1&d=' + encoded;
+  } catch(_) {
+    window.location.href = window.location.pathname + '?import=1';
+  }
 }
 
 function getWineById(id) { return wines.find(w=>w.id===id); }
@@ -3960,6 +4062,7 @@ async function loadWinesFromDB(cacheKey) {
       dateTasted:   row.date_tasted,
       notes:        row.notes,
       rating:       row.rating,
+      sharedBy:     row.shared_by || null,
       isFavourite:  row.is_favourite || false,
       buyAgain:     row.buy_again    || false,
       photoFront:   photoMap[row.id]?.photo_front || null,
@@ -4015,7 +4118,8 @@ async function saveWineToDB(entry) {
     photo_back:    entry.photoBack,
     loc_lat:       entry.locLat,
     loc_lng:       entry.locLng,
-    loc_label:     entry.locLabel
+    loc_label:     entry.locLabel,
+    shared_by:     entry.sharedBy || null
   };
   const { error } = await _sb.from('wines').upsert(row, { onConflict: 'id' });
   if (error) { console.error('saveWineToDB:', error); return false; }
