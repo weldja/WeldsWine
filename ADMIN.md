@@ -19,7 +19,7 @@ Welds Wine Wisdoms is a single-file HTML/CSS/JS app (`index.html`). There is no 
 | Code repository | GitHub (github.com/weldja) | github.com → WeldsWine repo |
 | Hosting | GitHub Pages | GitHub repo → Settings → Pages |
 | DNS, CDN & Email Routing | Cloudflare (free plan) | dash.cloudflare.com → weldswine.co.uk |
-| AI + email proxy | Cloudflare Worker (aged-union-8f0d) | Workers & Pages → aged-union-8f0d |
+| AI + email proxy | Cloudflare Worker (aged-wave-00c3) | Workers & Pages → aged-wave-00c3 |
 | Domain registrar | Namecheap | namecheap.com → Domain List |
 | Database & Auth | Supabase (free tier) | supabase.com → phcnswuwrqarikzjvfqd |
 | AI label scanning | Anthropic Claude API | console.anthropic.com |
@@ -46,9 +46,9 @@ GitHub Pages (weldja.github.io)
     ├──► Supabase (database + auth)
     │       wines, shared_wines, auth.users
     │
-    └──► Cloudflare Worker (aged-union-8f0d)
+    └──► Cloudflare Worker (aged-wave-00c3)
               ├──► Anthropic Claude API  (label scanning)
-              └──► Resend API            (welcome emails)
+              └──► Resend API            (transactional email)
 
 Inbound email:
     hello@weldswine.co.uk
@@ -95,8 +95,9 @@ All DNS is managed at **dash.cloudflare.com → weldswine.co.uk → DNS → Reco
 | MX | @ | route3.mx.cloudflare.net (priority 20) | — | Cloudflare Email Routing |
 | TXT | @ | v=spf1 include:_spf.mx.cloudflare.net ~all | — | Email SPF record |
 | TXT | cf2024-1._domainkey | (long DKIM key — do not edit) | — | Email DKIM signing |
+| TXT | _dmarc | v=DMARC1; p=none; rua=mailto:hello@weldswine.co.uk | — | DMARC reporting |
 
-> **Note:** The A records point to GitHub's IPs, not Cloudflare Pages. The site is hosted on GitHub Pages — Cloudflare proxies in front of it for CDN and security. The MX, SPF, and DKIM records are managed automatically by Cloudflare Email Routing — do not add or edit them manually.
+> **Note:** The A records point to GitHub's IPs. The site is hosted on GitHub Pages — Cloudflare proxies in front for CDN and security. Do not add or edit MX, SPF, or DKIM records manually.
 
 ---
 
@@ -113,7 +114,7 @@ GitHub repo → Settings → Pages:
 - Custom domain: `weldswine.co.uk`
 - Enforce HTTPS: enabled
 
-GitHub creates a `CNAME` file in the repo root containing `weldswine.co.uk`. **Do not delete this file** — it tells GitHub Pages to serve the site on your custom domain.
+GitHub creates a `CNAME` file in the repo root containing `weldswine.co.uk`. **Do not delete this file.**
 
 ### Deploying a change
 ```bash
@@ -130,7 +131,6 @@ git add index.html
 git commit -m "Rollback to previous version"
 git push
 ```
-Or via GitHub UI: repo → Commits → find previous commit → browse files → copy `index.html`.
 
 ---
 
@@ -149,14 +149,12 @@ Or via GitHub UI: repo → Commits → find previous commit → browse files →
 | hello@weldswine.co.uk | Forward | james_weld@yahoo.com | Active |
 | Catch-all | Drop | — | Disabled |
 
-MX, SPF, and DKIM records are managed automatically — never edit them manually.
+> **Known issue:** Yahoo occasionally rejects forwarded mail with "Relay access denied". This is a Yahoo restriction and cannot be fixed on our end. If persistent, change forwarding destination to Gmail.
 
 ### Email Obfuscation (known issue)
-Cloudflare automatically obfuscates `mailto:` links in HTML, replacing them with broken `/cdn-cgi/l/email-protection#...` URLs.
+Cloudflare automatically obfuscates `mailto:` links in HTML. The contact link in `index.html` uses `mailto:hello@weldswine.co.uk` — if it breaks after a deploy, Cloudflare has re-enabled obfuscation.
 
-**Permanent fix:** Cloudflare → weldswine.co.uk → Security → Settings → Email Address Obfuscation → **Off**
-
-If the contact link breaks after any deploy, this setting has been re-enabled. Turn it off and re-deploy.
+**Fix:** Cloudflare → weldswine.co.uk → Security → Settings → Email Address Obfuscation → **Off**
 
 ---
 
@@ -166,19 +164,31 @@ If the contact link breaks after any deploy, this setting has been re-enabled. T
 Secure server-side proxy so that API keys (Anthropic, Resend) never appear in the public `index.html`.
 
 ### Details
-- **Worker name:** `aged-union-8f0d`
-- **Worker URL:** `https://aged-union-8f0d.james-weld.workers.dev`
-- **Location:** dash.cloudflare.com → Workers & Pages → `aged-union-8f0d`
-- **Source file:** `cloudflare-worker.js` in the repo
+- **Worker name:** `aged-wave-00c3`
+- **Worker URL:** `https://aged-wave-00c3.james-weld.workers.dev`
+- **Location:** dash.cloudflare.com → Workers & Pages → `aged-wave-00c3`
+- **Source file:** `cloudflare-worker.js` in the repo (for reference only)
+
+> **CRITICAL:** Do NOT connect this Worker to GitHub via Git. When connected, Cloudflare treats the whole repo as static assets and the Worker stops functioning entirely. Always deploy Worker changes manually via **Edit Code** in the Cloudflare dashboard.
 
 ### Endpoints
 | Method | Path | Purpose |
 |--------|------|---------|
 | POST | `/` | Proxies label scan images to Anthropic Claude API |
-| POST | `/email` | Proxies welcome email requests to Resend API |
+| GET | `/geocode` | Proxies reverse geocoding to OpenStreetMap Nominatim |
+| POST | `/email` | Proxies transactional email requests to Resend API |
+
+### Allowed Origins
+The Worker only accepts requests from:
+- `https://weldswine.co.uk`
+- `https://www.weldswine.co.uk`
+- `https://james-weld.github.io`
+- `http://localhost` / `http://127.0.0.1`
+
+If scanning stops working after a domain change, check this list in `cloudflare-worker.js`.
 
 ### Secrets
-These are stored in the Worker only — never in `index.html`.
+Set at: Workers & Pages → aged-wave-00c3 → Settings → Variables and Secrets.
 
 | Variable | Purpose | Where to get a new one |
 |----------|---------|----------------------|
@@ -186,9 +196,16 @@ These are stored in the Worker only — never in `index.html`.
 | `RESEND_API_KEY` | Resend transactional email | resend.com → API Keys |
 
 **To update a secret:**
-1. dash.cloudflare.com → Workers & Pages → `aged-union-8f0d`
+1. dash.cloudflare.com → Workers & Pages → `aged-wave-00c3`
 2. Settings → Variables and Secrets → edit → Save
 3. Takes effect immediately — no redeployment needed
+
+### Deploying Worker changes
+1. Cloudflare → Workers & Pages → `aged-wave-00c3` → **Edit Code**
+2. Make changes directly in the browser editor
+3. Click **Deploy**
+
+Do NOT use `git push` to deploy Worker changes.
 
 ---
 
@@ -214,7 +231,7 @@ The anon key is intentionally public. Row Level Security (RLS) policies enforce 
 
 ### Row Level Security (RLS)
 - `wines` — users can only read/write their own rows
-- `shared_wines` — **must be readable by the `anon` role** (unauthenticated) so share links work for all visitors regardless of login status. If share links return "Wine not found", check this policy.
+- `shared_wines` — **must be readable by the `anon` role** so share links work for all visitors. If share links return "Wine not found", check this policy.
 
 ### Authentication URL Configuration
 **Path:** Supabase → Authentication → URL Configuration
@@ -224,14 +241,15 @@ The anon key is intentionally public. Row Level Security (RLS) policies enforce 
 | Site URL | https://weldswine.co.uk |
 | Redirect URLs | https://weldswine.co.uk/** |
 
-The `/**` wildcard is required — without it, password reset and email confirmation links with query strings are rejected by Supabase.
+The `/**` wildcard is required — without it, password reset and email confirmation links are rejected.
 
-Email confirmation is **enabled** — new users must verify their email before they can sign in.
+### Email Confirmation
+Email confirmation is **enabled** — new users must verify their email before signing in. The app shows "Please check your email and click the confirmation link to sign in." Only the Supabase confirmation email is sent — no separate welcome email.
 
 ### Managing Users
 - **List users:** Supabase → Authentication → Users
 - **Delete a user:** three-dot menu → Delete user
-- **Use the dashboard, not raw SQL** — deleting from `auth.users` via SQL leaves orphaned rows in `wines` and `shared_wines`
+- **Use the dashboard, not raw SQL** — deleting from `auth.users` via SQL leaves orphaned rows
 
 ### Free Tier Limits
 | Resource | Limit |
@@ -240,10 +258,8 @@ Email confirmation is **enabled** — new users must verify their email before t
 | File storage (photos) | 1GB |
 | Monthly active users | 50,000 |
 
-Upgrade to Supabase Pro (~$25/month) if approaching limits.
-
-### Manual Backup (free tier has no auto-backup)
-Supabase → Table Editor → select table → Export as CSV. Do this monthly for `wines` and `shared_wines`.
+### Manual Backup
+Supabase → Table Editor → select table → Export as CSV. Do monthly for `wines` and `shared_wines`.
 
 ---
 
@@ -251,13 +267,13 @@ Supabase → Table Editor → select table → Export as CSV. Do this monthly fo
 
 - **Console:** console.anthropic.com
 - **API key location:** Cloudflare Worker secret `ANTHROPIC_API_KEY`
+- **Model used:** `claude-haiku-4-5-20251001`
 - **Cost:** Pay-per-use, a few pence per label scan
-- **Monitor:** console.anthropic.com → Usage (check monthly)
 
 **Key rotation:**
 1. console.anthropic.com → API Keys → Create new key
-2. Update `ANTHROPIC_API_KEY` in Cloudflare Worker secrets
-3. Delete old key from Anthropic console
+2. Update `ANTHROPIC_API_KEY` in Worker secrets (aged-wave-00c3)
+3. Delete old key
 
 ---
 
@@ -266,17 +282,15 @@ Supabase → Table Editor → select table → Export as CSV. Do this monthly fo
 - **Dashboard:** resend.com
 - **API key location:** Cloudflare Worker secret `RESEND_API_KEY`
 - **Free tier:** 3,000 emails/month, 100/day
-- **Sending domain:** weldswine.co.uk (verified via DKIM in Cloudflare DNS)
+- **Sending domain:** `weldswine.co.uk` (verified)
+- **From address:** `hello@weldswine.co.uk`
 
-**Emails sent:**
-| Trigger | Recipient | Purpose |
-|---------|-----------|---------|
-| New user registration | New user's email | Welcome email |
+> No welcome email is sent on signup — Supabase handles the confirmation email. Resend is configured but currently unused for user-facing emails.
 
 **Key rotation:**
 1. resend.com → API Keys → Create new key
-2. Update `RESEND_API_KEY` in Cloudflare Worker secrets
-3. Delete old key from Resend
+2. Update `RESEND_API_KEY` in Worker secrets (aged-wave-00c3)
+3. Delete old key
 
 ---
 
@@ -289,21 +303,13 @@ Supabase → Table Editor → select table → Export as CSV. Do this monthly fo
 | Google Fonts | — | Lora + Inter typefaces |
 | BigDataCloud | — | GPS coordinates → place name |
 
-**To update Leaflet**, change both references in `index.html`:
-```html
-<!-- In <head>: -->
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.5/dist/leaflet.css"/>
-<!-- In JS (search "unpkg.com/leaflet"): -->
-s.src = 'https://unpkg.com/leaflet@1.9.5/dist/leaflet.js';
-```
-
 ---
 
 ## File Structure
 
 ```
-index.html              — entire app (HTML + CSS + JS, ~4,300 lines)
-cloudflare-worker.js    — AI scanning + email proxy (deployed to Cloudflare Workers)
+index.html              — entire app (HTML + CSS + JS, ~4,400 lines)
+cloudflare-worker.js    — AI scanning + email proxy (reference copy; deploy via Cloudflare Edit Code)
 CNAME                   — GitHub Pages custom domain (do not delete)
 ADMIN.md                — this guide
 ```
@@ -312,10 +318,8 @@ ADMIN.md                — this guide
 
 ## How to Reproduce This Setup from Scratch
 
-Follow these steps in order to rebuild the full infrastructure.
-
 ### Step 1 — GitHub repository
-1. Create repo (e.g. `WeldsWine`) on github.com
+1. Create repo `WeldsWine` on github.com
 2. Add `index.html`, `cloudflare-worker.js`, `CNAME` (containing `weldswine.co.uk`), `ADMIN.md`
 3. Push to `main`
 4. Repo → Settings → Pages → Source: `main`, root
@@ -325,67 +329,51 @@ Follow these steps in order to rebuild the full infrastructure.
 1. Create new project at supabase.com
 2. Create tables: `wines`, `shared_wines`
 3. Enable RLS on both tables
-4. Add anon SELECT policy on `shared_wines`: allow all reads for role `anon`
-5. Authentication → URL Configuration:
-   - Site URL: `https://weldswine.co.uk`
-   - Redirect URLs: `https://weldswine.co.uk/**`
+4. Add anon SELECT policy on `shared_wines`
+5. Authentication → URL Configuration: Site URL + Redirect URLs as above
 6. Copy project URL and anon key into `index.html`
 
 ### Step 3 — Anthropic
 1. Create API key at console.anthropic.com → API Keys
-2. Keep it for the Worker in step 5
 
 ### Step 4 — Resend
 1. Create account at resend.com
 2. Add sending domain: `weldswine.co.uk`
-3. Create API key — keep it for the Worker
+3. Add DNS records Resend provides in Cloudflare DNS
+4. Verify domain, create API key
 
 ### Step 5 — Cloudflare Worker
-1. dash.cloudflare.com → Workers & Pages → Create Worker
-2. Paste `cloudflare-worker.js` → Deploy
+1. dash.cloudflare.com → Workers & Pages → Create → **Start with Hello World**
+2. Replace code with `cloudflare-worker.js` → Deploy
 3. Settings → Variables and Secrets → add `ANTHROPIC_API_KEY` and `RESEND_API_KEY`
-4. Note the Worker URL (e.g. `https://xxx.workers.dev`)
-5. Update the `WORKER_URL` constant in `index.html`
+4. Update `WORKER_URL` in `index.html` with new Worker URL
+5. **Never connect to Git**
 
 ### Step 6 — Cloudflare DNS zone
 1. dash.cloudflare.com → Add a site → `weldswine.co.uk` → Free plan
-2. Add DNS records:
-
-```
-Type: A      Name: @    Value: 185.199.108.153   Proxy: ON
-Type: A      Name: @    Value: 185.199.109.153   Proxy: ON
-Type: A      Name: @    Value: 185.199.110.153   Proxy: ON
-Type: A      Name: @    Value: 185.199.111.153   Proxy: ON
-Type: CNAME  Name: www  Value: weldja.github.io  Proxy: ON
-```
-
+2. Add A records (×4) and CNAME for GitHub Pages
 3. Note the two nameservers Cloudflare provides
 
 ### Step 7 — Namecheap nameservers
-1. namecheap.com → Domain List → weldswine.co.uk → Manage
-2. Nameservers → Custom DNS → enter both Cloudflare nameservers
-3. Save — propagation takes 10–30 minutes
+1. namecheap.com → Domain List → weldswine.co.uk → Custom DNS
+2. Enter both Cloudflare nameservers → Save
 
 ### Step 8 — Cloudflare Email Routing
-1. dash.cloudflare.com → weldswine.co.uk → Email → Email Routing → Enable
-2. Delete the conflicting Namecheap SPF TXT record when prompted
-3. Let Cloudflare add MX, SPF, and DKIM records automatically
-4. Add routing rule: `hello@weldswine.co.uk` → `james_weld@yahoo.com`
-5. Confirm forwarding address via verification email
+1. weldswine.co.uk → Email → Email Routing → Enable
+2. Add routing rule: `hello@weldswine.co.uk` → forwarding destination
+3. Verify forwarding address
 
 ### Step 9 — Disable email obfuscation
-Cloudflare → weldswine.co.uk → Security → Settings → Email Address Obfuscation → **Off**
+Cloudflare → Security → Settings → Email Address Obfuscation → **Off**
 
 ### Step 10 — Verify everything
 - [ ] Site loads at https://weldswine.co.uk
 - [ ] HTTPS padlock shows
 - [ ] Login and signup work
-- [ ] Signup shows "check your email" message (not "signed in")
-- [ ] Email confirmation link works and lands on the app
-- [ ] Password reset email arrives and redirects correctly
-- [ ] Wine label scanning works
-- [ ] Welcome email arrives on registration
-- [ ] Contact link opens mail client to `hello@weldswine.co.uk`
+- [ ] Signup shows "check your email" (not "signed in")
+- [ ] Password reset works
+- [ ] Label scanning works
+- [ ] Contact link opens `mailto:hello@weldswine.co.uk`
 - [ ] Share links work for logged-in and logged-out users
 - [ ] Map view loads
 
@@ -394,25 +382,22 @@ Cloudflare → weldswine.co.uk → Security → Settings → Email Address Obfus
 ## Routine Maintenance Checklist
 
 ### Monthly
-- [ ] Check Supabase usage — Storage and Auth → Usage
-- [ ] Check Anthropic API usage and cost — console.anthropic.com → Usage
-- [ ] Check Resend sending logs — resend.com → Logs
-- [ ] Verify site loads and login works
-- [ ] Check contact link is not broken (Cloudflare obfuscation)
-- [ ] Manual CSV export of `wines` and `shared_wines` (free tier has no auto-backup)
+- [ ] Check Supabase usage
+- [ ] Check Anthropic API usage and cost
+- [ ] Check Resend logs
+- [ ] Verify site and login work
+- [ ] Check contact link not broken
+- [ ] CSV export of `wines` and `shared_wines`
 
 ### Quarterly
 - [ ] Rotate Anthropic API key
 - [ ] Rotate Resend API key
-- [ ] Review Supabase database and storage size
-- [ ] Delete orphaned photos in Supabase Storage if storage is high
-- [ ] Check Supabase JS library for updates
+- [ ] Review Supabase database size
 
 ### Annually
 - [ ] Renew domain on Namecheap (due 17 March 2027)
-- [ ] Review Supabase plan vs actual usage
-- [ ] Check Leaflet for security updates
-- [ ] Review Cloudflare plan
+- [ ] Review Supabase plan vs usage
+- [ ] Check Leaflet for updates
 
 ---
 
@@ -420,59 +405,41 @@ Cloudflare → weldswine.co.uk → Security → Settings → Email Address Obfus
 
 | Problem | Likely cause | Fix |
 |---------|-------------|-----|
-| Contact link gives 404 | Cloudflare re-obfuscated the email | Security → Settings → Email Obfuscation → Off; re-deploy |
-| Share links say "Wine not found" | Supabase RLS blocking anon reads on `shared_wines` | Add anon SELECT policy to `shared_wines` table |
-| Share links work incognito but not logged in | Same RLS issue | Same fix as above |
-| Label scanning not working | Worker down or bad Anthropic key | Check Worker in Cloudflare; verify key at console.anthropic.com |
-| Welcome email not received | Bad Resend key or Worker error | Check resend.com → Logs; verify `RESEND_API_KEY` in Worker |
+| Contact link gives 404 | Cloudflare re-obfuscated the email | Security → Settings → Email Obfuscation → Off |
+| Share links say "Wine not found" | Supabase RLS blocking anon reads | Add anon SELECT policy to `shared_wines` |
+| Scanning says "could not reach proxy" | Wrong Worker URL or origin mismatch | Check `WORKER_URL` in `index.html` matches `aged-wave-00c3`; check allowed origins in worker |
+| Scanning says "key missing" | API key not set | Check `ANTHROPIC_API_KEY` in Worker secrets |
+| Worker shows "static assets only" | Worker was connected to Git | Disconnect Git in Worker Settings; redeploy via Edit Code |
+| Save button stuck disabled on iPhone | iOS error during save | Fixed in code — try/catch/finally ensures button re-enables |
+| Duplicate emails on signup | — | Fixed — welcome email removed; only Supabase confirmation sent |
+| ERR_QUIC_PROTOCOL_ERROR | QUIC/HTTP3 conflict | chrome://flags/#enable-quic → Disabled |
 | Users can't log in | Supabase auth issue | Supabase → Authentication → Logs |
-| Password reset link rejected | Missing wildcard in Supabase redirect URLs | Add `https://weldswine.co.uk/**` to Supabase Auth URL Configuration |
+| Password reset rejected | Missing wildcard redirect URL | Add `https://weldswine.co.uk/**` in Supabase Auth config |
 | Site not updating after push | Cloudflare cache | Cloudflare → Caching → Purge Everything |
-| Map not showing | Leaflet CDN issue | Check browser console; Leaflet loads lazily on first map open |
-| Photos not saving | Supabase storage full | Supabase → Storage → delete orphaned files |
-| DNS not resolving | Nameservers reverted on Namecheap | Namecheap → Manage → confirm nameservers still show Cloudflare's |
-| Email forwarding broken | MX records missing or changed | Cloudflare → Email → Email Routing → check status |
-
----
-
-## Taking the Site Offline
-
-**Quickest — swap in a maintenance page:**
-```bash
-# Replace index.html content with a holding page, then:
-git add index.html
-git commit -m "Maintenance mode"
-git push
-
-# Restore:
-git checkout HEAD~1 -- index.html
-git add index.html
-git commit -m "Restore site"
-git push
-```
-
-**Alternative — disable in Cloudflare:**
-Cloudflare → Workers & Pages → your Pages project → Settings → Disable project
+| DNS not resolving | Nameservers reverted | Namecheap → confirm Cloudflare nameservers still set |
+| Email forwarding broken | MX records changed | Cloudflare → Email → Email Routing → check status |
 
 ---
 
 ## Git Quick Reference
 
 ```bash
-git status                          # see what's changed
+git status
 git add index.html
 git commit -m "Description"
-git push                            # live in ~60 seconds
+git push                    # index.html live in ~60 seconds
 
-git log --oneline -10               # recent commit history
-git diff index.html                 # see uncommitted changes
+git log --oneline -10       # recent history
+git diff index.html         # uncommitted changes
 
-# Emergency rollback one commit
+# Rollback one commit
 git checkout HEAD~1 -- index.html
 git add index.html
 git commit -m "Rollback"
 git push
 ```
+
+> `git push` only deploys `index.html` via GitHub Pages. Worker changes must be deployed via Cloudflare Edit Code.
 
 ---
 
@@ -487,4 +454,4 @@ git push
 | Anthropic console | https://console.anthropic.com |
 | Resend dashboard | https://resend.com |
 | Namecheap | https://namecheap.com (domain renewal only) |
-| Cloudflare Worker | dash.cloudflare.com → Workers & Pages → aged-union-8f0d |
+| Cloudflare Worker | dash.cloudflare.com → Workers & Pages → aged-wave-00c3 |
