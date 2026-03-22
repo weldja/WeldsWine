@@ -3516,8 +3516,9 @@ function processPendingImport(data) {
     showToast('Sign in to add this wine to your journal ↑');
     return;
   }
-  // Open the Add Wine form pre-populated with all shared data
-  openModal();
+  // Open the Add Wine form — pass rating via wine-like object so openModal
+  // sets it synchronously (avoids race with wineForm.reset())
+  openModal({ rating: data.rating || 0 }, data.photoFront || null, null);
   setTimeout(() => {
     // Text fields
     const map = {name:'wineName', winery:'winery', vintage:'vintage', country:'country',
@@ -3531,23 +3532,17 @@ function processPendingImport(data) {
       const s = document.getElementById('style');
       [...s.options].forEach(o => { if (o.value === data.style) s.value = data.style; });
     }
-    // Date tasted
-    if (data.dateTasted) {
-      const d = document.getElementById('dateTasted');
-      if (d) { d.value = data.dateTasted; flashAutofill(d); }
-    }
-    // Rating
-    if (data.rating) { setStars(data.rating); }
-    // Photo
-    if (data.photoFront) {
-      currentPhotoFront = data.photoFront;
-      setPhotoPreview('Front', data.photoFront);
-    }
+    // Date tasted — keep today's date (don't import sender's tasting date)
+    // Rating already set via openModal above
+    // Photo already set via openModal above
     // Mark as shared
     if (data.sharedBy) {
       document.getElementById('aiBanner').style.display = 'flex';
       window._importSharedBy = data.sharedBy || 'shared';
     }
+    document.getElementById('modalTitle').textContent = 'Add Wine';
+    document.getElementById('wineId').value = '';
+    document.getElementById('dateTasted').valueAsDate = new Date();
     showToast('Shared wine imported — review and save');
   }, 300);
 }
