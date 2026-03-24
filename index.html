@@ -2076,8 +2076,19 @@ function showApp() {
   if (badge) badge.style.display = 'flex';
 
   try {
+    // Check sessionStorage first (same-tab guest scan flow)
     const raw = sessionStorage.getItem('wwwImportWine');
-    if (raw) { window._pendingImport = JSON.parse(raw); sessionStorage.removeItem('wwwImportWine'); }
+    if (raw) {
+      window._pendingImport = JSON.parse(raw);
+      sessionStorage.removeItem('wwwImportWine');
+    } else {
+      // Fall back to localStorage (survives email confirmation redirect after sign-up)
+      const lsRaw = localStorage.getItem('wwwPendingImport');
+      if (lsRaw) {
+        window._pendingImport = JSON.parse(lsRaw);
+        localStorage.removeItem('wwwPendingImport');
+      }
+    }
   } catch(_) {}
 
   const cacheKey = 'wwwCache_' + (_currentUser?.id || '');
@@ -2186,9 +2197,17 @@ async function handleAuthSubmit() {
     if (error) throw error;
 
     if (!isSignIn) {
-      // Supabase requires email confirmation before the session is active —
-      // show the correct message and stay on the auth screen
-      showAuthMsg('ok', 'Account created! Please check your email and click the confirmation link to sign in.');
+      // Supabase requires email confirmation before the session is active.
+      // If there's a pending wine import, move it to localStorage so it
+      // survives the email confirmation redirect (sessionStorage doesn't).
+      try {
+        const pending = sessionStorage.getItem('wwwImportWine');
+        if (pending) {
+          localStorage.setItem('wwwPendingImport', pending);
+          sessionStorage.removeItem('wwwImportWine');
+        }
+      } catch(_) {}
+      showAuthMsg('ok', 'Account created! Check your email and click the confirmation link — your wine will be waiting when you sign in.');
       setAuthLoading(false);
       return;
     }
