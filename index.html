@@ -4055,7 +4055,7 @@ async function checkPublicWineView() {
         try { sessionStorage.setItem('wwwImportWine', JSON.stringify(importData)); } catch(_) {}
         // Hide public view and show auth screen with sign-in tab
         const publicView = document.getElementById('publicWineView');
-        if (publicView) publicView.classList.remove('show');
+        if (publicView) { publicView.classList.remove('show'); publicView.style.display = 'none'; }
         const authScreen = document.getElementById('authScreen');
         if (authScreen) authScreen.classList.remove('hidden');
         // Switch to sign-in and add a contextual message
@@ -4391,7 +4391,7 @@ async function loadWinesFromDB(cacheKey) {
   showLoadBar();
   if (!_sb) { console.warn('loadWinesFromDB: _sb not ready'); hideLoadBar(); return; }
   const user = _currentUser || (await _sb.auth.getUser()).data?.user;
-  if (!user) { console.warn('loadWinesFromDB: no current user'); return; }
+  if (!user) { console.warn('loadWinesFromDB: no current user'); hideLoadBar(); return; }
   console.log('loadWinesFromDB: fetching for user', user.id);
   try {
     const [metaResult, photoResult] = await Promise.all([
