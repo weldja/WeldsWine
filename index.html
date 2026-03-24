@@ -2030,12 +2030,12 @@ var _guestScanMode = false;
 
 function openGuestScan() {
   _guestScanMode = true;
-  // If the main app is ready, use openScanModal (which resets state cleanly)
   if (typeof openScanModal === 'function') {
     openScanModal();
+    var so = document.getElementById('scanOverlay');
+    if (so) so.style.zIndex = '1100';
     return;
   }
-  // App not yet loaded — fall back to scrolling to the sign-in form
   _guestScanMode = false;
   var panel = document.querySelector('.auth-panel');
   if (panel) panel.scrollIntoView({behavior:'smooth'});
@@ -3290,12 +3290,13 @@ function openModal(wine=null, injectFront=null, injectBack=null) {
   }
 
   modalOverlay.classList.add('open');
+  if (!_currentUser) modalOverlay.style.zIndex = '1100';
   document.body.style.overflow='hidden';
   _pushNavState();
   setTimeout(()=>document.getElementById('wineName').focus(),200);
 }
 
-function closeModal() { modalOverlay.classList.remove('open'); document.body.style.overflow=''; }
+function closeModal() { modalOverlay.classList.remove('open'); modalOverlay.style.zIndex=''; document.body.style.overflow=''; }
 
 /* ── Location tracking ───────────────────────────────────────
    Started once after login. Keeps _appLocLat/Lng/Label fresh.
@@ -4506,7 +4507,7 @@ function openScanModal() {
   _pushNavState();
 }
 
-function closeScanModal() { document.getElementById('scanOverlay').classList.remove('open'); document.body.style.overflow=''; }
+function closeScanModal() { var o=document.getElementById('scanOverlay'); o.classList.remove('open'); o.style.zIndex=''; document.body.style.overflow=''; }
 
 function resetSide(side) {
   // Clear file input value so iOS always fires change event on retake
