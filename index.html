@@ -90,23 +90,36 @@
 .landing-section-body{font-family:var(--font-b);font-size:.9rem;color:var(--warm-gray);line-height:1.7;margin-bottom:24px}
 
 /* ── Demo result card ────────────────────────────────────── */
-.landing-demo-card{background:var(--ivory);border-radius:var(--rl);border:1px solid var(--light-gray);overflow:hidden}
-.landing-demo-header{background:var(--burgundy-deep);padding:10px 14px;display:flex;align-items:center;gap:8px}
-.landing-demo-header-text{font-family:var(--font-b);font-size:.78rem;color:rgba(245,237,226,.75)}
+.landing-demo-card{background:rgba(255,255,255,.06);border-radius:var(--rl);border:1px solid rgba(255,255,255,.1);overflow:hidden}
+.landing-demo-header{background:rgba(0,0,0,.2);padding:10px 14px;display:flex;align-items:center;gap:8px}
+.landing-demo-header-dot{width:6px;height:6px;border-radius:50%;background:var(--gold);flex-shrink:0}
+.landing-demo-header-text{font-family:var(--font-b);font-size:.72rem;color:rgba(245,237,226,.6);letter-spacing:.04em}
 .landing-demo-header-badge{background:rgba(201,163,74,.2);color:var(--gold);font-family:var(--font-b);font-size:.65rem;padding:2px 8px;border-radius:10px;margin-left:auto;letter-spacing:.06em}
 .landing-demo-body{padding:14px;display:flex;gap:12px;align-items:flex-start}
-.landing-demo-img{width:68px;height:92px;background:var(--parchment);border-radius:8px;border:1px solid var(--light-gray);display:flex;align-items:center;justify-content:center;font-size:1.8rem;flex-shrink:0;position:relative}
-.landing-demo-scan-ring{position:absolute;inset:5px;border:1.5px dashed var(--gold);border-radius:4px;opacity:.55;animation:scanPulse 2s ease-in-out infinite}
-@keyframes scanPulse{0%,100%{opacity:.4}50%{opacity:.8}}
-.landing-demo-fields{flex:1}
-.landing-demo-field{margin-bottom:9px}
-.landing-demo-field-label{font-family:var(--font-b);font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:var(--warm-gray);margin-bottom:2px}
-.landing-demo-field-value{font-family:var(--font-b);font-size:.88rem;font-weight:500;color:var(--charcoal)}
-.landing-demo-field-sub{font-family:var(--font-b);font-size:.76rem;color:var(--warm-gray);margin-top:1px}
-.landing-demo-ai-pill{display:inline-flex;align-items:center;gap:4px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:6px;padding:2px 7px;font-family:var(--font-b);font-size:.65rem;color:#16a34a;margin-top:3px}
-.landing-demo-actions{padding:0 14px 14px;display:flex;gap:8px}
+.landing-demo-img{width:76px;height:104px;background:rgba(255,255,255,.07);border-radius:8px;border:1px solid rgba(255,255,255,.1);flex-shrink:0;position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center}
+.landing-demo-label-inner{width:52px;height:76px;background:rgba(255,255,255,.05);border-radius:4px;border:1px solid rgba(255,255,255,.08);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px}
+.landing-demo-crest{width:20px;height:20px;border-radius:50%;background:rgba(201,163,74,.2);border:1px solid rgba(201,163,74,.25)}
+.landing-demo-line{height:3px;background:rgba(255,255,255,.12);border-radius:2px}
+.landing-demo-beam{position:absolute;left:0;right:0;height:2px;background:var(--gold);opacity:0;top:0;pointer-events:none}
+.landing-demo-corner{position:absolute;border-color:var(--gold);border-style:solid;width:10px;height:10px;opacity:.7}
+.landing-demo-corner.tl{top:4px;left:4px;border-width:1.5px 0 0 1.5px}
+.landing-demo-corner.tr{top:4px;right:4px;border-width:1.5px 1.5px 0 0}
+.landing-demo-corner.bl{bottom:4px;left:4px;border-width:0 0 1.5px 1.5px}
+.landing-demo-corner.br{bottom:4px;right:4px;border-width:0 1.5px 1.5px 0}
+.landing-demo-fields{flex:1;display:flex;flex-direction:column;gap:7px}
+.landing-demo-field{opacity:0;transform:translateX(6px);transition:opacity .25s,transform .25s}
+.landing-demo-field.visible{opacity:1;transform:translateX(0)}
+.landing-demo-field-label{font-family:var(--font-b);font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:rgba(245,237,226,.4);margin-bottom:2px}
+.landing-demo-field-value{font-family:var(--font-b);font-size:.82rem;font-weight:500;color:var(--ivory)}
+.landing-demo-field-value.typing::after{content:"|";animation:ldBlink .6s step-end infinite;color:var(--gold)}
+@keyframes ldBlink{0%,100%{opacity:1}50%{opacity:0}}
+.landing-demo-ai-pill{display:inline-flex;align-items:center;gap:4px;background:rgba(22,163,74,.15);border:1px solid rgba(22,163,74,.3);border-radius:6px;padding:2px 7px;font-family:var(--font-b);font-size:.65rem;color:#4ade80;opacity:0;transition:opacity .4s;margin-top:1px}
+.landing-demo-ai-pill.visible{opacity:1}
+.landing-demo-actions{padding:0 14px 14px;display:flex;gap:8px;opacity:0;transition:opacity .4s}
+.landing-demo-actions.visible{opacity:1}
 .landing-demo-save{flex:1;background:var(--burgundy);color:var(--ivory);border:none;border-radius:8px;padding:9px;font-family:var(--font-b);font-size:.82rem;font-weight:600;cursor:pointer}
-.landing-demo-edit{background:none;border:1px solid var(--light-gray);border-radius:8px;padding:9px 12px;font-family:var(--font-b);font-size:.82rem;color:var(--warm-gray);cursor:pointer}
+.landing-demo-edit{background:none;border:1px solid rgba(255,255,255,.15);border-radius:8px;padding:9px 12px;font-family:var(--font-b);font-size:.82rem;color:rgba(245,237,226,.55);cursor:pointer}
+.landing-phase-label{font-family:var(--font-b);font-size:.68rem;color:var(--gold);letter-spacing:.1em;text-transform:uppercase;text-align:center;min-height:16px;margin-bottom:6px;opacity:.8}
 
 /* ── How it works steps ──────────────────────────────────── */
 .landing-steps{display:flex;flex-direction:column;gap:0}
@@ -165,13 +178,6 @@
   .landing-step-title{color:var(--ivory)}
   .landing-step-text{color:rgba(245,237,226,.6)}
   .landing-step:not(:last-child)::after{background:rgba(255,255,255,.1)}
-  .landing-demo-card{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.1)}
-  .landing-demo-header{background:rgba(255,255,255,.05)}
-  .landing-demo-body{background:transparent}
-  .landing-demo-img{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.1)}
-  .landing-demo-field-label{color:rgba(245,237,226,.5)}
-  .landing-demo-field-value{color:var(--ivory)}
-  .landing-demo-field-sub{color:rgba(245,237,226,.55)}
   .landing-demo-actions{display:none}
   .landing-bottom-cta{display:none}
   .landing-proof{background:rgba(0,0,0,.15);border-color:rgba(255,255,255,.06)}
@@ -1063,35 +1069,48 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
         <div class="landing-section-title">Instant label read</div>
         <div class="landing-section-body">AI scans the front and back label, pulls the key details, and pre-fills everything. Just check it looks right and save.</div>
 
+        <p class="landing-phase-label" id="ldPhaseLabel">scanning label...</p>
         <div class="landing-demo-card">
           <div class="landing-demo-header">
-            <span style="font-size:.9rem">📷</span>
-            <span class="landing-demo-header-text">Label scan complete</span>
-            <span class="landing-demo-header-badge">AI filled</span>
+            <div class="landing-demo-header-dot"></div>
+            <span class="landing-demo-header-text">Label scan</span>
+            <span class="landing-demo-header-badge" id="ldHeaderBadge">reading...</span>
           </div>
           <div class="landing-demo-body">
-            <div class="landing-demo-img">
-              🍷
-              <div class="landing-demo-scan-ring"></div>
+            <div class="landing-demo-img" id="ldLabelFrame">
+              <div class="landing-demo-label-inner">
+                <div class="landing-demo-crest"></div>
+                <div class="landing-demo-line" style="width:32px"></div>
+                <div class="landing-demo-line" style="width:22px"></div>
+                <div class="landing-demo-line" style="width:28px"></div>
+              </div>
+              <div class="landing-demo-beam" id="ldBeam"></div>
+              <div class="landing-demo-corner tl"></div>
+              <div class="landing-demo-corner tr"></div>
+              <div class="landing-demo-corner bl"></div>
+              <div class="landing-demo-corner br"></div>
             </div>
             <div class="landing-demo-fields">
-              <div class="landing-demo-field">
+              <div class="landing-demo-field" id="ldf0">
                 <div class="landing-demo-field-label">Wine name</div>
-                <div class="landing-demo-field-value">Château Margaux</div>
-                <div class="landing-demo-field-sub">Margaux, Bordeaux</div>
+                <div class="landing-demo-field-value" id="ldv0"></div>
               </div>
-              <div class="landing-demo-field">
+              <div class="landing-demo-field" id="ldf1">
+                <div class="landing-demo-field-label">Region</div>
+                <div class="landing-demo-field-value" id="ldv1"></div>
+              </div>
+              <div class="landing-demo-field" id="ldf2">
                 <div class="landing-demo-field-label">Grape · Vintage</div>
-                <div class="landing-demo-field-value">Cabernet Sauvignon · 2019</div>
+                <div class="landing-demo-field-value" id="ldv2"></div>
               </div>
-              <div class="landing-demo-field">
+              <div class="landing-demo-field" id="ldf3">
                 <div class="landing-demo-field-label">Tasting notes</div>
-                <div class="landing-demo-field-value" style="font-weight:400;font-size:.8rem;line-height:1.5">Dark fruit, cedar, silky tannins…</div>
+                <div class="landing-demo-field-value" id="ldv3" style="font-size:.75rem;font-weight:400;white-space:normal;line-height:1.4"></div>
               </div>
-              <div class="landing-demo-ai-pill">✓ Read from label</div>
+              <div class="landing-demo-ai-pill" id="ldAiPill">✓ AI read from label</div>
             </div>
           </div>
-          <div class="landing-demo-actions">
+          <div class="landing-demo-actions" id="ldActions">
             <button class="landing-demo-save" onclick="document.querySelector('.auth-panel').scrollIntoView({behavior:'smooth'})">Save to my journal</button>
             <button class="landing-demo-edit">Edit</button>
           </div>
@@ -2011,13 +2030,12 @@ var _guestScanMode = false;
 
 function openGuestScan() {
   _guestScanMode = true;
+  // If the main app is ready, use openScanModal (which resets state cleanly)
   if (typeof openScanModal === 'function') {
     openScanModal();
-    // Raise both overlays above authScreen (z-index:1000)
-    var so = document.getElementById('scanOverlay');
-    if (so) so.style.zIndex = '1100';
     return;
   }
+  // App not yet loaded — fall back to scrolling to the sign-in form
   _guestScanMode = false;
   var panel = document.querySelector('.auth-panel');
   if (panel) panel.scrollIntoView({behavior:'smooth'});
@@ -3272,14 +3290,12 @@ function openModal(wine=null, injectFront=null, injectBack=null) {
   }
 
   modalOverlay.classList.add('open');
-  // Guest mode: raise above authScreen (z-index:1000)
-  if (!_currentUser) modalOverlay.style.zIndex = '1100';
   document.body.style.overflow='hidden';
   _pushNavState();
   setTimeout(()=>document.getElementById('wineName').focus(),200);
 }
 
-function closeModal() { modalOverlay.classList.remove('open'); modalOverlay.style.zIndex=''; document.body.style.overflow=''; }
+function closeModal() { modalOverlay.classList.remove('open'); document.body.style.overflow=''; }
 
 /* ── Location tracking ───────────────────────────────────────
    Started once after login. Keeps _appLocLat/Lng/Label fresh.
@@ -4490,7 +4506,7 @@ function openScanModal() {
   _pushNavState();
 }
 
-function closeScanModal() { var o=document.getElementById('scanOverlay'); o.classList.remove('open'); o.style.zIndex=''; document.body.style.overflow=''; }
+function closeScanModal() { document.getElementById('scanOverlay').classList.remove('open'); document.body.style.overflow=''; }
 
 function resetSide(side) {
   // Clear file input value so iOS always fires change event on retake
@@ -4793,6 +4809,113 @@ function closeMobileMenu() {
 // FILE INTEGRITY CHECK — if this line is missing the file is truncated
 if (typeof closeMobileMenu !== 'function') console.error('CRITICAL: index.html is truncated — closeMobileMenu missing');
 
+</script>
+
+<script>
+(function() {
+  var ldFields = [
+    {fId:'ldf0', vId:'ldv0', text:'Château Pichon Baron'},
+    {fId:'ldf1', vId:'ldv1', text:'Pauillac, Bordeaux'},
+    {fId:'ldf2', vId:'ldv2', text:'Cab Sauv · 2018'},
+    {fId:'ldf3', vId:'ldv3', text:'Blackcurrant, cedar, firm tannins'}
+  ];
+
+  function ldType(el, text, cb) {
+    el.textContent = '';
+    el.classList.add('typing');
+    var i = 0;
+    var iv = setInterval(function() {
+      el.textContent = text.slice(0, ++i);
+      if (i >= text.length) {
+        clearInterval(iv);
+        el.classList.remove('typing');
+        if (cb) cb();
+      }
+    }, 36);
+  }
+
+  function ldRun() {
+    var beam    = document.getElementById('ldBeam');
+    var phase   = document.getElementById('ldPhaseLabel');
+    var badge   = document.getElementById('ldHeaderBadge');
+    var actions = document.getElementById('ldActions');
+    var pill    = document.getElementById('ldAiPill');
+    if (!beam) return;
+
+    ldFields.forEach(function(f) {
+      var fe = document.getElementById(f.fId);
+      var ve = document.getElementById(f.vId);
+      if (fe) { fe.classList.remove('visible'); }
+      if (ve) { ve.textContent = ''; }
+    });
+    if (actions) actions.classList.remove('visible');
+    if (pill)    pill.classList.remove('visible');
+    if (badge)   badge.textContent = 'reading...';
+    if (phase)   phase.textContent = 'scanning label...';
+
+    beam.style.transition = 'none';
+    beam.style.top = '0px';
+    beam.style.opacity = '0.9';
+
+    setTimeout(function() {
+      beam.style.transition = 'top 1.6s linear';
+      beam.style.top = '100px';
+    }, 60);
+    setTimeout(function() {
+      beam.style.transition = 'top 1.6s linear';
+      beam.style.top = '0px';
+    }, 1700);
+    setTimeout(function() {
+      beam.style.transition = 'top 1.6s linear';
+      beam.style.top = '100px';
+      if (phase) phase.textContent = 'reading with AI...';
+    }, 3350);
+    setTimeout(function() {
+      beam.style.transition = 'opacity .4s';
+      beam.style.opacity = '0';
+      if (badge) badge.textContent = 'AI filled';
+      if (phase) phase.textContent = 'fields extracted';
+    }, 4950);
+
+    function showField(idx, cb) {
+      var f  = ldFields[idx];
+      var fe = document.getElementById(f.fId);
+      var ve = document.getElementById(f.vId);
+      if (!fe || !ve) { if (cb) cb(); return; }
+      fe.classList.add('visible');
+      setTimeout(function() { ldType(ve, f.text, cb); }, 100);
+    }
+
+    setTimeout(function() {
+      showField(0, function() {
+        setTimeout(function() {
+          showField(1, function() {
+            setTimeout(function() {
+              showField(2, function() {
+                setTimeout(function() {
+                  showField(3, function() {
+                    setTimeout(function() {
+                      if (pill)    pill.classList.add('visible');
+                      if (actions) actions.classList.add('visible');
+                      if (phase)   phase.textContent = 'ready to save';
+                      setTimeout(ldRun, 3400);
+                    }, 250);
+                  });
+                }, 180);
+              });
+            }, 180);
+          });
+        }, 180);
+      });
+    }, 5100);
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function() { setTimeout(ldRun, 600); });
+  } else {
+    setTimeout(ldRun, 600);
+  }
+})();
 </script>
 </body>
 </html>
