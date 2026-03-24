@@ -4032,11 +4032,41 @@ async function checkPublicWineView() {
     <p style="font-family:var(--font-b);font-size:.78rem;color:var(--warm-gray);font-style:italic;text-align:center;margin-bottom:16px">Shared from Welds Wine Wisdoms</p>
   `;
 
-  // Wire up import button — show if user is logged in
+  // Wire up import button — always show, handle auth inside
   const importBtn = document.getElementById('importSharedWineBtn');
   if (importBtn) {
     importBtn.style.display = 'block';
-    importBtn.onclick = () => importSharedWine(w);
+    importBtn.onclick = () => {
+      if (_currentUser) {
+        // Logged in — import immediately
+        importSharedWine(w);
+      } else {
+        // Not logged in — stash wine data then show auth screen with prompt
+        const importData = {
+          name:       w.name,       winery:   w.winery,
+          vintage:    w.vintage,    country:  w.country,
+          region:     w.region,     grape:    w.grape,
+          style:      w.style,      rating:   w.rating     || null,
+          notes:      w.notes       || null,  price:       w.price      || null,
+          dateTasted: w.date_tasted || null,  locLabel:    w.loc_label  || null,
+          photoFront: w.photo_front || null,
+          sharedBy:   w.shared_by_email || 'shared',
+        };
+        try { sessionStorage.setItem('wwwImportWine', JSON.stringify(importData)); } catch(_) {}
+        // Hide public view and show auth screen with sign-in tab
+        const publicView = document.getElementById('publicWineView');
+        if (publicView) publicView.classList.remove('show');
+        const authScreen = document.getElementById('authScreen');
+        if (authScreen) authScreen.classList.remove('hidden');
+        // Switch to sign-in and add a contextual message
+        switchAuthTab('signin');
+        setTimeout(function() {
+          var panel = document.querySelector('.auth-panel');
+          if (panel) panel.scrollIntoView({behavior:'smooth'});
+          showAuthMsg('ok', 'Sign in to add "' + (w.name || 'this wine') + '" to your journal');
+        }, 150);
+      }
+    };
   }
 
   return true;
