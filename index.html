@@ -108,15 +108,15 @@
 .landing-demo-corner.br{bottom:4px;right:4px;border-width:0 1.5px 1.5px 0}
 .landing-demo-fields{flex:1;display:flex;flex-direction:column;gap:7px}
 .landing-demo-field{opacity:0;transform:translateX(6px);transition:opacity .25s,transform .25s}
-.landing-demo-field.visible{opacity:1;transform:translateX(0)}
+.landing-demo-field.ld-visible{opacity:1;transform:translateX(0)}
 .landing-demo-field-label{font-family:var(--font-b);font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:rgba(245,237,226,.4);margin-bottom:2px}
 .landing-demo-field-value{font-family:var(--font-b);font-size:.82rem;font-weight:500;color:var(--ivory)}
-.landing-demo-field-value.typing::after{content:"|";animation:ldBlink .6s step-end infinite;color:var(--gold)}
+.landing-demo-field-value.ld-typing::after{content:"|";animation:ldBlink .6s step-end infinite;color:var(--gold)}
 @keyframes ldBlink{0%,100%{opacity:1}50%{opacity:0}}
 .landing-demo-ai-pill{display:inline-flex;align-items:center;gap:4px;background:rgba(22,163,74,.15);border:1px solid rgba(22,163,74,.3);border-radius:6px;padding:2px 7px;font-family:var(--font-b);font-size:.65rem;color:#4ade80;opacity:0;transition:opacity .4s;margin-top:1px}
-.landing-demo-ai-pill.visible{opacity:1}
+.landing-demo-ai-pill.ld-visible{opacity:1}
 .landing-demo-actions{padding:0 14px 14px;display:flex;gap:8px;opacity:0;transition:opacity .4s}
-.landing-demo-actions.visible{opacity:1}
+.landing-demo-actions.ld-visible{opacity:1}
 .landing-demo-save{flex:1;background:var(--burgundy);color:var(--ivory);border:none;border-radius:8px;padding:9px;font-family:var(--font-b);font-size:.82rem;font-weight:600;cursor:pointer}
 .landing-demo-edit{background:none;border:1px solid rgba(255,255,255,.15);border-radius:8px;padding:9px 12px;font-family:var(--font-b);font-size:.82rem;color:rgba(245,237,226,.55);cursor:pointer}
 .landing-phase-label{font-family:var(--font-b);font-size:.68rem;color:var(--gold);letter-spacing:.1em;text-transform:uppercase;text-align:center;min-height:16px;margin-bottom:6px;opacity:.8}
@@ -1069,7 +1069,7 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
         <div class="landing-section-title">Instant label read</div>
         <div class="landing-section-body">AI scans the front and back label, pulls the key details, and pre-fills everything. Just check it looks right and save.</div>
 
-        <p class="landing-phase-label" id="ldPhaseLabel">scanning label...</p>
+        <p class="landing-phase-label" id="ldPhaseLabel"></p>
         <div class="landing-demo-card">
           <div class="landing-demo-header">
             <div class="landing-demo-header-dot"></div>
@@ -1077,7 +1077,7 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
             <span class="landing-demo-header-badge" id="ldHeaderBadge">reading...</span>
           </div>
           <div class="landing-demo-body">
-            <div class="landing-demo-img" id="ldLabelFrame">
+            <div class="landing-demo-img">
               <div class="landing-demo-label-inner">
                 <div class="landing-demo-crest"></div>
                 <div class="landing-demo-line" style="width:32px"></div>
@@ -4812,108 +4812,78 @@ if (typeof closeMobileMenu !== 'function') console.error('CRITICAL: index.html i
 </script>
 
 <script>
-(function() {
-  var ldFields = [
-    {fId:'ldf0', vId:'ldv0', text:'Château Pichon Baron'},
-    {fId:'ldf1', vId:'ldv1', text:'Pauillac, Bordeaux'},
-    {fId:'ldf2', vId:'ldv2', text:'Cab Sauv · 2018'},
-    {fId:'ldf3', vId:'ldv3', text:'Blackcurrant, cedar, firm tannins'}
+(function(){
+  var ldData=[
+    {f:'ldf0',v:'ldv0',t:'Château Pichon Baron'},
+    {f:'ldf1',v:'ldv1',t:'Pauillac, Bordeaux'},
+    {f:'ldf2',v:'ldv2',t:'Cab Sauv · 2018'},
+    {f:'ldf3',v:'ldv3',t:'Blackcurrant, cedar, firm tannins'}
   ];
-
-  function ldType(el, text, cb) {
-    el.textContent = '';
-    el.classList.add('typing');
-    var i = 0;
-    var iv = setInterval(function() {
-      el.textContent = text.slice(0, ++i);
-      if (i >= text.length) {
-        clearInterval(iv);
-        el.classList.remove('typing');
-        if (cb) cb();
-      }
-    }, 36);
+  function ldType(el,text,cb){
+    el.textContent='';el.classList.add('ld-typing');
+    var i=0,iv=setInterval(function(){
+      el.textContent=text.slice(0,++i);
+      if(i>=text.length){clearInterval(iv);el.classList.remove('ld-typing');if(cb)cb();}
+    },36);
   }
-
-  function ldRun() {
-    var beam    = document.getElementById('ldBeam');
-    var phase   = document.getElementById('ldPhaseLabel');
-    var badge   = document.getElementById('ldHeaderBadge');
-    var actions = document.getElementById('ldActions');
-    var pill    = document.getElementById('ldAiPill');
-    if (!beam) return;
-
-    ldFields.forEach(function(f) {
-      var fe = document.getElementById(f.fId);
-      var ve = document.getElementById(f.vId);
-      if (fe) { fe.classList.remove('visible'); }
-      if (ve) { ve.textContent = ''; }
+  function ldReset(){
+    ldData.forEach(function(d){
+      var fe=document.getElementById(d.f),ve=document.getElementById(d.v);
+      if(fe)fe.classList.remove('ld-visible');
+      if(ve)ve.textContent='';
     });
-    if (actions) actions.classList.remove('visible');
-    if (pill)    pill.classList.remove('visible');
-    if (badge)   badge.textContent = 'reading...';
-    if (phase)   phase.textContent = 'scanning label...';
-
-    beam.style.transition = 'none';
-    beam.style.top = '0px';
-    beam.style.opacity = '0.9';
-
-    setTimeout(function() {
-      beam.style.transition = 'top 1.6s linear';
-      beam.style.top = '100px';
-    }, 60);
-    setTimeout(function() {
-      beam.style.transition = 'top 1.6s linear';
-      beam.style.top = '0px';
-    }, 1700);
-    setTimeout(function() {
-      beam.style.transition = 'top 1.6s linear';
-      beam.style.top = '100px';
-      if (phase) phase.textContent = 'reading with AI...';
-    }, 3350);
-    setTimeout(function() {
-      beam.style.transition = 'opacity .4s';
-      beam.style.opacity = '0';
-      if (badge) badge.textContent = 'AI filled';
-      if (phase) phase.textContent = 'fields extracted';
-    }, 4950);
-
-    function showField(idx, cb) {
-      var f  = ldFields[idx];
-      var fe = document.getElementById(f.fId);
-      var ve = document.getElementById(f.vId);
-      if (!fe || !ve) { if (cb) cb(); return; }
-      fe.classList.add('visible');
-      setTimeout(function() { ldType(ve, f.text, cb); }, 100);
-    }
-
-    setTimeout(function() {
-      showField(0, function() {
-        setTimeout(function() {
-          showField(1, function() {
-            setTimeout(function() {
-              showField(2, function() {
-                setTimeout(function() {
-                  showField(3, function() {
-                    setTimeout(function() {
-                      if (pill)    pill.classList.add('visible');
-                      if (actions) actions.classList.add('visible');
-                      if (phase)   phase.textContent = 'ready to save';
-                      setTimeout(ldRun, 3400);
-                    }, 250);
-                  });
-                }, 180);
-              });
-            }, 180);
-          });
-        }, 180);
-      });
-    }, 5100);
+    var pill=document.getElementById('ldAiPill'),act=document.getElementById('ldActions');
+    var badge=document.getElementById('ldHeaderBadge'),phase=document.getElementById('ldPhaseLabel');
+    if(pill)pill.classList.remove('ld-visible');
+    if(act)act.classList.remove('ld-visible');
+    if(badge)badge.textContent='reading...';
+    if(phase)phase.textContent='scanning label...';
   }
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', function() { setTimeout(ldRun, 600); });
-  } else {
-    setTimeout(ldRun, 600);
+  function ldRun(){
+    var beam=document.getElementById('ldBeam');
+    if(!beam)return;
+    ldReset();
+    beam.style.transition='none';beam.style.top='0';beam.style.opacity='0.9';
+    setTimeout(function(){beam.style.transition='top 1.6s linear';beam.style.top='100px';},60);
+    setTimeout(function(){beam.style.transition='top 1.6s linear';beam.style.top='0';},1700);
+    setTimeout(function(){
+      beam.style.transition='top 1.6s linear';beam.style.top='100px';
+      var p=document.getElementById('ldPhaseLabel');if(p)p.textContent='reading with AI...';
+    },3350);
+    setTimeout(function(){
+      beam.style.transition='opacity .4s';beam.style.opacity='0';
+      var b=document.getElementById('ldHeaderBadge');if(b)b.textContent='AI filled';
+      var p=document.getElementById('ldPhaseLabel');if(p)p.textContent='fields extracted';
+    },4950);
+    function showField(idx,cb){
+      var d=ldData[idx],fe=document.getElementById(d.f),ve=document.getElementById(d.v);
+      if(!fe||!ve){if(cb)cb();return;}
+      fe.classList.add('ld-visible');
+      setTimeout(function(){ldType(ve,d.t,cb);},100);
+    }
+    setTimeout(function(){
+      showField(0,function(){setTimeout(function(){
+        showField(1,function(){setTimeout(function(){
+          showField(2,function(){setTimeout(function(){
+            showField(3,function(){
+              setTimeout(function(){
+                var pill=document.getElementById('ldAiPill'),act=document.getElementById('ldActions');
+                var p=document.getElementById('ldPhaseLabel');
+                if(pill)pill.classList.add('ld-visible');
+                if(act)act.classList.add('ld-visible');
+                if(p)p.textContent='ready to save';
+                setTimeout(ldRun,3400);
+              },250);
+            });
+          },180);});
+        },180);});
+      },180);});
+    },5100);
+  }
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',function(){setTimeout(ldRun,600);});
+  }else{
+    setTimeout(ldRun,600);
   }
 })();
 </script>
