@@ -2076,13 +2076,14 @@ function showApp() {
   if (badge) badge.style.display = 'flex';
 
   try {
-    // Check sessionStorage first (same-tab guest scan flow)
+    // Check sessionStorage first (same-tab sign-in flow — has photo data)
     const raw = sessionStorage.getItem('wwwImportWine');
     if (raw) {
       window._pendingImport = JSON.parse(raw);
       sessionStorage.removeItem('wwwImportWine');
+      localStorage.removeItem('wwwPendingImport'); // clean up the mirror copy
     } else {
-      // Fall back to localStorage (survives email confirmation redirect after sign-up)
+      // Fall back to localStorage (sign-up + email confirmation redirect)
       const lsRaw = localStorage.getItem('wwwPendingImport');
       if (lsRaw) {
         window._pendingImport = JSON.parse(lsRaw);
@@ -4083,18 +4084,22 @@ async function checkPublicWineView() {
           photoFront: w.photo_front || null,
           sharedBy:   w.shared_by_email || 'shared',
         };
+        // Store in BOTH storages immediately:
+        // sessionStorage — for same-tab sign-in (survives in-page auth flow)
+        // localStorage   — for sign-up + email confirmation redirect (cross-page)
         try { sessionStorage.setItem('wwwImportWine', JSON.stringify(importData)); } catch(_) {}
-        // Hide public view and show auth screen with sign-in tab
+        try { localStorage.setItem('wwwPendingImport', JSON.stringify(importData)); } catch(_) {}
+        // Hide public view and show auth screen
         const publicView = document.getElementById('publicWineView');
         if (publicView) { publicView.classList.remove('show'); publicView.style.display = 'none'; }
         const authScreen = document.getElementById('authScreen');
         if (authScreen) authScreen.classList.remove('hidden');
-        // Switch to sign-in and add a contextual message
+        // Show sign-in tab by default but let new users switch to sign-up
         switchAuthTab('signin');
         setTimeout(function() {
           var panel = document.querySelector('.auth-panel');
           if (panel) panel.scrollIntoView({behavior:'smooth'});
-          showAuthMsg('ok', 'Sign in to add "' + (w.name || 'this wine') + '" to your journal');
+          showAuthMsg('ok', 'Sign in or create an account to add "' + (w.name || 'this wine') + '" to your journal');
         }, 150);
       }
     };
