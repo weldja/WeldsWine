@@ -1928,12 +1928,13 @@ document.addEventListener('DOMContentLoaded', function() {
   // DOMContentLoaded guarantees all external scripts have run — init Supabase first
   _ensureSb();
 
-  // If this is a public shared wine link, handle it entirely here and bail out.
-  // checkPublicWineView uses its own anon client, so no auth listener needed.
+  // If this is a public shared wine link, show the wine view — but do NOT
+  // return early. We still need the auth listener registered so that if the
+  // user clicks "Add this wine" and signs in, onAuthStateChange fires showApp().
   if (new URLSearchParams(window.location.search).get('wine')) {
     document.getElementById('authScreen').classList.add('hidden');
     checkPublicWineView();
-    return;
+    // Fall through to register the auth listener below
   }
 
   // If returning from a share link import, show load bar immediately
@@ -1999,7 +2000,18 @@ document.addEventListener('DOMContentLoaded', function() {
 
     _currentUser = session ? session.user : null;
     if (_currentUser) {
-      showApp();
+      // If we're showing a public wine view (?wine= param), don't auto-show the
+      // journal on INITIAL_SESSION — let the user read the wine first.
+      // Only show the app if they've explicitly chosen to import (no ?wine= param)
+      // or after they sign in from the auth screen we showed them.
+      const isPublicView = new URLSearchParams(window.location.search).get('wine');
+      if (isPublicView && event === 'INITIAL_SESSION') {
+        // Already logged in, viewing a share link — keep public wine view visible,
+        // but wire up the import button to use importSharedWine directly (not auth flow)
+        // checkPublicWineView already handles this correctly for logged-in users.
+      } else {
+        showApp();
+      }
     } else {
       hideApp();
     }
