@@ -2013,12 +2013,11 @@ function openGuestScan() {
   _guestScanMode = true;
   if (typeof openScanModal === 'function') {
     openScanModal();
-    // Raise scanOverlay above the authScreen overlay (z-index:1000)
-    var overlay = document.getElementById('scanOverlay');
-    if (overlay) overlay.style.zIndex = '1100';
+    // Raise both overlays above authScreen (z-index:1000)
+    var so = document.getElementById('scanOverlay');
+    if (so) so.style.zIndex = '1100';
     return;
   }
-  // App not yet loaded — fall back to sign-in form
   _guestScanMode = false;
   var panel = document.querySelector('.auth-panel');
   if (panel) panel.scrollIntoView({behavior:'smooth'});
@@ -3273,12 +3272,14 @@ function openModal(wine=null, injectFront=null, injectBack=null) {
   }
 
   modalOverlay.classList.add('open');
+  // Guest mode: raise above authScreen (z-index:1000)
+  if (!_currentUser) modalOverlay.style.zIndex = '1100';
   document.body.style.overflow='hidden';
   _pushNavState();
   setTimeout(()=>document.getElementById('wineName').focus(),200);
 }
 
-function closeModal() { modalOverlay.classList.remove('open'); document.body.style.overflow=''; }
+function closeModal() { modalOverlay.classList.remove('open'); modalOverlay.style.zIndex=''; document.body.style.overflow=''; }
 
 /* ── Location tracking ───────────────────────────────────────
    Started once after login. Keeps _appLocLat/Lng/Label fresh.
