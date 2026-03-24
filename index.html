@@ -3459,17 +3459,36 @@ async function compressForStorage(dataUrl) {
 
 async function handleSave(e) {
   if (e) e.preventDefault();
-  // Guest user — prompt to sign up before saving
+  // Guest user — stash form data then redirect to sign-in
   if (!_currentUser) {
+    // Capture everything currently in the form so it survives the auth flow
+    try {
+      const guestEntry = {
+        name:         document.getElementById('wineName').value.trim()||null,
+        winery:       document.getElementById('winery').value.trim()||null,
+        vintage:      document.getElementById('vintage').value||null,
+        country:      document.getElementById('country').value.trim()||null,
+        region:       document.getElementById('region').value.trim()||null,
+        grape:        document.getElementById('grape').value.trim()||null,
+        style:        document.getElementById('style').value||null,
+        price:        document.getElementById('price').value.trim()||null,
+        notes:        document.getElementById('notes').value.trim()||null,
+        rating:       parseInt(document.getElementById('rating').value,10)||null,
+        photoFront:   currentPhotoFront||null,
+        photoBack:    currentPhotoBack||null,
+        dateTasted:   document.getElementById('dateTasted').value||null,
+      };
+      sessionStorage.setItem('wwwImportWine', JSON.stringify(guestEntry));
+    } catch(_) {}
     closeModal();
     closeScanModal();
     document.getElementById('authScreen').classList.remove('hidden');
     setTimeout(function() {
       var panel = document.querySelector('.auth-panel');
       if (panel) panel.scrollIntoView({behavior:'smooth'});
-      switchAuthTab('signup');
+      switchAuthTab('signin');
     }, 100);
-    showToast('Create a free account to save your wines');
+    showToast('Sign in to save your wine — it will be waiting for you');
     return;
   }
   const name = document.getElementById('wineName').value.trim();
