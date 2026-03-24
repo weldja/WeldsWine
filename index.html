@@ -2011,12 +2011,14 @@ var _guestScanMode = false;
 
 function openGuestScan() {
   _guestScanMode = true;
-  // If the main app is ready, use openScanModal (which resets state cleanly)
   if (typeof openScanModal === 'function') {
     openScanModal();
+    // Raise scanOverlay above the authScreen overlay (z-index:1000)
+    var overlay = document.getElementById('scanOverlay');
+    if (overlay) overlay.style.zIndex = '1100';
     return;
   }
-  // App not yet loaded — fall back to scrolling to the sign-in form
+  // App not yet loaded — fall back to sign-in form
   _guestScanMode = false;
   var panel = document.querySelector('.auth-panel');
   if (panel) panel.scrollIntoView({behavior:'smooth'});
@@ -4487,7 +4489,7 @@ function openScanModal() {
   _pushNavState();
 }
 
-function closeScanModal() { document.getElementById('scanOverlay').classList.remove('open'); document.body.style.overflow=''; }
+function closeScanModal() { var o=document.getElementById('scanOverlay'); o.classList.remove('open'); o.style.zIndex=''; document.body.style.overflow=''; }
 
 function resetSide(side) {
   // Clear file input value so iOS always fires change event on retake
