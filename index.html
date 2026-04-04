@@ -4648,16 +4648,15 @@ async function loadWinesFromDB(cacheKey) {
         .select('id,photo_front,photo_back')
         .eq('cellar_id', window._cellarId);
     } else {
-      // Fallback: personal wines only (no cellar yet)
+      // No cellar — load wines the user owns (user_id) OR personally added (added_by),
+      // covering wines they added while in a cellar they've since left.
       metaQuery = _sb.from('wines')
         .select('id,name,winery,vintage,country,region,grape,style,price,purchased_from,date_tasted,notes,rating,is_favourite,buy_again,loc_lat,loc_lng,loc_label,created_at,shared_by,added_by,cellar_id')
-        .eq('user_id', user.id)
-        .is('cellar_id', null)
+        .or(`user_id.eq.${user.id},added_by.eq.${user.id}`)
         .order('created_at', { ascending: false });
       photoQuery = _sb.from('wines')
         .select('id,photo_front,photo_back')
-        .eq('user_id', user.id)
-        .is('cellar_id', null);
+        .or(`user_id.eq.${user.id},added_by.eq.${user.id}`);
     }
 
     const [metaResult, photoResult] = await Promise.all([metaQuery, photoQuery]);
@@ -5437,7 +5436,7 @@ function closeCellarSettings() {
 }
 
 async function leaveCellar() {
-  if (!confirm('Leave this shared cellar?\n\nYour wines will stay in the cellar. You can rejoin using the invite link.')) return;
+  if (!confirm('Leave this shared cellar?\n\nWines you added will still appear in your personal journal. Wines added by other members will no longer be visible to you.')) return;
   if (!_sb || !_currentUser || !window._cellarId) return;
 
   const { error } = await _sb
@@ -5449,22 +5448,29 @@ async function leaveCellar() {
   if (error) { showToast('Could not leave cellar — try again'); return; }
 
   // Reset cellar state
-  window._cellarId   = null;
-  window._cellarRole = null;
+  window._cellarId      = null;
+  window._cellarRole    = null;
   window._cellarMembers = [];
 
   closeCellarSettings();
 
-  // Update pill
+  // Hide cellar pill
   const pill = document.getElementById('cellarPill');
   if (pill) pill.style.display = 'none';
 
-  // Clear wines and reload (they now have no cellar)
+  // Clear cache so stale shared wines aren't shown
+  try {
+    const cacheKey = 'wwwCache_' + (_currentUser?.id || '');
+    sessionStorage.removeItem(cacheKey);
+  } catch(_) {}
+
+  // Reload — fallback path will now only return wines the user added themselves
   wines = [];
   _winesLoaded = false;
+  showSkeletonGrid(3);
   showToast('You have left the shared cellar');
-  renderGrid();
-  updateStats();
+  const cacheKey = 'wwwCache_' + (_currentUser?.id || '');
+  await loadWinesFromDB(cacheKey);
 }
 
 async function _loadInviteLink() {
