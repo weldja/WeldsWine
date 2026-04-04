@@ -5081,15 +5081,19 @@ async function bootstrapCellar() {
   }
 
   // ── Step 2: look up existing membership ───────────────────
+  // Fetch all memberships — prefer 'member' role (joined someone else's cellar)
+  // over 'owner' (own cellar), so shared cellars take priority.
   const { data: memberships } = await _sb
     .from('cellar_members')
     .select('cellar_id, role')
     .eq('user_id', _currentUser.id)
-    .limit(1);
+    .order('role', { ascending: true }); // 'member' sorts before 'owner'
 
   if (memberships && memberships.length > 0) {
-    window._cellarId   = memberships[0].cellar_id;
-    window._cellarRole = memberships[0].role;
+    // Pick 'member' row first if it exists, otherwise fall back to 'owner'
+    const preferred = memberships.find(m => m.role === 'member') || memberships[0];
+    window._cellarId   = preferred.cellar_id;
+    window._cellarRole = preferred.role;
     await _backfillExistingWines();
     await _refreshCellarMembers();
     _updateCellarPill();
