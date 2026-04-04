@@ -5061,6 +5061,15 @@ window._cellarMembers = []; // [{user_id, role, email}]
 async function bootstrapCellar() {
   if (!_sb || !_currentUser) return;
 
+  // ── Step 0: ensure this user has a profile row ────────────
+  try {
+    const displayName = (_currentUser.email || 'Member').split('@')[0];
+    await _sb.from('profiles').upsert(
+      { id: _currentUser.id, display_name: displayName },
+      { onConflict: 'id', ignoreDuplicates: true }
+    );
+  } catch(e) { console.warn('profile upsert:', e); }
+
   // ── Step 1: check for invite token in URL ──────────────────
   const params = new URLSearchParams(window.location.search);
   const inviteToken = params.get('invite');
@@ -5140,15 +5149,31 @@ async function _backfillExistingWines() {
   }
 }
 
-// Fetch member list with emails from auth.users via a join
+// Fetch member list with display names from profiles
 async function _refreshCellarMembers() {
   if (!_sb || !window._cellarId) return;
   try {
-    const { data } = await _sb
+    const { data: members } = await _sb
       .from('cellar_members')
       .select('user_id, role, joined_at')
       .eq('cellar_id', window._cellarId);
-    window._cellarMembers = data || [];
+
+    if (!members || !members.length) { window._cellarMembers = []; return; }
+
+    // Fetch display names from profiles
+    const userIds = members.map(m => m.user_id);
+    const { data: profileRows } = await _sb
+      .from('profiles')
+      .select('id, display_name')
+      .in('id', userIds);
+
+    const profileMap = {};
+    (profileRows || []).forEach(p => { profileMap[p.id] = p.display_name; });
+
+    window._cellarMembers = members.map(m => ({
+      ...m,
+      display_name: profileMap[m.user_id] || 'Member'
+    }));
   } catch(e) {
     console.warn('_refreshCellarMembers:', e);
   }
@@ -5304,10 +5329,9 @@ async function _renderMembersList() {
   container.innerHTML = '';
   members.forEach(m => {
     const isMe = m.user_id === _currentUser?.id;
-    const initials = isMe
-      ? (_currentUser.email || 'Me').slice(0, 2).toUpperCase()
-      : (m.user_id || 'M').slice(0, 2).toUpperCase();
-    const displayName = isMe ? (_currentUser.email || 'You') : `Member ${m.user_id.slice(0,8)}…`;
+    const name = m.display_name || (isMe ? 'You' : 'Member');
+    const initials = name.slice(0, 2).toUpperCase();
+    const displayName = isMe ? `${name} (you)` : name;
     const roleLabel   = m.role === 'owner' ? '👑 Owner' : 'Member';
 
     const row = document.createElement('div');
