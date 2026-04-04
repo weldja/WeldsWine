@@ -295,126 +295,152 @@ body{font-family:var(--font-b);background:var(--cream);color:var(--charcoal);min
 .stat-divider{width:1px;height:28px;background:var(--light-gray);flex-shrink:0}
 
 /* ── Grid ──────────────────────────────────────────────── */
-.wine-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px}
-.main-content{max-width:1200px;margin:0 auto;padding:24px 16px 88px}
+.wine-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+.main-content{max-width:1200px;margin:0 auto;padding:20px 14px 88px}
 
-/* ── Card shell — vertical layout ─────────────────────── */
+/* ── Card shell — vertical ─────────────────────────────── */
 .wine-card{
   background:var(--ivory);
-  border:1px solid var(--light-gray);
-  border-radius:16px;
+  border:1px solid rgba(0,0,0,.08);
+  border-radius:18px;
   overflow:hidden;
   display:flex;
   flex-direction:column;
   cursor:pointer;
   animation:fadeUp .25s ease both;
-  transition:transform .18s ease, box-shadow .2s ease;
+  transition:transform .2s ease, box-shadow .22s ease;
   -webkit-tap-highlight-color:transparent;
+  box-shadow:0 1px 4px rgba(0,0,0,.06);
 }
 @media(hover:hover){
   .wine-card:hover{
-    transform:translateY(-3px);
-    box-shadow:0 12px 32px rgba(92,21,37,.13), 0 2px 8px rgba(92,21,37,.06);
+    transform:translateY(-4px);
+    box-shadow:0 16px 40px rgba(92,21,37,.14), 0 2px 8px rgba(0,0,0,.06);
   }
-  .wine-card:hover .card-thumb-wrap img,
-  .wine-card:hover .card-thumb-single{ transform:scale(1.04); }
 }
 @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
 
-/* ── Accent strip when no image ────────────────────────── */
+/* ── No-photo accent bar ────────────────────────────────── */
 .card-label-strip{
-  height:4px;width:100%;flex-shrink:0;
-  background:linear-gradient(to right,var(--burgundy),var(--blush));
+  height:5px;width:100%;flex-shrink:0;
+  background:linear-gradient(to right,var(--burgundy-deep),var(--blush));
 }
 
-/* ── Image — top banner ────────────────────────────────── */
+/* ── Photo banner — full width top, dark gradient overlay ── */
 .card-thumb-wrap{
-  position:relative;width:100%;height:130px;flex-shrink:0;
-  overflow:hidden;background:#ede6de;display:flex;
-  align-items:center;justify-content:center;cursor:zoom-in;
+  position:relative;width:100%;height:148px;flex-shrink:0;
+  overflow:hidden;
+  background:linear-gradient(135deg,#3a0d1a 0%,#6b1f35 100%);
+  display:flex;align-items:center;justify-content:center;cursor:zoom-in;
+}
+.card-thumb-wrap::after{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(to top,rgba(20,5,12,.75) 0%,transparent 52%);
+  pointer-events:none;z-index:1;
 }
 .card-thumb-wrap img{
   height:100%;width:auto;max-width:100%;
-  object-fit:contain;
-  transition:transform .3s ease;
+  object-fit:contain;transition:transform .32s ease;position:relative;z-index:0;
 }
+@media(hover:hover){.wine-card:hover .card-thumb-wrap img{transform:scale(1.05)}}
+
 .card-thumb-badge{
-  position:absolute;bottom:6px;right:8px;
-  background:rgba(44,36,32,.5);color:#fff;font-size:.55rem;
+  position:absolute;top:8px;right:9px;z-index:3;
+  background:rgba(0,0,0,.38);color:rgba(255,255,255,.82);font-size:.52rem;
   font-family:var(--font-b);padding:2px 8px;border-radius:10px;
   pointer-events:none;white-space:nowrap;letter-spacing:.04em;
 }
-.card-thumb-single{
-  width:100%;height:130px;flex-shrink:0;display:block;
-  object-fit:contain;cursor:zoom-in;background:#ede6de;
-  transition:transform .3s ease;
-}
 
-/* ── Content area ──────────────────────────────────────── */
+.card-thumb-single{
+  width:100%;height:148px;flex-shrink:0;display:block;
+  object-fit:contain;cursor:zoom-in;
+  background:linear-gradient(135deg,#3a0d1a 0%,#6b1f35 100%);
+  transition:transform .32s ease;position:relative;
+}
+/* Pseudo overlay for single thumb — achieved via wrapper */
+.card-thumb-single-wrap{
+  position:relative;width:100%;height:148px;flex-shrink:0;overflow:hidden;cursor:zoom-in;
+  background:linear-gradient(135deg,#3a0d1a 0%,#6b1f35 100%);
+}
+.card-thumb-single-wrap::after{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(to top,rgba(20,5,12,.75) 0%,transparent 52%);
+  pointer-events:none;z-index:1;
+}
+.card-thumb-single-wrap img{
+  width:100%;height:100%;object-fit:contain;
+  transition:transform .32s ease;
+}
+@media(hover:hover){.wine-card:hover .card-thumb-single-wrap img{transform:scale(1.05)}}
+@media(hover:hover){.wine-card:hover .card-thumb-single{transform:scale(1.05)}}
+
+/* ── Location pill — over photo, pinned to bottom ──────── */
+.card-location-row{
+  position:absolute;bottom:0;left:0;right:0;
+  z-index:2;padding:8px 10px;
+  display:flex;align-items:center;
+}
+.card-origin-btn{
+  display:inline-flex;align-items:center;gap:4px;
+  background:rgba(255,255,255,.14);
+  border:1px solid rgba(255,255,255,.2);
+  border-radius:20px;padding:3px 10px 3px 7px;
+  font-family:var(--font-b);font-size:.67rem;font-weight:500;
+  color:rgba(255,255,255,.9);cursor:pointer;
+  transition:background .15s;
+  -webkit-tap-highlight-color:transparent;
+  white-space:nowrap;
+  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+}
+.card-origin-btn:active{background:rgba(255,255,255,.26)}
+@media(hover:hover){.card-origin-btn:hover{background:rgba(255,255,255,.24)}}
+.card-origin-btn svg{width:10px;height:10px;flex-shrink:0;opacity:.8}
+
+/* ── Content body ───────────────────────────────────────── */
 .card-body{
-  padding:13px 14px 4px;flex:1;min-width:0;
+  padding:12px 14px 6px;flex:1;min-width:0;
   display:flex;flex-direction:column;gap:4px;
 }
-
-/* Header row: left=vintage+name+descriptor, right=fav+stars */
 .card-header{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
 .card-header-left{flex:1;min-width:0}
 
-.card-top-line{display:flex;align-items:baseline;gap:6px;flex-wrap:wrap;margin-bottom:1px}
+.card-top-line{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:2px}
 .card-vintage-badge{
-  font-family:var(--font-b);font-size:.65rem;font-weight:600;
-  color:var(--burgundy);background:rgba(139,36,57,.08);
-  border-radius:4px;padding:1px 5px;flex-shrink:0;letter-spacing:.03em;
+  font-family:var(--font-b);font-size:.63rem;font-weight:700;
+  color:var(--burgundy);background:rgba(139,36,57,.1);
+  border-radius:5px;padding:1px 6px;flex-shrink:0;
 }
 .card-name{
-  font-family:var(--font-d);font-size:1.02rem;font-weight:600;
+  font-family:var(--font-d);font-size:1.05rem;font-weight:600;
   color:var(--charcoal);line-height:1.22;
 }
 .card-descriptor{
-  font-family:var(--font-b);font-size:.74rem;
-  color:var(--burgundy);font-weight:500;font-style:italic;
-  line-height:1.3;
+  font-family:var(--font-b);font-size:.76rem;font-style:italic;
+  color:var(--burgundy);line-height:1.3;margin-bottom:1px;
 }
 
-/* Right side: fav heart + rating stacked */
+/* Right column: fav + stars */
 .card-rating{
-  display:flex;flex-direction:column;align-items:center;gap:3px;flex-shrink:0;padding-top:1px;
+  display:flex;flex-direction:column;align-items:center;gap:2px;
+  flex-shrink:0;padding-top:2px;
 }
 .card-rating-stars{
   color:var(--gold);font-size:.78rem;white-space:nowrap;letter-spacing:.5px;line-height:1;
 }
 .card-fav-btn{
-  background:none;border:none;cursor:pointer;font-size:1rem;
-  color:var(--light-gray);padding:0;
-  transition:color .15s,transform .18s;line-height:1;
+  background:none;border:none;cursor:pointer;font-size:1.05rem;
+  color:#ddd;padding:0;line-height:1;
+  transition:color .15s,transform .18s;
   -webkit-tap-highlight-color:transparent;
-  min-width:44px;min-height:44px;
+  min-width:44px;min-height:38px;
   display:flex;align-items:center;justify-content:center;
-  margin:-12px -10px -4px 0;
+  margin:-8px -10px -2px 0;
 }
-.card-fav-btn:hover,.card-fav-btn.active{color:#e05c7a}
-.card-fav-btn.active{transform:scale(1.15)}
-
-/* Origin line — pin icon inline, slim */
-.card-origin-line{
-  display:flex;align-items:center;gap:4px;flex-wrap:wrap;
-  font-family:var(--font-b);font-size:.71rem;color:var(--warm-gray);
-  margin-top:1px;
-}
-.card-origin-sep{color:var(--light-gray)}
-.card-origin-btn{
-  display:inline-flex;align-items:center;gap:2px;
-  background:none;border:none;padding:0;
-  font-family:var(--font-b);font-size:.71rem;
-  color:var(--blush);cursor:pointer;
-  transition:color .14s;white-space:nowrap;
-  -webkit-tap-highlight-color:transparent;
-}
-.card-origin-btn:active{color:var(--burgundy)}
-@media(hover:hover){.card-origin-btn:hover{color:var(--burgundy)}}
+.card-fav-btn:active,.card-fav-btn.active{color:#e05c7a;transform:scale(1.2)}
+@media(hover:hover){.card-fav-btn:hover{color:#e05c7a}}
 
 /* Tags */
-.card-tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:3px}
+.card-tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:2px}
 .card-tag{
   background:var(--parchment);border:1px solid var(--light-gray);
   border-radius:20px;padding:2px 9px;
@@ -426,21 +452,21 @@ body{font-family:var(--font-b);background:var(--cream);color:var(--charcoal);min
   -webkit-box-orient:vertical;overflow:hidden;margin-top:2px;
 }
 
-/* ── Footer — date left, icon actions right ────────────── */
+/* ── Footer — date + icon action strip ──────────────────── */
 .card-footer{
   display:flex;justify-content:space-between;align-items:center;
-  padding:8px 14px 10px;margin-top:6px;
-  border-top:1px solid rgba(0,0,0,.06);gap:8px;
+  padding:6px 8px 8px;margin-top:4px;
+  border-top:1px solid rgba(0,0,0,.06);gap:4px;
 }
 .card-footer-info{display:flex;align-items:center;gap:6px}
-.card-date{font-size:.63rem;color:var(--warm-gray);font-family:var(--font-b);opacity:.5}
+.card-date{font-size:.63rem;color:var(--warm-gray);font-family:var(--font-b);opacity:.5;padding-left:6px}
 .card-actions{display:flex;gap:0;flex-shrink:0}
 
-/* Icon-only action buttons with tooltip-style labels */
+/* Icon-only action buttons */
 .card-btn{
-  background:none;border:none;border-radius:8px;
-  width:34px;height:34px;display:flex;align-items:center;justify-content:center;
-  cursor:pointer;color:var(--warm-gray);font-size:.8rem;
+  background:none;border:none;border-radius:10px;
+  width:36px;height:36px;display:flex;align-items:center;justify-content:center;
+  cursor:pointer;color:var(--warm-gray);
   transition:background .13s,color .13s;
   -webkit-tap-highlight-color:transparent;
   position:relative;
@@ -738,9 +764,10 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
   .stat-divider{display:none}
   .main-content{padding:16px 14px 48px}
   .wine-grid{grid-template-columns:1fr;gap:10px}
-  .card-thumb-wrap{height:110px}
-  .card-thumb-single{height:110px}
-  .skeleton-card .sk-img{width:100%;min-height:110px}
+  .card-thumb-wrap{height:120px}
+  .card-thumb-single{height:120px}
+  .skeleton-card{flex-direction:column}
+  .skeleton-card .sk-img{width:100%;height:100px;min-height:unset}
   .form-row.two-col{grid-template-columns:1fr}
   .modal{max-width:100%;border-radius:var(--rl) var(--rl) 0 0}
   .modal-overlay{align-items:flex-end;padding:0}
@@ -3062,9 +3089,26 @@ function createCard(w) {
   card.className = 'wine-card';
   card.dataset.id = w.id;
 
-  // Build photo area using DOM APIs — never put user-derived URLs into innerHTML
+  // Build photo area — DOM APIs only, no user URLs in innerHTML
   const front = safePhotoSrc(w.photoFront || w.photo);
   const back  = safePhotoSrc(w.photoBack);
+  const originLabel = [w.region, w.country].filter(Boolean)[0] || '';
+
+  // Helper: build frosted location pill overlay inside photo wrap
+  function makeLocationPill(wineId, label) {
+    if (!label) return null;
+    const row = document.createElement('div');
+    row.className = 'card-location-row';
+    const btn = document.createElement('button');
+    btn.className = 'card-origin-btn';
+    btn.setAttribute('aria-label', 'Show origin map');
+    btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:10px;height:10px"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>`;
+    const txt = document.createTextNode(' ' + label);
+    btn.appendChild(txt);
+    btn.addEventListener('click', e => { e.stopPropagation(); openOriginMap(getWineById(wineId)); });
+    row.appendChild(btn);
+    return row;
+  }
 
   if (front && back) {
     const wrap = document.createElement('div');
@@ -3073,24 +3117,26 @@ function createCard(w) {
     const imgF = document.createElement('img'); imgF.src = front; imgF.loading = 'lazy'; wrap.appendChild(imgF);
     const imgB = document.createElement('img'); imgB.src = back;  imgB.loading = 'lazy'; wrap.appendChild(imgB);
     const badge = document.createElement('span'); badge.className = 'card-thumb-badge'; badge.textContent = 'front · back'; wrap.appendChild(badge);
+    const pill = makeLocationPill(w.id, originLabel); if (pill) wrap.appendChild(pill);
     card.appendChild(wrap);
   } else if (front) {
-    const img = document.createElement('img');
-    img.className = 'card-thumb-single'; img.src = front; img.loading = 'lazy';
-    img.addEventListener('click', e => { e.stopPropagation(); openLightbox(w.id, e); });
-    card.appendChild(img);
+    const wrap = document.createElement('div');
+    wrap.className = 'card-thumb-wrap';
+    wrap.addEventListener('click', e => { e.stopPropagation(); openLightbox(w.id, e); });
+    const img = document.createElement('img'); img.src = front; img.loading = 'lazy'; wrap.appendChild(img);
+    const pill = makeLocationPill(w.id, originLabel); if (pill) wrap.appendChild(pill);
+    card.appendChild(wrap);
   } else {
     const strip = document.createElement('div');
     strip.className = 'card-label-strip';
     card.appendChild(strip);
   }
 
-  const meta   = [w.winery, w.vintage, w.country].filter(Boolean).join(' · ');
   const tags   = [w.region, w.grape, w.style].filter(Boolean);
   const dateStr= w.dateTasted ? formatDate(w.dateTasted) : '';
   const descriptor = getTasteDescriptor(w);
 
-  // Added-by badge (only show in shared cellar and when not added by self)
+  // Added-by badge (shared cellars only)
   const addedByHtml = (() => {
     if (!window._cellarId || !window._cellarMembers.length) return '';
     const isMe = w.addedBy === _currentUser?.id;
@@ -3101,24 +3147,16 @@ function createCard(w) {
     return `<div class="card-added-by"><span class="card-added-by-dot">${escHtml(initials)}</span>${escHtml(name)}</div>`;
   })();
 
-  // Build origin label for inline use
-  const originLabel = [w.region, w.country].filter(Boolean)[0] || '';
-
   const body = document.createElement('div');
   body.innerHTML = `
     <div class="card-body">
       <div class="card-header">
         <div class="card-header-left">
           <div class="card-top-line">
-            ${w.vintage?`<span class="card-vintage-badge">${escHtml(String(w.vintage))}</span><span class="card-origin-sep">·</span>`:''}
+            ${w.vintage?`<span class="card-vintage-badge">${escHtml(String(w.vintage))}</span>`:''}
             <span class="card-name">${escHtml(w.name)}</span>
           </div>
           ${descriptor?`<div class="card-descriptor">${escHtml(descriptor)}</div>`:''}
-          <div class="card-origin-line">
-            ${originLabel?`<button class="card-origin-btn" onclick="event.stopPropagation();openOriginMap(getWineById('${w.id}'))"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:10px;height:10px;flex-shrink:0"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>${escHtml(originLabel)}</button>`:''} 
-            ${originLabel && w.winery?`<span class="card-origin-sep">·</span>`:''}
-            ${w.winery?`<span>${escHtml(w.winery)}</span>`:''}
-          </div>
         </div>
         <div class="card-rating">
           ${w.rating?`<div class="card-rating-stars">${renderStars(w.rating)}</div>`:''}
