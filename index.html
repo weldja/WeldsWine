@@ -373,6 +373,15 @@ body{font-family:var(--font-b);background:var(--cream);color:var(--charcoal);min
 }
 .card-notes{font-family:var(--font-b);font-size:.77rem;color:var(--warm-gray);line-height:1.5;flex:1;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .card-location{font-size:.68rem;color:var(--blush);font-family:var(--font-b)}
+.card-footer-info{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:5px}
+.card-origin-btn{
+  display:inline-flex;align-items:center;gap:4px;
+  background:none;border:1px solid var(--light-gray);border-radius:6px;
+  padding:3px 8px;font-family:var(--font-b);font-size:.65rem;
+  color:var(--warm-gray);cursor:pointer;transition:var(--tr);
+  white-space:nowrap;
+}
+.card-origin-btn:hover{border-color:var(--burgundy);color:var(--burgundy);background:rgba(139,36,57,.04)}
 .card-footer{display:flex;justify-content:space-between;align-items:center;padding:9px 16px 13px;border-top:1px solid var(--light-gray);margin-top:10px;gap:4px}
 .card-date{font-size:.69rem;color:var(--warm-gray);font-family:var(--font-b);flex:1;opacity:.65}
 .card-actions{display:flex;gap:3px;flex-shrink:0}
@@ -3032,8 +3041,10 @@ function createCard(w) {
     if (!window._cellarId || !window._cellarMembers.length) return '';
     const isMe = w.addedBy === _currentUser?.id;
     if (isMe || !w.addedBy) return '';
-    const initials = w.addedBy.slice(0,2).toUpperCase();
-    return `<div class="card-added-by"><span class="card-added-by-dot">${escHtml(initials)}</span>Added by member</div>`;
+    const member = window._cellarMembers.find(m => m.user_id === w.addedBy);
+    const name   = member?.display_name || 'Member';
+    const initials = name.slice(0,2).toUpperCase();
+    return `<div class="card-added-by"><span class="card-added-by-dot">${escHtml(initials)}</span>${escHtml(name)}</div>`;
   })();
 
   const body = document.createElement('div');
@@ -3054,8 +3065,10 @@ function createCard(w) {
       ${tags.length?`<div class="card-tags">${tags.map(t=>`<span class="card-tag">${escHtml(t)}</span>`).join('')}${w.buyAgain?'<span class="card-buy-badge">↺ Buy again</span>':''}</div>`:''}
       ${!tags.length && w.buyAgain?`<div class="card-tags"><span class="card-buy-badge">↺ Buy again</span></div>`:''}
       ${w.notes?`<p class="card-notes">${escHtml(w.notes)}</p>`:''}
-      ${w.locLabel?`<div class="card-location">📍 ${escHtml(w.locLabel)}</div>`:''}
-      ${addedByHtml}
+      <div class="card-footer-info">
+        ${(w.country||w.region||w.winery)?`<button class="card-origin-btn" onclick="event.stopPropagation();openOriginMap(getWineById('${w.id}'))">🗺 ${escHtml([w.region||w.country||''].filter(Boolean)[0]||'Origin')}</button>`:''}
+        ${addedByHtml}
+      </div>
     </div>
     <div class="card-footer">
       <span class="card-date">${dateStr}</span>
