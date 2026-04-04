@@ -1010,6 +1010,55 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
 .skeleton-card .sk-line.mid{width:55%}
 .skeleton-card .sk-line.short{width:35%;height:10px}
 
+/* ── Added-by badge on cards ─────────────────────────────── */
+.card-added-by{display:inline-flex;align-items:center;gap:4px;font-family:var(--font-b);font-size:.65rem;color:var(--warm-gray);margin-top:4px;opacity:.75}
+.card-added-by-dot{width:14px;height:14px;border-radius:50%;background:var(--burgundy);color:#fff;font-size:.55rem;font-weight:700;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0}
+
+/* ── Comments panel (inside detail modal) ────────────────── */
+.comments-section{margin-top:28px;padding-top:22px;border-top:1px solid var(--light-gray)}
+.comments-title{font-family:var(--font-d);font-size:1rem;font-weight:600;color:var(--charcoal);margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.comments-count{font-family:var(--font-b);font-size:.75rem;color:var(--warm-gray);font-weight:400}
+.comments-list{display:flex;flex-direction:column;gap:12px;margin-bottom:18px}
+.comment-item{background:var(--cream);border:1px solid var(--light-gray);border-radius:var(--r);padding:12px 14px;position:relative}
+.comment-header{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.comment-avatar{width:26px;height:26px;border-radius:50%;background:var(--burgundy);color:#fff;font-family:var(--font-b);font-size:.72rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.comment-author{font-family:var(--font-b);font-size:.8rem;font-weight:600;color:var(--charcoal)}
+.comment-time{font-family:var(--font-b);font-size:.7rem;color:var(--warm-gray);margin-left:auto}
+.comment-body{font-family:var(--font-b);font-size:.88rem;color:var(--charcoal);line-height:1.55}
+.comment-delete{position:absolute;top:8px;right:8px;background:none;border:none;cursor:pointer;color:var(--warm-gray);font-size:.75rem;opacity:0;transition:opacity .15s;padding:2px 5px}
+.comment-item:hover .comment-delete{opacity:.5}
+.comment-delete:hover{opacity:1!important;color:#dc2626}
+.comments-empty{font-family:var(--font-b);font-size:.85rem;color:var(--warm-gray);font-style:italic;padding:8px 0 16px;text-align:center}
+.comments-form{display:flex;gap:8px;align-items:flex-end}
+.comments-input{flex:1;border:1px solid var(--light-gray);border-radius:var(--r);padding:9px 12px;font-family:var(--font-b);font-size:.88rem;color:var(--charcoal);background:var(--cream);outline:none;resize:none;min-height:40px;max-height:120px;transition:border-color .2s;line-height:1.4}
+.comments-input:focus{border-color:var(--burgundy);background:var(--ivory)}
+.comments-submit{background:var(--burgundy);color:#fff;border:none;border-radius:var(--r);padding:9px 16px;font-family:var(--font-b);font-size:.82rem;font-weight:600;cursor:pointer;transition:var(--tr);white-space:nowrap;flex-shrink:0}
+.comments-submit:hover{background:var(--burgundy-lt)}
+.comments-submit:disabled{opacity:.4;cursor:not-allowed}
+.comments-loading{font-family:var(--font-b);font-size:.8rem;color:var(--warm-gray);font-style:italic;text-align:center;padding:8px 0}
+
+/* ── Cellar settings modal ───────────────────────────────── */
+.cellar-member-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--light-gray)}
+.cellar-member-row:last-child{border-bottom:none}
+.cellar-member-avatar{width:32px;height:32px;border-radius:50%;background:var(--burgundy);color:#fff;font-family:var(--font-b);font-size:.8rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.cellar-member-info{flex:1;min-width:0}
+.cellar-member-name{font-family:var(--font-b);font-size:.88rem;font-weight:600;color:var(--charcoal);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cellar-member-role{font-family:var(--font-b);font-size:.72rem;color:var(--warm-gray);margin-top:1px}
+.cellar-remove-btn{background:none;border:1px solid rgba(220,38,38,.3);border-radius:var(--r);padding:4px 10px;font-family:var(--font-b);font-size:.72rem;color:#dc2626;cursor:pointer;transition:var(--tr);flex-shrink:0}
+.cellar-remove-btn:hover{background:#fef2f2;border-color:#dc2626}
+.invite-link-wrap{display:flex;gap:8px;align-items:center;margin-top:8px}
+.invite-link-input{flex:1;border:1px solid var(--light-gray);border-radius:var(--r);padding:8px 10px;font-family:var(--font-b);font-size:.78rem;color:var(--warm-gray);background:var(--cream);outline:none}
+.invite-copy-btn{background:var(--burgundy);color:#fff;border:none;border-radius:var(--r);padding:8px 14px;font-family:var(--font-b);font-size:.78rem;font-weight:600;cursor:pointer;white-space:nowrap;transition:var(--tr)}
+.invite-copy-btn:hover{background:var(--burgundy-lt)}
+.invite-copy-btn.copied{background:#16a34a}
+.invite-regen-btn{background:none;border:1px solid var(--light-gray);border-radius:var(--r);padding:6px 12px;font-family:var(--font-b);font-size:.75rem;color:var(--warm-gray);cursor:pointer;transition:var(--tr);margin-top:8px}
+.invite-regen-btn:hover{border-color:var(--warm-gray);color:var(--charcoal)}
+
+/* ── Cellar member count pill in header ──────────────────── */
+.cellar-pill{display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);border-radius:20px;padding:4px 10px;font-family:var(--font-b);font-size:.72rem;color:rgba(245,239,230,.75);cursor:pointer;transition:var(--tr);white-space:nowrap}
+.cellar-pill:hover{background:rgba(255,255,255,.18);color:var(--parchment)}
+.cellar-pill-dot{width:7px;height:7px;border-radius:50%;background:#4ade80;flex-shrink:0}
+
 </style>
 </head>
 <body>
@@ -1285,6 +1334,10 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
       </div>
       <button class="btn-add-subtle" id="openAddModal" aria-label="Add wine manually">+ Add Wine</button>
       <button class="btn-quick-add" id="openQuickAdd" aria-label="Quick add wine" title="Log a wine in seconds">⚡ Quick Add</button>
+      <button class="cellar-pill" id="cellarPill" onclick="openCellarSettings()" style="display:none" title="Cellar members">
+        <span class="cellar-pill-dot"></span>
+        <span id="cellarPillLabel">Cellar</span>
+      </button>
       <button id="userBadge" onclick="openMobileMenu(event)" aria-label="Menu" class="btn-hamburger" style="display:none">☰</button>
     </div>
   </div>
@@ -2074,15 +2127,18 @@ function showApp() {
   const badge = document.getElementById('userBadge');
   if (badge) badge.style.display = 'flex';
 
+  // Show cellar pill
+  const pill = document.getElementById('cellarPill');
+  if (pill) pill.style.display = 'inline-flex';
+
   try {
     // Check sessionStorage first (same-tab sign-in flow — has photo data)
     const raw = sessionStorage.getItem('wwwImportWine');
     if (raw) {
       window._pendingImport = JSON.parse(raw);
       sessionStorage.removeItem('wwwImportWine');
-      localStorage.removeItem('wwwPendingImport'); // clean up the mirror copy
+      localStorage.removeItem('wwwPendingImport');
     } else {
-      // Fall back to localStorage (sign-up + email confirmation redirect)
       const lsRaw = localStorage.getItem('wwwPendingImport');
       if (lsRaw) {
         window._pendingImport = JSON.parse(lsRaw);
@@ -2101,12 +2157,12 @@ function showApp() {
   if (hadCache) { renderGrid(); updateStats(); }
   else { _winesLoaded = false; showSkeletonGrid(4); }
 
-  loadWinesFromDB(cacheKey);
+  // Bootstrap cellar then load wines
+  bootstrapCellar().then(() => {
+    loadWinesFromDB(cacheKey);
+  });
   setTimeout(startLocationTracking, 100);
 
-  // Flag whether this login session should trigger first-run scan if inbox is empty.
-  // We only do this when the user has NEVER had the flag set — i.e. a brand-new account.
-  // loadWinesFromDB will check this flag after the DB response arrives.
   try {
     if (!localStorage.getItem('wwwOnboardingDone')) {
       window._triggerFirstRunScan = true;
@@ -2126,6 +2182,8 @@ function hideApp() {
   }
   const badge = document.getElementById('userBadge');
   if (badge) badge.style.display = 'none';
+  const pill = document.getElementById('cellarPill');
+  if (pill) pill.style.display = 'none';
   const hint = document.getElementById('onboardingHint');
   if (hint) hint.style.display = 'none';
   if (!_appReady) return;
@@ -3013,6 +3071,15 @@ function createCard(w) {
   const dateStr= w.dateTasted ? formatDate(w.dateTasted) : '';
   const descriptor = getTasteDescriptor(w);
 
+  // Added-by badge (only show in shared cellar and when not added by self)
+  const addedByHtml = (() => {
+    if (!window._cellarId || !window._cellarMembers.length) return '';
+    const isMe = w.addedBy === _currentUser?.id;
+    if (isMe || !w.addedBy) return '';
+    const initials = w.addedBy.slice(0,2).toUpperCase();
+    return `<div class="card-added-by"><span class="card-added-by-dot">${escHtml(initials)}</span>Added by member</div>`;
+  })();
+
   const body = document.createElement('div');
   body.innerHTML = `
     <div class="card-body">
@@ -3032,6 +3099,7 @@ function createCard(w) {
       ${!tags.length && w.buyAgain?`<div class="card-tags"><span class="card-buy-badge">↺ Buy again</span></div>`:''}
       ${w.notes?`<p class="card-notes">${escHtml(w.notes)}</p>`:''}
       ${w.locLabel?`<div class="card-location">📍 ${escHtml(w.locLabel)}</div>`:''}
+      ${addedByHtml}
     </div>
     <div class="card-footer">
       <span class="card-date">${dateStr}</span>
@@ -3140,6 +3208,15 @@ async function openDetail(w, e) {
     ['Location',  w.locLabel]
   ].filter(([,v])=>v);
 
+  // Added-by label for shared cellars
+  const addedByLabel = (() => {
+    if (!window._cellarId) return '';
+    const isMe = w.addedBy === _currentUser?.id;
+    if (isMe) return '<div style="font-family:var(--font-b);font-size:.75rem;color:var(--warm-gray);margin-bottom:12px;font-style:italic">Added by you</div>';
+    if (w.addedBy) return '<div style="font-family:var(--font-b);font-size:.75rem;color:var(--warm-gray);margin-bottom:12px;font-style:italic">Added by a cellar member</div>';
+    return '';
+  })();
+
   document.getElementById('detailContent').innerHTML = `
     ${imgHtml}
     <div class="detail-body">
@@ -3147,11 +3224,13 @@ async function openDetail(w, e) {
       ${w.winery?`<div class="detail-winery">${escHtml(w.winery)}</div>`:''}
       ${w.rating?`<div class="detail-stars">${renderStarsLarge(w.rating)}</div>`:''}
       ${w.sharedBy?`<div class="shared-by-badge" style="margin-bottom:12px">🤝 Shared wine</div>`:''}
+      ${addedByLabel}
       <div class="detail-grid">
         ${fields.map(([l,v])=>`<div class="detail-field"><label>${l}</label><p>${escHtml(String(v))}</p></div>`).join('')}
       </div>
       ${mapHtml}
       ${w.notes?`<div class="detail-notes-label">Tasting Notes</div><div class="detail-notes">${escHtml(w.notes)}</div>`:''}
+      <div id="detailCommentsPlaceholder"></div>
       <div class="detail-footer">
         <button class="btn-secondary" onclick="closeDetail()">Close</button>
         <button class="btn-primary" onclick="editWine('${w.id}',event)">Edit</button>
@@ -3161,6 +3240,19 @@ async function openDetail(w, e) {
   detailOverlay.classList.add('open');
   document.body.style.overflow='hidden';
   _pushNavState();
+
+  // Load comments async (only when cellar is active)
+  if (window._cellarId) {
+    const placeholder = document.getElementById('detailCommentsPlaceholder');
+    if (placeholder) {
+      placeholder.innerHTML = '<div class="comments-loading" style="margin-top:24px">Loading comments…</div>';
+      loadComments(w.id).then(comments => {
+        if (placeholder && detailOverlay.classList.contains('open')) {
+          placeholder.outerHTML = renderCommentsSection(w.id, comments);
+        }
+      });
+    }
+  }
 
   if (w.locLat && w.locLng) {
     const initMini = () => {
@@ -3197,17 +3289,19 @@ function _anyPanelOpen() {
     document.getElementById('scanOverlay').classList.contains('open') ||
     document.getElementById('shareOverlay').classList.contains('open') ||
     document.getElementById('infoOverlay').classList.contains('open') ||
-    document.getElementById('quickAddOverlay').classList.contains('open')
+    document.getElementById('quickAddOverlay').classList.contains('open') ||
+    document.getElementById('cellarSettingsOverlay').classList.contains('open')
   );
 }
 function _closeTopPanel() {
-  if (document.getElementById('labelLightbox'))                               { closeLightbox();   return; }
-  if (document.getElementById('quickAddOverlay').classList.contains('open')) { closeQuickAdd();   return; }
-  if (document.getElementById('shareOverlay').classList.contains('open'))    { closeShareModal(); return; }
-  if (document.getElementById('infoOverlay').classList.contains('open'))     { closeInfoModal();  return; }
-  if (document.getElementById('scanOverlay').classList.contains('open'))     { closeScanModal();  return; }
-  if (document.getElementById('modalOverlay').classList.contains('open'))    { closeModal();      return; }
-  if (detailOverlay.classList.contains('open'))                               { closeDetail();     return; }
+  if (document.getElementById('labelLightbox'))                                        { closeLightbox();        return; }
+  if (document.getElementById('cellarSettingsOverlay').classList.contains('open'))    { closeCellarSettings();  return; }
+  if (document.getElementById('quickAddOverlay').classList.contains('open'))          { closeQuickAdd();        return; }
+  if (document.getElementById('shareOverlay').classList.contains('open'))             { closeShareModal();      return; }
+  if (document.getElementById('infoOverlay').classList.contains('open'))              { closeInfoModal();       return; }
+  if (document.getElementById('scanOverlay').classList.contains('open'))              { closeScanModal();       return; }
+  if (document.getElementById('modalOverlay').classList.contains('open'))             { closeModal();           return; }
+  if (detailOverlay.classList.contains('open'))                                        { closeDetail();          return; }
 }
 window.addEventListener('popstate', e => {
   if (e.state && e.state.wwwPanel) {
@@ -3557,6 +3651,7 @@ async function handleSave(e) {
     locLat:       currentLocLat,
     locLng:       currentLocLng,
     locLabel:     currentLocLabel||null,
+    addedBy:      _currentUser.id,
     createdAt:    Date.now()
   };
   const idx = wines.findIndex(w => w.id === id);
@@ -3636,13 +3731,21 @@ async function deleteWine(id, e) {
   if (e) e.stopPropagation();
   const w = wines.find(w => w.id === id);
   if (!w) return;
+
+  // Permission check: member can only delete their own wines
+  const isOwner = window._cellarRole === 'owner';
+  const isAdder = w.addedBy === _currentUser?.id || w.userId === _currentUser?.id;
+  if (!isOwner && !isAdder) {
+    showToast('You can only delete wines you added');
+    return;
+  }
+
   if (!confirm(`Delete "${w.name}"?`)) return;
 
   const ok = await deleteWineFromDB(id);
   if (!ok) { showToast('Failed to delete — check your connection'); return; }
 
   wines = wines.filter(w => w.id !== id);
-  // Always return to grid so empty-state shows correctly
   activeView = 'grid';
   document.getElementById('viewGrid').classList.add('active');
   document.getElementById('viewMap').classList.remove('active');
@@ -3671,7 +3774,7 @@ async function toggleFavourite(id) {
   if (_sb && _currentUser) {
     await _sb.from('wines')
       .update({ is_favourite: w.isFavourite })
-      .eq('id', id).eq('user_id', _currentUser.id);
+      .eq('id', id);
   }
   showToast(w.isFavourite ? '♥ Added to favourites' : 'Removed from favourites');
 }
@@ -3950,6 +4053,7 @@ async function handleQuickAdd() {
     notes:       null, isFavourite: false, buyAgain: false,
     photoFront:  null, photoBack: null, photo: null,
     locLat:      _appLocLat, locLng: _appLocLng, locLabel: _appLocLabel || null,
+    addedBy:     _currentUser.id,
     createdAt:   Date.now()
   };
 
@@ -4427,22 +4531,36 @@ async function loadWinesFromDB(cacheKey) {
   if (!_sb) { console.warn('loadWinesFromDB: _sb not ready'); hideLoadBar(); return; }
   const user = _currentUser || (await _sb.auth.getUser()).data?.user;
   if (!user) { console.warn('loadWinesFromDB: no current user'); hideLoadBar(); return; }
-  console.log('loadWinesFromDB: fetching for user', user.id);
+
   try {
-    const [metaResult, photoResult] = await Promise.all([
-      _sb.from('wines')
-        .select('id,name,winery,vintage,country,region,grape,style,price,purchased_from,date_tasted,notes,rating,is_favourite,buy_again,loc_lat,loc_lng,loc_label,created_at,shared_by')
+    let metaQuery, photoQuery;
+
+    if (window._cellarId) {
+      // Cellar mode — load all wines for this cellar
+      metaQuery = _sb.from('wines')
+        .select('id,name,winery,vintage,country,region,grape,style,price,purchased_from,date_tasted,notes,rating,is_favourite,buy_again,loc_lat,loc_lng,loc_label,created_at,shared_by,added_by,cellar_id')
+        .eq('cellar_id', window._cellarId)
+        .order('created_at', { ascending: false });
+      photoQuery = _sb.from('wines')
+        .select('id,photo_front,photo_back')
+        .eq('cellar_id', window._cellarId);
+    } else {
+      // Fallback: personal wines only (no cellar yet)
+      metaQuery = _sb.from('wines')
+        .select('id,name,winery,vintage,country,region,grape,style,price,purchased_from,date_tasted,notes,rating,is_favourite,buy_again,loc_lat,loc_lng,loc_label,created_at,shared_by,added_by,cellar_id')
         .eq('user_id', user.id)
-        .order('created_at', { ascending: false }),
-      _sb.from('wines')
+        .is('cellar_id', null)
+        .order('created_at', { ascending: false });
+      photoQuery = _sb.from('wines')
         .select('id,photo_front,photo_back')
         .eq('user_id', user.id)
-    ]);
+        .is('cellar_id', null);
+    }
 
-    console.log('loadWinesFromDB result:', metaResult.error || metaResult.data?.length + ' rows');
+    const [metaResult, photoResult] = await Promise.all([metaQuery, photoQuery]);
+
     if (metaResult.error) throw metaResult.error;
 
-    // Build photo lookup
     const photoMap = {};
     (photoResult.data || []).forEach(r => { photoMap[r.id] = r; });
 
@@ -4461,6 +4579,7 @@ async function loadWinesFromDB(cacheKey) {
       notes:        row.notes,
       rating:       row.rating,
       sharedBy:     row.shared_by || null,
+      addedBy:      row.added_by  || null,
       isFavourite:  row.is_favourite || false,
       buyAgain:     row.buy_again    || false,
       photoFront:   photoMap[row.id]?.photo_front || null,
@@ -4478,20 +4597,15 @@ async function loadWinesFromDB(cacheKey) {
     hideLoadBar();
     _checkPendingImport();
 
-    // First-run scan: only open if this is a brand-new account with zero wines
-    // and the scan modal isn't already open from a guest scan session
     try {
       if (window._triggerFirstRunScan && wines.length === 0) {
         window._triggerFirstRunScan = false;
         const scanAlreadyOpen = document.getElementById('scanOverlay')?.classList.contains('open');
-        if (!scanAlreadyOpen && typeof openScanModal === 'function') {
-          openScanModal();
-        }
+        if (!scanAlreadyOpen && typeof openScanModal === 'function') openScanModal();
       }
       window._triggerFirstRunScan = false;
     } catch(_) {}
 
-    // Cache for next visit — strip photos to keep sessionStorage light
     if (cacheKey) {
       try {
         const slim = wines.map(w => ({...w, photoFront:null, photoBack:null, photo:null}));
@@ -4507,8 +4621,6 @@ async function loadWinesFromDB(cacheKey) {
     showToast('Could not load wines: ' + (e?.message || e));
   }
 }
-
-
 async function saveWineToDB(entry) {
   if (!_sb || !_currentUser) return false;
   const row = {
@@ -4533,7 +4645,9 @@ async function saveWineToDB(entry) {
     loc_lat:       entry.locLat,
     loc_lng:       entry.locLng,
     loc_label:     entry.locLabel,
-    shared_by:     entry.sharedBy || null
+    shared_by:     entry.sharedBy || null,
+    cellar_id:     window._cellarId || null,
+    added_by:      entry.addedBy || _currentUser.id
   };
   const { error } = await _sb.from('wines').upsert(row, { onConflict: 'id' });
   if (error) { console.error('saveWineToDB:', error); return false; }
@@ -4543,7 +4657,8 @@ async function saveWineToDB(entry) {
 async function deleteWineFromDB(id) {
   if (!_sb || !_currentUser) return false;
   try {
-    const { error } = await _sb.from('wines').delete().eq('id', id).eq('user_id', _currentUser.id);
+    // RLS policy handles permission — owner can delete any, member only their own
+    const { error } = await _sb.from('wines').delete().eq('id', id);
     if (error) throw error;
     return true;
   } catch(e) {
@@ -4838,6 +4953,40 @@ function updateKeyBadge() {
 }
 </script>
 
+<!-- CELLAR SETTINGS MODAL -->
+<div class="modal-overlay" id="cellarSettingsOverlay" role="dialog" aria-modal="true">
+  <div class="modal" style="max-width:440px">
+    <div class="modal-header">
+      <h2 class="modal-title">🍾 Cellar Settings</h2>
+      <button class="modal-close" id="closeCellarSettings" aria-label="Close">✕</button>
+    </div>
+    <div class="modal-body">
+
+      <!-- Invite link -->
+      <div style="margin-bottom:22px">
+        <p style="font-family:var(--font-b);font-size:.78rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--warm-gray);margin-bottom:6px">Invite Link</p>
+        <p style="font-family:var(--font-b);font-size:.84rem;color:var(--charcoal);line-height:1.55;margin-bottom:10px">Anyone who opens this link and signs in will join your shared cellar as a member.</p>
+        <div class="invite-link-wrap">
+          <input class="invite-link-input" id="inviteLinkInput" readonly/>
+          <button class="invite-copy-btn" id="inviteCopyBtn" onclick="copyInviteLink()">Copy Link</button>
+        </div>
+        <div id="cellarOwnerControls" style="display:none">
+          <button class="invite-regen-btn" id="inviteRegenBtn" onclick="regenerateInviteToken()">↺ Generate new link</button>
+          <p style="font-family:var(--font-b);font-size:.7rem;color:var(--warm-gray);font-style:italic;margin-top:4px">Generating a new link will invalidate the old one.</p>
+        </div>
+      </div>
+
+      <!-- Members list -->
+      <div>
+        <p style="font-family:var(--font-b);font-size:.78rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--warm-gray);margin-bottom:10px">Members</p>
+        <div id="cellarMembersList">
+          <div class="comments-loading">Loading members…</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- MOBILE MENU -->
 <div class="modal-overlay" id="mobileMenuOverlay" style="align-items:flex-end;padding:0">
   <div style="background:var(--ivory);border-radius:var(--rl) var(--rl) 0 0;width:100%;padding:20px 24px 36px;box-shadow:0 -8px 40px rgba(44,20,36,.25)">
@@ -4851,6 +5000,7 @@ function updateKeyBadge() {
     <div style="display:flex;flex-direction:column;gap:4px">
       <button onclick="document.getElementById('openAddModal').click();closeMobileMenu()" style="background:none;border:1px solid var(--light-gray);border-radius:var(--r);padding:12px 16px;font-family:var(--font-b);font-size:.95rem;color:var(--charcoal);cursor:pointer;text-align:left;margin-top:4px">➕ Add Wine</button>
       <button onclick="document.getElementById('openQuickAdd').click();closeMobileMenu()" style="background:none;border:1px solid var(--light-gray);border-radius:var(--r);padding:12px 16px;font-family:var(--font-b);font-size:.95rem;color:var(--charcoal);cursor:pointer;text-align:left">⚡ Quick Add</button>
+      <button id="mobileMenuCellarBtn" onclick="openCellarSettings();closeMobileMenu()" style="background:none;border:1px solid var(--light-gray);border-radius:var(--r);padding:12px 16px;font-family:var(--font-b);font-size:.95rem;color:var(--charcoal);cursor:pointer;text-align:left">🍾 Cellar &amp; Members</button>
       <button onclick="showFooterModal('about');closeMobileMenu()" style="background:none;border:none;padding:12px 16px;font-family:var(--font-b);font-size:.95rem;color:var(--warm-gray);cursor:pointer;text-align:left">ℹ️ About</button>
       <button onclick="showFooterModal('privacy');closeMobileMenu()" style="background:none;border:none;padding:12px 16px;font-family:var(--font-b);font-size:.95rem;color:var(--warm-gray);cursor:pointer;text-align:left">🔒 Privacy</button>
       <button onclick="handleSignOut();closeMobileMenu()" style="background:none;border:none;padding:12px 16px;font-family:var(--font-b);font-size:.95rem;color:#dc2626;cursor:pointer;text-align:left;border-top:1px solid var(--light-gray);margin-top:8px">🚪 Sign Out</button>
@@ -4889,6 +5039,486 @@ function closeMobileMenu() {
   el.style.pointerEvents = '';
   el.classList.remove('open');
   document.body.style.overflow = '';
+}
+
+// Close cellar settings on backdrop click
+document.addEventListener('DOMContentLoaded', function() {
+  var cso = document.getElementById('cellarSettingsOverlay');
+  if (cso) cso.addEventListener('click', function(e) {
+    if (e.target === cso) closeCellarSettings();
+  });
+});
+
+/* ══════════════════════════════════════════════════════════════
+   CELLAR BOOTSTRAP — runs once after every login
+   Creates a cellar for new users; looks up existing cellar for
+   returning users; handles ?invite=TOKEN join flow.
+══════════════════════════════════════════════════════════════ */
+window._cellarId   = null;  // uuid of the active cellar
+window._cellarRole = null;  // 'owner' | 'member'
+window._cellarMembers = []; // [{user_id, role, email}]
+
+async function bootstrapCellar() {
+  if (!_sb || !_currentUser) return;
+
+  // ── Step 1: check for invite token in URL ──────────────────
+  const params = new URLSearchParams(window.location.search);
+  const inviteToken = params.get('invite');
+  if (inviteToken) {
+    await joinCellarViaToken(inviteToken);
+    // Clean token from URL
+    window.history.replaceState({}, '', window.location.pathname);
+    return;
+  }
+
+  // ── Step 2: look up existing membership ───────────────────
+  const { data: memberships } = await _sb
+    .from('cellar_members')
+    .select('cellar_id, role')
+    .eq('user_id', _currentUser.id)
+    .limit(1);
+
+  if (memberships && memberships.length > 0) {
+    window._cellarId   = memberships[0].cellar_id;
+    window._cellarRole = memberships[0].role;
+    await _backfillExistingWines();
+    await _refreshCellarMembers();
+    _updateCellarPill();
+    return;
+  }
+
+  // ── Step 3: no membership — create a new cellar ───────────
+  const { data: newCellar, error: cellarErr } = await _sb
+    .from('cellars')
+    .insert({ owner_id: _currentUser.id, name: 'My Cellar' })
+    .select('id, invite_token')
+    .single();
+
+  if (cellarErr || !newCellar) {
+    console.error('Failed to create cellar:', cellarErr);
+    return;
+  }
+
+  // Insert owner as member
+  await _sb.from('cellar_members').insert({
+    cellar_id: newCellar.id,
+    user_id:   _currentUser.id,
+    role:      'owner'
+  });
+
+  window._cellarId   = newCellar.id;
+  window._cellarRole = 'owner';
+  await _backfillExistingWines();
+  await _refreshCellarMembers();
+  _updateCellarPill();
+}
+
+// Backfill any existing wines (cellar_id = null) to this cellar
+async function _backfillExistingWines() {
+  if (!window._cellarId || !_currentUser) return;
+  try {
+    await _sb.from('wines')
+      .update({ cellar_id: window._cellarId, added_by: _currentUser.id })
+      .eq('user_id', _currentUser.id)
+      .is('cellar_id', null);
+  } catch(e) {
+    console.warn('Backfill wines:', e);
+  }
+}
+
+// Fetch member list with emails from auth.users via a join
+async function _refreshCellarMembers() {
+  if (!_sb || !window._cellarId) return;
+  try {
+    const { data } = await _sb
+      .from('cellar_members')
+      .select('user_id, role, joined_at')
+      .eq('cellar_id', window._cellarId);
+    window._cellarMembers = data || [];
+  } catch(e) {
+    console.warn('_refreshCellarMembers:', e);
+  }
+}
+
+function _updateCellarPill() {
+  const pill  = document.getElementById('cellarPill');
+  const label = document.getElementById('cellarPillLabel');
+  if (!pill || !label) return;
+  const count = window._cellarMembers.length;
+  label.textContent = count > 1 ? `${count} members` : 'Cellar';
+  pill.style.display = 'inline-flex';
+}
+
+// Join a cellar via invite token
+async function joinCellarViaToken(token) {
+  if (!_sb || !_currentUser) return;
+
+  // Find the cellar with this token
+  const { data: cellar } = await _sb
+    .from('cellars')
+    .select('id, owner_id')
+    .eq('invite_token', token)
+    .maybeSingle();
+
+  if (!cellar) {
+    showToast('Invite link not found or has been regenerated');
+    // Still do normal cellar bootstrap
+    await bootstrapCellar();
+    return;
+  }
+
+  // Check if already a member
+  const { data: existing } = await _sb
+    .from('cellar_members')
+    .select('cellar_id, role')
+    .eq('cellar_id', cellar.id)
+    .eq('user_id', _currentUser.id)
+    .maybeSingle();
+
+  if (existing) {
+    // Already a member — just set state
+    window._cellarId   = existing.cellar_id;
+    window._cellarRole = existing.role;
+  } else {
+    // Check if user has their OWN cellar — if so, we need to decide
+    const { data: myMemberships } = await _sb
+      .from('cellar_members')
+      .select('cellar_id, role')
+      .eq('user_id', _currentUser.id)
+      .limit(1);
+
+    if (myMemberships && myMemberships.length > 0) {
+      // Already in a different cellar — show a join prompt
+      const confirmed = confirm(
+        'This invite link will add you to a shared cellar.\n\n' +
+        'You will see all wines in that shared cellar going forward.\n\n' +
+        'Join the shared cellar?'
+      );
+      if (!confirmed) {
+        window._cellarId   = myMemberships[0].cellar_id;
+        window._cellarRole = myMemberships[0].role;
+        await _refreshCellarMembers();
+        _updateCellarPill();
+        return;
+      }
+    }
+
+    // Insert as member
+    const { error } = await _sb.from('cellar_members').insert({
+      cellar_id: cellar.id,
+      user_id:   _currentUser.id,
+      role:      'member'
+    });
+
+    if (error) {
+      console.error('joinCellarViaToken insert:', error);
+      showToast('Could not join cellar — please try the link again');
+      return;
+    }
+
+    window._cellarId   = cellar.id;
+    window._cellarRole = 'member';
+    showToast('✓ You\'ve joined the shared cellar!');
+  }
+
+  await _backfillExistingWines();
+  await _refreshCellarMembers();
+  _updateCellarPill();
+}
+
+/* ══════════════════════════════════════════════════════════════
+   CELLAR SETTINGS UI
+══════════════════════════════════════════════════════════════ */
+async function openCellarSettings() {
+  if (!window._cellarId) { showToast('Cellar not loaded yet — try again in a moment'); return; }
+
+  // Wire close button
+  const closeBtn = document.getElementById('closeCellarSettings');
+  if (closeBtn) closeBtn.onclick = closeCellarSettings;
+
+  // Show/hide owner-only controls
+  const ownerControls = document.getElementById('cellarOwnerControls');
+  if (ownerControls) ownerControls.style.display = window._cellarRole === 'owner' ? 'block' : 'none';
+
+  // Load invite link
+  await _loadInviteLink();
+
+  // Load members
+  await _renderMembersList();
+
+  document.getElementById('cellarSettingsOverlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+  _pushNavState();
+}
+
+function closeCellarSettings() {
+  document.getElementById('cellarSettingsOverlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+async function _loadInviteLink() {
+  const input = document.getElementById('inviteLinkInput');
+  if (!input || !_sb) return;
+  try {
+    const { data } = await _sb
+      .from('cellars')
+      .select('invite_token')
+      .eq('id', window._cellarId)
+      .single();
+    if (data) {
+      input.value = `${window.location.origin}${window.location.pathname}?invite=${data.invite_token}`;
+    }
+  } catch(e) {
+    input.value = 'Could not load link';
+  }
+}
+
+async function _renderMembersList() {
+  const container = document.getElementById('cellarMembersList');
+  if (!container) return;
+  container.innerHTML = '<div class="comments-loading">Loading…</div>';
+
+  await _refreshCellarMembers();
+  const members = window._cellarMembers;
+
+  if (!members.length) {
+    container.innerHTML = '<p class="comments-empty">No members found.</p>';
+    return;
+  }
+
+  container.innerHTML = '';
+  members.forEach(m => {
+    const isMe = m.user_id === _currentUser?.id;
+    const initials = isMe
+      ? (_currentUser.email || 'Me').slice(0, 2).toUpperCase()
+      : (m.user_id || 'M').slice(0, 2).toUpperCase();
+    const displayName = isMe ? (_currentUser.email || 'You') : `Member ${m.user_id.slice(0,8)}…`;
+    const roleLabel   = m.role === 'owner' ? '👑 Owner' : 'Member';
+
+    const row = document.createElement('div');
+    row.className = 'cellar-member-row';
+    row.innerHTML = `
+      <div class="cellar-member-avatar">${initials}</div>
+      <div class="cellar-member-info">
+        <div class="cellar-member-name">${escHtml(displayName)}</div>
+        <div class="cellar-member-role">${roleLabel}${isMe ? ' · You' : ''}</div>
+      </div>
+    `;
+
+    // Owner can remove non-owner, non-self members
+    if (window._cellarRole === 'owner' && !isMe && m.role !== 'owner') {
+      const removeBtn = document.createElement('button');
+      removeBtn.className = 'cellar-remove-btn';
+      removeBtn.textContent = 'Remove';
+      removeBtn.onclick = () => _removeMember(m.user_id);
+      row.appendChild(removeBtn);
+    }
+
+    container.appendChild(row);
+  });
+}
+
+async function _removeMember(userId) {
+  if (!confirm('Remove this member from the cellar?')) return;
+  if (!_sb || !window._cellarId) return;
+  const { error } = await _sb
+    .from('cellar_members')
+    .delete()
+    .eq('cellar_id', window._cellarId)
+    .eq('user_id', userId);
+  if (error) { showToast('Could not remove member'); return; }
+  showToast('Member removed');
+  await _renderMembersList();
+  await _refreshCellarMembers();
+  _updateCellarPill();
+}
+
+function copyInviteLink() {
+  const input = document.getElementById('inviteLinkInput');
+  const btn   = document.getElementById('inviteCopyBtn');
+  if (!input || !btn) return;
+  navigator.clipboard.writeText(input.value).then(() => {
+    btn.textContent = 'Copied ✓';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'Copy Link'; btn.classList.remove('copied'); }, 2500);
+  }).catch(() => {
+    input.select(); document.execCommand('copy');
+    showToast('Link copied');
+  });
+}
+
+async function regenerateInviteToken() {
+  if (!confirm('This will invalidate your current invite link. Generate a new one?')) return;
+  if (!_sb || !window._cellarId) return;
+  const btn = document.getElementById('inviteRegenBtn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Generating…'; }
+  try {
+    // Generate new token via Postgres function workaround — update with a fresh token
+    const newToken = Array.from(crypto.getRandomValues(new Uint8Array(16)))
+      .map(b => b.toString(16).padStart(2,'0')).join('');
+    const { error } = await _sb
+      .from('cellars')
+      .update({ invite_token: newToken })
+      .eq('id', window._cellarId)
+      .eq('owner_id', _currentUser.id);
+    if (error) throw error;
+    await _loadInviteLink();
+    showToast('New invite link generated ✓');
+  } catch(e) {
+    showToast('Could not regenerate link');
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '↺ Generate new link'; }
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   COMMENTS
+══════════════════════════════════════════════════════════════ */
+async function loadComments(wineId) {
+  if (!_sb || !window._cellarId) return [];
+  try {
+    const { data, error } = await _sb
+      .from('wine_comments')
+      .select('id, user_id, author_name, body, created_at')
+      .eq('wine_id', wineId)
+      .eq('cellar_id', window._cellarId)
+      .order('created_at', { ascending: true });
+    if (error) throw error;
+    return data || [];
+  } catch(e) {
+    console.error('loadComments:', e);
+    return [];
+  }
+}
+
+async function postComment(wineId, body) {
+  if (!_sb || !_currentUser || !window._cellarId) return null;
+  const authorName = _currentUser.email
+    ? _currentUser.email.split('@')[0]
+    : 'Member';
+  const { data, error } = await _sb
+    .from('wine_comments')
+    .insert({
+      wine_id:     wineId,
+      cellar_id:   window._cellarId,
+      user_id:     _currentUser.id,
+      author_name: authorName,
+      body:        body.trim()
+    })
+    .select('id, user_id, author_name, body, created_at')
+    .single();
+  if (error) { console.error('postComment:', error); return null; }
+  return data;
+}
+
+async function deleteComment(commentId) {
+  if (!_sb) return false;
+  const { error } = await _sb
+    .from('wine_comments')
+    .delete()
+    .eq('id', commentId);
+  return !error;
+}
+
+function renderCommentsSection(wineId, comments) {
+  const isOwner = window._cellarRole === 'owner';
+  const myId    = _currentUser?.id;
+
+  const commentsHtml = comments.length
+    ? comments.map(c => {
+        const initials = (c.author_name || 'M').slice(0, 2).toUpperCase();
+        const canDelete = c.user_id === myId || isOwner;
+        const timeStr   = new Date(c.created_at).toLocaleString('en-GB', {
+          day:'numeric', month:'short', hour:'2-digit', minute:'2-digit'
+        });
+        return `
+          <div class="comment-item" data-comment-id="${escHtml(c.id)}">
+            <div class="comment-header">
+              <div class="comment-avatar">${escHtml(initials)}</div>
+              <span class="comment-author">${escHtml(c.author_name)}</span>
+              <span class="comment-time">${timeStr}</span>
+            </div>
+            <div class="comment-body">${escHtml(c.body)}</div>
+            ${canDelete ? `<button class="comment-delete" title="Delete comment" onclick="handleDeleteComment('${escHtml(c.id)}', this)">✕</button>` : ''}
+          </div>`;
+      }).join('')
+    : '<div class="comments-empty">No comments yet — be the first to add one.</div>';
+
+  return `
+    <div class="comments-section" id="commentsSection_${escHtml(wineId)}">
+      <div class="comments-title">
+        💬 Comments
+        <span class="comments-count">${comments.length ? `(${comments.length})` : ''}</span>
+      </div>
+      <div class="comments-list" id="commentsList_${escHtml(wineId)}">${commentsHtml}</div>
+      <div class="comments-form">
+        <textarea class="comments-input" id="commentInput_${escHtml(wineId)}"
+          placeholder="Add a comment…" rows="1"
+          oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'"
+          onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();handlePostComment('${escHtml(wineId)}')}"
+        ></textarea>
+        <button class="comments-submit" id="commentSubmit_${escHtml(wineId)}"
+          onclick="handlePostComment('${escHtml(wineId)}')">Post</button>
+      </div>
+    </div>`;
+}
+
+async function handlePostComment(wineId) {
+  const input  = document.getElementById(`commentInput_${wineId}`);
+  const btn    = document.getElementById(`commentSubmit_${wineId}`);
+  const list   = document.getElementById(`commentsList_${wineId}`);
+  if (!input || !btn || !list) return;
+  const body = input.value.trim();
+  if (!body) return;
+  btn.disabled = true;
+  btn.textContent = '…';
+  const comment = await postComment(wineId, body);
+  btn.disabled = false;
+  btn.textContent = 'Post';
+  if (!comment) { showToast('Could not post comment — try again'); return; }
+  input.value = '';
+  input.style.height = 'auto';
+
+  // Remove empty state if present
+  const empty = list.querySelector('.comments-empty');
+  if (empty) empty.remove();
+
+  // Append new comment
+  const initials = (comment.author_name || 'M').slice(0, 2).toUpperCase();
+  const timeStr  = new Date(comment.created_at).toLocaleString('en-GB', {
+    day:'numeric', month:'short', hour:'2-digit', minute:'2-digit'
+  });
+  const div = document.createElement('div');
+  div.className = 'comment-item';
+  div.dataset.commentId = comment.id;
+  const isOwner = window._cellarRole === 'owner';
+  div.innerHTML = `
+    <div class="comment-header">
+      <div class="comment-avatar">${escHtml(initials)}</div>
+      <span class="comment-author">${escHtml(comment.author_name)}</span>
+      <span class="comment-time">${timeStr}</span>
+    </div>
+    <div class="comment-body">${escHtml(comment.body)}</div>
+    <button class="comment-delete" title="Delete comment" onclick="handleDeleteComment('${escHtml(comment.id)}', this)">✕</button>
+  `;
+  list.appendChild(div);
+  div.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+  // Update comment count in title
+  const title = document.querySelector(`#commentsSection_${wineId} .comments-count`);
+  if (title) {
+    const current = parseInt(title.textContent.replace(/\D/g,'')) || 0;
+    title.textContent = `(${current + 1})`;
+  }
+}
+
+async function handleDeleteComment(commentId, btnEl) {
+  if (!confirm('Delete this comment?')) return;
+  const ok = await deleteComment(commentId);
+  if (!ok) { showToast('Could not delete comment'); return; }
+  const item = btnEl?.closest('.comment-item');
+  if (item) item.remove();
+  showToast('Comment deleted');
 }
 
 // FILE INTEGRITY CHECK — if this line is missing the file is truncated
