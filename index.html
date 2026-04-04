@@ -5088,18 +5088,32 @@ async function bootstrapCellar() {
   }
 
   // ── Step 3: no membership — create a new cellar ───────────
-  const { data: newCellar, error: cellarErr } = await _sb
+  // Insert WITHOUT .select() chained — the SELECT RLS policy (is_cellar_member)
+  // would immediately fail because the cellar_members row doesn't exist yet.
+  const { error: cellarErr } = await _sb
     .from('cellars')
-    .insert({ owner_id: _currentUser.id, name: 'My Cellar' })
-    .select('id, invite_token')
-    .single();
+    .insert({ owner_id: _currentUser.id, name: 'My Cellar' });
 
-  if (cellarErr || !newCellar) {
+  if (cellarErr) {
     console.error('Failed to create cellar:', cellarErr);
     return;
   }
 
-  // Insert owner as member
+  // Read back by owner_id (member row doesn't exist yet, but owner_id is known)
+  const { data: newCellar } = await _sb
+    .from('cellars')
+    .select('id, invite_token')
+    .eq('owner_id', _currentUser.id)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (!newCellar) {
+    console.error('Failed to read newly created cellar');
+    return;
+  }
+
+  // Insert owner as member — now is_cellar_member() will work for future reads
   await _sb.from('cellar_members').insert({
     cellar_id: newCellar.id,
     user_id:   _currentUser.id,
