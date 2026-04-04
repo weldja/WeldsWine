@@ -320,16 +320,6 @@ body{font-family:var(--font-b);background:var(--cream);color:var(--charcoal);min
   .wine-card:hover .card-thumb-single{ transform:scale(1.04); }
 }
 @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
-@keyframes chipHighlight{
-  0%   { box-shadow:0 2px 8px var(--shadow),0 0 0 0   rgba(139,36,57,0);   border-color:var(--light-gray) }
-  20%  { box-shadow:0 2px 8px var(--shadow),0 0 0 3px rgba(139,36,57,.35); border-color:var(--burgundy) }
-  80%  { box-shadow:0 2px 8px var(--shadow),0 0 0 3px rgba(139,36,57,.2);  border-color:var(--burgundy) }
-  100% { box-shadow:0 2px 8px var(--shadow),0 0 0 0   rgba(139,36,57,0);   border-color:var(--light-gray) }
-}
-.wine-card.chip-highlight{
-  animation:chipHighlight 2s ease forwards !important;
-  transform:none !important;
-}
 
 /* ── Accent strip when no image ────────────────────────── */
 .card-label-strip{width:4px;align-self:stretch;flex-shrink:0;background:linear-gradient(to bottom,var(--burgundy),var(--blush))}
@@ -703,9 +693,7 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
   .hero-count{display:none}
   .curated-grid{grid-template-columns:1fr}
   .curated-title{font-size:1.05rem}
-  /* Start here responsive */
-  .start-here{padding:18px 18px 20px}
-  .start-here-chips{grid-template-columns:repeat(2,1fr)}
+
 }
 @media(max-width:520px){
   .header-inner{padding:0 10px;gap:8px}
@@ -716,7 +704,7 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
   .card-actions{gap:2px}
   .card-btn{padding:3px 7px;font-size:.7rem}
   .auth-card{padding:28px 20px}
-  .start-here-chips{grid-template-columns:1fr}
+
 }
 @media(max-width:380px){
   .logo-title{max-width:90px;font-size:.85rem}
@@ -975,60 +963,7 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
   .rec-tonight-title{ font-size:1.25rem }
 }
 
-/* ─── Start Here ──────────────────────────────────────── */
-.start-here{
-  margin-bottom:40px;
-  padding:24px 28px;
-  background:var(--ivory);
-  border:1px solid var(--light-gray);
-  border-radius:var(--rl);
-  box-shadow:0 2px 10px var(--shadow);
-}
-.start-here-header{
-  margin-bottom:16px;
-}
-.start-here-label{
-  font-family:var(--font-d);
-  font-size:1.1rem;
-  font-weight:600;
-  color:var(--charcoal);
-  margin-bottom:4px;
-}
-.start-here-hint{
-  font-family:var(--font-b);
-  font-size:.82rem;
-  color:var(--warm-gray);
-}
-.start-here-chips{
-  display:grid;
-  grid-template-columns:repeat(auto-fill,minmax(170px,1fr));
-  gap:10px;
-}
-.start-chip{
-  background:var(--cream);
-  border:1.5px solid var(--light-gray);
-  border-radius:var(--rl);
-  padding:14px 16px;
-  font-family:var(--font-b);
-  color:var(--charcoal);
-  cursor:pointer;
-  text-align:left;
-  transition:background .15s ease,border-color .15s ease,transform .15s ease,box-shadow .15s ease;
-  display:flex;
-  flex-direction:column;
-  gap:4px;
-}
-.start-chip:hover{
-  background:var(--parchment);
-  border-color:var(--burgundy);
-  transform:translateY(-2px);
-  box-shadow:0 4px 14px var(--shadow-md);
-}
-.start-chip .chip-emoji{ font-size:1.3rem;line-height:1;margin-bottom:2px }
-.start-chip .chip-label{ font-size:.88rem;font-weight:600;color:var(--charcoal);line-height:1.2 }
-.start-chip .chip-desc{  font-size:.74rem;color:var(--warm-gray);font-weight:400;line-height:1.3 }
-.start-chip:hover .chip-label{ color:var(--burgundy) }
-.start-chip:hover .chip-desc{  color:var(--burgundy-lt) }
+
 
 /* ─── Featured / Top Pick badge ──────────────────────── */
 .wine-card.featured{
@@ -2747,116 +2682,6 @@ function getTasteDescriptor(w) {
   if (style === 'white') return 'Crisp and refreshing — great chilled';
   if (style === 'rosé')  return 'Light and summery — easy crowd-pleaser';
   return 'Reliable choice — hard to go wrong';
-}
-
-/* ── Recommended Tonight ──────────────────────────────────── */
-function renderRecommendedTonight() {
-  const block = document.getElementById('recTonightBlock');
-  if (!block) return;
-
-  // Need at least 2 wines to show this section
-  if (wines.length < 2) { block.style.display = 'none'; return; }
-
-  const sorted = [...wines].sort((a,b) => (b.rating||0) - (a.rating||0));
-
-  // Primary recommendation: highest rated. Tiebreak: most recently tasted.
-  const primary = sorted[0];
-
-  // Alternatives: next 2 wines that are different styles or different enough
-  const alts = sorted.slice(1).filter(w => w.id !== primary.id).slice(0, 2);
-
-  // Reason labels — richer than the card descriptor, more personal
-  function getTonightReason(w, isPrimary) {
-    const all = ([w.notes, w.grape, w.style, w.name, w.region].filter(Boolean).join(' ')).toLowerCase();
-    if (isPrimary) {
-      if (all.includes('cab') || all.includes('syrah') || all.includes('shiraz') || all.includes('rioja')) return 'Rich and bold — perfect with a big meal tonight';
-      if (all.includes('pinot') || all.includes('merlot') || all.includes('beaujolais')) return 'Easy drinking — just open it and relax';
-      if (all.includes('chardonnay') || all.includes('butter') || all.includes('creamy')) return 'Smooth and full — lovely with dinner tonight';
-      if (all.includes('sauvignon') || all.includes('crisp') || all.includes('fresh')) return 'Crisp and refreshing — chill it and open it now';
-      if ((w.style||'').toLowerCase() === 'sparkling') return 'Celebratory — why not open the bubbles tonight?';
-      if ((w.style||'').toLowerCase() === 'rosé')      return 'Light and summery — great on its own tonight';
-      if ((w.rating||0) >= 9) return 'You\'ve loved this one before — open it again tonight';
-      return 'A proven favourite — you\'ve tried it and it works';
-    }
-    // Alt reasons — always use context
-    if (all.includes('sauvignon') || all.includes('blanc') || all.includes('white') || (w.style||'').toLowerCase()==='white') return 'Lighter option — good if you want something fresh';
-    if (all.includes('cab') || all.includes('syrah') || all.includes('shiraz')) return 'Bolder option — great if you\'re having food';
-    if (all.includes('pinot') || all.includes('merlot')) return 'Softer option — easy and crowd-pleasing';
-    if ((w.style||'').toLowerCase() === 'sparkling') return 'Bubbly option — if you feel like celebrating';
-    if ((w.style||'').toLowerCase() === 'rosé')      return 'Rosé option — light and refreshing alternative';
-    return 'Solid alternative — different but just as reliable';
-  }
-
-  // Build primary card
-  const primaryEl = document.getElementById('recPrimary');
-  if (primaryEl) {
-    const frontUrl = safePhotoSrc(primary.photoFront || primary.photo);
-    const meta = [primary.winery, primary.vintage, primary.country].filter(Boolean).join(' · ');
-    const stars = primary.rating ? renderStarsLarge(primary.rating) : '';
-    primaryEl.innerHTML = '';
-    const card = document.createElement('div');
-    card.className = 'rec-primary-card';
-
-    const imgEl = document.createElement('div');
-    if (frontUrl) {
-      imgEl.innerHTML = `<img class="rec-primary-img" src="${frontUrl}" alt="${escHtml(primary.name)}" loading="lazy">`;
-    } else {
-      imgEl.innerHTML = `<div class="rec-primary-img-placeholder">🍷</div>`;
-    }
-    card.appendChild(imgEl);
-
-    const body = document.createElement('div');
-    body.className = 'rec-primary-body';
-    body.innerHTML = `
-      <div class="rec-primary-badge">✓ Tonight's pick</div>
-      <div class="rec-primary-name">${escHtml(primary.name)}</div>
-      <div class="rec-primary-reason">${escHtml(getTonightReason(primary, true))}</div>
-      ${meta ? `<div class="rec-primary-meta">${escHtml(meta)}</div>` : ''}
-      ${stars ? `<div class="rec-primary-stars">${stars}</div>` : ''}
-    `;
-    const cta = document.createElement('button');
-    cta.className = 'rec-primary-cta';
-    cta.textContent = 'This is the one — see details →';
-    cta.addEventListener('click', () => openDetail(getWineById(primary.id), null));
-    body.appendChild(cta);
-    card.appendChild(body);
-    card.addEventListener('click', () => openDetail(getWineById(primary.id), null));
-    primaryEl.appendChild(card);
-  }
-
-  // Build alt cards
-  const altsEl = document.getElementById('recAlts');
-  if (altsEl) {
-    altsEl.innerHTML = '';
-    const altLabels = ['Good alternative', 'Or try this'];
-    alts.forEach((w, i) => {
-      const frontUrl = safePhotoSrc(w.photoFront || w.photo);
-      const card = document.createElement('div');
-      card.className = 'rec-alt-card';
-      card.addEventListener('click', () => openDetail(getWineById(w.id), null));
-
-      const imgDiv = document.createElement('div');
-      if (frontUrl) {
-        imgDiv.innerHTML = `<img class="rec-alt-img" src="${frontUrl}" alt="${escHtml(w.name)}" loading="lazy">`;
-      } else {
-        imgDiv.innerHTML = `<div class="rec-alt-img-placeholder">🍷</div>`;
-      }
-
-      const info = document.createElement('div');
-      info.className = 'rec-alt-info';
-      info.innerHTML = `
-        <div class="rec-alt-label">${altLabels[i] || 'Alternative'}</div>
-        <div class="rec-alt-name">${escHtml(w.name)}</div>
-        <div class="rec-alt-reason">${escHtml(getTonightReason(w, false))}</div>
-      `;
-
-      card.appendChild(imgDiv);
-      card.appendChild(info);
-      altsEl.appendChild(card);
-    });
-  }
-
-  block.style.display = 'block';
 }
 
 /* ── Curated sections ─────────────────────────────────────── */
