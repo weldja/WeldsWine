@@ -295,110 +295,150 @@ body{font-family:var(--font-b);background:var(--cream);color:var(--charcoal);min
 .stat-divider{width:1px;height:28px;background:var(--light-gray);flex-shrink:0}
 
 /* ── Grid ──────────────────────────────────────────────── */
-.wine-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:18px}
+.wine-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:12px}
 .main-content{max-width:1200px;margin:0 auto;padding:36px 24px 88px}
+
 /* ── Card shell ────────────────────────────────────────── */
 .wine-card{
   background:var(--ivory);
   border:1px solid var(--light-gray);
-  border-radius:var(--rl);
+  border-radius:14px;
   overflow:hidden;
   display:flex;
   flex-direction:row;
   cursor:pointer;
-  box-shadow:0 2px 8px var(--shadow), 0 1px 2px rgba(44,36,32,.04);
   animation:fadeUp .3s ease both;
-  transition:transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+  transition:transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+  min-height:128px;
 }
 @media(hover:hover){
   .wine-card:hover{
-    transform:translateY(-3px);
-    box-shadow:0 8px 28px var(--shadow-md), 0 2px 6px var(--shadow);
-    border-color:#d4c5ba;
+    transform:translateY(-2px);
+    box-shadow:0 6px 24px rgba(92,21,37,.1);
+    border-color:#cdbfb7;
   }
   .wine-card:hover .card-thumb-wrap img,
-  .wine-card:hover .card-thumb-single{ transform:scale(1.04); }
+  .wine-card:hover .card-thumb-single{ transform:scale(1.05); }
 }
-@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 
 /* ── Accent strip when no image ────────────────────────── */
-.card-label-strip{width:4px;align-self:stretch;flex-shrink:0;background:linear-gradient(to bottom,var(--burgundy),var(--blush))}
+.card-label-strip{width:3px;align-self:stretch;flex-shrink:0;background:linear-gradient(to bottom,var(--burgundy),var(--blush))}
 
 /* ── Image — left column ───────────────────────────────── */
 .card-thumb-wrap{
-  position:relative;width:110px;flex-shrink:0;
-  overflow:hidden;background:#ece5db;display:flex;cursor:zoom-in;
+  position:relative;width:96px;flex-shrink:0;
+  overflow:hidden;background:#e8e0d6;display:flex;cursor:zoom-in;
 }
 .card-thumb-wrap img{
   flex:1;min-width:0;height:100%;
   object-fit:contain;background:transparent;
-  transition:transform .25s ease;
+  transition:transform .28s ease;
 }
 .card-thumb-badge{
-  position:absolute;bottom:5px;left:50%;transform:translateX(-50%);
-  background:rgba(44,36,32,.5);color:#fff;font-size:.56rem;
-  font-family:var(--font-b);padding:2px 6px;border-radius:8px;
-  pointer-events:none;white-space:nowrap;
+  position:absolute;bottom:4px;left:50%;transform:translateX(-50%);
+  background:rgba(44,36,32,.45);backdrop-filter:blur(4px);color:#fff;font-size:.52rem;
+  font-family:var(--font-b);padding:2px 7px;border-radius:10px;
+  pointer-events:none;white-space:nowrap;letter-spacing:.04em;
 }
 .card-thumb-single{
-  width:110px;flex-shrink:0;align-self:stretch;display:block;
-  object-fit:contain;cursor:zoom-in;background:#ece5db;
-  transition:transform .25s ease;
+  width:96px;flex-shrink:0;align-self:stretch;display:block;
+  object-fit:contain;cursor:zoom-in;background:#e8e0d6;
+  transition:transform .28s ease;
 }
 
 /* ── Content — right column ────────────────────────────── */
-.card-body{padding:14px 16px 0;flex:1;min-width:0;display:flex;flex-direction:column;gap:5px}
-.card-header{display:flex;justify-content:space-between;align-items:flex-start;gap:6px}
+.card-body{
+  padding:12px 14px 0;flex:1;min-width:0;
+  display:flex;flex-direction:column;gap:3px;
+}
+.card-header{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+.card-header-left{flex:1;min-width:0}
+
+/* Vintage + name on one compact line */
+.card-top-line{display:flex;align-items:baseline;gap:7px;flex-wrap:wrap;margin-bottom:2px}
 .card-vintage-badge{
-  font-family:var(--font-b);font-size:.67rem;font-weight:500;
-  color:var(--warm-gray);background:var(--parchment);
-  border:1px solid var(--light-gray);border-radius:20px;
-  padding:2px 9px;display:inline-block;margin-bottom:4px;
+  font-family:var(--font-b);font-size:.62rem;font-weight:600;
+  color:var(--warm-gray);letter-spacing:.06em;
+  flex-shrink:0;
 }
-.card-name{font-family:var(--font-d);font-size:1.05rem;font-weight:600;color:var(--charcoal);line-height:1.3}
-.card-rating{color:var(--gold);font-size:.88rem;white-space:nowrap;flex-shrink:0;letter-spacing:1px}
-.card-meta{font-family:var(--font-b);font-size:.76rem;color:var(--warm-gray);line-height:1.35}
-/* Taste descriptor — the key human line */
+.card-name{font-family:var(--font-d);font-size:.98rem;font-weight:600;color:var(--charcoal);line-height:1.25;flex:1;min-width:0}
+
+/* Descriptor — the punchy one-liner */
 .card-descriptor{
-  font-family:var(--font-b);font-size:.8rem;
+  font-family:var(--font-b);font-size:.75rem;
   color:var(--burgundy);font-weight:600;
-  margin-top:1px;line-height:1.3;
+  line-height:1.3;margin-bottom:1px;
 }
-.card-tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:2px}
+
+/* Origin + meta on one clean line */
+.card-origin-line{
+  display:flex;align-items:center;gap:5px;
+  font-family:var(--font-b);font-size:.72rem;color:var(--warm-gray);
+  flex-wrap:wrap;
+}
+.card-origin-sep{color:var(--light-gray);font-size:.6rem}
+
+/* Map pin button — inline, no border box */
+.card-origin-btn{
+  display:inline-flex;align-items:center;gap:3px;
+  background:none;border:none;padding:0;
+  font-family:var(--font-b);font-size:.72rem;
+  color:var(--blush);cursor:pointer;transition:color .15s;
+  white-space:nowrap;text-decoration:underline;text-decoration-color:transparent;
+  text-underline-offset:2px;
+}
+.card-origin-btn:hover{color:var(--burgundy);text-decoration-color:var(--blush)}
+.card-origin-btn svg{width:10px;height:10px;flex-shrink:0}
+
+/* Tags row */
+.card-tags{display:flex;flex-wrap:wrap;gap:3px;margin-top:3px}
 .card-tag{
   background:var(--parchment);
   border:1px solid var(--light-gray);
-  border-radius:20px;padding:2px 10px;font-size:.68rem;font-family:var(--font-b);
-  color:var(--warm-gray);font-weight:500;
+  border-radius:20px;padding:1px 8px;font-size:.63rem;font-family:var(--font-b);
+  color:var(--warm-gray);
 }
-.card-notes{font-family:var(--font-b);font-size:.77rem;color:var(--warm-gray);line-height:1.5;flex:1;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.card-location{font-size:.68rem;color:var(--blush);font-family:var(--font-b)}
-.card-footer-info{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:5px}
-.card-origin-btn{
-  display:inline-flex;align-items:center;gap:4px;
-  background:none;border:1px solid var(--light-gray);border-radius:6px;
-  padding:3px 8px;font-family:var(--font-b);font-size:.65rem;
-  color:var(--warm-gray);cursor:pointer;transition:var(--tr);
-  white-space:nowrap;
-}
-.card-origin-btn:hover{border-color:var(--burgundy);color:var(--burgundy);background:rgba(139,36,57,.04)}
-.card-footer{display:flex;justify-content:space-between;align-items:center;padding:9px 16px 13px;border-top:1px solid var(--light-gray);margin-top:10px;gap:4px}
-.card-date{font-size:.69rem;color:var(--warm-gray);font-family:var(--font-b);flex:1;opacity:.65}
-.card-actions{display:flex;gap:3px;flex-shrink:0}
 
-/* ── Buttons — semantic hover colours ─────────────────── */
-.card-btn{
-  background:none;border:1px solid var(--light-gray);border-radius:var(--r);
-  padding:3px 9px;font-size:.72rem;cursor:pointer;
-  color:var(--warm-gray);font-family:var(--font-b);
-  transition:background .16s ease,color .16s ease,border-color .16s ease,transform .14s ease;
+.card-notes{font-family:var(--font-b);font-size:.74rem;color:var(--warm-gray);line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;margin-top:2px}
+
+/* Rating — right side */
+.card-rating{
+  display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0;
 }
-.card-btn:hover{transform:translateY(-1px)}
-.card-btn.view:hover{background:rgba(123,30,58,.07);color:var(--burgundy);border-color:rgba(123,30,58,.3)}
-.card-btn.edit:hover{background:rgba(201,163,74,.1);color:#9a7520;border-color:rgba(201,163,74,.45)}
-.card-btn.delete:hover{background:rgba(220,38,38,.06);color:#c42020;border-color:rgba(220,38,38,.28)}
-.card-btn.share{color:var(--blush);border-color:rgba(196,120,138,.3)}
-.card-btn.share:hover{background:rgba(196,120,138,.09);border-color:var(--blush);color:var(--burgundy)}
+.card-rating-stars{color:var(--gold);font-size:.82rem;white-space:nowrap;letter-spacing:.5px}
+.card-fav-btn{
+  background:none;border:none;cursor:pointer;font-size:.95rem;
+  color:var(--light-gray);padding:0;transition:color .15s,transform .15s;
+  line-height:1;flex-shrink:0;
+}
+.card-fav-btn:hover,.card-fav-btn.active{color:#e05c7a;transform:scale(1.2)}
+.card-fav-btn.active{color:#e05c7a}
+
+/* ── Footer ────────────────────────────────────────────── */
+.card-footer{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:8px 14px 10px;margin-top:8px;
+  border-top:1px solid rgba(0,0,0,.055);
+  gap:4px;
+}
+.card-footer-info{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.card-date{font-size:.64rem;color:var(--warm-gray);font-family:var(--font-b);opacity:.55}
+.card-actions{display:flex;gap:4px;flex-shrink:0}
+
+/* ── Action buttons — icon-style, minimal ──────────────── */
+.card-btn{
+  background:none;border:none;border-radius:8px;
+  padding:4px 8px;font-size:.68rem;cursor:pointer;
+  color:var(--warm-gray);font-family:var(--font-b);
+  transition:background .14s ease,color .14s ease;
+}
+.card-btn:hover{background:var(--parchment)}
+.card-btn.view:hover{color:var(--burgundy)}
+.card-btn.edit:hover{color:#9a7520}
+.card-btn.delete:hover{color:#c42020}
+.card-btn.share{color:var(--blush)}
+.card-btn.share:hover{background:rgba(196,120,138,.09);color:var(--burgundy)}
 
 /* ── Favourite heart micro-interaction ─────────────────── */
 .card-fav-btn{transition:color .15s ease,transform .15s ease}
@@ -684,9 +724,9 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
   .stat-divider{display:none}
   .main-content{padding:16px 14px 48px}
   .wine-grid{grid-template-columns:1fr}
-  .card-thumb-wrap{width:88px}
-  .card-thumb-single{width:88px}
-  .skeleton-card .sk-img{width:88px;min-height:110px}
+  .card-thumb-wrap{width:82px}
+  .card-thumb-single{width:82px}
+  .skeleton-card .sk-img{width:82px;min-height:110px}
   .form-row.two-col{grid-template-columns:1fr}
   .modal{max-width:100%;border-radius:var(--rl) var(--rl) 0 0}
   .modal-overlay{align-items:flex-end;padding:0}
@@ -3047,28 +3087,34 @@ function createCard(w) {
     return `<div class="card-added-by"><span class="card-added-by-dot">${escHtml(initials)}</span>${escHtml(name)}</div>`;
   })();
 
+  // Build origin label for inline use
+  const originLabel = [w.region, w.country].filter(Boolean)[0] || '';
+
   const body = document.createElement('div');
   body.innerHTML = `
     <div class="card-body">
       <div class="card-header">
-        <div>
-          ${w.vintage?`<div class="card-vintage-badge">${escHtml(String(w.vintage))}</div>`:''}
-          <div class="card-name">${escHtml(w.name)}</div>
+        <div class="card-header-left">
+          <div class="card-top-line">
+            ${w.vintage?`<span class="card-vintage-badge">${escHtml(String(w.vintage))}</span><span class="card-origin-sep">·</span>`:''}
+            <span class="card-name">${escHtml(w.name)}</span>
+          </div>
           ${descriptor?`<div class="card-descriptor">${escHtml(descriptor)}</div>`:''}
+          <div class="card-origin-line">
+            ${originLabel?`<button class="card-origin-btn" onclick="event.stopPropagation();openOriginMap(getWineById('${w.id}'))"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:10px;height:10px;flex-shrink:0"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>${escHtml(originLabel)}</button>`:''} 
+            ${originLabel && w.winery?`<span class="card-origin-sep">·</span>`:''}
+            ${w.winery?`<span>${escHtml(w.winery)}</span>`:''}
+          </div>
         </div>
-        <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
-          ${w.rating?`<div class="card-rating">${renderStars(w.rating)}</div>`:''}
-          ${w.sharedBy?`<div class="shared-by-badge">🤝 Shared wine</div>`:''}
+        <div class="card-rating">
+          ${w.rating?`<div class="card-rating-stars">${renderStars(w.rating)}</div>`:''}
         </div>
       </div>
-      ${meta?`<div class="card-meta">${escHtml(meta)}</div>`:''}
       ${tags.length?`<div class="card-tags">${tags.map(t=>`<span class="card-tag">${escHtml(t)}</span>`).join('')}${w.buyAgain?'<span class="card-buy-badge">↺ Buy again</span>':''}</div>`:''}
       ${!tags.length && w.buyAgain?`<div class="card-tags"><span class="card-buy-badge">↺ Buy again</span></div>`:''}
       ${w.notes?`<p class="card-notes">${escHtml(w.notes)}</p>`:''}
-      <div class="card-footer-info">
-        ${(w.country||w.region||w.winery)?`<button class="card-origin-btn" onclick="event.stopPropagation();openOriginMap(getWineById('${w.id}'))">🗺 ${escHtml([w.region||w.country||''].filter(Boolean)[0]||'Origin')}</button>`:''}
-        ${addedByHtml}
-      </div>
+      ${w.sharedBy?`<div class="shared-by-badge" style="margin-top:3px">🤝 Shared</div>`:''}
+      ${addedByHtml}
     </div>
     <div class="card-footer">
       <span class="card-date">${dateStr}</span>
@@ -3081,7 +3127,7 @@ function createCard(w) {
   favBtn.title = w.isFavourite ? 'Remove from favourites' : 'Add to favourites';
   favBtn.textContent = w.isFavourite ? '♥' : '♡';
   favBtn.addEventListener('click', e => { e.stopPropagation(); toggleFavourite(w.id); });
-  body.querySelector('.card-header > div:last-child').prepend(favBtn);
+  body.querySelector('.card-rating').prepend(favBtn);
 
   // Wire action buttons via addEventListener — no inline onclick handlers
   const actions = body.querySelector('.card-actions');
