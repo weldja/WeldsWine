@@ -337,7 +337,7 @@ body{font-family:var(--font-b);background:var(--cream);color:var(--charcoal);min
   overflow:hidden;
   background:linear-gradient(145deg,#3a0d1a,#6b1f35);
   display:flex;align-items:center;justify-content:center;
-  cursor:zoom-in;
+  cursor:pointer;
 }
 .card-thumb-wrap img{
   width:100%;height:100%;object-fit:contain;object-position:center;
@@ -356,7 +356,7 @@ body{font-family:var(--font-b);background:var(--cream);color:var(--charcoal);min
   overflow:hidden;
   background:linear-gradient(145deg,#3a0d1a,#6b1f35);
   display:flex;align-items:center;justify-content:center;
-  cursor:zoom-in;
+  cursor:pointer;
 }
 .card-thumb-single-wrap img{
   width:100%;height:100%;object-fit:contain;
@@ -3172,7 +3172,7 @@ function createCard(w) {
   imgWrap.style.position = 'relative';
 
   if (front) {
-    imgWrap.addEventListener('click', e => { e.stopPropagation(); openLightbox(w.id, e); });
+    // Click bubbles up to card → opens detail view (no separate lightbox from grid)
     const img = document.createElement('img');
     img.src = front; img.loading = 'lazy';
     imgWrap.appendChild(img);
@@ -3529,9 +3529,17 @@ function _closeTopPanel() {
   if (detailOverlay.classList.contains('open'))                                        { closeDetail();          return; }
 }
 window.addEventListener('popstate', e => {
-  if (e.state && e.state.wwwPanel) {
+  // wwwPanel:true  → a panel was open, close the top one
+  if (e.state && e.state.wwwPanel === true) {
     _closeTopPanel();
     if (_anyPanelOpen()) history.pushState({ wwwPanel: true }, '');
+    return;
+  }
+  // wwwPanel:false or null state → we're at the app baseline, show exit toast
+  if (_anyPanelOpen()) {
+    // Safety: a panel is open but state got lost — close it, re-seed baseline
+    _closeTopPanel();
+    history.replaceState({ wwwPanel: false }, '');
     return;
   }
   if (_exitToastTimer) {
