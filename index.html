@@ -4035,14 +4035,10 @@ async function handleQuickAdd() {
 
   wines.unshift(entry);
   closeQuickAdd();
-  // Reset view to grid/all so the new wine is visible
-  
-  else {
-    const card = createCard(entry);
-    card.style.animationDelay = '0s';
-    if (wineGrid.firstChild) wineGrid.insertBefore(card, wineGrid.firstChild);
-    else { emptyState.style.display = 'none'; wineGrid.style.display = 'grid'; wineGrid.appendChild(card); }
-  }
+  const card = createCard(entry);
+  card.style.animationDelay = '0s';
+  if (wineGrid.firstChild) wineGrid.insertBefore(card, wineGrid.firstChild);
+  else { emptyState.style.display = 'none'; wineGrid.style.display = 'grid'; wineGrid.appendChild(card); }
   updateStats();
   showToast(`${name} saved ✓`);
   btn.disabled = false;
