@@ -668,12 +668,13 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
 .detail-title{font-family:var(--font-d);font-size:1.65rem;font-weight:600;color:var(--burgundy-deep);line-height:1.2;margin-bottom:3px}
 .detail-winery{font-family:var(--font-b);font-style:italic;font-size:.92rem;color:var(--warm-gray);margin-bottom:12px}
 .detail-stars{font-size:1.25rem;color:var(--gold);letter-spacing:2px}
-.detail-rating-row{display:flex;align-items:center;gap:12px;margin-bottom:14px;flex-wrap:wrap}
-.detail-rating-row .detail-stars{margin-bottom:0}
+.detail-rating-row{display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap}
+.detail-rating-row .detail-stars{margin-bottom:0;line-height:1}
 .btn-origin-map--inline{
-  margin-top:0;
-  padding:5px 12px;
+  margin-top:0 !important;
+  padding:6px 12px;
   font-size:.78rem;
+  line-height:1;
 }
 .detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px 18px;margin-bottom:16px}
 .detail-field label{display:block;font-size:.66rem;letter-spacing:.1em;text-transform:uppercase;color:var(--warm-gray);margin-bottom:2px}
@@ -3455,7 +3456,7 @@ async function openDetail(w, e) {
       ${w.winery?`<div class="detail-winery">${escHtml(w.winery)}</div>`:''}
       <div class="detail-rating-row">
         ${w.rating?`<div class="detail-stars">${renderStarsLarge(w.rating)}</div>`:''}
-        ${(w.country||w.region||w.winery)?`<button class="btn-origin-map btn-origin-map--inline" onclick="openOriginMap(getWineById('${w.id}'))">🗺 Origin map</button>`:''}
+        ${(w.country||w.region||w.winery)?`<button class="btn-origin-map btn-origin-map--inline" onclick="openOriginMap(getWineById('${w.id}'))">🗺 Show wine origin on map</button>`:''}
       </div>
       ${w.sharedBy?`<div class="shared-by-badge" style="margin-bottom:12px">🤝 Shared wine</div>`:''}
       ${addedByLabel}
