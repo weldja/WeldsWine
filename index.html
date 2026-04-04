@@ -1466,21 +1466,7 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
     </div>
   </div>
 
-  <!-- TOP RATED SECTION (shown when enough wines exist) -->
-  <div id="curatedSections" style="display:none">
-    <div class="curated-section" id="sectionTopRated">
-      <div class="curated-header">
-        <div>
-          <h3 class="curated-title">⭐ Highest-rated bottles</h3>
-          <p class="curated-sub">The best of the cellar — tried and loved.</p>
-        </div>
-      </div>
-      <div class="curated-grid" id="curatedTopRated"></div>
-    </div>
-    <div class="section-divider">
-      <span>Everything in the cellar — scroll to explore</span>
-    </div>
-  </div>
+
 
   <div class="wine-grid" id="wineGrid"></div>
   <div class="map-view" id="mapView">
@@ -2687,12 +2673,10 @@ function getTasteDescriptor(w) {
 /* ── Curated sections ─────────────────────────────────────── */
 function renderCuratedSections() {
   const overview       = document.getElementById('cellarOverview');
-  const curatedSections= document.getElementById('curatedSections');
   const isFiltered     = searchQuery || activeFilter !== 'all' || activeView !== 'grid';
 
   if (!_winesLoaded || wines.length === 0 || isFiltered) {
     if (overview)        overview.style.display       = 'none';
-    if (curatedSections) curatedSections.style.display = 'none';
     return;
   }
 
@@ -2785,38 +2769,6 @@ function renderCuratedSections() {
     }
   }
 
-  // ── Top rated curated section ────────────────────────────
-  const topRated = [...wines]
-    .filter(w => (w.rating||0) >= 8)
-    .sort((a,b) => (b.rating||0) - (a.rating||0))
-    .slice(0, 4);
-
-  const topRatedSection = document.getElementById('sectionTopRated');
-  const topRatedGrid    = document.getElementById('curatedTopRated');
-
-  if (topRated.length >= 2 && topRatedSection && topRatedGrid) {
-    topRatedSection.style.display = 'block';
-    topRatedGrid.innerHTML = '';
-    topRated.forEach((w, i) => {
-      const c = createCard(w);
-      c.style.animationDelay = `${i * 0.05}s`;
-      if (i === 0) {
-        c.classList.add('featured');
-        const body = c.querySelector('.card-body');
-        if (body) {
-          const badge = document.createElement('div');
-          badge.className = 'card-top-pick';
-          badge.textContent = '⭐ Top pick';
-          body.insertBefore(badge, body.firstChild);
-        }
-      }
-      topRatedGrid.appendChild(c);
-    });
-    if (curatedSections) curatedSections.style.display = 'block';
-  } else {
-    if (topRatedSection) topRatedSection.style.display = 'none';
-    if (curatedSections) curatedSections.style.display = topRated.length < 2 ? 'none' : 'block';
-  }
 }
 
 function renderGrid() {
