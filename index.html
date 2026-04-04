@@ -295,154 +295,168 @@ body{font-family:var(--font-b);background:var(--cream);color:var(--charcoal);min
 .stat-divider{width:1px;height:28px;background:var(--light-gray);flex-shrink:0}
 
 /* ── Grid ──────────────────────────────────────────────── */
-.wine-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:12px}
-.main-content{max-width:1200px;margin:0 auto;padding:36px 24px 88px}
+.wine-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px}
+.main-content{max-width:1200px;margin:0 auto;padding:24px 16px 88px}
 
-/* ── Card shell ────────────────────────────────────────── */
+/* ── Card shell — vertical layout ─────────────────────── */
 .wine-card{
   background:var(--ivory);
   border:1px solid var(--light-gray);
-  border-radius:14px;
+  border-radius:16px;
   overflow:hidden;
   display:flex;
-  flex-direction:row;
+  flex-direction:column;
   cursor:pointer;
-  animation:fadeUp .3s ease both;
-  transition:transform .18s ease, box-shadow .18s ease, border-color .18s ease;
-  min-height:128px;
+  animation:fadeUp .25s ease both;
+  transition:transform .18s ease, box-shadow .2s ease;
+  -webkit-tap-highlight-color:transparent;
 }
 @media(hover:hover){
   .wine-card:hover{
-    transform:translateY(-2px);
-    box-shadow:0 6px 24px rgba(92,21,37,.1);
-    border-color:#cdbfb7;
+    transform:translateY(-3px);
+    box-shadow:0 12px 32px rgba(92,21,37,.13), 0 2px 8px rgba(92,21,37,.06);
   }
   .wine-card:hover .card-thumb-wrap img,
-  .wine-card:hover .card-thumb-single{ transform:scale(1.05); }
+  .wine-card:hover .card-thumb-single{ transform:scale(1.04); }
 }
-@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
 
 /* ── Accent strip when no image ────────────────────────── */
-.card-label-strip{width:3px;align-self:stretch;flex-shrink:0;background:linear-gradient(to bottom,var(--burgundy),var(--blush))}
+.card-label-strip{
+  height:4px;width:100%;flex-shrink:0;
+  background:linear-gradient(to right,var(--burgundy),var(--blush));
+}
 
-/* ── Image — left column ───────────────────────────────── */
+/* ── Image — top banner ────────────────────────────────── */
 .card-thumb-wrap{
-  position:relative;width:96px;flex-shrink:0;
-  overflow:hidden;background:#e8e0d6;display:flex;cursor:zoom-in;
+  position:relative;width:100%;height:130px;flex-shrink:0;
+  overflow:hidden;background:#ede6de;display:flex;
+  align-items:center;justify-content:center;cursor:zoom-in;
 }
 .card-thumb-wrap img{
-  flex:1;min-width:0;height:100%;
-  object-fit:contain;background:transparent;
-  transition:transform .28s ease;
+  height:100%;width:auto;max-width:100%;
+  object-fit:contain;
+  transition:transform .3s ease;
 }
 .card-thumb-badge{
-  position:absolute;bottom:4px;left:50%;transform:translateX(-50%);
-  background:rgba(44,36,32,.45);backdrop-filter:blur(4px);color:#fff;font-size:.52rem;
-  font-family:var(--font-b);padding:2px 7px;border-radius:10px;
+  position:absolute;bottom:6px;right:8px;
+  background:rgba(44,36,32,.5);color:#fff;font-size:.55rem;
+  font-family:var(--font-b);padding:2px 8px;border-radius:10px;
   pointer-events:none;white-space:nowrap;letter-spacing:.04em;
 }
 .card-thumb-single{
-  width:96px;flex-shrink:0;align-self:stretch;display:block;
-  object-fit:contain;cursor:zoom-in;background:#e8e0d6;
-  transition:transform .28s ease;
+  width:100%;height:130px;flex-shrink:0;display:block;
+  object-fit:contain;cursor:zoom-in;background:#ede6de;
+  transition:transform .3s ease;
 }
 
-/* ── Content — right column ────────────────────────────── */
+/* ── Content area ──────────────────────────────────────── */
 .card-body{
-  padding:12px 14px 0;flex:1;min-width:0;
-  display:flex;flex-direction:column;gap:3px;
+  padding:13px 14px 4px;flex:1;min-width:0;
+  display:flex;flex-direction:column;gap:4px;
 }
-.card-header{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+
+/* Header row: left=vintage+name+descriptor, right=fav+stars */
+.card-header{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
 .card-header-left{flex:1;min-width:0}
 
-/* Vintage + name on one compact line */
-.card-top-line{display:flex;align-items:baseline;gap:7px;flex-wrap:wrap;margin-bottom:2px}
+.card-top-line{display:flex;align-items:baseline;gap:6px;flex-wrap:wrap;margin-bottom:1px}
 .card-vintage-badge{
-  font-family:var(--font-b);font-size:.62rem;font-weight:600;
-  color:var(--warm-gray);letter-spacing:.06em;
-  flex-shrink:0;
+  font-family:var(--font-b);font-size:.65rem;font-weight:600;
+  color:var(--burgundy);background:rgba(139,36,57,.08);
+  border-radius:4px;padding:1px 5px;flex-shrink:0;letter-spacing:.03em;
 }
-.card-name{font-family:var(--font-d);font-size:.98rem;font-weight:600;color:var(--charcoal);line-height:1.25;flex:1;min-width:0}
-
-/* Descriptor — the punchy one-liner */
+.card-name{
+  font-family:var(--font-d);font-size:1.02rem;font-weight:600;
+  color:var(--charcoal);line-height:1.22;
+}
 .card-descriptor{
-  font-family:var(--font-b);font-size:.75rem;
-  color:var(--burgundy);font-weight:600;
-  line-height:1.3;margin-bottom:1px;
+  font-family:var(--font-b);font-size:.74rem;
+  color:var(--burgundy);font-weight:500;font-style:italic;
+  line-height:1.3;
 }
 
-/* Origin + meta on one clean line */
-.card-origin-line{
-  display:flex;align-items:center;gap:5px;
-  font-family:var(--font-b);font-size:.72rem;color:var(--warm-gray);
-  flex-wrap:wrap;
-}
-.card-origin-sep{color:var(--light-gray);font-size:.6rem}
-
-/* Map pin button — inline, no border box */
-.card-origin-btn{
-  display:inline-flex;align-items:center;gap:3px;
-  background:none;border:none;padding:0;
-  font-family:var(--font-b);font-size:.72rem;
-  color:var(--blush);cursor:pointer;transition:color .15s;
-  white-space:nowrap;text-decoration:underline;text-decoration-color:transparent;
-  text-underline-offset:2px;
-}
-.card-origin-btn:hover{color:var(--burgundy);text-decoration-color:var(--blush)}
-.card-origin-btn svg{width:10px;height:10px;flex-shrink:0}
-
-/* Tags row */
-.card-tags{display:flex;flex-wrap:wrap;gap:3px;margin-top:3px}
-.card-tag{
-  background:var(--parchment);
-  border:1px solid var(--light-gray);
-  border-radius:20px;padding:1px 8px;font-size:.63rem;font-family:var(--font-b);
-  color:var(--warm-gray);
-}
-
-.card-notes{font-family:var(--font-b);font-size:.74rem;color:var(--warm-gray);line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;margin-top:2px}
-
-/* Rating — right side */
+/* Right side: fav heart + rating stacked */
 .card-rating{
-  display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0;
+  display:flex;flex-direction:column;align-items:center;gap:3px;flex-shrink:0;padding-top:1px;
 }
-.card-rating-stars{color:var(--gold);font-size:.82rem;white-space:nowrap;letter-spacing:.5px}
+.card-rating-stars{
+  color:var(--gold);font-size:.78rem;white-space:nowrap;letter-spacing:.5px;line-height:1;
+}
 .card-fav-btn{
-  background:none;border:none;cursor:pointer;font-size:.95rem;
-  color:var(--light-gray);padding:0;transition:color .15s,transform .15s;
-  line-height:1;flex-shrink:0;
+  background:none;border:none;cursor:pointer;font-size:1rem;
+  color:var(--light-gray);padding:0;
+  transition:color .15s,transform .18s;line-height:1;
+  -webkit-tap-highlight-color:transparent;
+  min-width:44px;min-height:44px;
+  display:flex;align-items:center;justify-content:center;
+  margin:-12px -10px -4px 0;
 }
-.card-fav-btn:hover,.card-fav-btn.active{color:#e05c7a;transform:scale(1.2)}
-.card-fav-btn.active{color:#e05c7a}
+.card-fav-btn:hover,.card-fav-btn.active{color:#e05c7a}
+.card-fav-btn.active{transform:scale(1.15)}
 
-/* ── Footer ────────────────────────────────────────────── */
+/* Origin line — pin icon inline, slim */
+.card-origin-line{
+  display:flex;align-items:center;gap:4px;flex-wrap:wrap;
+  font-family:var(--font-b);font-size:.71rem;color:var(--warm-gray);
+  margin-top:1px;
+}
+.card-origin-sep{color:var(--light-gray)}
+.card-origin-btn{
+  display:inline-flex;align-items:center;gap:2px;
+  background:none;border:none;padding:0;
+  font-family:var(--font-b);font-size:.71rem;
+  color:var(--blush);cursor:pointer;
+  transition:color .14s;white-space:nowrap;
+  -webkit-tap-highlight-color:transparent;
+}
+.card-origin-btn:active{color:var(--burgundy)}
+@media(hover:hover){.card-origin-btn:hover{color:var(--burgundy)}}
+
+/* Tags */
+.card-tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:3px}
+.card-tag{
+  background:var(--parchment);border:1px solid var(--light-gray);
+  border-radius:20px;padding:2px 9px;
+  font-size:.64rem;font-family:var(--font-b);color:var(--warm-gray);
+}
+.card-notes{
+  font-family:var(--font-b);font-size:.74rem;color:var(--warm-gray);
+  line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;
+  -webkit-box-orient:vertical;overflow:hidden;margin-top:2px;
+}
+
+/* ── Footer — date left, icon actions right ────────────── */
 .card-footer{
   display:flex;justify-content:space-between;align-items:center;
-  padding:8px 14px 10px;margin-top:8px;
-  border-top:1px solid rgba(0,0,0,.055);
-  gap:4px;
+  padding:8px 14px 10px;margin-top:6px;
+  border-top:1px solid rgba(0,0,0,.06);gap:8px;
 }
-.card-footer-info{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
-.card-date{font-size:.64rem;color:var(--warm-gray);font-family:var(--font-b);opacity:.55}
-.card-actions{display:flex;gap:4px;flex-shrink:0}
+.card-footer-info{display:flex;align-items:center;gap:6px}
+.card-date{font-size:.63rem;color:var(--warm-gray);font-family:var(--font-b);opacity:.5}
+.card-actions{display:flex;gap:0;flex-shrink:0}
 
-/* ── Action buttons — icon-style, minimal ──────────────── */
+/* Icon-only action buttons with tooltip-style labels */
 .card-btn{
   background:none;border:none;border-radius:8px;
-  padding:4px 8px;font-size:.68rem;cursor:pointer;
-  color:var(--warm-gray);font-family:var(--font-b);
-  transition:background .14s ease,color .14s ease;
+  width:34px;height:34px;display:flex;align-items:center;justify-content:center;
+  cursor:pointer;color:var(--warm-gray);font-size:.8rem;
+  transition:background .13s,color .13s;
+  -webkit-tap-highlight-color:transparent;
+  position:relative;
 }
-.card-btn:hover{background:var(--parchment)}
-.card-btn.view:hover{color:var(--burgundy)}
-.card-btn.edit:hover{color:#9a7520}
-.card-btn.delete:hover{color:#c42020}
+.card-btn:active{background:var(--parchment)}
+@media(hover:hover){
+  .card-btn:hover{background:var(--parchment)}
+  .card-btn.view:hover{color:var(--burgundy)}
+  .card-btn.edit:hover{color:#9a7520}
+  .card-btn.delete:hover{color:#c42020}
+  .card-btn.share:hover{color:var(--burgundy)}
+}
 .card-btn.share{color:var(--blush)}
-.card-btn.share:hover{background:rgba(196,120,138,.09);color:var(--burgundy)}
 
 /* ── Favourite heart micro-interaction ─────────────────── */
-.card-fav-btn{transition:color .15s ease,transform .15s ease}
-.card-fav-btn:hover{transform:scale(1.28) !important}
+.card-fav-btn:hover{color:#e05c7a}
 /* Lightbox */
 .label-lightbox{position:fixed;inset:0;background:rgba(10,5,8,.88);z-index:500;display:flex;align-items:center;justify-content:center;padding:20px;cursor:zoom-out;animation:lbIn .18s ease}
 @keyframes lbIn{from{opacity:0}to{opacity:1}}
@@ -723,10 +737,10 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
   .stat{flex:0 0 50%;max-width:50%;padding:4px 0}
   .stat-divider{display:none}
   .main-content{padding:16px 14px 48px}
-  .wine-grid{grid-template-columns:1fr}
-  .card-thumb-wrap{width:82px}
-  .card-thumb-single{width:82px}
-  .skeleton-card .sk-img{width:82px;min-height:110px}
+  .wine-grid{grid-template-columns:1fr;gap:10px}
+  .card-thumb-wrap{height:110px}
+  .card-thumb-single{height:110px}
+  .skeleton-card .sk-img{width:100%;min-height:110px}
   .form-row.two-col{grid-template-columns:1fr}
   .modal{max-width:100%;border-radius:var(--rl) var(--rl) 0 0}
   .modal-overlay{align-items:flex-end;padding:0}
@@ -3129,17 +3143,20 @@ function createCard(w) {
   favBtn.addEventListener('click', e => { e.stopPropagation(); toggleFavourite(w.id); });
   body.querySelector('.card-rating').prepend(favBtn);
 
-  // Wire action buttons via addEventListener — no inline onclick handlers
+  // Wire action buttons via addEventListener — SVG icon buttons
   const actions = body.querySelector('.card-actions');
-  [
-    ['View',   'view',   () => openDetail(getWineById(w.id), null)],
-    ['Share',  'share',  (ev) => shareWine(w.id, ev)],
-    ['Edit',   'edit',   (ev) => editWine(w.id, ev)],
-    ['Delete', 'delete', (ev) => deleteWine(w.id, ev)]
-  ].forEach(([label, cls, handler]) => {
+  const iconBtns = [
+    ['View',   'view',   () => openDetail(getWineById(w.id), null), `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/></svg>`],
+    ['Share',  'share',  (ev) => shareWine(w.id, ev), `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>`],
+    ['Edit',   'edit',   (ev) => editWine(w.id, ev), `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`],
+    ['Delete', 'delete', (ev) => deleteWine(w.id, ev), `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>`],
+  ];
+  iconBtns.forEach(([label, cls, handler, icon]) => {
     const btn = document.createElement('button');
     btn.className = `card-btn ${cls}`;
-    btn.textContent = label;
+    btn.title = label;
+    btn.innerHTML = icon;
+    btn.setAttribute('aria-label', label);
     btn.addEventListener('click', e => { e.stopPropagation(); handler(e); });
     actions.appendChild(btn);
   });
