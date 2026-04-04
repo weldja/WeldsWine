@@ -4755,6 +4755,14 @@ function updateKeyBadge() {
           <div class="comments-loading">Loading members…</div>
         </div>
       </div>
+
+      <!-- Leave cellar — members only -->
+      <div id="leaveCellarSection" style="display:none;margin-top:24px;padding-top:18px;border-top:1px solid var(--light-gray)">
+        <button onclick="leaveCellar()" style="width:100%;background:none;border:1px solid rgba(220,38,38,.3);border-radius:var(--r);padding:11px;font-family:var(--font-b);font-size:.88rem;color:#dc2626;cursor:pointer;transition:var(--tr)" onmouseover="this.style.background='#fef2f2'" onmouseout="this.style.background='none'">
+          🚪 Leave shared cellar
+        </button>
+        <p style="font-family:var(--font-b);font-size:.7rem;color:var(--warm-gray);font-style:italic;margin-top:6px;text-align:center">Your wines will remain in the cellar. You can rejoin via the invite link.</p>
+      </div>
     </div>
   </div>
 </div>
@@ -5056,6 +5064,10 @@ async function openCellarSettings() {
   const ownerControls = document.getElementById('cellarOwnerControls');
   if (ownerControls) ownerControls.style.display = window._cellarRole === 'owner' ? 'block' : 'none';
 
+  // Show leave button for members only (not owner)
+  const leaveSection = document.getElementById('leaveCellarSection');
+  if (leaveSection) leaveSection.style.display = window._cellarRole === 'member' ? 'block' : 'none';
+
   // Load invite link
   await _loadInviteLink();
 
@@ -5070,6 +5082,37 @@ async function openCellarSettings() {
 function closeCellarSettings() {
   document.getElementById('cellarSettingsOverlay').classList.remove('open');
   document.body.style.overflow = '';
+}
+
+async function leaveCellar() {
+  if (!confirm('Leave this shared cellar?\n\nYour wines will stay in the cellar. You can rejoin using the invite link.')) return;
+  if (!_sb || !_currentUser || !window._cellarId) return;
+
+  const { error } = await _sb
+    .from('cellar_members')
+    .delete()
+    .eq('cellar_id', window._cellarId)
+    .eq('user_id', _currentUser.id);
+
+  if (error) { showToast('Could not leave cellar — try again'); return; }
+
+  // Reset cellar state
+  window._cellarId   = null;
+  window._cellarRole = null;
+  window._cellarMembers = [];
+
+  closeCellarSettings();
+
+  // Update pill
+  const pill = document.getElementById('cellarPill');
+  if (pill) pill.style.display = 'none';
+
+  // Clear wines and reload (they now have no cellar)
+  wines = [];
+  _winesLoaded = false;
+  showToast('You have left the shared cellar');
+  renderGrid();
+  updateStats();
 }
 
 async function _loadInviteLink() {
