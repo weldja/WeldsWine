@@ -2725,22 +2725,6 @@ function renderCuratedSections() {
           </div>`;
       }
 
-      // Most recent addition
-      const newest = [...wines].sort((a,b)=>(b.createdAt||0)-(a.createdAt||0))[0];
-      if (newest) {
-        const addedByMe = newest.addedBy === _currentUser?.id;
-        const adder = addedByMe ? 'you' : (window._cellarMembers.find(m=>m.user_id===newest.addedBy)?.display_name || 'a member');
-        rows.innerHTML += `
-          <div class="co-row" style="cursor:pointer" onclick="openDetail(getWineById('${newest.id}'),null)">
-            <div class="co-row-icon">🆕</div>
-            <div class="co-row-body">
-              <div class="co-row-label">Most recently added — by ${escHtml(adder)}</div>
-              <div class="co-row-value">${escHtml(newest.name)}${newest.vintage?' · '+newest.vintage:''}</div>
-            </div>
-            ${newest.rating?`<div class="co-row-badge">${newest.rating}/10</div>`:''}
-          </div>`;
-      }
-
       // Top region
       const rc={};wines.forEach(w=>{if(w.region)rc[w.region]=(rc[w.region]||0)+1;});
       const topRegion = Object.keys(rc).sort((a,b)=>rc[b]-rc[a])[0];
