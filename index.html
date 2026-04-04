@@ -436,10 +436,11 @@ body{font-family:var(--font-b);background:var(--cream);color:var(--charcoal);min
   color:var(--charcoal);line-height:1.18;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
 }
-/* Meta: vintage · country */
+/* Meta: vintage · country · map pin */
 .card-meta-line{
   font-family:var(--font-b);font-size:.71rem;color:var(--warm-gray);
   display:flex;align-items:center;gap:4px;line-height:1;margin-top:1px;
+  flex-wrap:nowrap;overflow:hidden;
 }
 .card-meta-dot{color:var(--light-gray);font-size:9px}
 
@@ -496,16 +497,21 @@ body{font-family:var(--font-b);background:var(--cream);color:var(--charcoal);min
 .card-footer-info{display:flex;align-items:center;gap:5px}
 .card-date{font-size:.62rem;color:var(--warm-gray);font-family:var(--font-b);opacity:.5}
 
-/* Map button in card footer */
+/* Map button in card meta line */
 .card-map-btn{
   background:none;border:none;cursor:pointer;
   display:inline-flex;align-items:center;gap:3px;
-  color:var(--warm-gray);opacity:.6;
-  padding:2px 4px;border-radius:6px;
+  color:var(--warm-gray);opacity:.55;
+  padding:1px 3px;border-radius:4px;
   font-family:var(--font-b);font-size:.62rem;
   transition:opacity .15s,color .15s,background .15s;
   -webkit-tap-highlight-color:transparent;
-  flex-shrink:0;white-space:nowrap;
+  flex-shrink:0;white-space:nowrap;vertical-align:middle;
+}
+.card-map-btn--inline{
+  display:inline-flex;
+  vertical-align:middle;
+  margin-left:1px;
 }
 .card-map-btn:active{opacity:1;color:var(--burgundy);background:rgba(139,36,57,.06)}
 @media(hover:hover){.card-map-btn:hover{opacity:1;color:var(--burgundy);background:rgba(139,36,57,.06)}}
@@ -3214,26 +3220,30 @@ function createCard(w) {
   nameEl.textContent = w.name || '—';
   body.appendChild(nameEl);
 
-  // Meta line: vintage · country
+  // Meta line: vintage · country · 📍 map button
   const metaParts = [w.vintage, w.country].filter(Boolean);
-  if (metaParts.length) {
+  if (metaParts.length || w.region || w.country || w.winery) {
     const meta = document.createElement('p');
     meta.className = 'card-meta-line';
     meta.innerHTML = metaParts.map(p => escHtml(String(p))).join('<span class="card-meta-dot">·</span>');
+    if (w.country || w.region || w.winery) {
+      const mapBtn = document.createElement('button');
+      mapBtn.className = 'card-map-btn card-map-btn--inline';
+      mapBtn.setAttribute('aria-label', 'Show wine origin on map');
+      mapBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" width="11" height="11"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>`;
+      mapBtn.addEventListener('click', e => { e.stopPropagation(); openOriginMap(getWineById(w.id)); });
+      if (metaParts.length) {
+        const dot = document.createElement('span');
+        dot.className = 'card-meta-dot';
+        dot.textContent = '·';
+        meta.appendChild(dot);
+      }
+      meta.appendChild(mapBtn);
+    }
     body.appendChild(meta);
   }
 
-  // Location pill (if available — inline in body for horizontal layout)
-  if (originLabel) {
-    const locBtn = document.createElement('button');
-    locBtn.className = 'card-origin-btn';
-    locBtn.style.marginTop = '2px';
-    locBtn.style.alignSelf = 'flex-start';
-    locBtn.setAttribute('aria-label', 'Show origin map');
-    locBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:9px;height:9px"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>${escHtml(originLabel)}`;
-    locBtn.addEventListener('click', e => { e.stopPropagation(); openOriginMap(getWineById(w.id)); });
-    body.appendChild(locBtn);
-  }
+  // Location pill removed — map access now in meta line above
   if (tags.length) {
     const tagsWrap = document.createElement('div');
     tagsWrap.className = 'card-tags';
@@ -3281,16 +3291,6 @@ function createCard(w) {
     favPip.style.cssText = 'font-size:.7rem;color:#e05c7a;line-height:1';
     favPip.textContent = '♥';
     footerInfo.appendChild(favPip);
-  }
-  // Map button — shows for any wine with country/region data
-  if (w.country || w.region || w.winery) {
-    const mapBtn = document.createElement('button');
-    mapBtn.className = 'card-map-btn';
-    mapBtn.setAttribute('aria-label', 'Show wine origin on map');
-    const mapLabel = w.region || w.country || '';
-    mapBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="11" height="11"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg><span class="card-map-label">${escHtml(mapLabel)}</span>`;
-    mapBtn.addEventListener('click', e => { e.stopPropagation(); openOriginMap(getWineById(w.id)); });
-    footerInfo.appendChild(mapBtn);
   }
   footer.appendChild(footerInfo);
 
