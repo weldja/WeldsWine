@@ -281,9 +281,7 @@ body{font-family:var(--font-b);background:var(--cream);color:var(--charcoal);min
 .filter-tab:hover{color:var(--burgundy)}
 .filter-tab.active{background:var(--burgundy);color:var(--ivory)}
 .toolbar-right{display:flex;align-items:center;gap:8px}
-.view-toggle{display:flex;background:var(--light-gray);border-radius:var(--r);padding:2px;gap:1px}
-.view-btn{background:none;border:none;padding:3px 10px;border-radius:2px;cursor:pointer;font-size:.8rem;color:var(--warm-gray);transition:var(--tr)}
-.view-btn.active{background:var(--ivory);color:var(--burgundy);box-shadow:0 1px 3px var(--shadow)}
+
 .sort-wrap{display:flex;align-items:center;gap:5px;font-family:var(--font-b);font-size:.82rem;color:var(--warm-gray)}
 .sort-wrap select{background:var(--cream);border:1px solid var(--light-gray);border-radius:var(--r);padding:3px 8px;font-family:var(--font-b);font-size:.82rem;color:var(--charcoal);cursor:pointer;outline:none}
 .export-btn{background:none;border:1px solid var(--light-gray);border-radius:var(--r);padding:4px 10px;font-family:var(--font-b);font-size:.78rem;color:var(--warm-gray);cursor:pointer;transition:var(--tr);white-space:nowrap;flex-shrink:0}
@@ -663,7 +661,7 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
   /* Row 2: controls — scrollable strip */
   .toolbar-controls{height:auto;overflow-x:auto;-webkit-overflow-scrolling:touch;flex-wrap:nowrap;padding:7px 14px;gap:7px;border-top:none;border-bottom:1px solid var(--light-gray);scrollbar-width:none;justify-content:flex-start}
   .toolbar-controls::-webkit-scrollbar{display:none}
-  .view-toggle{flex-shrink:0}
+
   .sort-wrap{flex-shrink:0}
   .sort-wrap label{display:none}
   /* Export always visible — show icon only to save space */
@@ -1471,11 +1469,7 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
     </div>
     <!-- Row 2: view toggle, sort, export -->
     <div class="toolbar-controls">
-      <div class="view-toggle">
-        <button class="view-btn active" id="viewGrid" title="Grid view">⊞ Grid</button>
-        <button class="view-btn" id="viewMap" title="Map view">◎ Map</button>
-        <button class="view-btn" id="viewInsights" title="Insights">◈ Insights</button>
-      </div>
+
       <div class="sort-wrap">
         <label for="sortSelect">Sort:</label>
         <select id="sortSelect">
@@ -1552,14 +1546,7 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
 
 
   <div class="wine-grid" id="wineGrid"></div>
-  <div class="map-view" id="mapView">
-    <div class="no-loc-note" id="noLocNote" style="display:none">Some entries have no location — scan or add wines with 📍 Get Location to see them on the map.</div>
-    <div id="wineMap"></div>
-  </div>
-  <!-- INSIGHTS VIEW -->
-  <div id="insightsView" style="display:none">
-    <div class="insights-grid" id="insightsGrid"></div>
-  </div>
+
   <div class="empty-state" id="emptyState" style="display:none">
     <div class="empty-icon" id="emptyIcon">🍷</div>
     <h2 id="emptyTitle">No wines yet — let's fix that!</h2>
@@ -2651,9 +2638,7 @@ function setupEvents() {
       tab.classList.add('active'); activeFilter=tab.dataset.filter; renderGrid();
     });
   });
-  document.getElementById('viewGrid').addEventListener('click', ()=>setView('grid'));
-  document.getElementById('viewMap').addEventListener('click',  ()=>setView('map'));
-  document.getElementById('viewInsights').addEventListener('click', ()=>setView('insights'));
+
   document.getElementById('openQuickAdd').addEventListener('click', openQuickAdd);
   document.getElementById('locateBtn').addEventListener('click', captureLocation);
   document.getElementById('closeShareModal').addEventListener('click', closeShareModal);
@@ -2665,17 +2650,9 @@ function setupEvents() {
 }
 
 function setView(v) {
-  activeView = v;
-  document.getElementById('viewGrid').classList.toggle('active',     v==='grid');
-  document.getElementById('viewMap').classList.toggle('active',      v==='map');
-  document.getElementById('viewInsights').classList.toggle('active', v==='insights');
-  wineGrid.style.display             = v==='grid'     ? 'grid'  : 'none';
-  mapViewEl.style.display            = v==='map'      ? 'block' : 'none';
-  document.getElementById('insightsView').style.display = v==='insights' ? 'block' : 'none';
-  emptyState.style.display           = 'none';
-  if (v==='map')      initMapView();
-  else if (v==='insights') renderInsights();
-  else renderGrid();
+  activeView = 'grid';
+  if (mapViewEl) mapViewEl.style.display = 'none';
+  renderGrid();
 }
 
 function getList() {
@@ -2756,7 +2733,7 @@ function getTasteDescriptor(w) {
 /* ── Curated sections ─────────────────────────────────────── */
 function renderCuratedSections() {
   const overview  = document.getElementById('cellarOverview');
-  const isFiltered = searchQuery || activeFilter !== 'all' || activeView !== 'grid';
+  const isFiltered = searchQuery || activeFilter !== 'all';
 
   if (!_winesLoaded || wines.length === 0 || isFiltered) {
     if (overview) overview.style.display = 'none';
@@ -2965,7 +2942,7 @@ function _restoreCellarOverviewState() {
 
 
 function renderGrid() {
-  if (activeView === 'map') return;
+  
   // Don't replace skeleton with empty state — wait for DB to respond
   if (!_winesLoaded && wines.length === 0) return;
   renderCuratedSections();
@@ -3664,9 +3641,7 @@ async function handleSave(e) {
   document.querySelectorAll('.filter-tab').forEach(t =>
     t.classList.toggle('active', t.dataset.filter === 'all')
   );
-  document.getElementById('viewGrid').classList.add('active');
-  document.getElementById('viewMap').classList.remove('active');
-  mapViewEl.style.display  = 'none';
+  if (mapViewEl) mapViewEl.style.display = 'none';
   emptyState.style.display = 'none';
   wineGrid.style.display   = 'grid';
 
@@ -3729,9 +3704,7 @@ async function deleteWine(id, e) {
 
   wines = wines.filter(w => w.id !== id);
   activeView = 'grid';
-  document.getElementById('viewGrid').classList.add('active');
-  document.getElementById('viewMap').classList.remove('active');
-  mapViewEl.style.display = 'none';
+  if (mapViewEl) mapViewEl.style.display = 'none';
   renderGrid();
   updateStats();
   showToast('Entry deleted');
@@ -4050,7 +4023,7 @@ async function handleQuickAdd() {
   wines.unshift(entry);
   closeQuickAdd();
   // Reset view to grid/all so the new wine is visible
-  if (activeView !== 'grid') setView('grid');
+  
   else {
     const card = createCard(entry);
     card.style.animationDelay = '0s';
@@ -4283,128 +4256,6 @@ function updateStats() {
    Renders rich analysis cards into #insightsGrid.
    Called by setView('insights') — uses current wines array.
 ────────────────────────────────────────────────────────── */
-function renderInsights() {
-  const grid = document.getElementById('insightsGrid');
-  grid.innerHTML = '';
-
-  if (!wines.length) {
-    grid.innerHTML = '<p class="insight-empty">Add some wines to see your insights.</p>';
-    return;
-  }
-
-  const rated = wines.filter(w => w.rating);
-  const avg   = rated.length ? (rated.reduce((s, w) => s + w.rating, 0) / rated.length).toFixed(1) : null;
-  const favs  = wines.filter(w => w.isFavourite);
-  const buys  = wines.filter(w => w.buyAgain);
-
-  // ── Card builder helpers ──────────────────────────────────
-  function card(titleIcon, titleText, bodyHtml, delay) {
-    const el = document.createElement('div');
-    el.className = 'insight-card';
-    el.style.animationDelay = `${delay * 0.06}s`;
-    el.innerHTML = `
-      <div class="insight-card-title"><span>${titleIcon}</span>${escHtml(titleText)}</div>
-      ${bodyHtml}`;
-    grid.appendChild(el);
-  }
-
-  function statCard(icon, title, value, sub, delay) {
-    card(icon, title, `
-      <div class="insight-stat-big">${escHtml(String(value))}</div>
-      <div class="insight-stat-label">${escHtml(sub)}</div>`, delay);
-  }
-
-  function listCard(icon, title, items, delay) {
-    // items: [{name, meta}]
-    const rows = items.length
-      ? items.map(it => `
-          <li class="insight-list-item">
-            <span class="insight-list-item-name">${escHtml(it.name)}</span>
-            <span class="insight-list-item-meta">${escHtml(it.meta)}</span>
-          </li>`).join('')
-      : `<li style="font-family:var(--font-b);font-size:.85rem;color:var(--warm-gray);font-style:italic;padding:6px 0">None yet</li>`;
-    card(icon, title, `<ul class="insight-list">${rows}</ul>`, delay);
-  }
-
-  function barCard(icon, title, entries, maxVal, delay) {
-    // entries: [{label, count}]
-    const bars = entries.map(e => `
-      <div class="insight-bar-row">
-        <span class="insight-bar-label" title="${escHtml(e.label)}">${escHtml(e.label)}</span>
-        <div class="insight-bar-track"><div class="insight-bar-fill" style="width:${Math.round((e.count/maxVal)*100)}%"></div></div>
-        <span class="insight-bar-count">${e.count}</span>
-      </div>`).join('');
-    card(icon, title, `<div class="insight-bar-wrap">${bars}</div>`, delay);
-  }
-
-  let d = 0;
-
-  // 1. Total wines
-  statCard('🍷', 'Wines Tasted', wines.length,
-    wines.length === 1 ? '1 bottle logged' : `${wines.length} bottles logged`, d++);
-
-  // 2. Average rating
-  statCard('🔢', 'Average Rating', avg ? `${avg}/10` : '—',
-    rated.length ? `From ${rated.length} rated wine${rated.length > 1 ? 's' : ''}` : 'No rated wines yet', d++);
-
-  // 3. Countries explored
-  const countryCounts = {};
-  wines.forEach(w => { if (w.country) countryCounts[w.country] = (countryCounts[w.country] || 0) + 1; });
-  const countryCount  = Object.keys(countryCounts).length;
-  statCard('🌍', 'Countries Explored', countryCount, countryCount === 1 ? '1 country' : `${countryCount} countries`, d++);
-
-  // 4. Favourites count
-  statCard('♥', 'Favourites', favs.length,
-    favs.length === 1 ? '1 wine marked favourite' : `${favs.length} wines marked favourite`, d++);
-
-  // 5. Top countries by bottle count (bar chart)
-  const sortedCountries = Object.entries(countryCounts)
-    .sort((a, b) => b[1] - a[1]).slice(0, 6)
-    .map(([label, count]) => ({ label, count }));
-  if (sortedCountries.length) {
-    barCard('🗺', 'Bottles by Country', sortedCountries, sortedCountries[0].count, d++);
-  }
-
-  // 6. Top rated wines
-  const topRated = [...wines]
-    .filter(w => w.rating)
-    .sort((a, b) => (b.rating - a.rating) || (new Date(b.dateTasted||0) - new Date(a.dateTasted||0)))
-    .slice(0, 5)
-    .map(w => ({ name: w.name, meta: `${w.rating}/10` + (w.vintage ? ` · ${w.vintage}` : '') }));
-  listCard('🏆', 'Top Rated Wines', topRated, d++);
-
-  // 7. Buy again list
-  const buyList = buys.slice(0, 6).map(w => ({
-    name: w.name,
-    meta: [w.winery, w.country].filter(Boolean).join(' · ') || (w.vintage || '—')
-  }));
-  listCard('↺', 'Buy Again', buyList, d++);
-
-  // 8. Favourite wines
-  const favList = favs.slice(0, 5).map(w => ({
-    name: w.name,
-    meta: [w.country, w.vintage].filter(Boolean).join(' · ') || '—'
-  }));
-  listCard('♥', 'Your Favourites', favList, d++);
-
-  // 9. Grape varieties
-  const grapeCounts = {};
-  wines.forEach(w => { if (w.grape) grapeCounts[w.grape] = (grapeCounts[w.grape] || 0) + 1; });
-  const topGrapes = Object.entries(grapeCounts)
-    .sort((a, b) => b[1] - a[1]).slice(0, 6)
-    .map(([label, count]) => ({ label, count }));
-  if (topGrapes.length) {
-    barCard('🍇', 'Bottles by Grape', topGrapes, topGrapes[0].count, d++);
-  }
-
-  // 10. Recent activity — last 5 wines by date tasted
-  const recent = [...wines]
-    .filter(w => w.dateTasted)
-    .sort((a, b) => new Date(b.dateTasted) - new Date(a.dateTasted))
-    .slice(0, 5)
-    .map(w => ({ name: w.name, meta: formatDate(w.dateTasted) }));
-  if (recent.length) listCard('📅', 'Recently Tasted', recent, d++);
-}
 
 function initStarInput() {
   starInput.querySelectorAll('.star').forEach(s=>{
