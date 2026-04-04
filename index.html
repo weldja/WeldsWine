@@ -267,6 +267,8 @@ body{font-family:var(--font-b);background:var(--cream);color:var(--charcoal);min
 .btn-primary:disabled{opacity:.4;cursor:not-allowed;transform:none}
 .btn-secondary{background:transparent;color:var(--warm-gray);border:1px solid var(--light-gray);border-radius:var(--r);padding:9px 20px;font-family:var(--font-b);font-size:.88rem;cursor:pointer;transition:var(--tr)}
 .btn-secondary:hover{border-color:var(--warm-gray);color:var(--charcoal)}
+.btn-danger{background:transparent;color:#c42020;border:1px solid rgba(196,32,32,.3);border-radius:var(--r);padding:9px 20px;font-family:var(--font-b);font-size:.88rem;cursor:pointer;transition:var(--tr)}
+.btn-danger:hover{background:#fef2f2;border-color:#c42020}
 .toolbar{background:var(--ivory);border-bottom:1px solid var(--light-gray);position:sticky;top:64px;z-index:100;box-shadow:0 1px 6px var(--shadow)}
 .toolbar-inner{max-width:1200px;margin:0 auto;padding:0 20px;display:flex;flex-direction:column;gap:0}
 .toolbar-filters{padding:8px 0 4px;display:flex;align-items:center}
@@ -3223,7 +3225,7 @@ function createCard(w) {
   // Meta line: vintage · country · 📍 map button
   const metaParts = [w.vintage, w.country].filter(Boolean);
   if (metaParts.length || w.region || w.country || w.winery) {
-    const meta = document.createElement('p');
+    const meta = document.createElement('div');
     meta.className = 'card-meta-line';
     meta.innerHTML = metaParts.map(p => escHtml(String(p))).join('<span class="card-meta-dot">·</span>');
     if (w.country || w.region || w.winery) {
@@ -3455,8 +3457,11 @@ async function openDetail(w, e) {
       ${(w.country||w.region||w.winery)?`<button class="btn-origin-map" onclick="openOriginMap(getWineById('${w.id}'))">🗺 Show wine origin on map</button>`:''}
       <div id="detailCommentsPlaceholder"></div>
       <div class="detail-footer">
-        <button class="btn-secondary" onclick="closeDetail()">Close</button>
-        <button class="btn-primary" onclick="editWine('${w.id}',event)">Edit</button>
+        <button class="btn-danger" onclick="deleteWine('${w.id}',event)">Delete</button>
+        <div style="display:flex;gap:8px;margin-left:auto">
+          <button class="btn-secondary" onclick="closeDetail()">Close</button>
+          <button class="btn-primary" onclick="editWine('${w.id}',event)">Edit</button>
+        </div>
       </div>
     </div>`;
 
@@ -3977,6 +3982,7 @@ async function deleteWine(id, e) {
   if (!ok) { showToast('Failed to delete — check your connection'); return; }
 
   wines = wines.filter(w => w.id !== id);
+  closeDetail();
   activeView = 'grid';
   if (mapViewEl) mapViewEl.style.display = 'none';
   renderGrid();
