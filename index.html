@@ -5224,7 +5224,8 @@ async function joinCellarViaToken(token) {
       role:      'member'
     });
 
-    if (error) {
+    if (error && error.code !== '23505') {
+      // 23505 = unique_violation meaning already a member — not a real error
       console.error('joinCellarViaToken insert:', error);
       showToast('Could not join cellar — please try the link again');
       return;
