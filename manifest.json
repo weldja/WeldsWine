@@ -1,0 +1,42 @@
+{
+  "name": "Welds Wine Wisdoms",
+  "short_name": "Wine Wisdoms",
+  "description": "Shared wine journal — scan labels, rate bottles, share with friends.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#5C1525",
+  "theme_color": "#5C1525",
+  "orientation": "portrait-primary",
+  "lang": "en-GB",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["food", "lifestyle"],
+  "shortcuts": [
+    {
+      "name": "Scan a wine",
+      "short_name": "Scan",
+      "description": "Open the label scanner",
+      "url": "/?action=scan",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Our cellar",
+      "short_name": "Cellar",
+      "description": "Browse the shared cellar",
+      "url": "/",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}

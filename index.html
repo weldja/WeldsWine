@@ -31,6 +31,8 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
   <meta name="apple-mobile-web-app-title" content="Wine Wisdoms"/>
   <meta name="application-name" content="Welds Wine Wisdoms"/>
+  <link rel="manifest" href="/manifest.json"/>
+  <link rel="apple-touch-icon" href="/icon-192.png"/>
 
   <!-- Structured data — Google rich results -->
   <script type="application/ld+json">
@@ -226,17 +228,17 @@ body{font-family:var(--font-b);background:var(--cream);color:var(--charcoal);min
 .load-bar.active{opacity:1}
 .load-bar.done{opacity:0;transition:opacity .4s .2s}
 .site-header{background:var(--burgundy-deep);border-bottom:none;position:sticky;top:0;z-index:200;box-shadow:0 2px 16px rgba(44,20,36,.25)}
-.header-inner{max-width:1200px;margin:0 auto;padding:0 16px;height:64px;display:flex;align-items:center;gap:12px;overflow:hidden}
-.logo{display:flex;align-items:center;gap:10px;flex-shrink:0;min-width:0}
-.logo-icon{font-size:24px;line-height:1;flex-shrink:0}
-.logo-title{font-family:var(--font-d);font-size:1.2rem;font-weight:600;color:var(--parchment);letter-spacing:.01em;line-height:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.logo-sub{font-family:var(--font-b);font-size:.65rem;color:var(--blush);letter-spacing:.14em;text-transform:uppercase;font-style:italic;line-height:1;margin-top:2px}
-.header-actions{display:flex;align-items:center;gap:8px;flex:1;justify-content:flex-end;min-width:0;overflow:hidden}
-.scan-cta{display:flex;flex-direction:column;align-items:center;gap:2px}
-.btn-scan-primary{background:var(--gold);color:var(--burgundy-deep);border:none;border-radius:30px;padding:10px 20px;font-family:var(--font-b);font-size:.88rem;font-weight:600;cursor:pointer;transition:var(--tr);white-space:nowrap;flex-shrink:0;box-shadow:0 2px 8px rgba(201,163,74,.35)}
+.header-inner{max-width:1200px;margin:0 auto;padding:0 16px;height:60px;display:flex;align-items:center;gap:10px;overflow:visible}
+.logo{display:flex;align-items:center;gap:8px;flex-shrink:1;min-width:0;overflow:hidden}
+.logo-icon{font-size:22px;line-height:1;flex-shrink:0}
+.logo-title{font-family:var(--font-d);font-size:1.1rem;font-weight:600;color:var(--parchment);letter-spacing:.01em;line-height:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:180px}
+.logo-sub{font-family:var(--font-b);font-size:.6rem;color:var(--blush);letter-spacing:.12em;text-transform:uppercase;font-style:italic;line-height:1;margin-top:2px}
+.header-actions{display:flex;align-items:center;gap:6px;flex-shrink:0;margin-left:auto}
+.scan-cta{display:flex;flex-direction:column;align-items:center;gap:1px}
+.btn-scan-primary{background:var(--gold);color:var(--burgundy-deep);border:none;border-radius:30px;padding:9px 16px;font-family:var(--font-b);font-size:.84rem;font-weight:600;cursor:pointer;transition:var(--tr);white-space:nowrap;flex-shrink:0;box-shadow:0 2px 8px rgba(201,163,74,.35)}
 .btn-scan-primary:hover{background:var(--gold-lt);transform:translateY(-1px);box-shadow:0 4px 16px rgba(201,168,76,.5)}
-.scan-hint{font-family:var(--font-b);font-size:.62rem;color:var(--blush);letter-spacing:.08em;font-style:italic;white-space:nowrap;opacity:.85}
-.btn-add-subtle{background:none;color:rgba(245,239,230,.45);border:none;border-radius:30px;padding:6px 10px;font-family:var(--font-b);font-size:.78rem;cursor:pointer;transition:var(--tr);white-space:nowrap;flex-shrink:0;text-decoration:underline;text-underline-offset:2px;text-decoration-color:rgba(196,120,138,.25)}
+.scan-hint{font-family:var(--font-b);font-size:.6rem;color:var(--blush);letter-spacing:.08em;font-style:italic;white-space:nowrap;opacity:.85}
+.btn-add-subtle{background:none;color:rgba(245,239,230,.45);border:none;border-radius:30px;padding:6px 8px;font-family:var(--font-b);font-size:.75rem;cursor:pointer;transition:var(--tr);white-space:nowrap;flex-shrink:0;text-decoration:underline;text-underline-offset:2px;text-decoration-color:rgba(196,120,138,.25)}
 .btn-add-subtle:hover{color:var(--parchment);text-decoration-color:var(--blush)}
 /* Hamburger button */
 .btn-hamburger{
@@ -706,16 +708,19 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
   .start-here-chips{grid-template-columns:repeat(2,1fr)}
 }
 @media(max-width:520px){
-  .header-inner{padding:0 12px}
-  .logo-title{font-size:1rem}
+  .header-inner{padding:0 10px;gap:8px}
+  .logo-title{font-size:.92rem;max-width:120px}
+  .logo-sub{display:none}
+  .scan-hint{display:none}
+  .btn-add-subtle{display:none}
   .card-actions{gap:2px}
   .card-btn{padding:3px 7px;font-size:.7rem}
   .auth-card{padding:28px 20px}
   .start-here-chips{grid-template-columns:1fr}
 }
-@media(max-width:420px){
+@media(max-width:380px){
+  .logo-title{max-width:90px;font-size:.85rem}
   .filter-tabs{flex-wrap:wrap}
-  .logo-sub{display:none}
 }
 /* Larger touch targets on true touch devices */
 @media(hover:none){
@@ -724,6 +729,78 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
   .star-input .star{width:28px;height:28px;font-size:.75rem}
   .btn-locate{min-height:38px}
 }
+/* ─── Cellar Overview Panel ───────────────────────────── */
+.cellar-overview{
+  background:var(--burgundy-deep);
+  border-radius:var(--rl);
+  padding:24px 28px 20px;
+  margin-bottom:28px;
+  box-shadow:0 4px 20px rgba(92,21,37,.2);
+  display:none;
+}
+.cellar-overview-top{
+  display:flex;align-items:flex-start;justify-content:space-between;
+  margin-bottom:20px;gap:12px;flex-wrap:wrap;
+}
+.cellar-overview-title{
+  font-family:var(--font-d);font-size:1.25rem;font-weight:600;
+  color:var(--ivory);margin-bottom:3px;
+}
+.cellar-overview-sub{
+  font-family:var(--font-b);font-size:.78rem;
+  color:rgba(245,237,226,.5);
+}
+.cellar-overview-actions{display:flex;gap:8px;flex-shrink:0}
+.cellar-overview-stats{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:1px;
+  background:rgba(255,255,255,.08);
+  border-radius:var(--r);
+  overflow:hidden;
+  margin-bottom:18px;
+}
+.co-stat{
+  background:rgba(255,255,255,.05);
+  padding:14px 16px;
+  text-align:center;
+}
+.co-stat-value{
+  font-family:var(--font-d);font-size:1.6rem;font-weight:600;
+  color:var(--ivory);line-height:1;margin-bottom:4px;
+}
+.co-stat-label{
+  font-family:var(--font-b);font-size:.68rem;
+  color:rgba(245,237,226,.45);
+  text-transform:uppercase;letter-spacing:.09em;
+}
+.cellar-overview-rows{
+  display:flex;flex-direction:column;gap:10px;
+}
+.co-row{
+  display:flex;align-items:center;gap:12px;
+  background:rgba(255,255,255,.05);
+  border-radius:var(--r);
+  padding:11px 14px;
+}
+.co-row-icon{font-size:1.1rem;flex-shrink:0;width:24px;text-align:center}
+.co-row-body{flex:1;min-width:0}
+.co-row-label{font-family:var(--font-b);font-size:.68rem;color:rgba(245,237,226,.45);text-transform:uppercase;letter-spacing:.08em;margin-bottom:2px}
+.co-row-value{font-family:var(--font-b);font-size:.88rem;font-weight:500;color:var(--ivory);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.co-row-badge{
+  font-family:var(--font-b);font-size:.7rem;font-weight:700;
+  background:var(--gold);color:var(--burgundy-deep);
+  padding:2px 8px;border-radius:4px;flex-shrink:0;
+}
+@media(max-width:640px){
+  .cellar-overview{padding:18px 16px 16px}
+  .cellar-overview-stats{grid-template-columns:repeat(2,1fr)}
+  .co-stat-value{font-size:1.3rem}
+}
+@media(max-width:380px){
+  .cellar-overview-stats{grid-template-columns:repeat(2,1fr)}
+}
+
 /* ─── Recommended Tonight ─────────────────────────────── */
 .rec-tonight{
   margin-bottom:36px;
@@ -1416,93 +1493,57 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
 <!-- MAIN -->
 <main class="main-content" role="main" aria-label="Wine collection">
 
-  <!-- HERO SECTION (shown when cellar has wines) -->
-  <div id="heroSection" style="display:none">
-    <div class="hero-section">
-      <div class="hero-text">
-        <h2 class="hero-headline">What are you drinking tonight?</h2>
-        <p class="hero-sub">We'll pick the right bottle for you — no thinking needed.</p>
-        <div class="hero-actions">
-          <button class="hero-btn-primary" onclick="document.getElementById('recTonightBlock').scrollIntoView({behavior:'smooth',block:'start'})">👇 Show me what to drink</button>
-          <button class="hero-btn-secondary" onclick="document.getElementById('openScanModal').click()">📷 Scan a new bottle</button>
-        </div>
+  <!-- CELLAR OVERVIEW PANEL (shown when wines exist) -->
+  <div class="cellar-overview" id="cellarOverview">
+    <div class="cellar-overview-top">
+      <div>
+        <div class="cellar-overview-title" id="coTitle">Our Cellar</div>
+        <div class="cellar-overview-sub" id="coSub">Shared wine journal</div>
       </div>
-      <div class="hero-count">
-        <span id="heroBadgeStat">0</span>
-        <small>wines to choose from</small>
+      <div class="cellar-overview-actions">
+        <button class="hero-btn-secondary" onclick="document.getElementById('openScanModal').click()" style="padding:8px 14px;font-size:.8rem">📷 Scan</button>
       </div>
+    </div>
+
+    <!-- Stats row -->
+    <div class="cellar-overview-stats">
+      <div class="co-stat">
+        <div class="co-stat-value" id="coTotal">0</div>
+        <div class="co-stat-label">Wines</div>
+      </div>
+      <div class="co-stat">
+        <div class="co-stat-value" id="coAvg">—</div>
+        <div class="co-stat-label">Avg Rating</div>
+      </div>
+      <div class="co-stat">
+        <div class="co-stat-value" id="coCountries">0</div>
+        <div class="co-stat-label">Countries</div>
+      </div>
+      <div class="co-stat">
+        <div class="co-stat-value" id="coHighest">—</div>
+        <div class="co-stat-label">Top Score</div>
+      </div>
+    </div>
+
+    <!-- Detail rows -->
+    <div class="cellar-overview-rows" id="coRows">
+      <!-- filled by JS -->
     </div>
   </div>
 
-  <!-- START HERE (shown when wines exist) -->
-  <div id="startHereSection" style="display:none">
-
-    <!-- RECOMMENDED TONIGHT block -->
-    <div id="recTonightBlock" style="display:none">
-      <div class="rec-tonight">
-        <div class="rec-tonight-header">
-          <h2 class="rec-tonight-title">🍷 Tonight's recommendation</h2>
-          <p class="rec-tonight-sub">Based on what you've loved most — just open this one.</p>
-        </div>
-        <div class="rec-tonight-body">
-          <!-- Primary pick — filled by JS -->
-          <div id="recPrimary" class="rec-primary"></div>
-          <!-- Alternatives — filled by JS -->
-          <div id="recAlts" class="rec-alts"></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- MOOD CHIPS block -->
-    <div class="start-here">
-      <div class="start-here-header">
-        <p class="start-here-label">Not sure? Start here.</p>
-        <p class="start-here-hint">Pick a mood and we'll find the right bottle.</p>
-      </div>
-      <div class="start-here-chips" id="startHereChips">
-        <!-- filled by JS -->
-      </div>
-    </div>
-  </div>
-
-  <!-- CURATED SECTIONS (shown when wines exist) -->
+  <!-- TOP RATED SECTION (shown when enough wines exist) -->
   <div id="curatedSections" style="display:none">
-    <!-- Section: Easy picks -->
-    <div class="curated-section" id="sectionEasyPicks">
-      <div class="curated-header">
-        <div>
-          <h3 class="curated-title">😊 Easy picks — just open one</h3>
-          <p class="curated-sub">No wrong choices here. Any of these work for tonight.</p>
-        </div>
-      </div>
-      <div class="curated-grid" id="curatedEasyPicks"></div>
-    </div>
-
-    <!-- Section: Great with food -->
-    <div class="curated-section" id="sectionWithFood">
-      <div class="curated-header">
-        <div>
-          <h3 class="curated-title">🍽️ If you're eating tonight</h3>
-          <p class="curated-sub">These come alive with food — good with most meals.</p>
-        </div>
-      </div>
-      <div class="curated-grid" id="curatedWithFood"></div>
-    </div>
-
-    <!-- Section: Your top rated -->
     <div class="curated-section" id="sectionTopRated">
       <div class="curated-header">
         <div>
-          <h3 class="curated-title">⭐ Your highest-rated bottles</h3>
-          <p class="curated-sub">You've tried these and loved them — always a safe bet.</p>
+          <h3 class="curated-title">⭐ Highest-rated bottles</h3>
+          <p class="curated-sub">The best of the cellar — tried and loved.</p>
         </div>
       </div>
       <div class="curated-grid" id="curatedTopRated"></div>
     </div>
-
-    <!-- Section divider before full cellar -->
     <div class="section-divider">
-      <span>Everything in your cellar — scroll to explore</span>
+      <span>Everything in the cellar — scroll to explore</span>
     </div>
   </div>
 
@@ -2820,168 +2861,136 @@ function renderRecommendedTonight() {
 
 /* ── Curated sections ─────────────────────────────────────── */
 function renderCuratedSections() {
-  const heroSection      = document.getElementById('heroSection');
-  const curatedSections  = document.getElementById('curatedSections');
-  const startHereSection = document.getElementById('startHereSection');
-  const isFiltered       = searchQuery || activeFilter !== 'all' || activeView !== 'grid';
+  const overview       = document.getElementById('cellarOverview');
+  const curatedSections= document.getElementById('curatedSections');
+  const isFiltered     = searchQuery || activeFilter !== 'all' || activeView !== 'grid';
 
   if (!_winesLoaded || wines.length === 0 || isFiltered) {
-    if (heroSection)      heroSection.style.display = 'none';
-    if (curatedSections)  curatedSections.style.display = 'none';
-    if (startHereSection) startHereSection.style.display = 'none';
+    if (overview)        overview.style.display       = 'none';
+    if (curatedSections) curatedSections.style.display = 'none';
     return;
   }
 
-  // Show hero with count — only once 3+ wines (meaningful recommendations)
-  if (heroSection) {
-    heroSection.style.display = wines.length >= 3 ? 'block' : 'none';
-    const statEl = document.getElementById('heroBadgeStat');
-    if (statEl) statEl.textContent = wines.length;
-  }
+  // ── Cellar overview panel ────────────────────────────────
+  if (overview) {
+    overview.style.display = 'block';
 
-  // ── Recommended Tonight ──────────────────────────────────
-  renderRecommendedTonight();
+    // Title — personalise for shared cellar
+    const titleEl = document.getElementById('coTitle');
+    const subEl   = document.getElementById('coSub');
+    const memberCount = window._cellarMembers.length;
+    if (titleEl) titleEl.textContent = memberCount > 1 ? 'Our Cellar' : 'My Cellar';
+    if (subEl)   subEl.textContent   = memberCount > 1
+      ? `Shared by ${memberCount} members`
+      : 'Your personal wine journal';
 
-  // Helper: fill a curated grid
-  function fillSection(sectionId, gridId, list, featuredId) {
-    const section = document.getElementById(sectionId);
-    const grid    = document.getElementById(gridId);
-    if (!section || !grid) return;
-    if (list.length >= 2) {
-      section.style.display = 'block';
-      grid.innerHTML = '';
-      list.slice(0, 4).forEach((w, i) => {
-        const c = createCard(w);
-        c.style.animationDelay = `${i * 0.05}s`;
-        if (featuredId && w.id === featuredId) {
-          c.classList.add('featured');
-          // inject top pick badge
-          const body = c.querySelector('.card-body');
-          if (body) {
-            const badge = document.createElement('div');
-            badge.className = 'card-top-pick';
-            badge.textContent = '⭐ Top pick';
-            body.insertBefore(badge, body.firstChild);
-          }
-        }
-        grid.appendChild(c);
-      });
-    } else {
-      section.style.display = 'none';
+    // Stats
+    const rated   = wines.filter(w => w.rating);
+    const avg     = rated.length ? (rated.reduce((s,w)=>s+w.rating,0)/rated.length).toFixed(1) : '—';
+    const countries = new Set(wines.map(w=>w.country).filter(Boolean)).size;
+    const highest = rated.length ? Math.max(...rated.map(w=>w.rating)) : '—';
+
+    document.getElementById('coTotal').textContent     = wines.length;
+    document.getElementById('coAvg').textContent       = avg === '—' ? '—' : `${avg}`;
+    document.getElementById('coCountries').textContent = countries || '—';
+    document.getElementById('coHighest').textContent   = highest;
+
+    // Detail rows
+    const rows = document.getElementById('coRows');
+    if (rows) {
+      rows.innerHTML = '';
+
+      // Top rated wine
+      const topWine = [...wines].filter(w=>w.rating).sort((a,b)=>b.rating-a.rating)[0];
+      if (topWine) {
+        rows.innerHTML += `
+          <div class="co-row" style="cursor:pointer" onclick="openDetail(getWineById('${topWine.id}'),null)">
+            <div class="co-row-icon">🏆</div>
+            <div class="co-row-body">
+              <div class="co-row-label">Top rated wine</div>
+              <div class="co-row-value">${escHtml(topWine.name)}${topWine.vintage?' · '+topWine.vintage:''}</div>
+            </div>
+            <div class="co-row-badge">${topWine.rating}/10</div>
+          </div>`;
+      }
+
+      // Most recent addition
+      const newest = [...wines].sort((a,b)=>(b.createdAt||0)-(a.createdAt||0))[0];
+      if (newest) {
+        const addedByMe = newest.addedBy === _currentUser?.id;
+        const adder = addedByMe ? 'you' : (window._cellarMembers.find(m=>m.user_id===newest.addedBy)?.display_name || 'a member');
+        rows.innerHTML += `
+          <div class="co-row" style="cursor:pointer" onclick="openDetail(getWineById('${newest.id}'),null)">
+            <div class="co-row-icon">🆕</div>
+            <div class="co-row-body">
+              <div class="co-row-label">Most recently added — by ${escHtml(adder)}</div>
+              <div class="co-row-value">${escHtml(newest.name)}${newest.vintage?' · '+newest.vintage:''}</div>
+            </div>
+            ${newest.rating?`<div class="co-row-badge">${newest.rating}/10</div>`:''}
+          </div>`;
+      }
+
+      // Top region
+      const rc={};wines.forEach(w=>{if(w.region)rc[w.region]=(rc[w.region]||0)+1;});
+      const topRegion = Object.keys(rc).sort((a,b)=>rc[b]-rc[a])[0];
+      if (topRegion) {
+        rows.innerHTML += `
+          <div class="co-row">
+            <div class="co-row-icon">🗺</div>
+            <div class="co-row-body">
+              <div class="co-row-label">Most explored region</div>
+              <div class="co-row-value">${escHtml(topRegion)}</div>
+            </div>
+            <div class="co-row-badge">${rc[topRegion]} bottle${rc[topRegion]>1?'s':''}</div>
+          </div>`;
+      }
+
+      // Buy again count
+      const buyCount = wines.filter(w=>w.buyAgain).length;
+      if (buyCount) {
+        rows.innerHTML += `
+          <div class="co-row">
+            <div class="co-row-icon">↺</div>
+            <div class="co-row-body">
+              <div class="co-row-label">Marked buy again</div>
+              <div class="co-row-value">${buyCount} bottle${buyCount>1?'s':''} worth buying again</div>
+            </div>
+          </div>`;
+      }
     }
   }
 
-  const easyKw = ['pinot','beaujolais','light','easy','smooth','fruity','rosé','rose','prosecco','cava','sparkling','merlot','riesling'];
-  const foodKw = ['steak','meat','red','cabernet','shiraz','syrah','rioja','tempranillo','chardonnay','sauvignon','fish','seafood','pasta','beef','lamb','chicken'];
-
-  function matchesKw(w, kws) {
-    const all = ([w.notes,w.grape,w.style,w.name,w.region].filter(Boolean).join(' ')).toLowerCase();
-    return kws.some(k => all.includes(k));
-  }
-
-  const easyPicks = [...wines]
-    .filter(w => (w.rating||0) >= 6 && matchesKw(w, easyKw))
-    .sort((a,b) => (b.rating||0) - (a.rating||0));
-
-  const withFood = [...wines]
-    .filter(w => (w.rating||0) >= 6 && matchesKw(w, foodKw) && !easyPicks.slice(0,4).find(e => e.id === w.id))
-    .sort((a,b) => (b.rating||0) - (a.rating||0));
-
-  const easyIds = new Set(easyPicks.slice(0,4).map(w => w.id));
-  const foodIds = new Set(withFood.slice(0,4).map(w => w.id));
+  // ── Top rated curated section ────────────────────────────
   const topRated = [...wines]
-    .filter(w => (w.rating||0) >= 9 && !easyIds.has(w.id) && !foodIds.has(w.id))
+    .filter(w => (w.rating||0) >= 8)
+    .sort((a,b) => (b.rating||0) - (a.rating||0))
     .slice(0, 4);
 
-  // Top pick = highest-rated wine overall (featured badge)
-  const topPick = [...wines].sort((a,b) => (b.rating||0) - (a.rating||0))[0];
-  const featuredId = topPick?.id;
+  const topRatedSection = document.getElementById('sectionTopRated');
+  const topRatedGrid    = document.getElementById('curatedTopRated');
 
-  fillSection('sectionEasyPicks', 'curatedEasyPicks', easyPicks, featuredId);
-  fillSection('sectionWithFood',  'curatedWithFood',  withFood,  null);
-  fillSection('sectionTopRated',  'curatedTopRated',  topRated,  null);
-
-  const anySection = easyPicks.length >= 2 || withFood.length >= 2 || topRated.length >= 2;
-  if (curatedSections) curatedSections.style.display = anySection ? 'block' : 'none';
-
-  // ── Start Here section ──────────────────────────────────
-  const chipsEl = document.getElementById('startHereChips');
-  if (startHereSection && chipsEl && wines.length >= 3) {
-    startHereSection.style.display = 'block';
-    chipsEl.innerHTML = '';
-
-    // Define 4 quick-pick moods with keyword matching
-    const moods = [
-      {
-        emoji: '🍷',
-        label: 'Just an easy red',
-        desc:  'No thinking — open and enjoy',
-        kws:   ['merlot','pinot','beaujolais','easy','light','smooth','red'],
-        style: 'red'
-      },
-      {
-        emoji: '🥩',
-        label: 'Good with dinner',
-        desc:  'Bold enough to stand up to food',
-        kws:   ['cabernet','shiraz','syrah','rioja','tempranillo','steak','beef','lamb'],
-        style: 'red'
-      },
-      {
-        emoji: '🌿',
-        label: 'Light and refreshing',
-        desc:  'Crisp white — brilliant chilled',
-        kws:   ['sauvignon','blanc','crisp','fresh','citrus','lemon','fish','seafood','white'],
-        style: 'white'
-      },
-      {
-        emoji: '✅',
-        label: 'Safe, reliable choice',
-        desc:  'Your top-rated bottle — never fails',
-        kws:   [],
-        isSafe: true
-      }
-    ];
-
-    moods.forEach(mood => {
-      let match;
-      if (mood.isSafe) {
-        // Always use the overall top-rated wine
-        match = topPick;
-      } else {
-        const all_list = ([...wines]).sort((a,b) => (b.rating||0)-(a.rating||0));
-        match = all_list.find(w => {
-          const txt = ([w.notes,w.grape,w.style,w.name,w.region].filter(Boolean).join(' ')).toLowerCase();
-          return mood.kws.some(k => txt.includes(k));
-        });
-        // style fallback
-        if (!match && mood.style) {
-          match = all_list.find(w => (w.style||'').toLowerCase() === mood.style);
+  if (topRated.length >= 2 && topRatedSection && topRatedGrid) {
+    topRatedSection.style.display = 'block';
+    topRatedGrid.innerHTML = '';
+    topRated.forEach((w, i) => {
+      const c = createCard(w);
+      c.style.animationDelay = `${i * 0.05}s`;
+      if (i === 0) {
+        c.classList.add('featured');
+        const body = c.querySelector('.card-body');
+        if (body) {
+          const badge = document.createElement('div');
+          badge.className = 'card-top-pick';
+          badge.textContent = '⭐ Top pick';
+          body.insertBefore(badge, body.firstChild);
         }
-        if (!match) return; // skip if no match
       }
-      if (!match) return;
-
-      const btn = document.createElement('button');
-      btn.className = 'start-chip';
-      btn.innerHTML = `<span class="chip-emoji">${mood.emoji}</span><span class="chip-label">${mood.label}</span><span class="chip-desc">${mood.desc}</span>`;
-      btn.addEventListener('click', () => {
-        // Scroll to and briefly highlight the matching card
-        const cardEl = document.querySelector(`.wine-card[data-id="${match.id}"]`);
-        if (cardEl) {
-          cardEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          cardEl.classList.add('chip-highlight');
-          setTimeout(() => cardEl.classList.remove('chip-highlight'), 2000);
-        } else {
-          openDetail(getWineById(match.id), null);
-        }
-      });
-      chipsEl.appendChild(btn);
+      topRatedGrid.appendChild(c);
     });
-
-    // Hide section if no chips were added
-    if (!chipsEl.children.length) startHereSection.style.display = 'none';
-  } else if (startHereSection) {
-    startHereSection.style.display = 'none';
+    if (curatedSections) curatedSections.style.display = 'block';
+  } else {
+    if (topRatedSection) topRatedSection.style.display = 'none';
+    if (curatedSections) curatedSections.style.display = topRated.length < 2 ? 'none' : 'block';
   }
 }
 
@@ -5644,6 +5653,17 @@ if (typeof closeMobileMenu !== 'function') console.error('CRITICAL: index.html i
     setTimeout(ldRun,600);
   }
 })();
+</script>
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function() {
+    navigator.serviceWorker.register('/sw.js').then(function(reg) {
+      console.log('SW registered:', reg.scope);
+    }).catch(function(err) {
+      console.log('SW registration failed:', err);
+    });
+  });
+}
 </script>
 </body>
 </html>
