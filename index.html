@@ -1043,6 +1043,85 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
 .skeleton-card .sk-line.mid{width:55%}
 .skeleton-card .sk-line.short{width:35%;height:10px}
 
+/* ── Wine Origin Map Modal ──────────────────────────────── */
+.origin-map-overlay{
+  position:fixed;inset:0;z-index:2000;
+  background:rgba(30,10,15,.75);
+  display:flex;align-items:flex-end;justify-content:center;
+  opacity:0;pointer-events:none;transition:opacity .2s;
+}
+.origin-map-overlay.open{opacity:1;pointer-events:all}
+.origin-map-sheet{
+  background:var(--burgundy-deep);
+  border-radius:var(--rl) var(--rl) 0 0;
+  width:100%;max-width:680px;
+  box-shadow:0 -8px 40px rgba(44,20,36,.4);
+  display:flex;flex-direction:column;
+  max-height:85vh;
+  transform:translateY(100%);
+  transition:transform .3s cubic-bezier(.4,0,.2,1);
+}
+.origin-map-overlay.open .origin-map-sheet{transform:translateY(0)}
+.origin-map-header{
+  padding:14px 18px 12px;
+  display:flex;align-items:flex-start;justify-content:space-between;
+  flex-shrink:0;border-bottom:1px solid rgba(255,255,255,.08);
+}
+.origin-map-title{
+  font-family:var(--font-d);font-size:1rem;font-weight:600;
+  color:var(--ivory);margin-bottom:2px;
+}
+.origin-map-sub{
+  font-family:var(--font-b);font-size:.75rem;
+  color:rgba(245,237,226,.45);
+}
+.origin-map-close{
+  background:rgba(255,255,255,.1);border:none;border-radius:50%;
+  width:30px;height:30px;color:var(--parchment);font-size:1rem;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;transition:var(--tr);
+}
+.origin-map-close:hover{background:rgba(255,255,255,.2)}
+.origin-map-container{
+  flex:1;min-height:320px;position:relative;overflow:hidden;
+}
+#originMapEl{width:100%;height:100%;min-height:320px}
+.origin-map-loading{
+  position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  background:var(--burgundy-deep);
+  font-family:var(--font-b);font-size:.88rem;color:rgba(245,237,226,.5);
+  flex-direction:column;gap:10px;
+}
+.origin-map-spinner{
+  width:28px;height:28px;border:2px solid rgba(245,237,226,.15);
+  border-top-color:var(--gold);border-radius:50%;
+  animation:spin .8s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+.origin-map-breadcrumb{
+  padding:10px 18px;
+  display:flex;gap:6px;flex-wrap:wrap;align-items:center;
+  flex-shrink:0;border-top:1px solid rgba(255,255,255,.06);
+}
+.origin-crumb{
+  font-family:var(--font-b);font-size:.72rem;
+  background:rgba(255,255,255,.08);border-radius:4px;
+  padding:3px 9px;color:rgba(245,237,226,.6);
+  cursor:pointer;transition:var(--tr);white-space:nowrap;
+}
+.origin-crumb:hover{background:rgba(255,255,255,.16);color:var(--ivory)}
+.origin-crumb.active{background:var(--gold);color:var(--burgundy-deep);font-weight:600}
+
+/* Map button in detail view */
+.btn-origin-map{
+  display:inline-flex;align-items:center;gap:6px;
+  background:var(--burgundy-deep);color:var(--parchment);
+  border:1px solid rgba(255,255,255,.15);border-radius:var(--r);
+  padding:8px 14px;font-family:var(--font-b);font-size:.8rem;
+  cursor:pointer;transition:var(--tr);margin-top:12px;
+}
+.btn-origin-map:hover{background:var(--burgundy);border-color:rgba(255,255,255,.25)}
+
 /* ── Added-by badge on cards ─────────────────────────────── */
 .card-added-by{display:inline-flex;align-items:center;gap:4px;font-family:var(--font-b);font-size:.65rem;color:var(--warm-gray);margin-top:4px;opacity:.75}
 .card-added-by-dot{width:14px;height:14px;border-radius:50%;background:var(--burgundy);color:#fff;font-size:.55rem;font-weight:700;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0}
@@ -2873,7 +2952,9 @@ function toggleCellarOverview() {
 
 function _restoreCellarOverviewState() {
   try {
-    const minimised = localStorage.getItem('wwwCellarMinimised') === '1';
+    // Default minimised unless user has explicitly expanded (value '0')
+    const stored = localStorage.getItem('wwwCellarMinimised');
+    const minimised = stored === null ? true : stored === '1';
     const body = document.getElementById('coBody');
     const btn  = document.getElementById('coMinBtn');
     if (!body || !btn) return;
@@ -3128,6 +3209,7 @@ async function openDetail(w, e) {
       </div>
       ${mapHtml}
       ${w.notes?`<div class="detail-notes-label">Tasting Notes</div><div class="detail-notes">${escHtml(w.notes)}</div>`:''}
+      ${(w.country||w.region||w.winery)?`<button class="btn-origin-map" onclick="openOriginMap(getWineById('${w.id}'))">🗺 Show wine origin on map</button>`:''}
       <div id="detailCommentsPlaceholder"></div>
       <div class="detail-footer">
         <button class="btn-secondary" onclick="closeDetail()">Close</button>
@@ -3188,11 +3270,13 @@ function _anyPanelOpen() {
     document.getElementById('shareOverlay').classList.contains('open') ||
     document.getElementById('infoOverlay').classList.contains('open') ||
     document.getElementById('quickAddOverlay').classList.contains('open') ||
-    document.getElementById('cellarSettingsOverlay').classList.contains('open')
+    document.getElementById('cellarSettingsOverlay').classList.contains('open') ||
+    document.getElementById('originMapOverlay').classList.contains('open')
   );
 }
 function _closeTopPanel() {
   if (document.getElementById('labelLightbox'))                                        { closeLightbox();        return; }
+  if (document.getElementById('originMapOverlay').classList.contains('open'))         { closeOriginMap();       return; }
   if (document.getElementById('cellarSettingsOverlay').classList.contains('open'))    { closeCellarSettings();  return; }
   if (document.getElementById('quickAddOverlay').classList.contains('open'))          { closeQuickAdd();        return; }
   if (document.getElementById('shareOverlay').classList.contains('open'))             { closeShareModal();      return; }
@@ -4851,6 +4935,27 @@ function updateKeyBadge() {
 }
 </script>
 
+<!-- WINE ORIGIN MAP MODAL -->
+<div class="origin-map-overlay" id="originMapOverlay">
+  <div class="origin-map-sheet">
+    <div class="origin-map-header">
+      <div>
+        <div class="origin-map-title" id="originMapTitle">Wine Origin</div>
+        <div class="origin-map-sub" id="originMapSub"></div>
+      </div>
+      <button class="origin-map-close" onclick="closeOriginMap()">✕</button>
+    </div>
+    <div class="origin-map-container">
+      <div class="origin-map-loading" id="originMapLoading">
+        <div class="origin-map-spinner"></div>
+        <span>Finding location…</span>
+      </div>
+      <div id="originMapEl"></div>
+    </div>
+    <div class="origin-map-breadcrumb" id="originMapCrumbs"></div>
+  </div>
+</div>
+
 <!-- CELLAR SETTINGS MODAL -->
 <div class="modal-overlay" id="cellarSettingsOverlay" role="dialog" aria-modal="true">
   <div class="modal" style="max-width:440px">
@@ -5503,6 +5608,168 @@ async function handleDeleteComment(commentId, btnEl) {
   const item = btnEl?.closest('.comment-item');
   if (item) item.remove();
   showToast('Comment deleted');
+}
+
+/* ══════════════════════════════════════════════════════════════
+   WINE ORIGIN MAP
+══════════════════════════════════════════════════════════════ */
+let _originMap      = null;
+let _originMarkers  = [];
+let _originWine     = null;
+let _originZoomLevel = 0; // 0=country, 1=region, 2=winery
+
+async function _geocodeQuery(query) {
+  try {
+    const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=1&accept-language=en`;
+    const r   = await fetch(url, { headers: { 'User-Agent': 'WeldsWineWisdoms/1.0' } });
+    if (!r.ok) return null;
+    const data = await r.json();
+    if (!data.length) return null;
+    return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon), name: data[0].display_name };
+  } catch(_) { return null; }
+}
+
+async function openOriginMap(w) {
+  if (!w) return;
+  _originWine = w;
+
+  // Show overlay
+  const overlay = document.getElementById('originMapOverlay');
+  overlay.classList.add('open');
+  document.body.style.overflow = 'hidden';
+  _pushNavState();
+
+  // Set title
+  document.getElementById('originMapTitle').textContent = w.name + (w.vintage ? ` ${w.vintage}` : '');
+  document.getElementById('originMapSub').textContent   = [w.winery, w.region, w.country].filter(Boolean).join(' · ');
+  document.getElementById('originMapLoading').style.display = 'flex';
+
+  // Build zoom levels from most to least specific
+  const levels = [];
+  if (w.winery && w.country) levels.push({ label: w.winery, query: `${w.winery} ${w.region||''} ${w.country}`, zoom: 12 });
+  if (w.region && w.country) levels.push({ label: w.region, query: `${w.region} ${w.country}`, zoom: 9 });
+  if (w.country)             levels.push({ label: w.country, query: w.country, zoom: 5 });
+
+  if (!levels.length) {
+    document.getElementById('originMapLoading').innerHTML = '<span>No location data for this wine</span>';
+    return;
+  }
+
+  // Build breadcrumb buttons
+  const crumbs = document.getElementById('originMapCrumbs');
+  crumbs.innerHTML = levels.map((l, i) =>
+    `<button class="origin-crumb${i===levels.length-1?' active':''}" onclick="zoomOriginMap(${i})">${escHtml(l.label)}</button>`
+  ).join('<span style="color:rgba(245,237,226,.2);font-size:.7rem">›</span>');
+
+  // Ensure Leaflet loaded
+  await _ensureLeaflet();
+  _initOriginMap();
+
+  // Geocode all levels
+  const geocoded = await Promise.all(levels.map(l => _geocodeQuery(l.query)));
+  window._originLevels = levels.map((l, i) => ({ ...l, geo: geocoded[i] }));
+
+  // Start at most specific level that has a result
+  const firstValid = window._originLevels.findIndex(l => l.geo);
+  _originZoomLevel = firstValid >= 0 ? firstValid : 0;
+  _flyToOriginLevel(_originZoomLevel);
+
+  // Update crumb active state
+  _updateOriginCrumbs();
+}
+
+function _initOriginMap() {
+  const el = document.getElementById('originMapEl');
+  if (!_originMap) {
+    _originMap = L.map(el, {
+      zoomControl: true,
+      attributionControl: false,
+      scrollWheelZoom: true
+    }).setView([47, 2], 5);
+
+    // Minimal style tile — CartoDB Positron (clean, light, minimal labels)
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+      subdomains: 'abcd',
+      maxZoom: 19
+    }).addTo(_originMap);
+  } else {
+    _originMap.invalidateSize();
+  }
+  // Clear old markers
+  _originMarkers.forEach(m => m.remove());
+  _originMarkers = [];
+  document.getElementById('originMapLoading').style.display = 'none';
+}
+
+function _flyToOriginLevel(idx) {
+  if (!_originMap || !window._originLevels) return;
+  const levels = window._originLevels;
+  if (idx < 0 || idx >= levels.length) return;
+
+  // Clear markers
+  _originMarkers.forEach(m => m.remove());
+  _originMarkers = [];
+
+  // Add markers for all levels that have geo data
+  levels.forEach((l, i) => {
+    if (!l.geo) return;
+    const isTarget = i === idx;
+    const colour   = i === 0 ? '#C9A34A' : i === 1 ? '#8B2439' : '#4A7BC9';
+    const size     = isTarget ? 14 : 8;
+    const marker   = L.circleMarker([l.geo.lat, l.geo.lng], {
+      radius: size,
+      fillColor: colour,
+      color: '#fff',
+      weight: 2,
+      fillOpacity: isTarget ? 0.95 : 0.5
+    });
+    if (isTarget) {
+      marker.bindPopup(`<div style="font-family:sans-serif;font-size:12px;font-weight:600;color:#2D2420">${escHtml(l.label)}</div>`, { closeButton: false });
+    }
+    marker.addTo(_originMap);
+    _originMarkers.push(marker);
+  });
+
+  // Fly to target
+  const target = levels[idx];
+  if (target.geo) {
+    _originMap.flyTo([target.geo.lat, target.geo.lng], target.zoom, { duration: 0.8 });
+    setTimeout(() => {
+      const m = _originMarkers[_originMarkers.length - 1];
+      if (m && idx === 0) m.openPopup();
+    }, 900);
+  }
+}
+
+function zoomOriginMap(idx) {
+  _originZoomLevel = idx;
+  _flyToOriginLevel(idx);
+  _updateOriginCrumbs();
+}
+
+function _updateOriginCrumbs() {
+  const crumbs = document.getElementById('originMapCrumbs');
+  if (!crumbs) return;
+  crumbs.querySelectorAll('.origin-crumb').forEach((btn, i) => {
+    btn.classList.toggle('active', i === _originZoomLevel);
+  });
+}
+
+function closeOriginMap() {
+  const overlay = document.getElementById('originMapOverlay');
+  overlay.classList.remove('open');
+  document.body.style.overflow = '';
+  if (_originMap) { _originMap.invalidateSize(); }
+}
+
+function _ensureLeaflet() {
+  return new Promise(res => {
+    if (typeof L !== 'undefined') { res(); return; }
+    const s = document.createElement('script');
+    s.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+    s.onload = res;
+    document.head.appendChild(s);
+  });
 }
 
 // FILE INTEGRITY CHECK — if this line is missing the file is truncated
