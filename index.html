@@ -493,6 +493,19 @@ body{font-family:var(--font-b);background:var(--cream);color:var(--charcoal);min
 .card-footer-info{display:flex;align-items:center;gap:5px}
 .card-date{font-size:.62rem;color:var(--warm-gray);font-family:var(--font-b);opacity:.5}
 
+/* Discreet map icon button in card footer */
+.card-map-btn{
+  background:none;border:none;cursor:pointer;
+  color:var(--warm-gray);opacity:.45;
+  padding:2px 3px;border-radius:5px;
+  display:flex;align-items:center;justify-content:center;
+  transition:opacity .15s,color .15s;
+  -webkit-tap-highlight-color:transparent;
+  flex-shrink:0;
+}
+.card-map-btn:active{opacity:1;color:var(--burgundy)}
+@media(hover:hover){.card-map-btn:hover{opacity:1;color:var(--burgundy)}}
+
 /* 3-dot menu replaces old icon strip */
 .card-actions{display:flex;gap:0;flex-shrink:0}
 .card-menu-wrap{position:relative;display:flex;align-items:flex-start}
@@ -2313,6 +2326,11 @@ function showApp() {
     }
   } catch(_) {}
 
+  // Seed a baseline history entry so back-button closes panels rather than exiting the app
+  if (!history.state || !('wwwPanel' in history.state)) {
+    history.replaceState({ wwwPanel: false }, '');
+  }
+
   const cacheKey = 'wwwCache_' + (_currentUser?.id || '');
   let hadCache = false;
   try {
@@ -3208,8 +3226,6 @@ function createCard(w) {
     locBtn.addEventListener('click', e => { e.stopPropagation(); openOriginMap(getWineById(w.id)); });
     body.appendChild(locBtn);
   }
-
-  // Tags (max 3)
   if (tags.length) {
     const tagsWrap = document.createElement('div');
     tagsWrap.className = 'card-tags';
@@ -3257,6 +3273,16 @@ function createCard(w) {
     favPip.style.cssText = 'font-size:.7rem;color:#e05c7a;line-height:1';
     favPip.textContent = '♥';
     footerInfo.appendChild(favPip);
+  }
+  // Discreet map button — shows for any wine with country/region data
+  if (w.country || w.region || w.winery) {
+    const mapBtn = document.createElement('button');
+    mapBtn.className = 'card-map-btn';
+    mapBtn.setAttribute('aria-label', 'Show wine origin on map');
+    mapBtn.title = 'Show origin on map';
+    mapBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="12" height="12"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>`;
+    mapBtn.addEventListener('click', e => { e.stopPropagation(); openOriginMap(getWineById(w.id)); });
+    footerInfo.appendChild(mapBtn);
   }
   footer.appendChild(footerInfo);
 
