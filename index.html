@@ -303,7 +303,7 @@ body{font-family:var(--font-b);background:var(--cream);color:var(--charcoal);min
   background:#faf9f7;
   border:1px solid rgba(180,140,100,.11);
   border-radius:18px;
-  overflow:visible;
+  overflow:hidden;
   display:flex;
   flex-direction:row;
   align-items:stretch;
@@ -315,6 +315,8 @@ body{font-family:var(--font-b);background:var(--cream);color:var(--charcoal);min
   padding:11px 10px 11px 11px;
   gap:12px;
   position:relative;
+  width:100%;
+  box-sizing:border-box;
 }
 @media(hover:hover){
   .wine-card:hover{
@@ -417,6 +419,7 @@ body{font-family:var(--font-b);background:var(--cream);color:var(--charcoal);min
   display:flex;flex-direction:column;justify-content:center;
   gap:3px;
   padding:2px 0;
+  overflow:hidden;
 }
 .card-header{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
 .card-header-left{flex:1;min-width:0}
@@ -493,47 +496,50 @@ body{font-family:var(--font-b);background:var(--cream);color:var(--charcoal);min
 .card-footer-info{display:flex;align-items:center;gap:5px}
 .card-date{font-size:.62rem;color:var(--warm-gray);font-family:var(--font-b);opacity:.5}
 
-/* Discreet map icon button in card footer */
+/* Map button in card footer */
 .card-map-btn{
   background:none;border:none;cursor:pointer;
-  color:var(--warm-gray);opacity:.45;
-  padding:2px 3px;border-radius:5px;
-  display:flex;align-items:center;justify-content:center;
-  transition:opacity .15s,color .15s;
+  display:inline-flex;align-items:center;gap:3px;
+  color:var(--warm-gray);opacity:.6;
+  padding:2px 4px;border-radius:6px;
+  font-family:var(--font-b);font-size:.62rem;
+  transition:opacity .15s,color .15s,background .15s;
   -webkit-tap-highlight-color:transparent;
-  flex-shrink:0;
+  flex-shrink:0;white-space:nowrap;
 }
-.card-map-btn:active{opacity:1;color:var(--burgundy)}
-@media(hover:hover){.card-map-btn:hover{opacity:1;color:var(--burgundy)}}
+.card-map-btn:active{opacity:1;color:var(--burgundy);background:rgba(139,36,57,.06)}
+@media(hover:hover){.card-map-btn:hover{opacity:1;color:var(--burgundy);background:rgba(139,36,57,.06)}}
+.card-map-label{max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
 /* 3-dot menu replaces old icon strip */
 .card-actions{display:flex;gap:0;flex-shrink:0}
-.card-menu-wrap{position:relative;display:flex;align-items:flex-start}
+.card-menu-wrap{position:relative;display:flex;align-items:flex-start;flex-shrink:0}
 .card-menu-btn{
   background:none;border:none;cursor:pointer;
   color:#c0b8af;font-size:16px;line-height:1;
-  padding:2px 2px;letter-spacing:1.5px;
+  padding:2px 4px;letter-spacing:1.5px;
   border-radius:6px;transition:color .15s,background .15s;
   font-family:inherit;
   min-width:32px;min-height:32px;
   display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;
 }
 .card-menu-btn:active,.card-menu-btn.open{color:var(--charcoal);background:var(--parchment)}
 @media(hover:hover){.card-menu-btn:hover{color:var(--warm-gray);background:var(--parchment)}}
 
 .card-menu-dropdown{
-  position:absolute;top:32px;right:0;
+  position:fixed;
   background:var(--ivory);border-radius:12px;
-  box-shadow:0 6px 28px rgba(0,0,0,.14);
-  z-index:20;min-width:130px;padding:5px 0;
+  box-shadow:0 6px 28px rgba(0,0,0,.18);
+  z-index:500;min-width:140px;padding:5px 0;
   display:flex;flex-direction:column;
-  border:1px solid rgba(0,0,0,.06);
+  border:1px solid rgba(0,0,0,.07);
   animation:menuIn .13s ease;
 }
 @keyframes menuIn{from{opacity:0;transform:scale(.93) translateY(-5px)}to{opacity:1;transform:scale(1) translateY(0)}}
 .card-menu-dropdown button{
   background:none;border:none;text-align:left;
-  padding:9px 15px;font-family:var(--font-b);font-size:.82rem;
+  padding:10px 16px;font-family:var(--font-b);font-size:.84rem;
   color:var(--charcoal);cursor:pointer;transition:background .1s;width:100%;
 }
 .card-menu-dropdown button:hover{background:var(--cream)}
@@ -820,11 +826,13 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
   .stats-inner{flex-wrap:wrap}
   .stat{flex:0 0 50%;max-width:50%;padding:4px 0}
   .stat-divider{display:none}
-  .main-content{padding:16px 10px 48px}
+  .main-content{padding:12px 8px 48px}
   .wine-grid{grid-template-columns:1fr;gap:8px}
-  .card-thumb-wrap,.card-thumb-single-wrap,.card-label-strip{width:62px;min-height:86px}
-  .card-name{font-size:.95rem}
-  .card-descriptor{font-size:.65rem}
+  .wine-card{padding:10px 8px 10px 10px;gap:10px}
+  .card-thumb-wrap,.card-thumb-single-wrap,.card-label-strip{width:58px;min-height:82px;border-radius:10px}
+  .card-name{font-size:.92rem}
+  .card-descriptor{font-size:.64rem}
+  .card-map-label{display:none}
   .form-row.two-col{grid-template-columns:1fr}
   .modal{max-width:100%;border-radius:var(--rl) var(--rl) 0 0}
   .modal-overlay{align-items:flex-end;padding:0}
@@ -3274,13 +3282,13 @@ function createCard(w) {
     favPip.textContent = '♥';
     footerInfo.appendChild(favPip);
   }
-  // Discreet map button — shows for any wine with country/region data
+  // Map button — shows for any wine with country/region data
   if (w.country || w.region || w.winery) {
     const mapBtn = document.createElement('button');
     mapBtn.className = 'card-map-btn';
     mapBtn.setAttribute('aria-label', 'Show wine origin on map');
-    mapBtn.title = 'Show origin on map';
-    mapBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="12" height="12"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>`;
+    const mapLabel = w.region || w.country || '';
+    mapBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="11" height="11"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg><span class="card-map-label">${escHtml(mapLabel)}</span>`;
     mapBtn.addEventListener('click', e => { e.stopPropagation(); openOriginMap(getWineById(w.id)); });
     footerInfo.appendChild(mapBtn);
   }
@@ -3307,7 +3315,6 @@ function createCard(w) {
   menuBtn.addEventListener('click', e => {
     e.stopPropagation();
     if (_menuOpen) { closeMenu(); return; }
-    // Close any other open menus
     document.querySelectorAll('.card-menu-btn.open').forEach(b => b.click());
     _dropdown = document.createElement('div');
     _dropdown.className = 'card-menu-dropdown';
@@ -3324,7 +3331,15 @@ function createCard(w) {
       btn.addEventListener('click', ev => { ev.stopPropagation(); closeMenu(); handler(ev); });
       _dropdown.appendChild(btn);
     });
-    menuWrap.appendChild(_dropdown);
+    // Fixed positioning so dropdown never clips off-screen edge
+    document.body.appendChild(_dropdown);
+    const rect = menuBtn.getBoundingClientRect();
+    const ddW  = 140;
+    let left   = rect.right - ddW;
+    if (left < 8) left = 8;
+    if (left + ddW > window.innerWidth - 8) left = window.innerWidth - ddW - 8;
+    _dropdown.style.top  = (rect.bottom + 4) + 'px';
+    _dropdown.style.left = left + 'px';
     menuBtn.classList.add('open');
     _menuOpen = true;
   });
