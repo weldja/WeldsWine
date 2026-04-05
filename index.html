@@ -2371,14 +2371,13 @@ function showApp() {
   });
   setTimeout(startLocationTracking, 100);
 
-  // Poll for cellar membership changes every 30s so the remaining member's
-  // view updates automatically when someone joins or leaves
+  // Poll every 30s: reload wines if cellar membership changed
   setInterval(async () => {
     if (!window._cellarId || !_currentUser) return;
-    const prevCount = window._cellarMembers.length;
+    const prev = window._cellarMembers.length;
     await _refreshCellarMembers();
-    if (window._cellarMembers.length !== prevCount) {
-      _updateCellarPill();
+    _updateCellarPill();
+    if (window._cellarMembers.length !== prev) {
       try { sessionStorage.removeItem('wwwCache_' + _currentUser.id); } catch(_) {}
       await loadWinesFromDB('wwwCache_' + _currentUser.id);
     }
@@ -5378,8 +5377,12 @@ function _updateCellarPill() {
   const label = document.getElementById('cellarPillLabel');
   if (!pill || !label) return;
   const count = window._cellarMembers.length;
-  label.textContent = count > 1 ? `${count} members` : 'Cellar';
-  pill.style.display = 'inline-flex';
+  if (count > 1) {
+    label.textContent = count + ' members';
+    pill.style.display = 'inline-flex';
+  } else {
+    pill.style.display = 'none';
+  }
 }
 
 // Join a cellar via invite token
@@ -5538,7 +5541,7 @@ async function leaveCellar() {
   showSkeletonGrid(3);
   showToast('You have left the shared cellar');
 
-  // Reset the concurrency guard so bootstrapCellar runs fresh
+  // Reset concurrency guard so bootstrapCellar runs fresh
   _bootstrapRunning = false;
   await bootstrapCellar();
   await loadWinesFromDB('wwwCache_' + _currentUser.id);
@@ -5614,7 +5617,8 @@ async function _removeMember(userId) {
     .eq('cellar_id', window._cellarId)
     .eq('user_id', userId);
   if (error) { showToast('Could not remove member'); return; }
-  // Refresh member list (now excludes removed user), then reload wines
+  // Refresh member list (now excludes removed user), then reload wines --
+  // their wines disappear automatically since query is by member user_ids
   await _refreshCellarMembers();
   _updateCellarPill();
   try { sessionStorage.removeItem('wwwCache_' + _currentUser.id); } catch(_) {}
