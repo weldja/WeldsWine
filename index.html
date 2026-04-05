@@ -5386,14 +5386,16 @@ function _updateCellarPill() {
 
 // Join a cellar via invite token
 async function joinCellarViaToken(token) {
-  if (!_sb || !_currentUser) return;
+  if (!_sb || !_currentUser) { _dbg('joinCellar: no sb/user'); return; }
+  _dbg('joinCellar: token=' + token.slice(0,8) + ' uid=' + _currentUser.id.slice(0,8));
 
   // Find the cellar with this token
-  const { data: cellar } = await _sb
+  const { data: cellar, error: cellarErr } = await _sb
     .from('cellars')
     .select('id, owner_id')
     .eq('invite_token', token)
     .maybeSingle();
+  _dbg('joinCellar: cellar=' + JSON.stringify(cellar) + ' err=' + JSON.stringify(cellarErr));
 
   if (!cellar) {
     showToast('Invite link not found or has been regenerated');
@@ -5439,11 +5441,13 @@ async function joinCellarViaToken(token) {
     }
 
     // Insert as member
+    _dbg('joinCellar: inserting membership cellar=' + cellar.id.slice(0,8));
     const { error } = await _sb.from('cellar_members').insert({
       cellar_id: cellar.id,
       user_id:   _currentUser.id,
       role:      'member'
     });
+    _dbg('joinCellar: insert error=' + JSON.stringify(error));
 
     if (error && error.code !== '23505') {
       // 23505 = unique_violation meaning already a member — not a real error
@@ -5540,8 +5544,6 @@ async function leaveCellar() {
   showSkeletonGrid(3);
   showToast('You have left the shared cellar');
 
-  // Reload the page so bootstrapCellar runs fresh and re-establishes
-  // personal cellar membership -- required for RLS to allow reading own wines.
   window.location.reload();
 }
 
@@ -6066,6 +6068,35 @@ if ('serviceWorker' in navigator) {
     });
   });
 }
+</script>
+
+<div id='_dbgPanel' style='display:none;position:fixed;bottom:0;left:0;right:0;max-height:50vh;overflow-y:auto;background:rgba(0,0,0,.9);color:#0f0;font:11px/1.5 monospace;padding:8px;z-index:99999;white-space:pre-wrap;word-break:break-all;border-top:2px solid #0f0'></div>
+<script>
+(function(){
+  var lines=[];
+  window._dbg=function(msg){
+    var t=new Date().toTimeString().slice(0,8);
+    lines.push(t+' '+msg);
+    console.log('[DBG]',msg);
+    if(lines.length>100)lines.shift();
+    var el=document.getElementById('_dbgPanel');
+    if(el&&el.style.display!=='none'){el.textContent=lines.join('\n');el.scrollTop=el.scrollHeight;}
+  };
+  var taps=0,timer;
+  document.addEventListener('click',function(e){
+    if(!e.target.closest('.logo'))return;
+    taps++;clearTimeout(timer);
+    timer=setTimeout(function(){taps=0;},2000);
+    if(taps>=5){
+      taps=0;
+      var el=document.getElementById('_dbgPanel');
+      if(!el)return;
+      var show=el.style.display==='none';
+      el.style.display=show?'block':'none';
+      if(show){el.textContent=lines.join('\n');el.scrollTop=el.scrollHeight;}
+    }
+  });
+})();
 </script>
 </body>
 </html>
