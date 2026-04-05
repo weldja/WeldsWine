@@ -2386,7 +2386,7 @@ function showApp() {
       try { sessionStorage.removeItem('wwwCache_' + _currentUser.id); } catch(_) {}
       await loadWinesFromDB('wwwCache_' + _currentUser.id);
     }
-  }, 30000);
+  }, 10000);
 
   try {
     if (!localStorage.getItem('wwwOnboardingDone')) {
@@ -5256,7 +5256,6 @@ async function _bootstrapCellarInner() {
   }
   if (inviteToken) {
     try { localStorage.removeItem('wwwPendingInvite'); } catch(_) {}
-    _dbg('bootstrap: processing invite token=' + inviteToken.slice(0,8));
     await joinCellarViaToken(inviteToken);
     window.history.replaceState({}, '', window.location.pathname);
     return;
@@ -5340,7 +5339,9 @@ async function _bootstrapCellarInner() {
   window._cellarRole = 'owner';
   await _refreshCellarMembers();
   _updateCellarPill();
-  _dbg('joinCellar: done cellarId=' + (window._cellarId||'null').slice(0,8) + ' members=' + window._cellarMembers.length);
+  // Reload wines now that membership is confirmed
+  try { sessionStorage.removeItem('wwwCache_' + _currentUser.id); } catch(_) {}
+  await loadWinesFromDB('wwwCache_' + _currentUser.id);
 }
 async function _backfillExistingWines() {
   if (!window._cellarId || !_currentUser) return;
@@ -5483,6 +5484,9 @@ async function joinCellarViaToken(token) {
 ══════════════════════════════════════════════════════════════ */
 async function openCellarSettings() {
   if (!window._cellarId) { showToast('Cellar not loaded yet — try again in a moment'); return; }
+  // Refresh member list immediately so newly joined members appear
+  await _refreshCellarMembers();
+  _updateCellarPill();
 
   // Wire close button
   const closeBtn = document.getElementById('closeCellarSettings');
