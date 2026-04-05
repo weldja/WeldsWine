@@ -5573,20 +5573,7 @@ async function _removeMember(userId) {
   if (!confirm('Remove this member from the cellar? Their wines will be removed from the shared cellar.')) return;
   if (!_sb || !window._cellarId) return;
 
-  // Detach the member's wines from the shared cellar.
-  // Try update first (preserves wine for them under their own account).
-  // Fall back to delete if RLS blocks the update.
-  const { error: wineErr } = await _sb.from('wines')
-    .update({ cellar_id: null, added_by: null })
-    .eq('added_by', userId)
-    .eq('cellar_id', window._cellarId);
-  if (wineErr) {
-    await _sb.from('wines')
-      .delete()
-      .eq('added_by', userId)
-      .eq('cellar_id', window._cellarId);
-  }
-
+  // 1. Remove membership row
   const { error } = await _sb
     .from('cellar_members')
     .delete()
@@ -5594,12 +5581,22 @@ async function _removeMember(userId) {
     .eq('user_id', userId);
   if (error) { showToast('Could not remove member'); return; }
 
-  // Drop their wines from the local array so the grid updates instantly
+  // 2. Filter their wines out locally so the grid updates immediately
   wines = wines.filter(w => w.addedBy !== userId);
-
-  showToast('Member removed');
   renderGrid();
   updateStats();
+
+  // 3. Try to move their wines off this cellar on the server.
+  // Supabase silently no-ops RLS-blocked updates so we try both fields.
+  await _sb.from('wines').update({ cellar_id: null }).eq('user_id', userId).eq('cellar_id', window._cellarId);
+  await _sb.from('wines').update({ cellar_id: null }).eq('added_by', userId).eq('cellar_id', window._cellarId);
+
+  // 4. Reload from DB to reflect true server state
+  const cacheKey = 'wwwCache_' + _currentUser.id;
+  try { sessionStorage.removeItem(cacheKey); } catch(_) {}
+  await loadWinesFromDB(cacheKey);
+
+  showToast('Member removed');
   await _renderMembersList();
   await _refreshCellarMembers();
   _updateCellarPill();
