@@ -229,6 +229,21 @@ body{font-family:var(--font-b);background:var(--cream);color:var(--charcoal);min
 .load-bar-inner{height:100%;width:0%;background:var(--gold);transition:width .4s ease;border-radius:0 2px 2px 0}
 .load-bar.active{opacity:1}
 .load-bar.done{opacity:0;transition:opacity .4s .2s}
+.cellar-loader{display:none;flex-direction:column;align-items:center;justify-content:center;padding:56px 20px;gap:14px}
+.cellar-loader.active{display:flex}
+.cellar-loader-bottle{font-size:3.2rem;display:inline-block;animation:wobble 1.1s ease-in-out infinite;filter:drop-shadow(0 6px 16px rgba(139,36,57,.2))}
+@keyframes wobble{0%{transform:rotate(-12deg)}25%{transform:rotate(0deg)}50%{transform:rotate(12deg)}75%{transform:rotate(0deg)}100%{transform:rotate(-12deg)}}
+.cellar-loader-text{font-family:var(--font-d);font-size:1rem;color:var(--burgundy);font-style:italic;animation:cellarFade 2s ease-in-out infinite}
+@keyframes cellarFade{0%,100%{opacity:.4}50%{opacity:1}}
+.cellar-loader-sub{font-family:var(--font-b);font-size:.72rem;color:var(--warm-gray);opacity:.55}
+.cellar-motto-wrap{margin-bottom:20px;background:linear-gradient(135deg,rgba(92,21,37,.05),rgba(201,163,74,.07));border:1px solid rgba(201,163,74,.22);border-radius:var(--rl);padding:14px 16px}
+.cellar-motto-label{font-family:var(--font-b);font-size:.67rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);margin-bottom:8px}
+.cellar-motto-text{font-family:var(--font-d);font-size:.98rem;font-style:italic;color:var(--burgundy-deep);line-height:1.5;cursor:pointer;border-radius:6px;padding:3px 5px;margin:-3px -5px;transition:background .15s;word-break:break-word}
+.cellar-motto-text:hover{background:rgba(92,21,37,.06)}
+.cellar-motto-text.empty{color:var(--warm-gray);opacity:.5}
+.cellar-motto-input{width:100%;font-family:var(--font-d);font-size:.98rem;font-style:italic;color:var(--burgundy-deep);border:1.5px solid rgba(201,163,74,.5);border-radius:6px;padding:5px 8px;background:rgba(255,255,255,.8);outline:none;resize:none;line-height:1.5;box-sizing:border-box}
+.cellar-motto-input:focus{border-color:var(--gold)}
+.cellar-motto-hint{font-family:var(--font-b);font-size:.67rem;color:var(--warm-gray);margin-top:5px;opacity:.55}
 .site-header{background:var(--burgundy-deep);border-bottom:none;position:sticky;top:0;z-index:200;box-shadow:0 2px 16px rgba(44,20,36,.25)}
 .header-inner{max-width:1200px;margin:0 auto;padding:0 16px;height:60px;display:flex;align-items:center;gap:10px;overflow:visible}
 .logo{display:flex;align-items:center;gap:8px;flex-shrink:1;min-width:0;overflow:hidden}
@@ -1716,6 +1731,11 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
 
 
 
+  <div class="cellar-loader" id="cellarLoader">
+    <div class="cellar-loader-bottle">🍷</div>
+    <div class="cellar-loader-text" id="cellarLoaderText">Decanting your cellar…</div>
+    <div class="cellar-loader-sub">Good things take a moment</div>
+  </div>
   <div class="wine-grid" id="wineGrid"></div>
 
   <div class="empty-state" id="emptyState" style="display:none">
@@ -2366,7 +2386,7 @@ function showApp() {
   } catch(_) {}
 
   if (hadCache) { renderGrid(); updateStats(); }
-  else { _winesLoaded = false; showSkeletonGrid(4); }
+  else { _winesLoaded = false; showCellarLoader(); }
 
   // Bootstrap cellar then load wines
   bootstrapCellar().then(() => {
@@ -2381,7 +2401,7 @@ function showApp() {
       try { sessionStorage.removeItem('wwwCache_' + _currentUser.id); } catch(_) {}
       await loadWinesFromDB('wwwCache_' + _currentUser.id);
     }
-  }, 10000);
+  }, 5000);
 
   try {
     if (!localStorage.getItem('wwwOnboardingDone')) {
@@ -4720,6 +4740,7 @@ async function loadWinesFromDB(cacheKey) {
     }));
 
     _winesLoaded = true;
+    hideCellarLoader();
     renderGrid();
     updateStats();
     hideLoadBar();
@@ -5111,6 +5132,14 @@ function updateKeyBadge() {
     </div>
     <div class="modal-body">
 
+      <!-- Cellar motto -->
+      <div class="cellar-motto-wrap">
+        <div class="cellar-motto-label">✨ Cellar Motto</div>
+        <div class="cellar-motto-text empty" id="cellarMottoDisplay" onclick="editCellarMotto()">Tap to set a cellar motto…</div>
+        <textarea class="cellar-motto-input" id="cellarMottoInput" rows="2" placeholder="e.g. In vino veritas…" style="display:none" maxlength="120"></textarea>
+        <div class="cellar-motto-hint" id="cellarMottoHint" style="display:none">Enter to save · Esc to cancel</div>
+      </div>
+
       <!-- Invite link -->
       <div style="margin-bottom:22px">
         <p style="font-family:var(--font-b);font-size:.78rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--warm-gray);margin-bottom:6px">Invite Link</p>
@@ -5261,6 +5290,7 @@ async function _bootstrapInner() {
     const pick = active.find(m => m.role === 'member') || active[0];
     window._cellarId = pick.cellar_id; window._cellarRole = pick.role;
     await _refreshCellarMembers(); _updateCellarPill();
+    setTimeout(_subscribeRealtime, 500);
     return;
   }
 
@@ -5338,6 +5368,88 @@ function _updateCellarPill() {
   else { pill.style.display = 'none'; }
 }
 
+const _cellarMsgs = ['Decanting your cellar…','Letting the wines breathe…','Checking the vintage…','Consulting the sommelier…','Polishing the glasses…','Uncorking something special…','Aerating the selection…','Bribing the wine fairies…'];
+function showCellarLoader() {
+  const loader = document.getElementById('cellarLoader');
+  const text   = document.getElementById('cellarLoaderText');
+  const grid   = document.getElementById('wineGrid');
+  const empty  = document.getElementById('emptyState');
+  if (text) text.textContent = _cellarMsgs[Math.floor(Math.random() * _cellarMsgs.length)];
+  if (loader) loader.classList.add('active');
+  if (grid)  grid.style.display  = 'none';
+  if (empty) empty.style.display = 'none';
+  _winesLoaded = false;
+}
+function hideCellarLoader() {
+  const loader = document.getElementById('cellarLoader');
+  if (loader) loader.classList.remove('active');
+}
+
+async function _loadCellarMotto() {
+  if (!_sb || !window._cellarId) return;
+  const d = document.getElementById('cellarMottoDisplay');
+  if (!d) return;
+  try {
+    const { data } = await _sb.from('cellars').select('motto').eq('id', window._cellarId).maybeSingle();
+    const m = data?.motto?.trim();
+    if (m) { d.textContent = '“' + m + '”'; d.classList.remove('empty'); }
+    else   { d.textContent = 'Tap to set a cellar motto…'; d.classList.add('empty'); }
+  } catch(e) { console.warn('_loadCellarMotto:', e); }
+}
+
+function editCellarMotto() {
+  const d = document.getElementById('cellarMottoDisplay');
+  const inp = document.getElementById('cellarMottoInput');
+  const hint = document.getElementById('cellarMottoHint');
+  if (!d || !inp) return;
+  const cur = d.classList.contains('empty') ? '' : d.textContent.replace(/^“|”$/g, '');
+  inp.value = cur;
+  d.style.display = 'none'; inp.style.display = 'block';
+  if (hint) hint.style.display = 'block';
+  inp.focus();
+  let _saving = false;
+  const save = async () => { if (_saving) return; _saving = true; await saveCellarMotto(inp.value.trim()); };
+  inp.onkeydown = async (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); await save(); } if (e.key === 'Escape') { _cancelMotto(); } };
+  inp.onblur = save;
+}
+function _cancelMotto() {
+  const d = document.getElementById('cellarMottoDisplay');
+  const inp = document.getElementById('cellarMottoInput');
+  const hint = document.getElementById('cellarMottoHint');
+  if (inp) { inp.style.display = 'none'; inp.onblur = null; inp.onkeydown = null; }
+  if (d) d.style.display = 'block';
+  if (hint) hint.style.display = 'none';
+}
+async function saveCellarMotto(motto) {
+  _cancelMotto();
+  if (!_sb || !window._cellarId) return;
+  try {
+    await _sb.from('cellars').update({ motto }).eq('id', window._cellarId);
+    await _loadCellarMotto();
+    if (motto) showToast('✓ Motto saved');
+  } catch(e) { console.warn('saveCellarMotto:', e); }
+}
+
+let _realtimeChannel = null;
+function _subscribeRealtime() {
+  if (!_sb || !window._cellarId || !_currentUser) return;
+  if (_realtimeChannel) { try { _sb.removeChannel(_realtimeChannel); } catch(_) {} _realtimeChannel = null; }
+  _realtimeChannel = _sb.channel('cellar:' + window._cellarId)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'cellar_members', filter: 'cellar_id=eq.' + window._cellarId },
+      async () => {
+        const prev = window._cellarMembers.length;
+        await _refreshCellarMembers(); _updateCellarPill();
+        if (window._cellarMembers.length !== prev) {
+          try { sessionStorage.removeItem('wwwCache_' + _currentUser.id); } catch(_) {}
+          await loadWinesFromDB('wwwCache_' + _currentUser.id);
+        }
+      })
+    .subscribe();
+}
+function _unsubscribeRealtime() {
+  if (_realtimeChannel && _sb) { try { _sb.removeChannel(_realtimeChannel); } catch(_) {} _realtimeChannel = null; }
+}
+
 // Join a cellar via invite token
 async function joinCellarViaToken(token) {
   if (!_sb || !_currentUser) return;
@@ -5399,6 +5511,7 @@ async function openCellarSettings() {
   const leaveSection = document.getElementById('leaveCellarSection');
   if (leaveSection) leaveSection.style.display = window._cellarMembers.length > 1 ? 'block' : 'none';
 
+  await _loadCellarMotto();
   await _loadInviteLink();
   await _renderMembersList();
 
@@ -5433,6 +5546,7 @@ async function leaveCellar() {
     } catch(_) {}
   }
 
+  _unsubscribeRealtime();
   closeCellarSettings();
   showToast('You have left the shared cellar');
   window.location.reload();
