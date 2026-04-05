@@ -5295,14 +5295,25 @@ async function bootstrapCellar() {
   _updateCellarPill();
 }
 
-// Backfill any existing wines (cellar_id = null) to this cellar
-async function _backfillExistingWines() {
+// Backfill any existing wines to this cellar.
+// Migrates wines with cellar_id = null AND wines from the user's previous
+// personal cellar (oldCellarId) so they appear after joining a shared cellar.
+async function _backfillExistingWines(oldCellarId) {
   if (!window._cellarId || !_currentUser) return;
   try {
+    // Always backfill null-cellar wines
     await _sb.from('wines')
       .update({ cellar_id: window._cellarId, added_by: _currentUser.id })
       .eq('user_id', _currentUser.id)
       .is('cellar_id', null);
+
+    // Also migrate wines from the user's old personal cellar if we have one
+    if (oldCellarId && oldCellarId !== window._cellarId) {
+      await _sb.from('wines')
+        .update({ cellar_id: window._cellarId, added_by: _currentUser.id })
+        .eq('user_id', _currentUser.id)
+        .eq('cellar_id', oldCellarId);
+    }
   } catch(e) {
     console.warn('Backfill wines:', e);
   }
@@ -5365,6 +5376,9 @@ async function joinCellarViaToken(token) {
     return;
   }
 
+  // Remember the user's current cellar so we can migrate their wines after switching
+  const oldCellarId = window._cellarId;
+
   // Check if already a member
   const { data: existing } = await _sb
     .from('cellar_members')
@@ -5420,7 +5434,7 @@ async function joinCellarViaToken(token) {
     showToast('✓ You\'ve joined the shared cellar!');
   }
 
-  await _backfillExistingWines();
+  await _backfillExistingWines(oldCellarId);
   await _refreshCellarMembers();
   _updateCellarPill();
 }
