@@ -5210,57 +5210,64 @@ window._cellarMembers = []; // [{user_id, role, email}]
 let _bootstrapRunning = false;
 async function bootstrapCellar() {
   if (!_sb || !_currentUser) return;
-  if (_bootstrapRunning) { _dbg('bootstrap skipped: already running'); return; }
+  if (_bootstrapRunning) { console.log('[bootstrap] skipped: already running'); return; }
   _bootstrapRunning = true;
   try { await _bootstrapCellarInner(); } finally { _bootstrapRunning = false; }
 }
 
 async function _bootstrapCellarInner() {
-  _dbg('bootstrap start uid=' + _currentUser.id.slice(0,8));
-
+  // Step 0: ensure profile row
   try {
     const displayName = (_currentUser.email || 'Member').split('@')[0];
     await _sb.from('profiles').upsert(
       { id: _currentUser.id, display_name: displayName },
       { onConflict: 'id', ignoreDuplicates: true }
     );
-  } catch(e) { _dbg('profile upsert err: ' + e); }
+  } catch(e) { console.warn('profile upsert:', e); }
 
+  // Step 1: invite token in URL
   const params = new URLSearchParams(window.location.search);
   const inviteToken = params.get('invite');
   if (inviteToken) {
-    _dbg('invite token in URL, joining');
     await joinCellarViaToken(inviteToken);
     window.history.replaceState({}, '', window.location.pathname);
     return;
   }
 
+  // Step 2: fetch memberships from DB -- this is ground truth
   const { data: memberships, error: memberErr } = await _sb
     .from('cellar_members')
     .select('cellar_id, role')
     .eq('user_id', _currentUser.id)
-    .order('role', { ascending: true });
-
-  _dbg('DB memberships: ' + JSON.stringify(memberships) + ' err:' + (memberErr ? memberErr.message : 'none'));
+    .order('role', { ascending: true }); // 'member' < 'owner'
 
   if (memberErr) {
-    _dbg('ABORT: query error, not creating cellar');
+    console.warn('bootstrapCellar: query error, aborting', memberErr);
     return;
   }
 
+  // Clean up any stale leftCellars entries for cellars where the user is
+  // still an active member -- these can accumulate from old buggy code paths
+  // and would cause the shared cellar to be incorrectly filtered out.
   let leftCellars = [];
   try { leftCellars = JSON.parse(localStorage.getItem('wwwLeftCellars_' + _currentUser.id) || '[]'); } catch(_) {}
-  _dbg('leftCellars: ' + JSON.stringify(leftCellars));
+  const activeCellarIds = new Set((memberships || []).map(m => m.cellar_id));
+  const cleanedLeft = leftCellars.filter(id => !activeCellarIds.has(id));
+  if (cleanedLeft.length !== leftCellars.length) {
+    try { localStorage.setItem('wwwLeftCellars_' + _currentUser.id, JSON.stringify(cleanedLeft)); } catch(_) {}
+    console.log('bootstrapCellar: cleaned stale leftCellars', leftCellars, '->', cleanedLeft);
+  }
+  leftCellars = cleanedLeft;
 
-  // Never filter out role='member' rows -- that kicks invitees out on refresh
+  // leftCellars now only blocks re-joining an owner cellar after deliberate leave.
+  // As a belt-and-braces safety, also never filter role='member' rows.
   const activeMemberships = (memberships || []).filter(m =>
     m.role === 'member' || !leftCellars.includes(m.cellar_id)
   );
-  _dbg('active: ' + JSON.stringify(activeMemberships));
 
   if (activeMemberships.length > 0) {
+    // Prefer shared cellar ('member') over personal ('owner')
     const preferred = activeMemberships.find(m => m.role === 'member') || activeMemberships[0];
-    _dbg('using membership role=' + preferred.role + ' cellar=' + preferred.cellar_id.slice(0,8));
     window._cellarId   = preferred.cellar_id;
     window._cellarRole = preferred.role;
     await _refreshCellarMembers();
@@ -5268,13 +5275,12 @@ async function _bootstrapCellarInner() {
     return;
   }
 
-  _dbg('no active membership, checking for existing owned cellar');
+  // Step 3: no active membership. Check for existing owned cellar before creating.
   const { data: existingOwned } = await _sb
     .from('cellars').select('id').eq('owner_id', _currentUser.id).limit(1).maybeSingle();
-  _dbg('existingOwned: ' + JSON.stringify(existingOwned));
 
   if (existingOwned) {
-    _dbg('restoring member row for existing cellar');
+    // Restore missing member row
     await _sb.from('cellar_members').upsert(
       { cellar_id: existingOwned.id, user_id: _currentUser.id, role: 'owner' },
       { onConflict: 'cellar_id,user_id', ignoreDuplicates: true }
@@ -5286,15 +5292,15 @@ async function _bootstrapCellarInner() {
     return;
   }
 
-  _dbg('creating new personal cellar');
+  // Truly new user: create cellar + owner member row
   const { error: cellarErr } = await _sb
     .from('cellars').insert({ owner_id: _currentUser.id, name: 'My Cellar' });
-  if (cellarErr) { _dbg('ERROR creating cellar: ' + cellarErr.message); return; }
+  if (cellarErr) { console.error('Failed to create cellar:', cellarErr); return; }
 
   const { data: newCellar } = await _sb
     .from('cellars').select('id').eq('owner_id', _currentUser.id)
     .order('created_at', { ascending: false }).limit(1).maybeSingle();
-  if (!newCellar) { _dbg('ERROR reading new cellar'); return; }
+  if (!newCellar) { console.error('Failed to read new cellar'); return; }
 
   await _sb.from('cellar_members').insert(
     { cellar_id: newCellar.id, user_id: _currentUser.id, role: 'owner' }
@@ -5303,7 +5309,6 @@ async function _bootstrapCellarInner() {
   window._cellarRole = 'owner';
   await _refreshCellarMembers();
   _updateCellarPill();
-  _dbg('new cellar created: ' + newCellar.id.slice(0,8));
 }
 async function _backfillExistingWines() {
   if (!window._cellarId || !_currentUser) return;
@@ -5429,6 +5434,17 @@ async function joinCellarViaToken(token) {
     showToast('✓ You\'ve joined the shared cellar!');
   }
 
+  // Remove this cellar from leftCellars so bootstrap never filters it out.
+  try {
+    const lk = 'wwwLeftCellars_' + _currentUser.id;
+    const prev = JSON.parse(localStorage.getItem(lk) || '[]');
+    const cleaned = prev.filter(id => id !== window._cellarId);
+    if (cleaned.length !== prev.length) {
+      localStorage.setItem(lk, JSON.stringify(cleaned));
+      _dbg('cleared shared cellar from leftCellars');
+    }
+  } catch(_) {}
+
   await _refreshCellarMembers();
   _updateCellarPill();
 }
@@ -5481,14 +5497,15 @@ async function leaveCellar() {
 
   if (error) { showToast('Could not leave cellar — try again'); return; }
 
-  // Only write leftCellars for owners. Writing it for invitees (role='member')
-  // causes bootstrapCellar to filter out their membership on every hard refresh.
+  // Only write leftCellars for owners. Invitees (role='member') must NOT have
+  // their shared cellar written here -- it causes bootstrapCellar to filter
+  // them out on every hard refresh.
   if (window._cellarRole === 'owner') {
     try {
       const leftKey = 'wwwLeftCellars_' + _currentUser.id;
       const prev = JSON.parse(localStorage.getItem(leftKey) || '[]');
       if (!prev.includes(leftCellarId)) prev.push(leftCellarId);
-      localStorage.setItem(leftKey, JSON.stringify(prev));
+      localStorage.setItem(leftKey, JSON.stringify(leftCellarId));
     } catch(_) {}
   }
 
@@ -6053,7 +6070,6 @@ if ('serviceWorker' in navigator) {
     var el = document.getElementById('_dbgPanel');
     if (el) { el.textContent = _dbgLines.join('\n'); el.scrollTop = el.scrollHeight; }
   };
-  // Shake phone or tap 5 times on logo to show/hide debug panel
   var _tapCount = 0, _tapTimer;
   document.addEventListener('click', function(e) {
     if (e.target.closest('.logo')) {
