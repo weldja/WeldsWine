@@ -4654,25 +4654,30 @@ async function loadWinesFromDB(cacheKey) {
   try {
     let metaQuery, photoQuery;
 
-    if (window._cellarId) {
-      // Cellar mode — load all wines for this cellar
+    // Always re-fetch members so the query reflects current cellar state.
+    if (window._cellarId) await _refreshCellarMembers();
+    const memberIds = (window._cellarMembers || []).map(m => m.user_id);
+
+    if (window._cellarId && memberIds.length > 0) {
+      // Cellar mode: fetch wines owned by any current member.
+      // Querying by user_id means wines never need to move between cellars.
+      const idFilter = memberIds.map(id => `user_id.eq.${id}`).join(',');
       metaQuery = _sb.from('wines')
-        .select('id,name,winery,vintage,country,region,grape,style,price,purchased_from,date_tasted,notes,rating,is_favourite,buy_again,loc_lat,loc_lng,loc_label,created_at,shared_by,added_by,cellar_id')
-        .eq('cellar_id', window._cellarId)
+        .select('id,name,winery,vintage,country,region,grape,style,price,purchased_from,date_tasted,notes,rating,is_favourite,buy_again,loc_lat,loc_lng,loc_label,created_at,shared_by,added_by,cellar_id,user_id')
+        .or(idFilter)
         .order('created_at', { ascending: false });
       photoQuery = _sb.from('wines')
         .select('id,photo_front,photo_back')
-        .eq('cellar_id', window._cellarId);
+        .or(idFilter);
     } else {
-      // No cellar — load wines the user owns (user_id) OR personally added (added_by),
-      // covering wines they added while in a cellar they've since left.
+      // Solo mode: just this user's wines
       metaQuery = _sb.from('wines')
-        .select('id,name,winery,vintage,country,region,grape,style,price,purchased_from,date_tasted,notes,rating,is_favourite,buy_again,loc_lat,loc_lng,loc_label,created_at,shared_by,added_by,cellar_id')
-        .or(`user_id.eq.${user.id},added_by.eq.${user.id}`)
+        .select('id,name,winery,vintage,country,region,grape,style,price,purchased_from,date_tasted,notes,rating,is_favourite,buy_again,loc_lat,loc_lng,loc_label,created_at,shared_by,added_by,cellar_id,user_id')
+        .eq('user_id', user.id)
         .order('created_at', { ascending: false });
       photoQuery = _sb.from('wines')
         .select('id,photo_front,photo_back')
-        .or(`user_id.eq.${user.id},added_by.eq.${user.id}`);
+        .eq('user_id', user.id);
     }
 
     const [metaResult, photoResult] = await Promise.all([metaQuery, photoQuery]);
@@ -4697,7 +4702,8 @@ async function loadWinesFromDB(cacheKey) {
       notes:        row.notes,
       rating:       row.rating,
       sharedBy:     row.shared_by || null,
-      addedBy:      row.added_by  || null,
+      addedBy:      row.added_by  || row.user_id || null,
+      userId:       row.user_id   || null,
       isFavourite:  row.is_favourite || false,
       buyAgain:     row.buy_again    || false,
       photoFront:   photoMap[row.id]?.photo_front || null,
@@ -5205,10 +5211,17 @@ window._cellarId   = null;  // uuid of the active cellar
 window._cellarRole = null;  // 'owner' | 'member'
 window._cellarMembers = []; // [{user_id, role, email}]
 
+let _bootstrapRunning = false;
 async function bootstrapCellar() {
   if (!_sb || !_currentUser) return;
+  // Prevent concurrent runs (swipe-refresh can fire onAuthStateChange twice)
+  if (_bootstrapRunning) return;
+  _bootstrapRunning = true;
+  try { await _bootstrapCellarInner(); } finally { _bootstrapRunning = false; }
+}
 
-  // ── Step 0: ensure this user has a profile row ────────────
+async function _bootstrapCellarInner() {
+  // Step 0: ensure profile row
   try {
     const displayName = (_currentUser.email || 'Member').split('@')[0];
     await _sb.from('profiles').upsert(
@@ -5217,85 +5230,86 @@ async function bootstrapCellar() {
     );
   } catch(e) { console.warn('profile upsert:', e); }
 
-  // ── Step 1: check for invite token in URL ──────────────────
+  // Step 1: invite token in URL takes priority
   const params = new URLSearchParams(window.location.search);
   const inviteToken = params.get('invite');
   if (inviteToken) {
     await joinCellarViaToken(inviteToken);
-    // Clean token from URL
     window.history.replaceState({}, '', window.location.pathname);
     return;
   }
 
-  // ── Step 2: look up existing membership ───────────────────
-  // Fetch all memberships — prefer 'member' role (joined someone else's cellar)
-  // over 'owner' (own cellar), so shared cellars take priority.
-  const { data: memberships } = await _sb
+  // Step 2: look up all memberships from DB -- this is the ground truth.
+  const { data: memberships, error: memberErr } = await _sb
     .from('cellar_members')
     .select('cellar_id, role')
     .eq('user_id', _currentUser.id)
-    .order('role', { ascending: true }); // 'member' sorts before 'owner'
+    .order('role', { ascending: true }); // 'member' < 'owner'
 
-  // Filter out any cellars the user has explicitly left
+  // If the DB query itself failed, ABORT -- never create a cellar due to a transient error.
+  // This is the primary guard against swipe-refresh kicking invitees out.
+  if (memberErr) {
+    console.warn('bootstrapCellar: membership query error, aborting', memberErr);
+    return;
+  }
+
+  // leftCellars tracks cellars the user deliberately left as OWNER.
+  // It must NEVER filter out role='member' rows -- that would kick invitees
+  // out of their shared cellar on every hard refresh.
   let leftCellars = [];
-  try {
-    leftCellars = JSON.parse(localStorage.getItem('wwwLeftCellars_' + _currentUser.id) || '[]');
-  } catch(_) {}
+  try { leftCellars = JSON.parse(localStorage.getItem('wwwLeftCellars_' + _currentUser.id) || '[]'); } catch(_) {}
 
-  const activeMemberships = (memberships || []).filter(m => !leftCellars.includes(m.cellar_id));
+  const activeMemberships = (memberships || []).filter(m =>
+    m.role === 'member' || !leftCellars.includes(m.cellar_id)
+  );
 
   if (activeMemberships.length > 0) {
-    // Pick 'member' row first if it exists, otherwise fall back to 'owner'
+    // Prefer shared cellar ('member') over personal ('owner')
     const preferred = activeMemberships.find(m => m.role === 'member') || activeMemberships[0];
     window._cellarId   = preferred.cellar_id;
     window._cellarRole = preferred.role;
-    await _backfillExistingWines();
     await _refreshCellarMembers();
     _updateCellarPill();
     return;
   }
 
-  // ── Step 3: no membership — create a new cellar ───────────
-  // Insert WITHOUT .select() chained — the SELECT RLS policy (is_cellar_member)
-  // would immediately fail because the cellar_members row doesn't exist yet.
+  // Step 3: no active membership found.
+  // Before creating a new cellar, check the user already owns one.
+  // This handles the case where the member row was lost but the cellar still exists.
+  const { data: existingOwned } = await _sb
+    .from('cellars').select('id').eq('owner_id', _currentUser.id).limit(1).maybeSingle();
+
+  if (existingOwned) {
+    // Restore missing member row
+    await _sb.from('cellar_members').upsert(
+      { cellar_id: existingOwned.id, user_id: _currentUser.id, role: 'owner' },
+      { onConflict: 'cellar_id,user_id', ignoreDuplicates: true }
+    );
+    window._cellarId   = existingOwned.id;
+    window._cellarRole = 'owner';
+    await _refreshCellarMembers();
+    _updateCellarPill();
+    return;
+  }
+
+  // Truly new user: create cellar + owner member row
   const { error: cellarErr } = await _sb
-    .from('cellars')
-    .insert({ owner_id: _currentUser.id, name: 'My Cellar' });
+    .from('cellars').insert({ owner_id: _currentUser.id, name: 'My Cellar' });
+  if (cellarErr) { console.error('Failed to create cellar:', cellarErr); return; }
 
-  if (cellarErr) {
-    console.error('Failed to create cellar:', cellarErr);
-    return;
-  }
-
-  // Read back by owner_id (member row doesn't exist yet, but owner_id is known)
   const { data: newCellar } = await _sb
-    .from('cellars')
-    .select('id, invite_token')
-    .eq('owner_id', _currentUser.id)
-    .order('created_at', { ascending: false })
-    .limit(1)
-    .maybeSingle();
+    .from('cellars').select('id').eq('owner_id', _currentUser.id)
+    .order('created_at', { ascending: false }).limit(1).maybeSingle();
+  if (!newCellar) { console.error('Failed to read new cellar'); return; }
 
-  if (!newCellar) {
-    console.error('Failed to read newly created cellar');
-    return;
-  }
-
-  // Insert owner as member — now is_cellar_member() will work for future reads
-  await _sb.from('cellar_members').insert({
-    cellar_id: newCellar.id,
-    user_id:   _currentUser.id,
-    role:      'owner'
-  });
-
+  await _sb.from('cellar_members').insert(
+    { cellar_id: newCellar.id, user_id: _currentUser.id, role: 'owner' }
+  );
   window._cellarId   = newCellar.id;
   window._cellarRole = 'owner';
-  await _backfillExistingWines();
   await _refreshCellarMembers();
   _updateCellarPill();
 }
-
-// Backfill any existing wines (cellar_id = null) to this cellar
 async function _backfillExistingWines() {
   if (!window._cellarId || !_currentUser) return;
   try {
@@ -5420,7 +5434,6 @@ async function joinCellarViaToken(token) {
     showToast('✓ You\'ve joined the shared cellar!');
   }
 
-  await _backfillExistingWines();
   await _refreshCellarMembers();
   _updateCellarPill();
 }
@@ -5439,10 +5452,9 @@ async function openCellarSettings() {
   const ownerControls = document.getElementById('cellarOwnerControls');
   if (ownerControls) ownerControls.style.display = window._cellarRole === 'owner' ? 'block' : 'none';
 
-  // Show leave button for any member of a shared cellar (owner or invitee)
+  // Show leave button whenever there is more than one cellar member
   const leaveSection = document.getElementById('leaveCellarSection');
-  const isShared = window._cellarMembers.length > 1;
-  if (leaveSection) leaveSection.style.display = isShared ? 'block' : 'none';
+  if (leaveSection) leaveSection.style.display = window._cellarMembers.length > 1 ? 'block' : 'none';
 
   // Load invite link
   await _loadInviteLink();
@@ -5461,11 +5473,7 @@ function closeCellarSettings() {
 }
 
 async function leaveCellar() {
-  const isOwner = window._cellarRole === 'owner';
-  const msg = isOwner
-    ? 'Leave this shared cellar?\n\nAs the originator, leaving will dissolve the shared cellar for all members. Your wines will return to your personal journal.'
-    : 'Leave this shared cellar?\n\nYour wines will return to your personal journal. You will no longer see other members\' wines.';
-  if (!confirm(msg)) return;
+  if (!confirm('Leave this shared cellar?\n\nWines you added will still appear in your personal journal. Wines added by other members will no longer be visible to you.')) return;
   if (!_sb || !_currentUser || !window._cellarId) return;
 
   const leftCellarId = window._cellarId;
@@ -5478,10 +5486,10 @@ async function leaveCellar() {
 
   if (error) { showToast('Could not leave cellar — try again'); return; }
 
-  // Only add to leftCellars for owner rows -- never for member rows.
-  // This prevents bootstrapCellar from re-creating a personal cellar and
-  // accidentally blocking a future re-join via invite.
-  if (isOwner) {
+  // Only write leftCellars for owner rows -- not for invitees (role='member').
+  // Writing it for members would block bootstrapCellar from recognising their
+  // membership on the next hard refresh.
+  if (window._cellarRole === 'owner') {
     try {
       const leftKey = 'wwwLeftCellars_' + _currentUser.id;
       const prev = JSON.parse(localStorage.getItem(leftKey) || '[]');
@@ -5490,22 +5498,31 @@ async function leaveCellar() {
     } catch(_) {}
   }
 
+  // Reset cellar state
   window._cellarId      = null;
   window._cellarRole    = null;
   window._cellarMembers = [];
 
   closeCellarSettings();
+
   const pill = document.getElementById('cellarPill');
   if (pill) pill.style.display = 'none';
-  try { sessionStorage.removeItem('wwwCache_' + _currentUser.id); } catch(_) {}
+
+  // Clear session cache
+  try {
+    const cacheKey = 'wwwCache_' + _currentUser.id;
+    sessionStorage.removeItem(cacheKey);
+  } catch(_) {}
 
   wines = [];
   _winesLoaded = false;
   showSkeletonGrid(3);
   showToast('You have left the shared cellar');
 
+  // Re-bootstrap so user gets their own personal cellar, then load only their wines
   await bootstrapCellar();
-  await loadWinesFromDB('wwwCache_' + _currentUser.id);
+  const cacheKey = 'wwwCache_' + _currentUser.id;
+  await loadWinesFromDB(cacheKey);
 }
 
 async function _loadInviteLink() {
@@ -5570,7 +5587,7 @@ async function _renderMembersList() {
 }
 
 async function _removeMember(userId) {
-  if (!confirm('Remove this member from the cellar?')) return;
+  if (!confirm('Remove this member? Their wines will no longer be visible to the cellar.')) return;
   if (!_sb || !window._cellarId) return;
   const { error } = await _sb
     .from('cellar_members')
@@ -5578,10 +5595,13 @@ async function _removeMember(userId) {
     .eq('cellar_id', window._cellarId)
     .eq('user_id', userId);
   if (error) { showToast('Could not remove member'); return; }
-  showToast('Member removed');
-  await _renderMembersList();
+  // Refresh member list (now excludes removed user), then reload wines
   await _refreshCellarMembers();
   _updateCellarPill();
+  try { sessionStorage.removeItem('wwwCache_' + _currentUser.id); } catch(_) {}
+  await loadWinesFromDB('wwwCache_' + _currentUser.id);
+  showToast('Member removed');
+  await _renderMembersList();
 }
 
 function copyInviteLink() {
