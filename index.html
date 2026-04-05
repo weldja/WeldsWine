@@ -1293,7 +1293,9 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
 
 /* ── Added-by badge on cards ─────────────────────────────── */
 .card-added-by{display:inline-flex;align-items:center;gap:4px;font-family:var(--font-b);font-size:.65rem;color:var(--warm-gray);margin-top:4px;opacity:.75}
+.card-added-by--own{opacity:.45}
 .card-added-by-dot{width:14px;height:14px;border-radius:50%;background:var(--burgundy);color:#fff;font-size:.55rem;font-weight:700;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0}
+.card-added-by--own .card-added-by-dot{background:var(--warm-gray)}
 
 /* ── Comments panel (inside detail modal) ────────────────── */
 .comments-section{margin-top:28px;padding-top:22px;border-top:1px solid var(--light-gray)}
@@ -3273,14 +3275,15 @@ function createCard(w) {
     body.appendChild(tagsWrap);
   }
 
-  // Added-by badge (shared cellars only)
-  if (window._cellarId && window._cellarMembers.length && w.addedBy && w.addedBy !== _currentUser?.id) {
-    const member   = window._cellarMembers.find(m => m.user_id === w.addedBy);
-    const name     = member?.display_name || 'Member';
-    const initials = name.slice(0,2).toUpperCase();
+  // Added-by badge (shared cellars only — all wines, including your own)
+  if (window._cellarId && window._cellarMembers.length > 1) {
+    const isOwn    = w.addedBy === _currentUser?.id;
+    const member   = !isOwn && w.addedBy ? window._cellarMembers.find(m => m.user_id === w.addedBy) : null;
+    const name     = isOwn ? 'You' : (member?.display_name || 'Member');
+    const initials = isOwn ? '✓' : name.slice(0,2).toUpperCase();
     const ab = document.createElement('div');
-    ab.className = 'card-added-by';
-    ab.innerHTML = `<span class="card-added-by-dot">${escHtml(initials)}</span>${escHtml(name)}`;
+    ab.className = 'card-added-by' + (isOwn ? ' card-added-by--own' : '');
+    ab.innerHTML = `<span class="card-added-by-dot">${escHtml(initials)}</span>Added by ${escHtml(name)}`;
     body.appendChild(ab);
   }
 
@@ -5460,17 +5463,10 @@ function closeCellarSettings() {
 }
 
 async function leaveCellar() {
-  if (!confirm('Leave this shared cellar?\n\nWines you added will be removed from the shared cellar and returned to your personal journal. You will no longer see wines added by other members.')) return;
+  if (!confirm('Leave this shared cellar?\n\nWines you added will still appear in your personal journal. Wines added by other members will no longer be visible to you.')) return;
   if (!_sb || !_currentUser || !window._cellarId) return;
 
   const leftCellarId = window._cellarId;
-
-  // Detach the leaving user's wines from the shared cellar BEFORE removing membership,
-  // so remaining members no longer see them.
-  await _sb.from('wines')
-    .update({ cellar_id: null })
-    .eq('user_id', _currentUser.id)
-    .eq('cellar_id', leftCellarId);
 
   const { error } = await _sb
     .from('cellar_members')
