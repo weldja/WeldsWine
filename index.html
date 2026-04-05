@@ -5295,18 +5295,10 @@ async function bootstrapCellar() {
   _updateCellarPill();
 }
 
-// Backfill ALL of the current user's wines into the active cellar.
-// Migrates wines regardless of their previous cellar_id so that joining
-// a shared cellar brings all pre-existing wines with you.
+// Backfill any existing wines (cellar_id = null) to this cellar
 async function _backfillExistingWines() {
   if (!window._cellarId || !_currentUser) return;
   try {
-    // Migrate wines already assigned to a different cellar
-    await _sb.from('wines')
-      .update({ cellar_id: window._cellarId, added_by: _currentUser.id })
-      .eq('user_id', _currentUser.id)
-      .neq('cellar_id', window._cellarId);
-    // Also catch wines with no cellar yet
     await _sb.from('wines')
       .update({ cellar_id: window._cellarId, added_by: _currentUser.id })
       .eq('user_id', _currentUser.id)
@@ -5468,10 +5460,17 @@ function closeCellarSettings() {
 }
 
 async function leaveCellar() {
-  if (!confirm('Leave this shared cellar?\n\nWines you added will still appear in your personal journal. Wines added by other members will no longer be visible to you.')) return;
+  if (!confirm('Leave this shared cellar?\n\nWines you added will be removed from the shared cellar and returned to your personal journal. You will no longer see wines added by other members.')) return;
   if (!_sb || !_currentUser || !window._cellarId) return;
 
   const leftCellarId = window._cellarId;
+
+  // Detach the leaving user's wines from the shared cellar BEFORE removing membership,
+  // so remaining members no longer see them.
+  await _sb.from('wines')
+    .update({ cellar_id: null })
+    .eq('user_id', _currentUser.id)
+    .eq('cellar_id', leftCellarId);
 
   const { error } = await _sb
     .from('cellar_members')
