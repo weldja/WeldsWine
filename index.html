@@ -5291,11 +5291,9 @@ async function _bootstrapCellarInner() {
     return;
   }
 
-  // Step 3: no active membership. Find any cellar owned by this user
-  // that they haven't explicitly left.
+  // Step 3: no active membership. Find owned cellar not in leftCellars.
   const { data: ownedCellars } = await _sb
     .from('cellars').select('id').eq('owner_id', _currentUser.id);
-
   const existingOwned = (ownedCellars || []).find(c => !cleanedLeft.includes(c.id));
 
   if (existingOwned) {
@@ -5542,10 +5540,9 @@ async function leaveCellar() {
   showSkeletonGrid(3);
   showToast('You have left the shared cellar');
 
-  // Skip bootstrapCellar to avoid RLS issues with the old cellar.
-  // _cellarId is null so loadWinesFromDB will fetch only this user's own wines.
-  _bootstrapRunning = false;
-  await loadWinesFromDB('wwwCache_' + _currentUser.id);
+  // Reload the page so bootstrapCellar runs fresh and re-establishes
+  // personal cellar membership -- required for RLS to allow reading own wines.
+  window.location.reload();
 }
 
 async function _loadInviteLink() {
