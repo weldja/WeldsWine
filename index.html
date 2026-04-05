@@ -5255,6 +5255,14 @@ async function bootstrapCellar() {
     return;
   }
 
+  // Guard: if the query returned null (network/RLS failure) rather than an empty
+  // array, do not create a new cellar -- that would silently kick the user out
+  // of an existing shared cellar on hard refresh.
+  if (memberships === null) {
+    console.warn('bootstrapCellar: cellar_members query returned null, aborting cellar creation');
+    return;
+  }
+
   // ── Step 3: no membership — create a new cellar ───────────
   // Insert WITHOUT .select() chained — the SELECT RLS policy (is_cellar_member)
   // would immediately fail because the cellar_members row doesn't exist yet.
@@ -5295,10 +5303,17 @@ async function bootstrapCellar() {
   _updateCellarPill();
 }
 
-// Backfill any existing wines (cellar_id = null) to this cellar
+// Backfill ALL of this user's wines into the active cellar.
+// Covers wines with cellar_id = null AND wines still on a previous cellar.
 async function _backfillExistingWines() {
   if (!window._cellarId || !_currentUser) return;
   try {
+    // Wines already assigned to a different cellar (e.g. personal cellar before joining)
+    await _sb.from('wines')
+      .update({ cellar_id: window._cellarId, added_by: _currentUser.id })
+      .eq('user_id', _currentUser.id)
+      .neq('cellar_id', window._cellarId);
+    // Wines with no cellar yet
     await _sb.from('wines')
       .update({ cellar_id: window._cellarId, added_by: _currentUser.id })
       .eq('user_id', _currentUser.id)
@@ -5570,32 +5585,14 @@ async function _renderMembersList() {
 }
 
 async function _removeMember(userId) {
-  if (!confirm('Remove this member from the cellar? Their wines will be removed from the shared cellar.')) return;
+  if (!confirm('Remove this member from the cellar?')) return;
   if (!_sb || !window._cellarId) return;
-
-  // 1. Remove membership row
   const { error } = await _sb
     .from('cellar_members')
     .delete()
     .eq('cellar_id', window._cellarId)
     .eq('user_id', userId);
   if (error) { showToast('Could not remove member'); return; }
-
-  // 2. Filter their wines out locally so the grid updates immediately
-  wines = wines.filter(w => w.addedBy !== userId);
-  renderGrid();
-  updateStats();
-
-  // 3. Try to move their wines off this cellar on the server.
-  // Supabase silently no-ops RLS-blocked updates so we try both fields.
-  await _sb.from('wines').update({ cellar_id: null }).eq('user_id', userId).eq('cellar_id', window._cellarId);
-  await _sb.from('wines').update({ cellar_id: null }).eq('added_by', userId).eq('cellar_id', window._cellarId);
-
-  // 4. Reload from DB to reflect true server state
-  const cacheKey = 'wwwCache_' + _currentUser.id;
-  try { sessionStorage.removeItem(cacheKey); } catch(_) {}
-  await loadWinesFromDB(cacheKey);
-
   showToast('Member removed');
   await _renderMembersList();
   await _refreshCellarMembers();
