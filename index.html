@@ -1293,9 +1293,7 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
 
 /* ── Added-by badge on cards ─────────────────────────────── */
 .card-added-by{display:inline-flex;align-items:center;gap:4px;font-family:var(--font-b);font-size:.65rem;color:var(--warm-gray);margin-top:4px;opacity:.75}
-.card-added-by--own{opacity:.5}
 .card-added-by-dot{width:14px;height:14px;border-radius:50%;background:var(--burgundy);color:#fff;font-size:.55rem;font-weight:700;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0}
-.card-added-by--own .card-added-by-dot{background:var(--warm-gray)}
 
 /* ── Comments panel (inside detail modal) ────────────────── */
 .comments-section{margin-top:28px;padding-top:22px;border-top:1px solid var(--light-gray)}
@@ -3275,14 +3273,13 @@ function createCard(w) {
     body.appendChild(tagsWrap);
   }
 
-  // Added-by badge (shared cellars only — shown for all wines including your own)
-  if (window._cellarId && window._cellarMembers.length > 1) {
-    const isOwn    = w.addedBy === _currentUser?.id;
-    const member   = !isOwn && w.addedBy ? window._cellarMembers.find(m => m.user_id === w.addedBy) : null;
-    const name     = isOwn ? 'You' : (member?.display_name || 'Member');
-    const initials = isOwn ? '\u2713' : name.slice(0,2).toUpperCase();
+  // Added-by badge (shared cellars only)
+  if (window._cellarId && window._cellarMembers.length && w.addedBy && w.addedBy !== _currentUser?.id) {
+    const member   = window._cellarMembers.find(m => m.user_id === w.addedBy);
+    const name     = member?.display_name || 'Member';
+    const initials = name.slice(0,2).toUpperCase();
     const ab = document.createElement('div');
-    ab.className = 'card-added-by' + (isOwn ? ' card-added-by--own' : '');
+    ab.className = 'card-added-by';
     ab.innerHTML = `<span class="card-added-by-dot">${escHtml(initials)}</span>${escHtml(name)}`;
     body.appendChild(ab);
   }
@@ -5298,10 +5295,18 @@ async function bootstrapCellar() {
   _updateCellarPill();
 }
 
-// Backfill any existing wines (cellar_id = null) to this cellar
+// Backfill ALL of the current user's wines into the active cellar.
+// Migrates wines regardless of their previous cellar_id so that joining
+// a shared cellar brings all pre-existing wines with you.
 async function _backfillExistingWines() {
   if (!window._cellarId || !_currentUser) return;
   try {
+    // Migrate wines already assigned to a different cellar
+    await _sb.from('wines')
+      .update({ cellar_id: window._cellarId, added_by: _currentUser.id })
+      .eq('user_id', _currentUser.id)
+      .neq('cellar_id', window._cellarId);
+    // Also catch wines with no cellar yet
     await _sb.from('wines')
       .update({ cellar_id: window._cellarId, added_by: _currentUser.id })
       .eq('user_id', _currentUser.id)
