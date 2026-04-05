@@ -2183,6 +2183,13 @@ document.addEventListener('DOMContentLoaded', function() {
   // DOMContentLoaded guarantees all external scripts have run — init Supabase first
   _ensureSb();
 
+  // Persist invite token to localStorage on page load so it survives
+  // email confirmation redirects that strip the ?invite= param from the URL.
+  try {
+    const _inv = new URLSearchParams(window.location.search).get('invite');
+    if (_inv) localStorage.setItem('wwwPendingInvite', _inv);
+  } catch(_) {}
+
   // If this is a public shared wine link, show the wine view — but do NOT
   // return early. We still need the auth listener registered so that if the
   // user clicks "Add this wine" and signs in, onAuthStateChange fires showApp().
@@ -5241,10 +5248,16 @@ async function _bootstrapCellarInner() {
     );
   } catch(e) { console.warn('profile upsert:', e); }
 
-  // Step 1: handle invite token in URL
+  // Step 1: handle invite token — check URL then localStorage fallback
+  // (localStorage covers email confirmation redirects that lose ?invite=)
   const params = new URLSearchParams(window.location.search);
-  const inviteToken = params.get('invite');
+  let inviteToken = params.get('invite');
+  if (!inviteToken) {
+    try { inviteToken = localStorage.getItem('wwwPendingInvite'); } catch(_) {}
+  }
   if (inviteToken) {
+    try { localStorage.removeItem('wwwPendingInvite'); } catch(_) {}
+    _dbg('bootstrap: processing invite token=' + inviteToken.slice(0,8));
     await joinCellarViaToken(inviteToken);
     window.history.replaceState({}, '', window.location.pathname);
     return;
