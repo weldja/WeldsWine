@@ -5291,15 +5291,14 @@ async function _bootstrapCellarInner() {
     return;
   }
 
-  // Step 3: no active membership found.
-  // Find any cellar owned by this user that they haven't explicitly left.
+  // Step 3: no active membership. Find any cellar owned by this user
+  // that they haven't explicitly left.
   const { data: ownedCellars } = await _sb
     .from('cellars').select('id').eq('owner_id', _currentUser.id);
 
   const existingOwned = (ownedCellars || []).find(c => !cleanedLeft.includes(c.id));
 
   if (existingOwned) {
-    // Restore missing member row; if the upsert fails (RLS), fall through to create fresh
     const { error: upsertErr } = await _sb.from('cellar_members').upsert(
       { cellar_id: existingOwned.id, user_id: _currentUser.id, role: 'owner' },
       { onConflict: 'cellar_id,user_id', ignoreDuplicates: true }
@@ -5311,7 +5310,7 @@ async function _bootstrapCellarInner() {
       _updateCellarPill();
       return;
     }
-    console.warn('bootstrapCellar: upsert failed, creating fresh cellar:', upsertErr);
+    console.warn('bootstrapCellar: upsert blocked, creating fresh cellar');
   }
 
   // Truly new user: create a personal cellar
@@ -5543,8 +5542,7 @@ async function leaveCellar() {
   showSkeletonGrid(3);
   showToast('You have left the shared cellar');
 
-  // Don't call bootstrapCellar here -- it will try to restore the owned cellar
-  // and hit RLS. Instead, load wines directly with no cellar context.
+  // Skip bootstrapCellar to avoid RLS issues with the old cellar.
   // _cellarId is null so loadWinesFromDB will fetch only this user's own wines.
   _bootstrapRunning = false;
   await loadWinesFromDB('wwwCache_' + _currentUser.id);
