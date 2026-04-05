@@ -1293,9 +1293,7 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
 
 /* ── Added-by badge on cards ─────────────────────────────── */
 .card-added-by{display:inline-flex;align-items:center;gap:4px;font-family:var(--font-b);font-size:.65rem;color:var(--warm-gray);margin-top:4px;opacity:.75}
-.card-added-by--own{opacity:.45}
 .card-added-by-dot{width:14px;height:14px;border-radius:50%;background:var(--burgundy);color:#fff;font-size:.55rem;font-weight:700;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0}
-.card-added-by--own .card-added-by-dot{background:var(--warm-gray)}
 
 /* ── Comments panel (inside detail modal) ────────────────── */
 .comments-section{margin-top:28px;padding-top:22px;border-top:1px solid var(--light-gray)}
@@ -3003,7 +3001,7 @@ function _renderCellarAnalytics() {
         const ratings = memberRatings[m.user_id] || [];
         const mavg    = ratings.length ? (ratings.reduce((a,b)=>a+b,0)/ratings.length).toFixed(1) : '—';
         const isMe    = m.user_id === _currentUser?.id;
-        const name    = m.display_name || (isMe ? (_currentUser?.email||'').split('@')[0] : 'Member');
+        const name    = m.display_name || (isMe ? 'You' : 'Member');
         const initials= name.slice(0,2).toUpperCase();
         const colour  = memberColours[i % memberColours.length];
         return `<div class="co-member-row">
@@ -3275,15 +3273,14 @@ function createCard(w) {
     body.appendChild(tagsWrap);
   }
 
-  // Added-by badge (shared cellars only — all wines, including your own)
-  if (window._cellarId && window._cellarMembers.length > 1) {
-    const isOwn    = w.addedBy === _currentUser?.id;
-    const member   = window._cellarMembers.find(m => m.user_id === (isOwn ? _currentUser?.id : w.addedBy));
-    const name     = member?.display_name || (isOwn ? (_currentUser?.email||'').split('@')[0] : 'Member');
+  // Added-by badge (shared cellars only)
+  if (window._cellarId && window._cellarMembers.length && w.addedBy && w.addedBy !== _currentUser?.id) {
+    const member   = window._cellarMembers.find(m => m.user_id === w.addedBy);
+    const name     = member?.display_name || 'Member';
     const initials = name.slice(0,2).toUpperCase();
     const ab = document.createElement('div');
-    ab.className = 'card-added-by' + (isOwn ? ' card-added-by--own' : '');
-    ab.innerHTML = `<span class="card-added-by-dot">${escHtml(initials)}</span>Added by ${escHtml(name)}`;
+    ab.className = 'card-added-by';
+    ab.innerHTML = `<span class="card-added-by-dot">${escHtml(initials)}</span>${escHtml(name)}`;
     body.appendChild(ab);
   }
 
@@ -3445,14 +3442,11 @@ async function openDetail(w, e) {
 
   // Added-by label for shared cellars
   const addedByLabel = (() => {
-    if (!window._cellarId || window._cellarMembers.length < 2) return '';
-    const isMe   = w.addedBy === _currentUser?.id;
-    const member = window._cellarMembers.find(m => m.user_id === w.addedBy);
-    const name   = member?.display_name
-      || (isMe ? (_currentUser?.email||'').split('@')[0] : null)
-      || 'Member';
-    if (!w.addedBy) return '';
-    return `<div style="font-family:var(--font-b);font-size:.75rem;color:var(--warm-gray);margin-bottom:12px;font-style:italic">Added by ${escHtml(name)}</div>`;
+    if (!window._cellarId) return '';
+    const isMe = w.addedBy === _currentUser?.id;
+    if (isMe) return '<div style="font-family:var(--font-b);font-size:.75rem;color:var(--warm-gray);margin-bottom:12px;font-style:italic">Added by you</div>';
+    if (w.addedBy) return '<div style="font-family:var(--font-b);font-size:.75rem;color:var(--warm-gray);margin-bottom:12px;font-style:italic">Added by a cellar member</div>';
+    return '';
   })();
 
   document.getElementById('detailContent').innerHTML = `
@@ -5579,11 +5573,19 @@ async function _removeMember(userId) {
   if (!confirm('Remove this member from the cellar? Their wines will be removed from the shared cellar.')) return;
   if (!_sb || !window._cellarId) return;
 
-  // Detach the removed member's wines from the shared cellar first
-  await _sb.from('wines')
-    .update({ cellar_id: null })
-    .eq('user_id', userId)
+  // Detach the member's wines from the shared cellar.
+  // Try update first (preserves wine for them under their own account).
+  // Fall back to delete if RLS blocks the update.
+  const { error: wineErr } = await _sb.from('wines')
+    .update({ cellar_id: null, added_by: null })
+    .eq('added_by', userId)
     .eq('cellar_id', window._cellarId);
+  if (wineErr) {
+    await _sb.from('wines')
+      .delete()
+      .eq('added_by', userId)
+      .eq('cellar_id', window._cellarId);
+  }
 
   const { error } = await _sb
     .from('cellar_members')
@@ -5591,11 +5593,16 @@ async function _removeMember(userId) {
     .eq('cellar_id', window._cellarId)
     .eq('user_id', userId);
   if (error) { showToast('Could not remove member'); return; }
+
+  // Drop their wines from the local array so the grid updates instantly
+  wines = wines.filter(w => w.addedBy !== userId);
+
   showToast('Member removed');
+  renderGrid();
+  updateStats();
   await _renderMembersList();
   await _refreshCellarMembers();
   _updateCellarPill();
-  await loadWinesFromDB('wwwCache_' + _currentUser.id);
 }
 
 function copyInviteLink() {
