@@ -5334,8 +5334,15 @@ function _updateCellarPill() {
   const label = document.getElementById('cellarPillLabel');
   if (!pill || !label) return;
   const count = window._cellarMembers.length;
-  if (count > 1) { label.textContent = count + ' members'; pill.style.display = 'inline-flex'; }
-  else { pill.style.display = 'none'; }
+  const shortId = window._cellarId ? window._cellarId.slice(0,6) : 'none';
+  if (count > 1) {
+    label.textContent = count + ' members (' + shortId + ')';
+    pill.style.display = 'inline-flex';
+  } else {
+    // Show cellar ID even when solo so we can debug which cellar each user is on
+    label.textContent = 'Cellar ' + shortId;
+    pill.style.display = 'inline-flex';
+  }
 }
 
 // Join a cellar via invite token
