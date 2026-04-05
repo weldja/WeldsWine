@@ -5377,7 +5377,7 @@ async function joinCellarViaToken(token) {
   _updateCellarPill();
   try { sessionStorage.removeItem('wwwCache_' + _currentUser.id); } catch(_) {}
   await loadWinesFromDB('wwwCache_' + _currentUser.id);
-}}
+}
 
 /* ══════════════════════════════════════════════════════════════
    CELLAR SETTINGS UI
