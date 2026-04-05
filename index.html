@@ -2371,6 +2371,19 @@ function showApp() {
   });
   setTimeout(startLocationTracking, 100);
 
+  // Poll for cellar membership changes every 30s so the remaining member's
+  // view updates automatically when someone joins or leaves
+  setInterval(async () => {
+    if (!window._cellarId || !_currentUser) return;
+    const prevCount = window._cellarMembers.length;
+    await _refreshCellarMembers();
+    if (window._cellarMembers.length !== prevCount) {
+      _updateCellarPill();
+      try { sessionStorage.removeItem('wwwCache_' + _currentUser.id); } catch(_) {}
+      await loadWinesFromDB('wwwCache_' + _currentUser.id);
+    }
+  }, 30000);
+
   try {
     if (!localStorage.getItem('wwwOnboardingDone')) {
       window._triggerFirstRunScan = true;
@@ -5525,7 +5538,8 @@ async function leaveCellar() {
   showSkeletonGrid(3);
   showToast('You have left the shared cellar');
 
-  // Re-bootstrap (picks up personal cellar), then reload own wines only
+  // Reset the concurrency guard so bootstrapCellar runs fresh
+  _bootstrapRunning = false;
   await bootstrapCellar();
   await loadWinesFromDB('wwwCache_' + _currentUser.id);
 }
@@ -5600,8 +5614,7 @@ async function _removeMember(userId) {
     .eq('cellar_id', window._cellarId)
     .eq('user_id', userId);
   if (error) { showToast('Could not remove member'); return; }
-  // Refresh member list (now excludes removed user), then reload wines --
-  // their wines disappear automatically since query is by member user_ids
+  // Refresh member list (now excludes removed user), then reload wines
   await _refreshCellarMembers();
   _updateCellarPill();
   try { sessionStorage.removeItem('wwwCache_' + _currentUser.id); } catch(_) {}
