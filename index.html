@@ -5232,7 +5232,6 @@ async function bootstrapCellar() {
 }
 
 async function _bootstrapCellarInner() {
-  _dbg('bootstrap: start uid=' + _currentUser.id.slice(0,8));
   // Step 0: upsert profile row
   try {
     const displayName = (_currentUser.user_metadata?.full_name || _currentUser.email || 'Member').split('@')[0];
@@ -5258,8 +5257,6 @@ async function _bootstrapCellarInner() {
     .eq('user_id', _currentUser.id)
     .order('role', { ascending: true }); // 'member' < 'owner' alphabetically
 
-  _dbg('bootstrap: memberships=' + JSON.stringify(memberships) + ' err=' + (memberErr?memberErr.message:'none'));
-
   // If the query failed, ABORT. Never create a new cellar due to a transient
   // network error -- that would silently eject an invitee from their shared cellar.
   if (memberErr) {
@@ -5284,35 +5281,37 @@ async function _bootstrapCellarInner() {
     m.role === 'member' || !cleanedLeft.includes(m.cellar_id)
   );
 
-  _dbg('bootstrap: active=' + JSON.stringify(activeMemberships));
   if (activeMemberships.length > 0) {
+    // Prefer shared cellar ('member' role) over personal ('owner')
     const preferred = activeMemberships.find(m => m.role === 'member') || activeMemberships[0];
-    _dbg('bootstrap: using role=' + preferred.role + ' cellar=' + preferred.cellar_id.slice(0,8));
     window._cellarId   = preferred.cellar_id;
     window._cellarRole = preferred.role;
     await _refreshCellarMembers();
-    _dbg('bootstrap: members after refresh=' + window._cellarMembers.length);
     _updateCellarPill();
     return;
   }
 
   // Step 3: no active membership found.
-  // Check if user already owns a cellar before creating another.
-  // Handles the case where the cellar_members row was lost but the cellar exists.
-  const { data: existingOwned } = await _sb
-    .from('cellars').select('id').eq('owner_id', _currentUser.id).limit(1).maybeSingle();
+  // Find any cellar owned by this user that they haven't explicitly left.
+  const { data: ownedCellars } = await _sb
+    .from('cellars').select('id').eq('owner_id', _currentUser.id);
+
+  const existingOwned = (ownedCellars || []).find(c => !cleanedLeft.includes(c.id));
 
   if (existingOwned) {
-    // Restore missing member row
-    await _sb.from('cellar_members').upsert(
+    // Restore missing member row; if the upsert fails (RLS), fall through to create fresh
+    const { error: upsertErr } = await _sb.from('cellar_members').upsert(
       { cellar_id: existingOwned.id, user_id: _currentUser.id, role: 'owner' },
       { onConflict: 'cellar_id,user_id', ignoreDuplicates: true }
     );
-    window._cellarId   = existingOwned.id;
-    window._cellarRole = 'owner';
-    await _refreshCellarMembers();
-    _updateCellarPill();
-    return;
+    if (!upsertErr) {
+      window._cellarId   = existingOwned.id;
+      window._cellarRole = 'owner';
+      await _refreshCellarMembers();
+      _updateCellarPill();
+      return;
+    }
+    console.warn('bootstrapCellar: upsert failed, creating fresh cellar:', upsertErr);
   }
 
   // Truly new user: create a personal cellar
@@ -5380,7 +5379,6 @@ function _updateCellarPill() {
   const label = document.getElementById('cellarPillLabel');
   if (!pill || !label) return;
   const count = window._cellarMembers.length;
-  _dbg('updateCellarPill: count=' + count);
   if (count > 1) {
     label.textContent = count + ' members';
     pill.style.display = 'inline-flex';
@@ -5502,24 +5500,21 @@ function closeCellarSettings() {
 
 async function leaveCellar() {
   const isOwner = window._cellarRole === 'owner';
-  _dbg('leaveCellar: role=' + window._cellarRole + ' cellarId=' + (window._cellarId||'').slice(0,8));
   const msg = isOwner
     ? 'Leave this shared cellar?\n\nAs the originator you will leave the cellar. Your wines return to your personal journal.'
     : 'Leave this shared cellar?\n\nYour wines return to your personal journal. You will no longer see other members\' wines.';
-  if (!confirm(msg)) { _dbg('leaveCellar: cancelled'); return; }
-  if (!_sb || !_currentUser || !window._cellarId) { _dbg('leaveCellar: guard fail'); return; }
+  if (!confirm(msg)) return;
+  if (!_sb || !_currentUser || !window._cellarId) return;
 
   const leftCellarId = window._cellarId;
   const leftRole     = window._cellarRole;
 
-  _dbg('leaveCellar: deleting membership...');
-  const { error, count: delCount } = await _sb
+  const { error } = await _sb
     .from('cellar_members')
     .delete()
     .eq('cellar_id', leftCellarId)
     .eq('user_id', _currentUser.id);
 
-  _dbg('leaveCellar: delete result error=' + JSON.stringify(error) + ' count=' + delCount);
   if (error) { showToast('Could not leave cellar — try again'); return; }
 
   // Only write leftCellars for the owner role.
@@ -5537,7 +5532,6 @@ async function leaveCellar() {
   window._cellarId      = null;
   window._cellarRole    = null;
   window._cellarMembers = [];
-  _dbg('leaveCellar: state cleared, calling bootstrapCellar');
 
   closeCellarSettings();
   const pill = document.getElementById('cellarPill');
@@ -5549,11 +5543,11 @@ async function leaveCellar() {
   showSkeletonGrid(3);
   showToast('You have left the shared cellar');
 
+  // Don't call bootstrapCellar here -- it will try to restore the owned cellar
+  // and hit RLS. Instead, load wines directly with no cellar context.
+  // _cellarId is null so loadWinesFromDB will fetch only this user's own wines.
   _bootstrapRunning = false;
-  await bootstrapCellar();
-  _dbg('leaveCellar: after bootstrap cellarId=' + (window._cellarId||'null').toString().slice(0,8) + ' role=' + window._cellarRole + ' members=' + window._cellarMembers.length);
   await loadWinesFromDB('wwwCache_' + _currentUser.id);
-  _dbg('leaveCellar: done');
 }
 
 async function _loadInviteLink() {
@@ -6077,37 +6071,6 @@ if ('serviceWorker' in navigator) {
     });
   });
 }
-</script>
-
-<div id='_dbgPanel' style='display:none;position:fixed;bottom:0;left:0;right:0;max-height:50vh;overflow-y:auto;background:rgba(0,0,0,.9);color:#0f0;font:11px/1.5 monospace;padding:8px;z-index:99999;white-space:pre-wrap;word-break:break-all;border-top:2px solid #0f0'></div>
-<script>
-(function(){
-  var lines=[];
-  window._dbg=function(msg){
-    var t=new Date().toTimeString().slice(0,8);
-    var line=t+' '+msg;
-    console.log('[DBG]',msg);
-    lines.push(line);
-    if(lines.length>100)lines.shift();
-    var el=document.getElementById('_dbgPanel');
-    if(el&&el.style.display!=='none'){el.textContent=lines.join('\n');el.scrollTop=el.scrollHeight;}
-  };
-  // Tap logo 5x to toggle panel
-  var taps=0,timer;
-  document.addEventListener('click',function(e){
-    if(!e.target.closest('.logo'))return;
-    taps++;clearTimeout(timer);
-    timer=setTimeout(function(){taps=0;},2000);
-    if(taps>=5){
-      taps=0;
-      var el=document.getElementById('_dbgPanel');
-      if(!el)return;
-      var show=el.style.display==='none';
-      el.style.display=show?'block':'none';
-      if(show){el.textContent=lines.join('\n');el.scrollTop=el.scrollHeight;}
-    }
-  });
-})();
 </script>
 </body>
 </html>
