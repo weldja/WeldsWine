@@ -5249,7 +5249,6 @@ async function _bootstrapCellarInner() {
   } catch(e) { console.warn('profile upsert:', e); }
 
   // Step 1: handle invite token — check URL then localStorage fallback
-  // (localStorage covers email confirmation redirects that lose ?invite=)
   const params = new URLSearchParams(window.location.search);
   let inviteToken = params.get('invite');
   if (!inviteToken) {
@@ -5341,6 +5340,7 @@ async function _bootstrapCellarInner() {
   window._cellarRole = 'owner';
   await _refreshCellarMembers();
   _updateCellarPill();
+  _dbg('joinCellar: done cellarId=' + (window._cellarId||'null').slice(0,8) + ' members=' + window._cellarMembers.length);
 }
 async function _backfillExistingWines() {
   if (!window._cellarId || !_currentUser) return;
