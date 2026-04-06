@@ -2380,7 +2380,7 @@ async function showApp() {
     history.replaceState({ wwwPanel: false }, '');
   }
 
-  const cacheKey = 'wwwCache_' + (_currentUser?.id || '');
+  const userId = _currentUser?.id || '';
 
   // Show loader immediately -- do NOT render sessionStorage cache yet.
   // Cache may reflect solo state from a previous session; we must wait
@@ -2391,17 +2391,22 @@ async function showApp() {
   // Await bootstrap fully before loading wines -- guarantees _cellarId is set
   await bootstrapCellar();
   console.log('[showApp] bootstrap done cellarId=' + (window._cellarId || 'null') + ' role=' + window._cellarRole);
+
+  // Include cellarId in cache key so stale solo cache never renders for cellar members
+  const cacheKey = 'wwwCache_' + userId + '_' + (window._cellarId || 'solo');
   await loadWinesFromDB(cacheKey);
 
   // Now safe to show cached wines for subsequent fast renders
   setTimeout(startLocationTracking, 100);
-  setInterval(async () => {
+  if (window._memberPollInterval) clearInterval(window._memberPollInterval);
+  window._memberPollInterval = setInterval(async () => {
     if (!window._cellarId || !_currentUser) return;
     const prev = window._cellarMembers.length;
     await _refreshCellarMembers(); _updateCellarPill();
     if (window._cellarMembers.length !== prev) {
-      try { sessionStorage.removeItem('wwwCache_' + _currentUser.id); } catch(_) {}
-      await loadWinesFromDB('wwwCache_' + _currentUser.id);
+      const ck = 'wwwCache_' + _currentUser.id + '_' + (window._cellarId || 'solo');
+      try { sessionStorage.removeItem(ck); } catch(_) {}
+      await loadWinesFromDB(ck);
     }
   }, 10000);
 
@@ -2418,6 +2423,7 @@ async function showApp() {
 function hideApp() {
   _pendingShowApp = false;
   _showAppRunning = false;
+  if (window._memberPollInterval) { clearInterval(window._memberPollInterval); window._memberPollInterval = null; }
   // Don't show auth screen if we're displaying a public shared wine link
   const _isPublicView = new URLSearchParams(window.location.search).get('wine');
   if (!_isPublicView) {
