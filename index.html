@@ -2207,6 +2207,15 @@ document.addEventListener('DOMContentLoaded', function() {
   // return early. We still need the auth listener registered so that if the
   // user clicks "Add this wine" and signs in, onAuthStateChange fires showApp().
   // Save invite token to localStorage immediately -- survives email confirmation redirects
+  // Save invite token only if not already authenticated
+  // (prevents an authenticated owner from storing their own link as a pending invite)
+  try {
+    const _i = new URLSearchParams(window.location.search).get('invite');
+    const _alreadyAuthed = !!Object.keys(localStorage).find(k => k.startsWith('sb-') && k.endsWith('-auth-token'));
+    if (_i && !_alreadyAuthed) localStorage.setItem('wwwPendingInvite', _i);
+  } catch(_) {}
+
+  // Save invite token to localStorage immediately -- survives email confirmation redirects
   try { const _i = new URLSearchParams(window.location.search).get('invite'); if (_i) localStorage.setItem('wwwPendingInvite', _i); } catch(_) {}
 
   if (new URLSearchParams(window.location.search).get('wine')) {
@@ -2393,6 +2402,15 @@ function showApp() {
     loadWinesFromDB(cacheKey);
   });
   setTimeout(startLocationTracking, 100);
+  setInterval(async () => {
+    if (!window._cellarId || !_currentUser) return;
+    const prev = window._cellarMembers.length;
+    await _refreshCellarMembers(); _updateCellarPill();
+    if (window._cellarMembers.length !== prev) {
+      try { sessionStorage.removeItem('wwwCache_' + _currentUser.id); } catch(_) {}
+      await loadWinesFromDB('wwwCache_' + _currentUser.id);
+    }
+  }, 10000);
   setInterval(async () => {
     if (!window._cellarId || !_currentUser) return;
     const prev = window._cellarMembers.length;
@@ -5245,6 +5263,7 @@ window._cellarRole = null;  // 'owner' | 'member'
 window._cellarMembers = []; // [{user_id, role, email}]
 
 let _bootstrapRunning = false;
+let _bootstrapRunning = false;
 async function bootstrapCellar() {
   if (!_sb || !_currentUser) return;
   if (_bootstrapRunning) return;
@@ -5289,8 +5308,8 @@ async function _bootstrapInner() {
   if (active.length > 0) {
     const pick = active.find(m => m.role === 'member') || active[0];
     window._cellarId = pick.cellar_id; window._cellarRole = pick.role;
+    try { localStorage.removeItem('wwwPendingInvite'); } catch(_) {}
     await _refreshCellarMembers(); _updateCellarPill();
-    setTimeout(_subscribeRealtime, 500);
     return;
   }
 
@@ -5424,10 +5443,11 @@ async function saveCellarMotto(motto) {
   _cancelMotto();
   if (!_sb || !window._cellarId) return;
   try {
-    await _sb.from('cellars').update({ motto }).eq('id', window._cellarId);
+    const { error } = await _sb.from('cellars').update({ motto }).eq('id', window._cellarId);
+    if (error) { console.error('saveCellarMotto:', error); showToast('Could not save motto'); return; }
     await _loadCellarMotto();
     if (motto) showToast('✓ Motto saved');
-  } catch(e) { console.warn('saveCellarMotto:', e); }
+  } catch(e) { console.warn('saveCellarMotto:', e); showToast('Could not save motto'); }
 }
 
 let _realtimeChannel = null;
@@ -5489,7 +5509,7 @@ async function joinCellarViaToken(token) {
   _updateCellarPill();
   try { sessionStorage.removeItem('wwwCache_' + _currentUser.id); } catch(_) {}
   await loadWinesFromDB('wwwCache_' + _currentUser.id);
-}
+}}
 
 /* ══════════════════════════════════════════════════════════════
    CELLAR SETTINGS UI
