@@ -2209,8 +2209,7 @@ document.addEventListener('DOMContentLoaded', function() {
   // Save invite token to localStorage immediately -- survives email confirmation redirects
   try {
     const _i = new URLSearchParams(window.location.search).get('invite');
-    const _authed = !!Object.keys(localStorage).find(k => k.startsWith('sb-') && k.endsWith('-auth-token'));
-    if (_i && !_authed) localStorage.setItem('wwwPendingInvite', _i);
+    if (_i) localStorage.setItem('wwwPendingInvite', _i);
   } catch(_) {}
 
   if (new URLSearchParams(window.location.search).get('wine')) {
