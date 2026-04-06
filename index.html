@@ -2392,16 +2392,13 @@ function showApp() {
   if (hadCache) { renderGrid(); updateStats(); }
   else { _winesLoaded = false; showCellarLoader(); }
 
-  // Bootstrap cellar then load wines
-  // Guard: only run bootstrap+load once per session to prevent
-  // onAuthStateChange firing twice (SIGNED_IN + INITIAL_SESSION)
-  // from causing a race where the second call loads wines before
-  // the first bootstrap has set _cellarId.
+  // Bootstrap cellar then load wines.
+  // Guard against onAuthStateChange firing twice (SIGNED_IN + INITIAL_SESSION).
+  // Without this, the second call loads wines before the first bootstrap sets _cellarId,
+  // causing wines to load in solo mode and the cellar pill to disappear.
   if (!window._showAppRan) {
     window._showAppRan = true;
-    bootstrapCellar().then(() => {
-      loadWinesFromDB(cacheKey);
-    });
+    bootstrapCellar().then(() => loadWinesFromDB(cacheKey));
     setTimeout(startLocationTracking, 100);
     setInterval(async () => {
       if (!window._cellarId || !_currentUser) return;
@@ -2413,9 +2410,7 @@ function showApp() {
       }
     }, 10000);
   } else {
-    // Subsequent calls: just refresh members and reload wines with correct cellar state
-    await bootstrapCellar();
-    loadWinesFromDB(cacheKey);
+    bootstrapCellar().then(() => loadWinesFromDB(cacheKey));
   }
 
   try {
