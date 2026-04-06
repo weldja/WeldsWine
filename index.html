@@ -5622,6 +5622,13 @@ async function _removeMember(userId) {
   const { error } = await _sb.from('cellar_members').delete()
     .eq('cellar_id', window._cellarId).eq('user_id', userId);
   if (error) { showToast('Could not remove member'); return; }
+
+  // Rotate invite token so the removed member's old link no longer works
+  const newToken = Array.from(crypto.getRandomValues(new Uint8Array(16)))
+    .map(b => b.toString(16).padStart(2,'0')).join('');
+  await _sb.from('cellars').update({ invite_token: newToken }).eq('id', window._cellarId);
+  await _loadInviteLink();
+
   await _refreshCellarMembers();
   _updateCellarPill();
   try { sessionStorage.removeItem('wwwCache_' + _currentUser.id); } catch(_) {}
