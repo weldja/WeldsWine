@@ -2335,7 +2335,11 @@ function openGuestScan() {
   if (panel) panel.scrollIntoView({behavior:'smooth'});
 }
 
-function showApp() {
+// Prevents onAuthStateChange firing twice (SIGNED_IN + INITIAL_SESSION)
+// from racing: second call would load wines before first bootstrap sets _cellarId.
+let _showAppRunning = false;
+
+async function showApp() {
   if (!_appReady) {
     _pendingShowApp = true;
     try {
@@ -2351,18 +2355,16 @@ function showApp() {
     });
     return;
   }
+  // If already running (second onAuthStateChange fire), just wait for it to finish
+  if (_showAppRunning) return;
+  _showAppRunning = true;
   _pendingShowApp = false;
 
   document.getElementById('authScreen').classList.add('hidden');
   const badge = document.getElementById('userBadge');
   if (badge) badge.style.display = 'flex';
 
-  // Show cellar pill
-  const pill = document.getElementById('cellarPill');
-  if (pill) pill.style.display = 'inline-flex';
-
   try {
-    // Check sessionStorage first (same-tab sign-in flow — has photo data)
     const raw = sessionStorage.getItem('wwwImportWine');
     if (raw) {
       window._pendingImport = JSON.parse(raw);
@@ -2370,48 +2372,38 @@ function showApp() {
       localStorage.removeItem('wwwPendingImport');
     } else {
       const lsRaw = localStorage.getItem('wwwPendingImport');
-      if (lsRaw) {
-        window._pendingImport = JSON.parse(lsRaw);
-        localStorage.removeItem('wwwPendingImport');
-      }
+      if (lsRaw) { window._pendingImport = JSON.parse(lsRaw); localStorage.removeItem('wwwPendingImport'); }
     }
   } catch(_) {}
 
-  // Seed a baseline history entry so back-button closes panels rather than exiting the app
   if (!history.state || !('wwwPanel' in history.state)) {
     history.replaceState({ wwwPanel: false }, '');
   }
 
   const cacheKey = 'wwwCache_' + (_currentUser?.id || '');
-  let hadCache = false;
-  try {
-    const cached = sessionStorage.getItem(cacheKey);
-    if (cached) { wines = JSON.parse(cached); hadCache = true; }
-  } catch(_) {}
 
-  if (hadCache) { renderGrid(); updateStats(); }
-  else { _winesLoaded = false; showCellarLoader(); }
+  // Show loader immediately -- do NOT render sessionStorage cache yet.
+  // Cache may reflect solo state from a previous session; we must wait
+  // for bootstrap to resolve _cellarId before rendering anything.
+  _winesLoaded = false;
+  showCellarLoader();
 
-  // Bootstrap cellar then load wines.
-  // Guard against onAuthStateChange firing twice (SIGNED_IN + INITIAL_SESSION).
-  // Without this, the second call loads wines before the first bootstrap sets _cellarId,
-  // causing wines to load in solo mode and the cellar pill to disappear.
-  if (!window._showAppRan) {
-    window._showAppRan = true;
-    bootstrapCellar().then(() => loadWinesFromDB(cacheKey));
-    setTimeout(startLocationTracking, 100);
-    setInterval(async () => {
-      if (!window._cellarId || !_currentUser) return;
-      const prev = window._cellarMembers.length;
-      await _refreshCellarMembers(); _updateCellarPill();
-      if (window._cellarMembers.length !== prev) {
-        try { sessionStorage.removeItem('wwwCache_' + _currentUser.id); } catch(_) {}
-        await loadWinesFromDB('wwwCache_' + _currentUser.id);
-      }
-    }, 10000);
-  } else {
-    bootstrapCellar().then(() => loadWinesFromDB(cacheKey));
-  }
+  // Await bootstrap fully before loading wines -- guarantees _cellarId is set
+  await bootstrapCellar();
+  console.log('[showApp] bootstrap done cellarId=' + (window._cellarId || 'null') + ' role=' + window._cellarRole);
+  await loadWinesFromDB(cacheKey);
+
+  // Now safe to show cached wines for subsequent fast renders
+  setTimeout(startLocationTracking, 100);
+  setInterval(async () => {
+    if (!window._cellarId || !_currentUser) return;
+    const prev = window._cellarMembers.length;
+    await _refreshCellarMembers(); _updateCellarPill();
+    if (window._cellarMembers.length !== prev) {
+      try { sessionStorage.removeItem('wwwCache_' + _currentUser.id); } catch(_) {}
+      await loadWinesFromDB('wwwCache_' + _currentUser.id);
+    }
+  }, 10000);
 
   try {
     if (!localStorage.getItem('wwwOnboardingDone')) {
@@ -2425,7 +2417,7 @@ function showApp() {
 
 function hideApp() {
   _pendingShowApp = false;
-  window._showAppRan = false;
+  _showAppRunning = false;
   // Don't show auth screen if we're displaying a public shared wine link
   const _isPublicView = new URLSearchParams(window.location.search).get('wine');
   if (!_isPublicView) {
@@ -5282,11 +5274,18 @@ async function _bootstrapInner() {
     return;
   }
 
-  // Fetch memberships -- DB is ground truth, abort on error
-  const { data: memberships, error: memberErr } = await _sb
-    .from('cellar_members').select('cellar_id, role')
-    .eq('user_id', _currentUser.id).order('role', { ascending: true });
-  if (memberErr) { console.warn('bootstrapCellar: query error, aborting:', memberErr); return; }
+  // Fetch memberships with retry -- DB is ground truth, never fall through on transient error
+  let memberships = null, memberErr = null;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    if (attempt > 0) await new Promise(r => setTimeout(r, 500 * attempt));
+    const res = await _sb.from('cellar_members').select('cellar_id, role')
+      .eq('user_id', _currentUser.id).order('role', { ascending: true });
+    if (!res.error) { memberships = res.data; memberErr = null; break; }
+    memberErr = res.error;
+    console.warn('[bootstrap] membership query attempt', attempt + 1, 'failed:', res.error);
+  }
+  if (memberErr) { console.error('[bootstrap] all retries failed, aborting'); return; }
+  console.log('[bootstrap] memberships:', JSON.stringify(memberships));
 
   // Clean stale leftCellars entries (auto-fix legacy bad state)
   let leftCellars = [];
@@ -5302,7 +5301,6 @@ async function _bootstrapInner() {
   if (active.length > 0) {
     const pick = active.find(m => m.role === 'member') || active[0];
     window._cellarId = pick.cellar_id; window._cellarRole = pick.role;
-    try { localStorage.removeItem('wwwPendingInvite'); } catch(_) {}
     await _refreshCellarMembers(); _updateCellarPill();
     setTimeout(_subscribeRealtime, 500);
     return;
@@ -5472,11 +5470,11 @@ async function joinCellarViaToken(token) {
     .from('cellars').select('id').eq('invite_token', token).maybeSingle();
 
   if (ce || !cellar) {
-    try { localStorage.removeItem('wwwPendingInvite'); } catch(_) {}
-    const { data: mems } = await _sb.from('cellar_members').select('cellar_id,role')
-      .eq('user_id', _currentUser.id).order('role', { ascending: true });
-    const validMem = (mems || []).find(m => m.role === 'member') || (mems || [])[0];
-    if (validMem) { window._cellarId = validMem.cellar_id; window._cellarRole = validMem.role; await _refreshCellarMembers(); _updateCellarPill(); }
+    showToast('Invite link not found or has expired');
+    // Proceed with normal bootstrap path
+    const { data: m } = await _sb.from('cellar_members').select('cellar_id,role')
+      .eq('user_id', _currentUser.id).order('role', { ascending: true }).limit(1).maybeSingle();
+    if (m) { window._cellarId = m.cellar_id; window._cellarRole = m.role; await _refreshCellarMembers(); _updateCellarPill(); }
     return;
   }
 
@@ -5485,7 +5483,6 @@ async function joinCellarViaToken(token) {
     .eq('cellar_id', cellar.id).eq('user_id', _currentUser.id).maybeSingle();
 
   if (!existing) {
-    // Clicking the invite link is implicit consent -- insert directly, no confirm needed
     const { error: ie } = await _sb.from('cellar_members').insert({
       cellar_id: cellar.id, user_id: _currentUser.id, role: 'member'
     });
@@ -5494,15 +5491,27 @@ async function joinCellarViaToken(token) {
       showToast('Could not join cellar — please try the link again');
       return;
     }
+    // Confirm insert by re-querying -- don't trust insert alone
+    const { data: confirmed } = await _sb.from('cellar_members').select('cellar_id,role')
+      .eq('cellar_id', cellar.id).eq('user_id', _currentUser.id).maybeSingle();
+    if (!confirmed) {
+      console.error('joinCellarViaToken: insert not confirmed in DB');
+      showToast('Could not join cellar — please try the link again');
+      return;
+    }
+    console.log('[join] membership confirmed in DB for cellar=' + cellar.id.slice(0,8));
     showToast('\u2713 You\u2019ve joined the shared cellar!');
+    // Only clear invite token from URL after confirmed join
+    window.history.replaceState({}, '', window.location.pathname);
+    try { localStorage.removeItem('wwwPendingInvite'); } catch(_) {}
   }
 
   window._cellarId   = cellar.id;
   window._cellarRole = existing ? existing.role : 'member';
+  console.log('[join] cellarId set to=' + cellar.id.slice(0,8) + ' role=' + window._cellarRole);
   await _refreshCellarMembers();
   _updateCellarPill();
   try { sessionStorage.removeItem('wwwCache_' + _currentUser.id); } catch(_) {}
-  await loadWinesFromDB('wwwCache_' + _currentUser.id);
 }
 
 /* ══════════════════════════════════════════════════════════════
