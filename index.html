@@ -2207,7 +2207,11 @@ document.addEventListener('DOMContentLoaded', function() {
   // return early. We still need the auth listener registered so that if the
   // user clicks "Add this wine" and signs in, onAuthStateChange fires showApp().
   // Save invite token to localStorage immediately -- survives email confirmation redirects
-  try { const _i = new URLSearchParams(window.location.search).get('invite'); if (_i) localStorage.setItem('wwwPendingInvite', _i); } catch(_) {}
+  try {
+    const _i = new URLSearchParams(window.location.search).get('invite');
+    const _authed = !!Object.keys(localStorage).find(k => k.startsWith('sb-') && k.endsWith('-auth-token'));
+    if (_i && !_authed) localStorage.setItem('wwwPendingInvite', _i);
+  } catch(_) {}
 
   if (new URLSearchParams(window.location.search).get('wine')) {
     document.getElementById('authScreen').classList.add('hidden');
@@ -2415,7 +2419,6 @@ function showApp() {
 
 function hideApp() {
   _pendingShowApp = false;
-  _bootstrapDone = false; // Reset so next login bootstraps fresh
   // Don't show auth screen if we're displaying a public shared wine link
   const _isPublicView = new URLSearchParams(window.location.search).get('wine');
   if (!_isPublicView) {
@@ -5248,18 +5251,14 @@ window._cellarRole = null;  // 'owner' | 'member'
 window._cellarMembers = []; // [{user_id, role, email}]
 
 let _bootstrapRunning = false;
-let _bootstrapDone = false; // Set after first successful bootstrap this session
 async function bootstrapCellar() {
   if (!_sb || !_currentUser) return;
   if (_bootstrapRunning) return;
-  // If already bootstrapped and we have a cellar, just refresh members
-  if (_bootstrapDone && window._cellarId) {
-    await _refreshCellarMembers(); _updateCellarPill(); return;
-  }
   _bootstrapRunning = true;
-  try { await _bootstrapInner(); _bootstrapDone = true; } finally { _bootstrapRunning = false; }
+  try { await _bootstrapInner(); } finally { _bootstrapRunning = false; }
 }
 async function _bootstrapInner() {
+  console.log('[bootstrap] start uid=' + _currentUser.id.slice(0,8));
   // Upsert profile
   try {
     const name = (_currentUser.user_metadata?.full_name || _currentUser.email || '').split('@')[0] || 'Member';
@@ -5270,6 +5269,7 @@ async function _bootstrapInner() {
   const params = new URLSearchParams(window.location.search);
   let inviteToken = params.get('invite');
   if (!inviteToken) { try { inviteToken = localStorage.getItem('wwwPendingInvite'); } catch(_) {} }
+  console.log('[bootstrap] inviteToken=' + (inviteToken ? inviteToken.slice(0,8) : 'none'));
   if (inviteToken) {
     try { localStorage.removeItem('wwwPendingInvite'); } catch(_) {}
     await joinCellarViaToken(inviteToken);
@@ -5281,6 +5281,7 @@ async function _bootstrapInner() {
   const { data: memberships, error: memberErr } = await _sb
     .from('cellar_members').select('cellar_id, role')
     .eq('user_id', _currentUser.id).order('role', { ascending: true });
+  console.log('[bootstrap] memberships=' + JSON.stringify(memberships) + ' err=' + JSON.stringify(memberErr));
   if (memberErr) { console.warn('bootstrapCellar: query error, aborting:', memberErr); return; }
 
   // Clean stale leftCellars entries (auto-fix legacy bad state)
@@ -5294,13 +5295,17 @@ async function _bootstrapInner() {
   // Active memberships: member rows always pass; owner rows blocked if explicitly left
   const active = (memberships || []).filter(m => m.role === 'member' || !cleanedLeft.includes(m.cellar_id));
 
+  console.log('[bootstrap] leftCellars=' + JSON.stringify(cleanedLeft) + ' active=' + JSON.stringify(active));
   if (active.length > 0) {
     const pick = active.find(m => m.role === 'member') || active[0];
     window._cellarId = pick.cellar_id; window._cellarRole = pick.role;
+    console.log('[bootstrap] picked cellar=' + pick.cellar_id.slice(0,8) + ' role=' + pick.role);
+    try { localStorage.removeItem('wwwPendingInvite'); } catch(_) {}
     await _refreshCellarMembers(); _updateCellarPill();
     setTimeout(_subscribeRealtime, 500);
     return;
   }
+  console.log('[bootstrap] no active membership found, checking owned cellars');
 
   // No membership -- restore existing owned cellar or create new one
   const { data: owned } = await _sb.from('cellars').select('id').eq('owner_id', _currentUser.id);
@@ -5466,11 +5471,12 @@ async function joinCellarViaToken(token) {
     .from('cellars').select('id').eq('invite_token', token).maybeSingle();
 
   if (ce || !cellar) {
-    showToast('Invite link not found or has expired');
-    // Proceed with normal bootstrap path
-    const { data: m } = await _sb.from('cellar_members').select('cellar_id,role')
-      .eq('user_id', _currentUser.id).order('role', { ascending: true }).limit(1).maybeSingle();
-    if (m) { window._cellarId = m.cellar_id; window._cellarRole = m.role; await _refreshCellarMembers(); _updateCellarPill(); }
+    // Token is invalid/stale -- clear it and run normal membership lookup
+    try { localStorage.removeItem('wwwPendingInvite'); } catch(_) {}
+    const { data: mems } = await _sb.from('cellar_members').select('cellar_id,role')
+      .eq('user_id', _currentUser.id).order('role', { ascending: true });
+    const validMem = (mems || []).find(m => m.role === 'member') || (mems || [])[0];
+    if (validMem) { window._cellarId = validMem.cellar_id; window._cellarRole = validMem.role; await _refreshCellarMembers(); _updateCellarPill(); }
     return;
   }
 
