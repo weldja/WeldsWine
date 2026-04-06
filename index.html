@@ -2415,6 +2415,7 @@ function showApp() {
 
 function hideApp() {
   _pendingShowApp = false;
+  _bootstrapDone = false; // Reset so next login bootstraps fresh
   // Don't show auth screen if we're displaying a public shared wine link
   const _isPublicView = new URLSearchParams(window.location.search).get('wine');
   if (!_isPublicView) {
@@ -4536,6 +4537,7 @@ function showLoadBar() {
     inner.style.transition = 'width 2s ease';
     inner.style.width = '75%';
   });
+  if (!_winesLoaded) showCellarLoader();
 }
 function hideLoadBar() {
   const bar = document.getElementById('loadBar');
@@ -4548,6 +4550,7 @@ function hideLoadBar() {
     bar.classList.add('done');
     setTimeout(() => { inner.style.width = '0%'; bar.classList.remove('done'); }, 500);
   }, 150);
+  hideCellarLoader();
 }
 
 function _checkPendingImport() {
@@ -5134,9 +5137,9 @@ function updateKeyBadge() {
 
       <!-- Cellar motto -->
       <div class="cellar-motto-wrap">
-        <div class="cellar-motto-label">✨ Shared Message</div>
-        <div class="cellar-motto-text empty" id="cellarMottoDisplay" onclick="editCellarMotto()">Tap to add a shared message…</div>
-        <textarea class="cellar-motto-input" id="cellarMottoInput" rows="2" placeholder="e.g. Bring a bottle Friday…" style="display:none" maxlength="120"></textarea>
+        <div class="cellar-motto-label">✨ Cellar Motto</div>
+        <div class="cellar-motto-text empty" id="cellarMottoDisplay" onclick="editCellarMotto()">Tap to set a cellar motto…</div>
+        <textarea class="cellar-motto-input" id="cellarMottoInput" rows="2" placeholder="e.g. In vino veritas…" style="display:none" maxlength="120"></textarea>
         <div class="cellar-motto-hint" id="cellarMottoHint" style="display:none">Enter to save · Esc to cancel</div>
       </div>
 
@@ -5245,11 +5248,16 @@ window._cellarRole = null;  // 'owner' | 'member'
 window._cellarMembers = []; // [{user_id, role, email}]
 
 let _bootstrapRunning = false;
+let _bootstrapDone = false; // Set after first successful bootstrap this session
 async function bootstrapCellar() {
   if (!_sb || !_currentUser) return;
   if (_bootstrapRunning) return;
+  // If already bootstrapped and we have a cellar, just refresh members
+  if (_bootstrapDone && window._cellarId) {
+    await _refreshCellarMembers(); _updateCellarPill(); return;
+  }
   _bootstrapRunning = true;
-  try { await _bootstrapInner(); } finally { _bootstrapRunning = false; }
+  try { await _bootstrapInner(); _bootstrapDone = true; } finally { _bootstrapRunning = false; }
 }
 async function _bootstrapInner() {
   // Upsert profile
@@ -5393,7 +5401,7 @@ async function _loadCellarMotto() {
     const { data } = await _sb.from('cellars').select('motto').eq('id', window._cellarId).maybeSingle();
     const m = data?.motto?.trim();
     if (m) { d.textContent = '“' + m + '”'; d.classList.remove('empty'); }
-    else   { d.textContent = 'Tap to add a shared message…'; d.classList.add('empty'); }
+    else   { d.textContent = 'Tap to set a cellar motto…'; d.classList.add('empty'); }
   } catch(e) { console.warn('_loadCellarMotto:', e); }
 }
 
@@ -5426,7 +5434,7 @@ async function saveCellarMotto(motto) {
   try {
     await _sb.from('cellars').update({ motto }).eq('id', window._cellarId);
     await _loadCellarMotto();
-    if (motto) showToast('✓ Message updated for all members');
+    if (motto) showToast('✓ Motto saved');
   } catch(e) { console.warn('saveCellarMotto:', e); }
 }
 
