@@ -2207,9 +2207,13 @@ document.addEventListener('DOMContentLoaded', function() {
   // return early. We still need the auth listener registered so that if the
   // user clicks "Add this wine" and signs in, onAuthStateChange fires showApp().
   // Save invite token to localStorage immediately -- survives email confirmation redirects
+  // Also save a timestamp so we can discard stale tokens on normal logins.
   try {
     const _i = new URLSearchParams(window.location.search).get('invite');
-    if (_i) localStorage.setItem('wwwPendingInvite', _i);
+    if (_i) {
+      localStorage.setItem('wwwPendingInvite', _i);
+      localStorage.setItem('wwwPendingInviteTs', Date.now().toString());
+    }
   } catch(_) {}
 
   if (new URLSearchParams(window.location.search).get('wine')) {
@@ -5277,11 +5281,24 @@ async function _bootstrapInner() {
   if (urlInviteToken) {
     inviteToken = urlInviteToken;
   } else {
-    // No ?invite= in URL — check localStorage (covers post-redirect cases where URL was wiped)
-    try { inviteToken = localStorage.getItem('wwwPendingInvite'); } catch(_) {}
+    // No ?invite= in URL — check localStorage (covers post-redirect cases where URL was wiped).
+    // Only honour the token if it was saved recently (within 30 minutes); otherwise it is a
+    // stale token from a previous invite session and must be discarded silently to prevent
+    // the "Invite link not found" toast appearing on normal logins.
+    try {
+      const stored = localStorage.getItem('wwwPendingInvite');
+      const ts     = parseInt(localStorage.getItem('wwwPendingInviteTs') || '0', 10);
+      if (stored && (Date.now() - ts) < 30 * 60 * 1000) {
+        inviteToken = stored;
+      } else if (stored) {
+        // Stale — clean up silently
+        localStorage.removeItem('wwwPendingInvite');
+        localStorage.removeItem('wwwPendingInviteTs');
+      }
+    } catch(_) {}
   }
   if (inviteToken) {
-    try { localStorage.removeItem('wwwPendingInvite'); } catch(_) {}
+    try { localStorage.removeItem('wwwPendingInvite'); localStorage.removeItem('wwwPendingInviteTs'); } catch(_) {}
     await joinCellarViaToken(inviteToken, !!urlInviteToken);
     window.history.replaceState({}, '', window.location.pathname);
     return;
@@ -5524,7 +5541,7 @@ async function joinCellarViaToken(token, showErrors = true) {
   });
   if (ie && ie.code !== '23505') {
     console.error('joinCellarViaToken:', ie);
-    showToast('Could not join cellar — please try the link again');
+    if (showErrors) showToast('Could not join cellar — please try the link again');
     return;
   }
 
@@ -5533,14 +5550,14 @@ async function joinCellarViaToken(token, showErrors = true) {
     .eq('cellar_id', cellar.id).eq('user_id', _currentUser.id).maybeSingle();
   if (!confirmed) {
     console.error('joinCellarViaToken: insert not confirmed in DB');
-    showToast('Could not join cellar — please try the link again');
+    if (showErrors) showToast('Could not join cellar — please try the link again');
     return;
   }
 
   console.log('[join] membership confirmed in DB for cellar=' + cellar.id.slice(0,8));
   showToast('\u2713 You\u2019ve joined the shared cellar!');
   window.history.replaceState({}, '', window.location.pathname);
-  try { localStorage.removeItem('wwwPendingInvite'); } catch(_) {}
+  try { localStorage.removeItem('wwwPendingInvite'); localStorage.removeItem('wwwPendingInviteTs'); } catch(_) {}
 
   window._cellarId   = cellar.id;
   window._cellarRole = 'member';
