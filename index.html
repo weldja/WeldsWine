@@ -5927,9 +5927,10 @@ async function openOriginMap(w) {
   const geocoded = await Promise.all(levels.map(l => _geocodeQuery(l.query)));
   window._originLevels = levels.map((l, i) => ({ ...l, geo: geocoded[i] }));
 
-  // Start at most specific level that has a result
+  // Start at region level (index 1) if available, otherwise most specific
+  const regionIdx = window._originLevels.findIndex((l, i) => i === 1 && l.geo);
   const firstValid = window._originLevels.findIndex(l => l.geo);
-  _originZoomLevel = firstValid >= 0 ? firstValid : 0;
+  _originZoomLevel = regionIdx >= 0 ? regionIdx : (firstValid >= 0 ? firstValid : 0);
   _flyToOriginLevel(_originZoomLevel);
 
   // Update crumb active state
@@ -5969,32 +5970,59 @@ function _flyToOriginLevel(idx) {
   _originMarkers = [];
 
   // Add markers for all levels that have geo data
+  // Colours: winery=gold, region=burgundy, country=blue-grey
+  const colours = ['#C9A34A', '#8B2439', '#4A7BC9'];
   levels.forEach((l, i) => {
     if (!l.geo) return;
-    const isTarget = i === idx;
-    const colour   = i === 0 ? '#C9A34A' : i === 1 ? '#8B2439' : '#4A7BC9';
-    const size     = isTarget ? 14 : 8;
-    const marker   = L.circleMarker([l.geo.lat, l.geo.lng], {
+    const isTarget  = i === idx;
+    const isCountry = i === levels.length - 1;
+    const colour    = colours[i] || '#888';
+    // Country shown as subtle context dot when not the target
+    const size      = isTarget ? 14 : isCountry ? 7 : 8;
+    const opacity   = isTarget ? 0.95 : isCountry && !isTarget ? 0.35 : 0.55;
+    const marker    = L.circleMarker([l.geo.lat, l.geo.lng], {
       radius: size,
       fillColor: colour,
       color: '#fff',
-      weight: 2,
-      fillOpacity: isTarget ? 0.95 : 0.5
+      weight: isTarget ? 2.5 : 1.5,
+      fillOpacity: opacity
     });
-    if (isTarget) {
-      marker.bindPopup(`<div style="font-family:sans-serif;font-size:12px;font-weight:600;color:#2D2420">${escHtml(l.label)}</div>`, { closeButton: false });
+    // Popup for target and country (so both are labelled in the combined view)
+    if (isTarget || (idx === 1 && isCountry)) {
+      marker.bindPopup(
+        `<div style="font-family:sans-serif;font-size:12px;font-weight:600;color:#2D2420">${escHtml(l.label)}</div>`,
+        { closeButton: false, offset: [0, -4] }
+      );
     }
     marker.addTo(_originMap);
     _originMarkers.push(marker);
+    // Auto-open country popup in combined region+country view
+    if (idx === 1 && isCountry) {
+      setTimeout(() => marker.openPopup(), 950);
+    }
   });
 
-  // Fly to target
+  // Fly to target — if at region level and country is also available, fit both in view
   const target = levels[idx];
   if (target.geo) {
-    _originMap.flyTo([target.geo.lat, target.geo.lng], target.zoom, { duration: 0.8 });
+    const countryLevel = levels[levels.length - 1]; // country is always last
+    if (idx === 1 && countryLevel?.geo && countryLevel !== target) {
+      // Fit region + country both in view
+      const bounds = L.latLngBounds(
+        [target.geo.lat, target.geo.lng],
+        [countryLevel.geo.lat, countryLevel.geo.lng]
+      ).pad(0.3);
+      _originMap.flyToBounds(bounds, { duration: 0.8, maxZoom: target.zoom });
+    } else {
+      _originMap.flyTo([target.geo.lat, target.geo.lng], target.zoom, { duration: 0.8 });
+    }
     setTimeout(() => {
-      const m = _originMarkers[_originMarkers.length - 1];
-      if (m && idx === 0) m.openPopup();
+      // Open popup on the target marker
+      const targetMarker = _originMarkers.find((m, i) => {
+        const l = levels.find(lv => lv.geo && Math.abs(lv.geo.lat - m.getLatLng().lat) < 0.001);
+        return l === target;
+      });
+      if (targetMarker) targetMarker.openPopup();
     }, 900);
   }
 }
