@@ -5297,7 +5297,7 @@ async function _bootstrapInner() {
   for (let attempt = 0; attempt < 3; attempt++) {
     if (attempt > 0) await new Promise(r => setTimeout(r, 500 * attempt));
     const res = await _sb.from('cellar_members').select('cellar_id, role')
-      .eq('user_id', _currentUser.id).order('created_at', { ascending: false }).limit(1);
+      .eq('user_id', _currentUser.id).limit(1);
     if (!res.error) { memberships = res.data; memberErr = null; break; }
     memberErr = res.error;
     console.warn('[bootstrap] membership query attempt', attempt + 1, 'failed:', res.error);
