@@ -5313,14 +5313,28 @@ async function _bootstrapInner() {
     return;
   }
 
-  // No membership -- new user: create personal cellar
-  const { error: ce } = await _sb.from('cellars').insert({ owner_id: _currentUser.id, name: 'My Cellar' });
-  if (ce) { console.error('bootstrapCellar: create failed:', ce); return; }
-  const { data: nc } = await _sb.from('cellars').select('id').eq('owner_id', _currentUser.id)
-    .order('created_at', { ascending: false }).limit(1).maybeSingle();
-  if (!nc) { console.error('bootstrapCellar: read failed'); return; }
-  await _sb.from('cellar_members').insert({ cellar_id: nc.id, user_id: _currentUser.id, role: 'owner' });
-  window._cellarId = nc.id; window._cellarRole = 'owner';
+  // No membership row found -- check if user already owns a cellar before creating one.
+  // This prevents orphan cellars accumulating if the membership row is missing.
+  const { data: ownedCellars } = await _sb.from('cellars').select('id')
+    .eq('owner_id', _currentUser.id).limit(1).maybeSingle();
+  let cellarId = ownedCellars?.id || null;
+
+  if (!cellarId) {
+    // Truly new user — create a cellar
+    const { data: nc, error: ce } = await _sb.from('cellars')
+      .insert({ owner_id: _currentUser.id, name: 'My Cellar' })
+      .select('id').maybeSingle();
+    if (ce || !nc) { console.error('bootstrapCellar: create failed:', ce); return; }
+    cellarId = nc.id;
+  }
+
+  // Ensure membership row exists (upsert is safe if it already exists)
+  const { error: me } = await _sb.from('cellar_members').upsert(
+    { cellar_id: cellarId, user_id: _currentUser.id, role: 'owner' },
+    { onConflict: 'cellar_id,user_id', ignoreDuplicates: true }
+  );
+  if (me) { console.error('bootstrapCellar: membership upsert failed:', me); return; }
+  window._cellarId = cellarId; window._cellarRole = 'owner';
   await _refreshCellarMembers(); _updateCellarPill();
 }
 async function _backfillExistingWines() {
