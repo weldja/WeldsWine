@@ -5328,6 +5328,20 @@ async function _bootstrapInner() {
     return;
   }
 
+  // No owned cellar found. Only create one if this user has never had any cellar
+  // at all (i.e. they signed up but never joined or created one).
+  // Check the profiles table — if their profile was created very recently they're new.
+  // Otherwise they were a member who left — do NOT create a cellar, just wait for re-invite.
+  const { data: profile } = await _sb.from('profiles').select('created_at').eq('id', _currentUser.id).maybeSingle();
+  const profileAge = profile?.created_at ? (Date.now() - new Date(profile.created_at).getTime()) : Infinity;
+  const isNewUser = profileAge < 5 * 60 * 1000; // created within last 5 minutes
+
+  if (!isNewUser) {
+    // Existing user with no cellar — they left or were removed. Don't create a new one.
+    console.log('[bootstrap] no cellar found for existing user — awaiting re-invite');
+    return;
+  }
+
   // Truly new user — create a personal cellar
   const { data: nc, error: ce } = await _sb.from('cellars')
     .insert({ owner_id: _currentUser.id, name: 'My Cellar' })
