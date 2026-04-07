@@ -5877,14 +5877,44 @@ let _originWine     = null;
 let _originZoomLevel = 0; // 0=country, 1=region, 2=winery
 
 async function _geocodeQuery(query) {
-  try {
-    const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=1&accept-language=en`;
-    const r   = await fetch(url, { headers: { 'User-Agent': 'WeldsWineWisdoms/1.0' } });
-    if (!r.ok) return null;
-    const data = await r.json();
-    if (!data.length) return null;
-    return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon), name: data[0].display_name };
-  } catch(_) { return null; }
+  // Clean a region string down to its core geographic name:
+  // - Strip "Appellation ... Contrôlée/Controlée/Protégée" boilerplate
+  // - Strip "AOC", "AOP", "IGP", "DOC", "DOCG" suffixes
+  // - Replace em/en dashes with commas to help Nominatim parse sub-regions
+  function cleanQuery(q) {
+    return q
+      .replace(/\s*[–—]\s*(Appellation|Indicazione Geografica Tipica|Denominazione di Origine|Vino da Tavola)\b.*/i, '') // remove Italian/French legal suffix after dash
+      .replace(/\bAppellation\b.*(Contr[oô]l[eé]e|Prot[eé]g[eé]e)\b/i, '')  // standalone French AOC boilerplate
+      .replace(/\bIndicazione Geografica Tipica\b/gi, '')                        // Italian IGT
+      .replace(/\bDenominazione di Origine (Controllata|Protetta)(\s+e Garantita)?\b/gi, '') // Italian DOC/DOCG
+      .replace(/\b(AOC|AOP|IGP|IGT|DOC|DOCG|DOP|PDO|PGI)\b/gi, '')
+      .replace(/[–—]/g, ',')           // em/en dash → comma (Nominatim handles "Region, Subregion")
+      .replace(/\s+/g, ' ')
+      .trim()
+      .replace(/,\s*$/, '');          // trailing comma
+  }
+  // Build variants to try: cleaned full name, then each dash-separated part cleaned
+  const rawParts = query.split(/[–—]/).map(p => p.trim()).filter(Boolean);
+  const variants = [cleanQuery(query)];
+  if (rawParts.length > 1) {
+    // Most specific part (after last dash), stripped of AOC boilerplate
+    const specific = cleanQuery(rawParts[rawParts.length - 1]);
+    if (specific && !variants.includes(specific)) variants.push(specific);
+    // Broadest part (before first dash)
+    const broad = cleanQuery(rawParts[0]);
+    if (broad && !variants.includes(broad)) variants.push(broad);
+  }
+  for (const v of variants) {
+    try {
+      const cleaned = cleanQuery(v);
+      const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(cleaned)}&format=json&limit=1&accept-language=en`;
+      const r   = await fetch(url, { headers: { 'User-Agent': 'WeldsWineWisdoms/1.0' } });
+      if (!r.ok) continue;
+      const data = await r.json();
+      if (data.length) return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon), name: data[0].display_name };
+    } catch(_) {}
+  }
+  return null;
 }
 
 async function openOriginMap(w) {
