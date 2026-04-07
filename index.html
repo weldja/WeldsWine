@@ -5488,7 +5488,7 @@ async function joinCellarViaToken(token) {
     showToast('Invite link not found or has expired');
     // Fall back to existing membership
     const { data: m } = await _sb.from('cellar_members').select('cellar_id,role')
-      .eq('user_id', _currentUser.id).order('created_at', { ascending: false }).limit(1).maybeSingle();
+      .eq('user_id', _currentUser.id).limit(1).maybeSingle();
     if (m) { window._cellarId = m.cellar_id; window._cellarRole = m.role; await _refreshCellarMembers(); _updateCellarPill(); }
     return;
   }
