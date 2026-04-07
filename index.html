@@ -5269,20 +5269,16 @@ async function _bootstrapInner() {
   } catch(e) { console.warn('profile upsert:', e); }
 
   // Invite token join flow.
-  // Use URL param if present; fall back to localStorage ONLY when there are no
-  // URL search params at all (i.e. Supabase wiped the URL during email confirmation).
-  // If the user lands with other params but no ?invite=, discard any stale token.
+  // Use URL param if present; always fall back to localStorage when no ?invite= in URL.
+  // localStorage covers cases where the URL was wiped by a Supabase auth redirect.
   const params = new URLSearchParams(window.location.search);
   const urlInviteToken = params.get('invite');
   let inviteToken = null;
   if (urlInviteToken) {
     inviteToken = urlInviteToken;
-  } else if (!window.location.search) {
-    // Clean URL — may be a post-redirect landing, check localStorage
-    try { inviteToken = localStorage.getItem('wwwPendingInvite'); } catch(_) {}
   } else {
-    // URL has params but no invite= — discard any stale token
-    try { localStorage.removeItem('wwwPendingInvite'); } catch(_) {}
+    // No ?invite= in URL — check localStorage (covers post-redirect cases where URL was wiped)
+    try { inviteToken = localStorage.getItem('wwwPendingInvite'); } catch(_) {}
   }
   if (inviteToken) {
     try { localStorage.removeItem('wwwPendingInvite'); } catch(_) {}
