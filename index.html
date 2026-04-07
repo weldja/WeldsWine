@@ -5282,7 +5282,7 @@ async function _bootstrapInner() {
   }
   if (inviteToken) {
     try { localStorage.removeItem('wwwPendingInvite'); } catch(_) {}
-    await joinCellarViaToken(inviteToken);
+    await joinCellarViaToken(inviteToken, !!urlInviteToken);
     window.history.replaceState({}, '', window.location.pathname);
     return;
   }
@@ -5488,14 +5488,14 @@ function _unsubscribeRealtime() {
 }
 
 // Join a cellar via invite token
-async function joinCellarViaToken(token) {
+async function joinCellarViaToken(token, showErrors = true) {
   if (!_sb || !_currentUser) return;
 
   const { data: cellar, error: ce } = await _sb
     .from('cellars').select('id').eq('invite_token', token).maybeSingle();
 
   if (ce || !cellar) {
-    showToast('Invite link not found or has expired');
+    if (showErrors) showToast('Invite link not found or has expired');
     // Fall back to existing membership
     const { data: m } = await _sb.from('cellar_members').select('cellar_id,role')
       .eq('user_id', _currentUser.id).limit(1).maybeSingle();
