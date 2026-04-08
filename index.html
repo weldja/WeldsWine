@@ -2206,13 +2206,17 @@ document.addEventListener('DOMContentLoaded', function() {
   // If this is a public shared wine link, show the wine view — but do NOT
   // return early. We still need the auth listener registered so that if the
   // user clicks "Add this wine" and signs in, onAuthStateChange fires showApp().
-  // Save invite token to localStorage immediately -- survives email confirmation redirects
-  // Also save a timestamp so we can discard stale tokens on normal logins.
+  // Save invite token to localStorage immediately -- survives email confirmation redirects.
+  // Also save a timestamp and an explicit intent flag (wwwInviteIntended) so we can
+  // distinguish a deliberate invite navigation from a stale token in a future session.
   try {
     const _i = new URLSearchParams(window.location.search).get('invite');
     if (_i) {
       localStorage.setItem('wwwPendingInvite', _i);
       localStorage.setItem('wwwPendingInviteTs', Date.now().toString());
+      // Intent flag: only set when the user actually arrived via ?invite=.
+      // bootstrapCellar checks this flag before acting on the stored token.
+      localStorage.setItem('wwwInviteIntended', '1');
     }
   } catch(_) {}
 
@@ -5281,24 +5285,38 @@ async function _bootstrapInner() {
   if (urlInviteToken) {
     inviteToken = urlInviteToken;
   } else {
-    // No ?invite= in URL — check localStorage (covers post-redirect cases where URL was wiped).
-    // Only honour the token if it was saved recently (within 30 minutes); otherwise it is a
-    // stale token from a previous invite session and must be discarded silently to prevent
-    // the "Invite link not found" toast appearing on normal logins.
+    // No ?invite= in URL — check localStorage (covers post-redirect cases where the
+    // Supabase auth redirect wipes query params).
+    // THREE conditions must ALL be true before acting on the stored token:
+    //   1. A token is stored
+    //   2. wwwInviteIntended flag is set (user actually navigated via an invite link
+    //      in this browser — not a token left over from a previous session)
+    //   3. The token is less than 30 minutes old (guards against clock skew / edge cases)
+    // If any condition fails, discard silently — no toast, no join attempt.
     try {
-      const stored = localStorage.getItem('wwwPendingInvite');
-      const ts     = parseInt(localStorage.getItem('wwwPendingInviteTs') || '0', 10);
-      if (stored && (Date.now() - ts) < 30 * 60 * 1000) {
+      const stored   = localStorage.getItem('wwwPendingInvite');
+      const intended = localStorage.getItem('wwwInviteIntended') === '1';
+      const ts       = parseInt(localStorage.getItem('wwwPendingInviteTs') || '0', 10);
+      const fresh    = (Date.now() - ts) < 30 * 60 * 1000;
+      if (stored && intended && fresh) {
+        console.log('[bootstrap] localStorage invite token accepted (intended + fresh)');
         inviteToken = stored;
       } else if (stored) {
-        // Stale — clean up silently
+        // Token present but missing intent flag or too old — discard silently
+        console.log('[bootstrap] localStorage invite token discarded (intended=' + intended + ' fresh=' + fresh + ')');
         localStorage.removeItem('wwwPendingInvite');
         localStorage.removeItem('wwwPendingInviteTs');
+        localStorage.removeItem('wwwInviteIntended');
       }
     } catch(_) {}
   }
   if (inviteToken) {
-    try { localStorage.removeItem('wwwPendingInvite'); localStorage.removeItem('wwwPendingInviteTs'); } catch(_) {}
+    try {
+      localStorage.removeItem('wwwPendingInvite');
+      localStorage.removeItem('wwwPendingInviteTs');
+      localStorage.removeItem('wwwInviteIntended');
+    } catch(_) {}
+    console.log('[bootstrap] invoking joinCellarViaToken token=' + token.slice(0,8) + '… urlBased=' + !!urlInviteToken);
     await joinCellarViaToken(inviteToken, !!urlInviteToken);
     window.history.replaceState({}, '', window.location.pathname);
     return;
@@ -5507,11 +5525,13 @@ function _unsubscribeRealtime() {
 // Join a cellar via invite token
 async function joinCellarViaToken(token, showErrors = true) {
   if (!_sb || !_currentUser) return;
+  console.log('[joinCellarViaToken] attempting join token=' + token.slice(0,8) + '… showErrors=' + showErrors);
 
   const { data: cellar, error: ce } = await _sb
     .from('cellars').select('id').eq('invite_token', token).maybeSingle();
 
   if (ce || !cellar) {
+    console.warn('[joinCellarViaToken] token lookup failed — ce=' + (ce?.message||'none') + ' cellar=' + JSON.stringify(cellar) + ' showErrors=' + showErrors);
     if (showErrors) showToast('Invite link not found or has expired');
     // Fall back to existing membership
     const { data: m } = await _sb.from('cellar_members').select('cellar_id,role')
@@ -5557,7 +5577,11 @@ async function joinCellarViaToken(token, showErrors = true) {
   console.log('[join] membership confirmed in DB for cellar=' + cellar.id.slice(0,8));
   showToast('\u2713 You\u2019ve joined the shared cellar!');
   window.history.replaceState({}, '', window.location.pathname);
-  try { localStorage.removeItem('wwwPendingInvite'); localStorage.removeItem('wwwPendingInviteTs'); } catch(_) {}
+  try {
+    localStorage.removeItem('wwwPendingInvite');
+    localStorage.removeItem('wwwPendingInviteTs');
+    localStorage.removeItem('wwwInviteIntended');
+  } catch(_) {}
 
   window._cellarId   = cellar.id;
   window._cellarRole = 'member';
