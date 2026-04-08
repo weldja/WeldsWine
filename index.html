@@ -5316,7 +5316,7 @@ async function _bootstrapInner() {
       localStorage.removeItem('wwwPendingInviteTs');
       localStorage.removeItem('wwwInviteIntended');
     } catch(_) {}
-    console.log('[bootstrap] invoking joinCellarViaToken token=' + token.slice(0,8) + '… urlBased=' + !!urlInviteToken);
+    console.log('[bootstrap] invoking joinCellarViaToken token=' + inviteToken.slice(0,8) + '… urlBased=' + !!urlInviteToken);
     await joinCellarViaToken(inviteToken, !!urlInviteToken);
     window.history.replaceState({}, '', window.location.pathname);
     return;
