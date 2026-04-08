@@ -2206,17 +2206,13 @@ document.addEventListener('DOMContentLoaded', function() {
   // If this is a public shared wine link, show the wine view — but do NOT
   // return early. We still need the auth listener registered so that if the
   // user clicks "Add this wine" and signs in, onAuthStateChange fires showApp().
-  // Save invite token to localStorage immediately -- survives email confirmation redirects.
-  // Also save a timestamp and an explicit intent flag (wwwInviteIntended) so we can
-  // distinguish a deliberate invite navigation from a stale token in a future session.
+  // Save invite token to localStorage immediately -- survives email confirmation redirects
+  // Also save a timestamp so we can discard stale tokens on normal logins.
   try {
     const _i = new URLSearchParams(window.location.search).get('invite');
     if (_i) {
       localStorage.setItem('wwwPendingInvite', _i);
       localStorage.setItem('wwwPendingInviteTs', Date.now().toString());
-      // Intent flag: only set when the user actually arrived via ?invite=.
-      // bootstrapCellar checks this flag before acting on the stored token.
-      localStorage.setItem('wwwInviteIntended', '1');
     }
   } catch(_) {}
 
@@ -3376,11 +3372,12 @@ function createCard(w) {
     document.querySelectorAll('.card-menu-btn.open').forEach(b => b.click());
     _dropdown = document.createElement('div');
     _dropdown.className = 'card-menu-dropdown';
+    const _canDelete = w.addedBy === _currentUser?.id || w.userId === _currentUser?.id;
     const actions = [
       ['👁 View',   () => openDetail(getWineById(w.id), null)],
       ['✏️ Edit',   (ev) => editWine(w.id, ev)],
       ['↗️ Share',  (ev) => shareWine(w.id, ev)],
-      ['🗑 Delete', (ev) => deleteWine(w.id, ev), 'danger'],
+      ...(_canDelete ? [['🗑 Delete', (ev) => deleteWine(w.id, ev), 'danger']] : []),
     ];
     actions.forEach(([label, handler, cls]) => {
       const btn = document.createElement('button');
@@ -3515,7 +3512,7 @@ async function openDetail(w, e) {
       ${w.notes?`<div class="detail-notes-label">Tasting Notes</div><div class="detail-notes">${escHtml(w.notes)}</div>`:''}
       <div id="detailCommentsPlaceholder"></div>
       <div class="detail-footer">
-        <button class="btn-danger" onclick="deleteWine('${w.id}',event)">Delete</button>
+        ${(w.addedBy === _currentUser?.id || w.userId === _currentUser?.id) ? `<button class="btn-danger" onclick="deleteWine('${w.id}',event)">Delete</button>` : ''}
         <div style="display:flex;gap:8px;margin-left:auto">
           <button class="btn-secondary" onclick="closeDetail()">Close</button>
           <button class="btn-primary" onclick="editWine('${w.id}',event)">Edit</button>
@@ -4026,10 +4023,9 @@ async function deleteWine(id, e) {
   const w = wines.find(w => w.id === id);
   if (!w) return;
 
-  // Permission check: member can only delete their own wines
-  const isOwner = window._cellarRole === 'owner';
+  // Permission: everyone (including owners) can only delete wines they personally added
   const isAdder = w.addedBy === _currentUser?.id || w.userId === _currentUser?.id;
-  if (!isOwner && !isAdder) {
+  if (!isAdder) {
     showToast('You can only delete wines you added');
     return;
   }
@@ -4824,8 +4820,11 @@ async function saveWineToDB(entry) {
 async function deleteWineFromDB(id) {
   if (!_sb || !_currentUser) return false;
   try {
-    // RLS policy handles permission — owner can delete any, member only their own
-    const { error } = await _sb.from('wines').delete().eq('id', id);
+    // Double-lock: filter by both id AND added_by so even if the UI check is bypassed
+    // the DB query will match 0 rows rather than deleting another user's wine.
+    const { error } = await _sb.from('wines').delete()
+      .eq('id', id)
+      .eq('added_by', _currentUser.id);
     if (error) throw error;
     return true;
   } catch(e) {
@@ -5285,38 +5284,24 @@ async function _bootstrapInner() {
   if (urlInviteToken) {
     inviteToken = urlInviteToken;
   } else {
-    // No ?invite= in URL — check localStorage (covers post-redirect cases where the
-    // Supabase auth redirect wipes query params).
-    // THREE conditions must ALL be true before acting on the stored token:
-    //   1. A token is stored
-    //   2. wwwInviteIntended flag is set (user actually navigated via an invite link
-    //      in this browser — not a token left over from a previous session)
-    //   3. The token is less than 30 minutes old (guards against clock skew / edge cases)
-    // If any condition fails, discard silently — no toast, no join attempt.
+    // No ?invite= in URL — check localStorage (covers post-redirect cases where URL was wiped).
+    // Only honour the token if it was saved recently (within 30 minutes); otherwise it is a
+    // stale token from a previous invite session and must be discarded silently to prevent
+    // the "Invite link not found" toast appearing on normal logins.
     try {
-      const stored   = localStorage.getItem('wwwPendingInvite');
-      const intended = localStorage.getItem('wwwInviteIntended') === '1';
-      const ts       = parseInt(localStorage.getItem('wwwPendingInviteTs') || '0', 10);
-      const fresh    = (Date.now() - ts) < 30 * 60 * 1000;
-      if (stored && intended && fresh) {
-        console.log('[bootstrap] localStorage invite token accepted (intended + fresh)');
+      const stored = localStorage.getItem('wwwPendingInvite');
+      const ts     = parseInt(localStorage.getItem('wwwPendingInviteTs') || '0', 10);
+      if (stored && (Date.now() - ts) < 30 * 60 * 1000) {
         inviteToken = stored;
       } else if (stored) {
-        // Token present but missing intent flag or too old — discard silently
-        console.log('[bootstrap] localStorage invite token discarded (intended=' + intended + ' fresh=' + fresh + ')');
+        // Stale — clean up silently
         localStorage.removeItem('wwwPendingInvite');
         localStorage.removeItem('wwwPendingInviteTs');
-        localStorage.removeItem('wwwInviteIntended');
       }
     } catch(_) {}
   }
   if (inviteToken) {
-    try {
-      localStorage.removeItem('wwwPendingInvite');
-      localStorage.removeItem('wwwPendingInviteTs');
-      localStorage.removeItem('wwwInviteIntended');
-    } catch(_) {}
-    console.log('[bootstrap] invoking joinCellarViaToken token=' + inviteToken.slice(0,8) + '… urlBased=' + !!urlInviteToken);
+    try { localStorage.removeItem('wwwPendingInvite'); localStorage.removeItem('wwwPendingInviteTs'); } catch(_) {}
     await joinCellarViaToken(inviteToken, !!urlInviteToken);
     window.history.replaceState({}, '', window.location.pathname);
     return;
@@ -5525,13 +5510,11 @@ function _unsubscribeRealtime() {
 // Join a cellar via invite token
 async function joinCellarViaToken(token, showErrors = true) {
   if (!_sb || !_currentUser) return;
-  console.log('[joinCellarViaToken] attempting join token=' + token.slice(0,8) + '… showErrors=' + showErrors);
 
   const { data: cellar, error: ce } = await _sb
     .from('cellars').select('id').eq('invite_token', token).maybeSingle();
 
   if (ce || !cellar) {
-    console.warn('[joinCellarViaToken] token lookup failed — ce=' + (ce?.message||'none') + ' cellar=' + JSON.stringify(cellar) + ' showErrors=' + showErrors);
     if (showErrors) showToast('Invite link not found or has expired');
     // Fall back to existing membership
     const { data: m } = await _sb.from('cellar_members').select('cellar_id,role')
@@ -5577,11 +5560,7 @@ async function joinCellarViaToken(token, showErrors = true) {
   console.log('[join] membership confirmed in DB for cellar=' + cellar.id.slice(0,8));
   showToast('\u2713 You\u2019ve joined the shared cellar!');
   window.history.replaceState({}, '', window.location.pathname);
-  try {
-    localStorage.removeItem('wwwPendingInvite');
-    localStorage.removeItem('wwwPendingInviteTs');
-    localStorage.removeItem('wwwInviteIntended');
-  } catch(_) {}
+  try { localStorage.removeItem('wwwPendingInvite'); localStorage.removeItem('wwwPendingInviteTs'); } catch(_) {}
 
   window._cellarId   = cellar.id;
   window._cellarRole = 'member';
