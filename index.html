@@ -663,12 +663,17 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
 .btn-locate{background:var(--burgundy);color:var(--ivory);border:none;border-radius:var(--r);padding:5px 12px;font-family:var(--font-b);font-size:.78rem;cursor:pointer;transition:var(--tr);white-space:nowrap;flex-shrink:0}
 .btn-locate:hover{background:var(--burgundy-lt)}
 .btn-locate:disabled{opacity:.5;cursor:not-allowed}
-.star-input{display:flex;flex-wrap:wrap;gap:5px;padding-top:2px}
-.star-input .star{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:50%;border:2px solid var(--light-gray);background:var(--cream);color:var(--warm-gray);font-family:var(--font-b);font-size:.8rem;font-weight:600;cursor:pointer;transition:background .13s,border-color .13s,color .13s,transform .13s;user-select:none;line-height:1}
-.star-input .star.filled.low{background:#7A6E6A;border-color:#7A6E6A;color:#fff}
-.star-input .star.filled.mid{background:var(--burgundy);border-color:var(--burgundy);color:#fff}
-.star-input .star.filled.high{background:#16a34a;border-color:#16a34a;color:#fff}
-.star-input .star:hover{transform:scale(1.1);border-color:var(--gold);color:var(--gold)}
+/* ── Tap-grid rating input ───────────────────────────────── */
+.rating-tap-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;padding-top:2px}
+.rating-tap-grid .r-btn{aspect-ratio:1;border-radius:50%;border:1.5px solid var(--light-gray);background:var(--cream);color:var(--warm-gray);font-family:var(--font-b);font-size:.8rem;font-weight:600;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;transition:background .13s,border-color .13s,color .13s,transform .1s,box-shadow .13s;user-select:none;line-height:1;position:relative;min-width:44px;min-height:44px;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+.rating-tap-grid .r-btn .r-half-pip{position:absolute;bottom:5px;width:4px;height:4px;border-radius:50%;background:var(--gold);opacity:0;transition:opacity .13s}
+.rating-tap-grid .r-btn.r-filled{background:rgba(139,36,57,.18);border-color:rgba(139,36,57,.35);color:var(--burgundy)}
+.rating-tap-grid .r-btn.r-selected-whole{background:var(--burgundy);border-color:var(--burgundy);color:#fff;box-shadow:0 3px 10px rgba(139,36,57,.35)}
+.rating-tap-grid .r-btn.r-selected-half{background:rgba(201,163,74,.12);border-color:var(--gold);color:var(--gold);box-shadow:0 3px 10px rgba(201,163,74,.2)}
+.rating-tap-grid .r-btn.r-selected-half .r-half-pip{opacity:1}
+.rating-tap-grid .r-btn:active{transform:scale(.88)}
+/* keep old .star-input name as alias so any stray references don't break */
+.star-input{display:contents}
 .rating-save-row{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:end}
 .save-group .btn-primary{width:100%;white-space:nowrap}
 .ai-banner{display:flex;align-items:center;gap:8px;background:rgba(201,168,76,.1);border:1px solid rgba(201,168,76,.3);border-radius:var(--r);padding:8px 12px;margin-bottom:14px;font-family:var(--font-b);font-size:.84rem;color:var(--warm-gray);font-style:italic}
@@ -1795,19 +1800,8 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
         </div>
       </div>
       <div class="form-group" style="margin-bottom:18px">
-        <label>Rating</label>
-        <div class="star-input" id="qaStarInput">
-          <span class="star low" data-val="1">1</span>
-          <span class="star low" data-val="2">2</span>
-          <span class="star low" data-val="3">3</span>
-          <span class="star mid" data-val="4">4</span>
-          <span class="star mid" data-val="5">5</span>
-          <span class="star mid" data-val="6">6</span>
-          <span class="star mid" data-val="7">7</span>
-          <span class="star high" data-val="8">8</span>
-          <span class="star high" data-val="9">9</span>
-          <span class="star high" data-val="10">10</span>
-        </div>
+        <label>Rating <span id="qaRatingDisplay" style="font-family:var(--font-b);font-size:.75rem;color:var(--burgundy);text-transform:none;letter-spacing:0;margin-left:4px"></span></label>
+        <div class="rating-tap-grid" id="qaStarInput"></div>
         <input type="hidden" id="qaRating" value="0"/>
       </div>
       <div style="display:flex;gap:10px">
@@ -1845,19 +1839,8 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
         <!-- Rating with Save Wine directly below, date alongside -->
         <div class="form-row two-col">
           <div class="form-group">
-            <label>Rating</label>
-            <div class="star-input" id="starInput">
-              <span class="star low" data-val="1">1</span>
-              <span class="star low" data-val="2">2</span>
-              <span class="star low" data-val="3">3</span>
-              <span class="star mid" data-val="4">4</span>
-              <span class="star mid" data-val="5">5</span>
-              <span class="star mid" data-val="6">6</span>
-              <span class="star mid" data-val="7">7</span>
-              <span class="star high" data-val="8">8</span>
-              <span class="star high" data-val="9">9</span>
-              <span class="star high" data-val="10">10</span>
-            </div>
+            <label>Rating <span id="modalRatingDisplay" style="font-family:var(--font-b);font-size:.75rem;color:var(--burgundy);text-transform:none;letter-spacing:0;margin-left:4px"></span></label>
+            <div class="rating-tap-grid" id="starInput"></div>
             <input type="hidden" id="rating" value="0"/>
             <button type="button" class="btn-primary" id="saveWineBtn" style="margin-top:8px;width:100%">Save Wine</button>
           </div>
@@ -2809,20 +2792,12 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('dateTasted').valueAsDate = new Date();
   document.getElementById('exportBtn').addEventListener('click', exportCSV);
 
-  // Quick Add star input
-  document.querySelectorAll('#qaStarInput .star').forEach(s => {
-    s.addEventListener('mouseover', () => {
-      document.querySelectorAll('#qaStarInput .star').forEach(st => st.classList.toggle('filled', +st.dataset.val <= +s.dataset.val));
-    });
-    s.addEventListener('mouseleave', () => {
-      const v = +document.getElementById('qaRating').value;
-      document.querySelectorAll('#qaStarInput .star').forEach(st => st.classList.toggle('filled', +st.dataset.val <= v));
-    });
-    s.addEventListener('click', () => {
-      document.getElementById('qaRating').value = s.dataset.val;
-      document.querySelectorAll('#qaStarInput .star').forEach(st => st.classList.toggle('filled', +st.dataset.val <= +s.dataset.val));
-    });
-  });
+  // Quick Add tap-grid rating
+  _buildTapGrid(
+    document.getElementById('qaStarInput'),
+    document.getElementById('qaRating'),
+    document.getElementById('qaRatingDisplay')
+  );
   document.getElementById('saveQuickAddBtn').addEventListener('click', handleQuickAdd);
   document.getElementById('cancelQuickAdd').addEventListener('click', closeQuickAdd);
   document.getElementById('closeQuickAdd').addEventListener('click', closeQuickAdd);
@@ -3942,7 +3917,7 @@ async function handleSave(e) {
     purchasedFrom:document.getElementById('purchasedFrom').value.trim()||null,
     dateTasted:   document.getElementById('dateTasted').value||null,
     notes:        document.getElementById('notes').value.trim()||null,
-    rating:       parseInt(ratingInput.value,10)||null,
+    rating:       parseFloat(ratingInput.value)||null,
     sharedBy:     window._importSharedBy || null,
     isFavourite:  document.getElementById('isFavourite').checked,
     buyAgain:     document.getElementById('buyAgain').checked,
@@ -4307,7 +4282,7 @@ function openQuickAdd() {
   document.getElementById('qaCountry').value = '';
   document.getElementById('qaVintage').value = '';
   document.getElementById('qaRating').value  = '0';
-  document.querySelectorAll('#qaStarInput .star').forEach(s => s.classList.remove('filled'));
+  _renderTapGrid(0, document.getElementById('qaStarInput'), document.getElementById('qaRatingDisplay'));
   document.getElementById('quickAddOverlay').classList.add('open');
   document.body.style.overflow = 'hidden';
   _pushNavState();
@@ -4343,7 +4318,7 @@ async function handleQuickAdd() {
     name,
     country:     document.getElementById('qaCountry').value.trim() || null,
     vintage:     document.getElementById('qaVintage').value || null,
-    rating:      parseInt(document.getElementById('qaRating').value, 10) || null,
+    rating:      parseFloat(document.getElementById('qaRating').value) || null,
     winery:      null, region: null, grape: null, style: null,
     price:       null, purchasedFrom: null,
     dateTasted:  new Date().toISOString().slice(0, 10),
@@ -4597,20 +4572,47 @@ function updateStats() {
    Called by setView('insights') — uses current wines array.
 ────────────────────────────────────────────────────────── */
 
+/* ── Tap-grid rating helpers ───────────────────────────── */
+function _buildTapGrid(gridEl, hiddenInput, displayEl) {
+  gridEl.innerHTML = '';
+  for (let i = 1; i <= 10; i++) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'r-btn';
+    btn.dataset.n = i;
+    btn.innerHTML = `<span>${i}</span><span class="r-half-pip"></span>`;
+    btn.addEventListener('click', () => _handleTapRating(i, hiddenInput, gridEl, displayEl));
+    gridEl.appendChild(btn);
+  }
+}
+function _handleTapRating(n, hiddenInput, gridEl, displayEl) {
+  const cur = parseFloat(hiddenInput.value) || 0;
+  let next;
+  if (cur === n)            next = (n < 10) ? n + 0.5 : n; // whole → half (up)
+  else if (cur === n + 0.5) next = 0;                        // half → deselect
+  else                      next = n;                         // fresh tap → whole
+  hiddenInput.value = next;
+  _renderTapGrid(next, gridEl, displayEl);
+}
+function _renderTapGrid(rating, gridEl, displayEl) {
+  const btns = gridEl.querySelectorAll('.r-btn');
+  const floor = Math.floor(rating);
+  btns.forEach(btn => {
+    const n = parseInt(btn.dataset.n);
+    btn.classList.remove('r-selected-whole','r-selected-half','r-filled');
+    if (!rating) return;
+    if (rating === n)           btn.classList.add('r-selected-whole');
+    else if (rating === n - 0.5) btn.classList.add('r-selected-half');
+    else if (n < floor || (n === floor && rating > floor)) btn.classList.add('r-filled');
+  });
+  if (displayEl) displayEl.textContent = rating ? (Number.isInteger(rating) ? rating+'/10' : rating.toFixed(1)+'/10') : '';
+}
+
 function initStarInput() {
-  starInput.querySelectorAll('.star').forEach(s=>{
-    s.addEventListener('mouseover',()=>highlightStars(+s.dataset.val));
-    s.addEventListener('mouseleave',()=>highlightStars(+ratingInput.value));
-    s.addEventListener('click',()=>{ ratingInput.value=s.dataset.val; highlightStars(+s.dataset.val); });
-  });
+  _buildTapGrid(starInput, ratingInput, document.getElementById('modalRatingDisplay'));
 }
-function highlightStars(v){
-  starInput.querySelectorAll('.star').forEach(s=>{
-    const on = +s.dataset.val<=v;
-    s.classList.toggle('filled',on);
-  });
-}
-function setStars(v){ ratingInput.value=v; highlightStars(v); }
+function highlightStars(v){ _renderTapGrid(v, starInput, document.getElementById('modalRatingDisplay')); }
+function setStars(v){ ratingInput.value=v; _renderTapGrid(v, starInput, document.getElementById('modalRatingDisplay')); }
 
 function initPhotoUpload() {
   // Wire up both photo inputs in the Add/Edit form
@@ -4673,12 +4675,14 @@ function _ratingColor(r){
 function renderStars(r){
   if(!r) return '';
   const c=_ratingColor(r);
-  return '<span style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:'+c+';color:#fff;font-family:var(--font-b);font-size:.7rem;font-weight:700;line-height:1;flex-shrink:0">'+r+'</span>';
+  const label = Number.isInteger(r) ? r : r.toFixed(1);
+  return '<span style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:'+c+';color:#fff;font-family:var(--font-b);font-size:.65rem;font-weight:700;line-height:1;flex-shrink:0">'+label+'</span>';
 }
 function renderStarsLarge(r){
   if(!r) return '';
   const c=_ratingColor(r);
-  return '<span style="display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:50%;background:'+c+';color:#fff;font-family:var(--font-b);font-size:1rem;font-weight:700;line-height:1;flex-shrink:0">'+r+'</span>';
+  const label = Number.isInteger(r) ? r : r.toFixed(1);
+  return '<span style="display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:50%;background:'+c+';color:#fff;font-family:var(--font-b);font-size:.9rem;font-weight:700;line-height:1;flex-shrink:0">'+label+'</span>';
 }
 
 // formatDate with memo cache — toLocaleDateString is slow, only call it once per unique value
