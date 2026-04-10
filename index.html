@@ -4798,6 +4798,14 @@ async function loadWinesFromDB(cacheKey) {
 }
 async function saveWineToDB(entry) {
   if (!_sb || !_currentUser) return false;
+  // Ensure session is still valid (can lapse when app is backgrounded on mobile)
+  try {
+    const { data: { session } } = await _sb.auth.getSession();
+    if (!session) {
+      const { error: refreshError } = await _sb.auth.refreshSession();
+      if (refreshError) { console.error('saveWineToDB: session refresh failed', refreshError); return false; }
+    }
+  } catch (e) { console.warn('saveWineToDB: session check failed', e); }
   const row = {
     id:            entry.id,
     user_id:       _currentUser.id,
