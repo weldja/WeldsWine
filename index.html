@@ -3128,10 +3128,10 @@ function _renderCellarAnalytics() {
     </div>
 
     <!-- World map button -->
-    ${wines.some(w=>w.locLat&&w.locLng) ? `<button class="co-world-map-btn" onclick="openWorldMap()">
+    ${wines.some(w=>w.region||w.country) ? `<button class="co-world-map-btn" onclick="openWorldMap()">
       <span class="co-world-map-icon">🌍</span>
       <span class="co-world-map-text">View cellar on world map</span>
-      <span class="co-world-map-count">${wines.filter(w=>w.locLat&&w.locLng).length} located</span>
+      <span class="co-world-map-count">${wines.filter(w=>w.region||w.country).length} mappable</span>
     </button>` : ''}
   `;
 }
@@ -3650,21 +3650,87 @@ function closeWorldMap() {
   document.body.style.overflow = '';
 }
 
-function _renderWorldMap() {
+/* ── Geocode wine origin (region, country) via Nominatim ─────
+   Cached in sessionStorage so unique region/country pairs only
+   hit the network once per browser session. Returns {lat,lng}
+   or null. Failed lookups are also cached (as null) to prevent
+   retry storms. */
+async function _geocodeWineOrigin(region, country) {
+  if (!region && !country) return null;
+  const query = [region, country].filter(Boolean).join(', ');
+  const cacheKey = 'wwwGeo:' + query.toLowerCase();
+
+  // Cache check
+  try {
+    const cached = sessionStorage.getItem(cacheKey);
+    if (cached !== null) {
+      return cached === 'null' ? null : JSON.parse(cached);
+    }
+  } catch(_) {}
+
+  // Network fetch
+  try {
+    const url = `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(query)}`;
+    const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
+    if (!res.ok) throw new Error('geocode failed: ' + res.status);
+    const data = await res.json();
+    if (!Array.isArray(data) || data.length === 0) {
+      try { sessionStorage.setItem(cacheKey, 'null'); } catch(_) {}
+      return null;
+    }
+    const result = { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
+    try { sessionStorage.setItem(cacheKey, JSON.stringify(result)); } catch(_) {}
+    return result;
+  } catch (e) {
+    console.warn('Geocode failed for', query, e);
+    try { sessionStorage.setItem(cacheKey, 'null'); } catch(_) {}
+    return null;
+  }
+}
+
+async function _renderWorldMap() {
   const loading = document.getElementById('worldMapLoading');
+  const sub     = document.getElementById('worldMapSub');
+  const note    = document.getElementById('worldMapNoLocNote');
+
+  // Filter to wines with at least region or country
+  const mappable = wines.filter(w => w.region || w.country);
+  const noOrigin = wines.length - mappable.length;
+
+  // Show loading state with progress
+  if (loading) {
+    loading.style.display = 'flex';
+    loading.innerHTML = `<div class="origin-map-spinner"></div><span>Locating ${mappable.length} wine${mappable.length!==1?'s':''}…</span>`;
+  }
+
+  // Geocode all in parallel with a small stagger to be polite to Nominatim
+  const located = [];
+  const geocodePromises = mappable.map((w, i) => {
+    return new Promise(resolve => {
+      setTimeout(async () => {
+        const coords = await _geocodeWineOrigin(w.region, w.country);
+        if (coords) located.push({ wine: w, ...coords });
+        resolve();
+      }, i * 100); // 100ms stagger
+    });
+  });
+  await Promise.all(geocodePromises);
+
+  // Hide loading
   if (loading) loading.style.display = 'none';
 
-  const withLoc    = wines.filter(w => w.locLat && w.locLng);
-  const noLocCount = wines.length - withLoc.length;
+  // Update sub-header
+  if (sub) sub.textContent = `${located.length} of ${wines.length} wine${wines.length!==1?'s':''} mapped`;
 
-  // Update sub-header and no-location note
-  const sub = document.getElementById('worldMapSub');
-  if (sub) sub.textContent = `${withLoc.length} of ${wines.length} wine${wines.length!==1?'s':''} mapped`;
-
-  const note = document.getElementById('worldMapNoLocNote');
+  // Update no-location note
+  const hidden = wines.length - located.length;
   if (note) {
-    if (noLocCount > 0) {
-      note.textContent = `${noLocCount} wine${noLocCount!==1?'s':''} hidden — no location data`;
+    if (hidden > 0) {
+      const parts = [];
+      if (noOrigin > 0) parts.push(`${noOrigin} with no region/country`);
+      const failedGeocode = hidden - noOrigin;
+      if (failedGeocode > 0) parts.push(`${failedGeocode} location not found`);
+      note.textContent = `${hidden} wine${hidden!==1?'s':''} hidden — ${parts.join(', ')}`;
       note.classList.add('show');
     } else {
       note.classList.remove('show');
@@ -3673,8 +3739,8 @@ function _renderWorldMap() {
 
   // Build or rebuild map
   if (!leafletMap) {
-    const c = withLoc.length ? [withLoc[0].locLat, withLoc[0].locLng] : [30, 10];
-    leafletMap = L.map('worldMapEl', { worldCopyJump: true }).setView(c, withLoc.length > 1 ? 3 : 10);
+    const c = located.length ? [located[0].lat, located[0].lng] : [30, 10];
+    leafletMap = L.map('worldMapEl', { worldCopyJump: true }).setView(c, located.length > 1 ? 3 : 5);
     L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
       attribution: '© OpenStreetMap contributors © CARTO',
       maxZoom: 18
@@ -3685,17 +3751,19 @@ function _renderWorldMap() {
   mapMarkers.forEach(m => m.remove());
   mapMarkers = [];
 
-  withLoc.forEach(w => {
-    const mk = L.circleMarker([w.locLat, w.locLng], {
+  located.forEach(({ wine: w, lat, lng }) => {
+    const mk = L.circleMarker([lat, lng], {
       radius: 9,
       fillColor: '#6B2737',
       color: '#F5EFE6',
       weight: 2,
       fillOpacity: .88
     });
+    const originLabel = [w.region, w.country].filter(Boolean).join(', ');
     mk.bindPopup(`
       <div class="map-popup-name">${escHtml(w.name)}</div>
       <div class="map-popup-meta">${escHtml([w.winery, w.vintage].filter(Boolean).join(' · '))}</div>
+      <div class="map-popup-meta" style="font-size:.7rem;opacity:.7;margin-top:2px">📍 ${escHtml(originLabel)}</div>
       ${w.rating ? `<div class="map-popup-stars">${renderStars(w.rating)}</div>` : ''}
       <button class="map-popup-btn" onclick="closeWorldMap();openDetail(getWineById('${escJs(w.id)}'))">View Details</button>
     `);
@@ -3704,7 +3772,7 @@ function _renderWorldMap() {
   });
 
   // Fit bounds to all markers (with padding) — only if we have 2+, otherwise keep the centered view
-  if (withLoc.length > 1) {
+  if (located.length > 1) {
     leafletMap.fitBounds(L.featureGroup(mapMarkers).getBounds().pad(0.2));
   }
 
