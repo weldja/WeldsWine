@@ -1287,8 +1287,78 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
 }
 #originMapEl{width:100%;height:100%;min-height:320px}
 #worldMapEl{width:100%;height:100%;min-height:320px}
-#worldMapNoLocNote{display:none;padding:10px 18px;font-family:var(--font-b);font-size:.72rem;color:rgba(245,237,226,.55);text-align:center;flex-shrink:0;border-top:1px solid rgba(255,255,255,.06)}
+#worldMapNoLocNote{display:none}
 #worldMapNoLocNote.show{display:block}
+
+/* ── World map: edge-to-edge with floating UI ───────────── */
+.origin-map-overlay.world-map-mode{align-items:stretch}
+.origin-map-overlay.world-map-mode .origin-map-sheet{
+  max-width:none;max-height:100vh;height:100vh;
+  border-radius:0;
+  transform:translateY(100%);
+}
+.origin-map-overlay.world-map-mode.open .origin-map-sheet{transform:translateY(0)}
+.origin-map-overlay.world-map-mode .origin-map-container{flex:1;min-height:0}
+.world-map-mode #worldMapEl{height:100%;min-height:0}
+
+/* Floating title pill — top-left, glass effect */
+.world-map-title-pill{
+  position:absolute;top:14px;left:14px;z-index:500;
+  display:flex;align-items:center;gap:10px;
+  background:rgba(44,20,36,.82);
+  -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
+  border:1px solid rgba(255,255,255,.1);
+  border-radius:14px;
+  padding:9px 14px 9px 12px;
+  box-shadow:0 4px 16px rgba(0,0,0,.25);
+  max-width:calc(100% - 80px);
+}
+.world-map-title-icon{font-size:1.05rem;line-height:1;flex-shrink:0}
+.world-map-title-text{
+  font-family:var(--font-d);font-size:.88rem;font-weight:600;
+  color:var(--ivory);line-height:1.15;
+}
+.world-map-title-sub{
+  font-family:var(--font-b);font-size:.68rem;
+  color:rgba(245,237,226,.55);margin-top:1px;
+}
+
+/* Floating close button — top-right, circular FAB */
+.world-map-close-fab{
+  position:absolute;top:14px;right:14px;z-index:500;
+  width:38px;height:38px;border-radius:50%;
+  background:rgba(44,20,36,.82);
+  -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
+  border:1px solid rgba(255,255,255,.1);
+  color:var(--parchment);font-size:1.1rem;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;
+  box-shadow:0 4px 16px rgba(0,0,0,.25);
+  transition:var(--tr);-webkit-tap-highlight-color:transparent;
+}
+.world-map-close-fab:hover{background:rgba(60,28,46,.92);transform:scale(1.05)}
+.world-map-close-fab:active{transform:scale(.95)}
+
+/* Floating no-location note — bottom-center chip */
+.world-map-mode #worldMapNoLocNote{
+  position:absolute;bottom:14px;left:50%;transform:translateX(-50%);z-index:500;
+  background:rgba(44,20,36,.82);
+  -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
+  border:1px solid rgba(255,255,255,.1);
+  border-radius:20px;
+  padding:7px 14px;
+  font-family:var(--font-b);font-size:.7rem;
+  color:rgba(245,237,226,.75);
+  box-shadow:0 4px 16px rgba(0,0,0,.25);
+  white-space:nowrap;max-width:calc(100% - 28px);
+  overflow:hidden;text-overflow:ellipsis;
+  border-top:1px solid rgba(255,255,255,.1);
+}
+
+/* Nudge Leaflet's zoom controls clear of the floating title pill */
+.world-map-mode .leaflet-top.leaflet-left{top:64px}
+
+/* Loading state stays absolute, behind floating UI */
+.world-map-mode .origin-map-loading{z-index:400}
 .origin-map-loading{
   position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
   background:var(--burgundy-deep);
@@ -3740,10 +3810,11 @@ async function _renderWorldMap() {
   // Build or rebuild map
   if (!leafletMap) {
     const c = located.length ? [located[0].lat, located[0].lng] : [30, 10];
-    leafletMap = L.map('worldMapEl', { worldCopyJump: true }).setView(c, located.length > 1 ? 3 : 5);
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+    leafletMap = L.map('worldMapEl', { worldCopyJump: true, zoomControl: true }).setView(c, located.length > 1 ? 3 : 5);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
       attribution: '© OpenStreetMap contributors © CARTO',
-      maxZoom: 18
+      maxZoom: 18,
+      subdomains: 'abcd'
     }).addTo(leafletMap);
   }
 
@@ -5309,23 +5380,25 @@ function updateKeyBadge() {
 </div>
 
 <!-- WORLD MAP MODAL — full cellar on a world map -->
-<div class="origin-map-overlay" id="worldMapOverlay">
+<div class="origin-map-overlay world-map-mode" id="worldMapOverlay">
   <div class="origin-map-sheet">
-    <div class="origin-map-header">
-      <div>
-        <div class="origin-map-title">🌍 Cellar World Map</div>
-        <div class="origin-map-sub" id="worldMapSub"></div>
-      </div>
-      <button class="origin-map-close" onclick="closeWorldMap()">✕</button>
-    </div>
     <div class="origin-map-container">
       <div class="origin-map-loading" id="worldMapLoading">
         <div class="origin-map-spinner"></div>
         <span>Loading map…</span>
       </div>
       <div id="worldMapEl"></div>
+      <!-- Floating UI overlays -->
+      <div class="world-map-title-pill">
+        <span class="world-map-title-icon">🌍</span>
+        <div>
+          <div class="world-map-title-text">Cellar World Map</div>
+          <div class="world-map-title-sub" id="worldMapSub"></div>
+        </div>
+      </div>
+      <button class="world-map-close-fab" onclick="closeWorldMap()" aria-label="Close map">✕</button>
+      <div id="worldMapNoLocNote"></div>
     </div>
-    <div id="worldMapNoLocNote"></div>
   </div>
 </div>
 
