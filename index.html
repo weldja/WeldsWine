@@ -6294,10 +6294,13 @@ async function openOriginMap(w) {
   document.getElementById('originMapSub').textContent   = [w.winery, w.region, w.country].filter(Boolean).join(' · ');
   document.getElementById('originMapLoading').style.display = 'flex';
 
-  // Build zoom levels from most to least specific
+  // Build zoom levels from most to least specific.
+  // Clean the region first to strip appellation prefixes/suffixes
+  // and parentheticals (e.g. "W.O. Paarl (Old Bush Vine)" → "Paarl")
+  const cleanedRegion = _cleanRegionForGeocode(w.region);
   const levels = [];
-  if (w.winery && w.country) levels.push({ label: w.winery, query: `${w.winery} ${w.region||''} ${w.country}`, zoom: 12 });
-  if (w.region && w.country) levels.push({ label: w.region, query: `${w.region} ${w.country}`, zoom: 9 });
+  if (w.winery && w.country) levels.push({ label: w.winery, query: `${w.winery} ${cleanedRegion||''} ${w.country}`, zoom: 12 });
+  if (cleanedRegion && w.country) levels.push({ label: w.region, query: `${cleanedRegion}, ${w.country}`, zoom: 9 });
   if (w.country)             levels.push({ label: w.country, query: w.country, zoom: 5 });
 
   if (!levels.length) {
