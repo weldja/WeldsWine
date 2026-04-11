@@ -994,6 +994,13 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
 .co-highlight-value{font-family:var(--font-b);font-size:.82rem;font-weight:600;color:var(--ivory);line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .co-highlight-meta{font-family:var(--font-b);font-size:.68rem;color:rgba(245,237,226,.4);margin-top:2px}
 
+.co-world-map-btn{display:flex;align-items:center;gap:10px;width:100%;margin-top:14px;background:linear-gradient(135deg,rgba(201,163,74,.14),rgba(201,163,74,.06));border:1px solid rgba(201,163,74,.32);border-radius:10px;padding:13px 16px;color:var(--ivory);font-family:var(--font-b);font-size:.85rem;font-weight:500;cursor:pointer;transition:var(--tr);-webkit-tap-highlight-color:transparent;text-align:left;min-height:44px}
+.co-world-map-btn:hover{background:linear-gradient(135deg,rgba(201,163,74,.22),rgba(201,163,74,.1));border-color:rgba(201,163,74,.5)}
+.co-world-map-btn:active{transform:scale(.98)}
+.co-world-map-icon{font-size:1.15rem;line-height:1;flex-shrink:0}
+.co-world-map-text{flex:1}
+.co-world-map-count{font-size:.7rem;color:rgba(245,237,226,.5);background:rgba(255,255,255,.06);padding:3px 8px;border-radius:10px;flex-shrink:0}
+
 @media(max-width:640px){
   .co-header{padding:14px 16px 12px}
   .co-body{padding:0 14px 16px}
@@ -1279,6 +1286,9 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
   flex:1;min-height:320px;position:relative;overflow:hidden;
 }
 #originMapEl{width:100%;height:100%;min-height:320px}
+#worldMapEl{width:100%;height:100%;min-height:320px}
+#worldMapNoLocNote{display:none;padding:10px 18px;font-family:var(--font-b);font-size:.72rem;color:rgba(245,237,226,.55);text-align:center;flex-shrink:0;border-top:1px solid rgba(255,255,255,.06)}
+#worldMapNoLocNote.show{display:block}
 .origin-map-loading{
   position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
   background:var(--burgundy-deep);
@@ -3060,9 +3070,9 @@ function _renderCellarAnalytics() {
   ].filter(Boolean);
 
   const highlightsHtml = highlights.slice(0,4).map(h => `
-    <div class="co-highlight" onclick="openDetail(getWineById('${escJs(h.id)}'),null)">
-      <div class="co-highlight-icon">${escHtml(h.icon)}</div>
-      <div class="co-highlight-label">${escHtml(h.label)}</div>
+    <div class="co-highlight" onclick="openDetail(getWineById('${escHtml(h.id)}'),null)">
+      <div class="co-highlight-icon">${h.icon}</div>
+      <div class="co-highlight-label">${h.label}</div>
       <div class="co-highlight-value">${escHtml(h.value)}</div>
       <div class="co-highlight-meta">${escHtml(h.meta)}</div>
     </div>`).join('');
@@ -3116,6 +3126,13 @@ function _renderCellarAnalytics() {
       ${favCount  ? `<div style="background:rgba(255,255,255,.05);border-radius:6px;padding:6px 12px;font-family:var(--font-b);font-size:.75rem;color:rgba(245,237,226,.6)">♥ ${favCount} favourite${favCount!==1?'s':''}</div>` : ''}
       ${buyCount  ? `<div style="background:rgba(255,255,255,.05);border-radius:6px;padding:6px 12px;font-family:var(--font-b);font-size:.75rem;color:rgba(245,237,226,.6)">↺ ${buyCount} buy again</div>` : ''}
     </div>
+
+    <!-- World map button -->
+    ${wines.some(w=>w.locLat&&w.locLng) ? `<button class="co-world-map-btn" onclick="openWorldMap()">
+      <span class="co-world-map-icon">🌍</span>
+      <span class="co-world-map-text">View cellar on world map</span>
+      <span class="co-world-map-count">${wines.filter(w=>w.locLat&&w.locLng).length} located</span>
+    </button>` : ''}
   `;
 }
 
@@ -3484,21 +3501,21 @@ async function openDetail(w, e) {
       ${w.winery?`<div class="detail-winery">${escHtml(w.winery)}</div>`:''}
       <div class="detail-rating-row">
         ${w.rating?`<div class="detail-stars">${renderStarsLarge(w.rating)}</div>`:''}
-        ${(w.country||w.region||w.winery)?`<button class="btn-origin-map btn-origin-map--inline" onclick="openOriginMap(getWineById('${escJs(w.id)}'))">🗺 Show wine origin on map</button>`:''}
+        ${(w.country||w.region||w.winery)?`<button class="btn-origin-map btn-origin-map--inline" onclick="openOriginMap(getWineById('${w.id}'))">🗺 Show wine origin on map</button>`:''}
       </div>
       ${w.sharedBy?`<div class="shared-by-badge" style="margin-bottom:12px">🤝 Shared wine</div>`:''}
       ${addedByLabel}
       <div class="detail-grid">
-        ${fields.map(([l,v])=>`<div class="detail-field"><label>${escHtml(l)}</label><p>${escHtml(String(v))}</p></div>`).join('')}
+        ${fields.map(([l,v])=>`<div class="detail-field"><label>${l}</label><p>${escHtml(String(v))}</p></div>`).join('')}
       </div>
       ${mapHtml}
       ${w.notes?`<div class="detail-notes-label">Tasting Notes</div><div class="detail-notes">${escHtml(w.notes)}</div>`:''}
       <div id="detailCommentsPlaceholder"></div>
       <div class="detail-footer">
-        ${(w.addedBy === _currentUser?.id || w.userId === _currentUser?.id) ? `<button class="btn-danger" onclick="deleteWine('${escJs(w.id)}',event)">Delete</button>` : ''}
+        ${(w.addedBy === _currentUser?.id || w.userId === _currentUser?.id) ? `<button class="btn-danger" onclick="deleteWine('${w.id}',event)">Delete</button>` : ''}
         <div style="display:flex;gap:8px;margin-left:auto">
           <button class="btn-secondary" onclick="closeDetail()">Close</button>
-          <button class="btn-primary" onclick="editWine('${escJs(w.id)}',event)">Edit</button>
+          <button class="btn-primary" onclick="editWine('${w.id}',event)">Edit</button>
         </div>
       </div>
     </div>`;
@@ -3557,12 +3574,14 @@ function _anyPanelOpen() {
     document.getElementById('infoOverlay').classList.contains('open') ||
     document.getElementById('quickAddOverlay').classList.contains('open') ||
     document.getElementById('cellarSettingsOverlay').classList.contains('open') ||
-    document.getElementById('originMapOverlay').classList.contains('open')
+    document.getElementById('originMapOverlay').classList.contains('open') ||
+    document.getElementById('worldMapOverlay').classList.contains('open')
   );
 }
 function _closeTopPanel() {
   if (document.getElementById('labelLightbox'))                                        { closeLightbox();        return; }
   if (document.getElementById('originMapOverlay').classList.contains('open'))         { closeOriginMap();       return; }
+  if (document.getElementById('worldMapOverlay').classList.contains('open'))          { closeWorldMap();        return; }
   if (document.getElementById('cellarSettingsOverlay').classList.contains('open'))    { closeCellarSettings();  return; }
   if (document.getElementById('quickAddOverlay').classList.contains('open'))          { closeQuickAdd();        return; }
   if (document.getElementById('shareOverlay').classList.contains('open'))             { closeShareModal();      return; }
@@ -3601,43 +3620,96 @@ window.addEventListener('popstate', e => {
   }, 2200);
 });
 
-function initMapView() {
+function openWorldMap() {
+  const overlay = document.getElementById('worldMapOverlay');
+  if (!overlay) return;
+  overlay.classList.add('open');
+  document.body.style.overflow = 'hidden';
+  _pushNavState();
+
   // Lazy-load Leaflet only when map is first opened
   if (typeof L === 'undefined') {
+    const loading = document.getElementById('worldMapLoading');
+    if (loading) loading.style.display = 'flex';
     const s = document.createElement('script');
     s.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
-    s.onload = () => _initMapViewInner();
+    s.onload = () => _renderWorldMap();
+    s.onerror = () => {
+      if (loading) loading.innerHTML = '<span>Could not load map. Check your connection.</span>';
+    };
     document.head.appendChild(s);
   } else {
-    _initMapViewInner();
+    _renderWorldMap();
   }
 }
 
-function _initMapViewInner() {
-  const withLoc = wines.filter(w=>w.locLat&&w.locLng);
-  document.getElementById('noLocNote').style.display = (wines.length>0 && withLoc.length<wines.length) ? 'block':'none';
+function closeWorldMap() {
+  const overlay = document.getElementById('worldMapOverlay');
+  if (!overlay) return;
+  overlay.classList.remove('open');
+  document.body.style.overflow = '';
+}
 
-  if (!leafletMap) {
-    const c = withLoc.length ? [withLoc[0].locLat,withLoc[0].locLng] : [51.5,-0.12];
-    leafletMap = L.map('wineMap').setView(c, withLoc.length>1?6:10);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap'}).addTo(leafletMap);
+function _renderWorldMap() {
+  const loading = document.getElementById('worldMapLoading');
+  if (loading) loading.style.display = 'none';
+
+  const withLoc    = wines.filter(w => w.locLat && w.locLng);
+  const noLocCount = wines.length - withLoc.length;
+
+  // Update sub-header and no-location note
+  const sub = document.getElementById('worldMapSub');
+  if (sub) sub.textContent = `${withLoc.length} of ${wines.length} wine${wines.length!==1?'s':''} mapped`;
+
+  const note = document.getElementById('worldMapNoLocNote');
+  if (note) {
+    if (noLocCount > 0) {
+      note.textContent = `${noLocCount} wine${noLocCount!==1?'s':''} hidden — no location data`;
+      note.classList.add('show');
+    } else {
+      note.classList.remove('show');
+    }
   }
 
-  mapMarkers.forEach(m=>m.remove()); mapMarkers=[];
+  // Build or rebuild map
+  if (!leafletMap) {
+    const c = withLoc.length ? [withLoc[0].locLat, withLoc[0].locLng] : [30, 10];
+    leafletMap = L.map('worldMapEl', { worldCopyJump: true }).setView(c, withLoc.length > 1 ? 3 : 10);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+      attribution: '© OpenStreetMap contributors © CARTO',
+      maxZoom: 18
+    }).addTo(leafletMap);
+  }
 
-  withLoc.forEach(w=>{
-    const mk = L.circleMarker([w.locLat,w.locLng],{radius:10,fillColor:'#6B2737',color:'#F5EFE6',weight:2,fillOpacity:.88});
+  // Clear old markers
+  mapMarkers.forEach(m => m.remove());
+  mapMarkers = [];
+
+  withLoc.forEach(w => {
+    const mk = L.circleMarker([w.locLat, w.locLng], {
+      radius: 9,
+      fillColor: '#6B2737',
+      color: '#F5EFE6',
+      weight: 2,
+      fillOpacity: .88
+    });
     mk.bindPopup(`
       <div class="map-popup-name">${escHtml(w.name)}</div>
-      <div class="map-popup-meta">${escHtml([w.winery,w.vintage].filter(Boolean).join(' · '))}</div>
-      ${w.rating?`<div class="map-popup-stars">${renderStars(w.rating)}</div>`:''}
-      <button class="map-popup-btn" onclick="(function(){openDetail(getWineById('${w.id}'));})()">View Details</button>
+      <div class="map-popup-meta">${escHtml([w.winery, w.vintage].filter(Boolean).join(' · '))}</div>
+      ${w.rating ? `<div class="map-popup-stars">${renderStars(w.rating)}</div>` : ''}
+      <button class="map-popup-btn" onclick="closeWorldMap();openDetail(getWineById('${escJs(w.id)}'))">View Details</button>
     `);
-    mk.addTo(leafletMap); mapMarkers.push(mk);
+    mk.addTo(leafletMap);
+    mapMarkers.push(mk);
   });
 
-  if (withLoc.length>1) { leafletMap.fitBounds(L.featureGroup(mapMarkers).getBounds().pad(0.2)); }
-  setTimeout(()=>leafletMap.invalidateSize(),120);
+  // Fit bounds to all markers (with padding) — only if we have 2+, otherwise keep the centered view
+  if (withLoc.length > 1) {
+    leafletMap.fitBounds(L.featureGroup(mapMarkers).getBounds().pad(0.2));
+  }
+
+  // Leaflet needs invalidateSize after the container becomes visible
+  setTimeout(() => leafletMap.invalidateSize(), 120);
 }
 
 function openModal(wine=null, injectFront=null, injectBack=null) {
@@ -4694,7 +4766,6 @@ function formatDate(s) {
   return _dateCache[s];
 }
 function escHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;'); }
-function escJs(s){ return String(s).replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'\\"').replace(/\n/g,'\\n').replace(/\r/g,'\\r').replace(/</g,'\\x3c').replace(/>/g,'\\x3e'); }
 function showToast(m){ const t=document.getElementById('toast'); t.textContent=m; t.classList.add('show'); clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove('show'),3000); }
 function flashAutofill(el){ el.classList.remove('autofilled'); void el.offsetWidth; el.classList.add('autofilled'); }
 // Crypto-safe ID — no collisions across devices
@@ -5165,6 +5236,27 @@ function updateKeyBadge() {
       <div id="originMapEl"></div>
     </div>
     <div class="origin-map-breadcrumb" id="originMapCrumbs"></div>
+  </div>
+</div>
+
+<!-- WORLD MAP MODAL — full cellar on a world map -->
+<div class="origin-map-overlay" id="worldMapOverlay">
+  <div class="origin-map-sheet">
+    <div class="origin-map-header">
+      <div>
+        <div class="origin-map-title">🌍 Cellar World Map</div>
+        <div class="origin-map-sub" id="worldMapSub"></div>
+      </div>
+      <button class="origin-map-close" onclick="closeWorldMap()">✕</button>
+    </div>
+    <div class="origin-map-container">
+      <div class="origin-map-loading" id="worldMapLoading">
+        <div class="origin-map-spinner"></div>
+        <span>Loading map…</span>
+      </div>
+      <div id="worldMapEl"></div>
+    </div>
+    <div id="worldMapNoLocNote"></div>
   </div>
 </div>
 
@@ -5687,7 +5779,7 @@ async function _renderMembersList() {
     const row = document.createElement('div');
     row.className = 'cellar-member-row';
     row.innerHTML = `
-      <div class="cellar-member-avatar">${escHtml(initials)}</div>
+      <div class="cellar-member-avatar">${initials}</div>
       <div class="cellar-member-info">
         <div class="cellar-member-name">${escHtml(displayName)}</div>
         <div class="cellar-member-role">${roleLabel}${isMe ? ' · You' : ''}</div>
@@ -5831,10 +5923,10 @@ function renderCommentsSection(wineId, comments) {
             <div class="comment-header">
               <div class="comment-avatar">${escHtml(initials)}</div>
               <span class="comment-author">${escHtml(c.author_name)}</span>
-              <span class="comment-time">${escHtml(timeStr)}</span>
+              <span class="comment-time">${timeStr}</span>
             </div>
             <div class="comment-body">${escHtml(c.body)}</div>
-            ${canDelete ? `<button class="comment-delete" title="Delete comment" onclick="handleDeleteComment('${escJs(c.id)}', this)">✕</button>` : ''}
+            ${canDelete ? `<button class="comment-delete" title="Delete comment" onclick="handleDeleteComment('${escHtml(c.id)}', this)">✕</button>` : ''}
           </div>`;
       }).join('')
     : '<div class="comments-empty">No comments yet — be the first to add one.</div>';
@@ -5850,10 +5942,10 @@ function renderCommentsSection(wineId, comments) {
         <textarea class="comments-input" id="commentInput_${escHtml(wineId)}"
           placeholder="Add a comment…" rows="1"
           oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'"
-          onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();handlePostComment('${escJs(wineId)}')}"
+          onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();handlePostComment('${escHtml(wineId)}')}"
         ></textarea>
         <button class="comments-submit" id="commentSubmit_${escHtml(wineId)}"
-          onclick="handlePostComment('${escJs(wineId)}')">Post</button>
+          onclick="handlePostComment('${escHtml(wineId)}')">Post</button>
       </div>
     </div>`;
 }
@@ -5891,10 +5983,10 @@ async function handlePostComment(wineId) {
     <div class="comment-header">
       <div class="comment-avatar">${escHtml(initials)}</div>
       <span class="comment-author">${escHtml(comment.author_name)}</span>
-      <span class="comment-time">${escHtml(timeStr)}</span>
+      <span class="comment-time">${timeStr}</span>
     </div>
     <div class="comment-body">${escHtml(comment.body)}</div>
-    <button class="comment-delete" title="Delete comment" onclick="handleDeleteComment('${escJs(comment.id)}', this)">✕</button>
+    <button class="comment-delete" title="Delete comment" onclick="handleDeleteComment('${escHtml(comment.id)}', this)">✕</button>
   `;
   list.appendChild(div);
   div.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
