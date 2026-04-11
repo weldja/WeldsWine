@@ -4288,6 +4288,10 @@ async function shareWine(id, e) {
 
   // Create/fetch share record in Supabase and get link
   const shareId = await getOrCreateShareId(w);
+  if (!shareId) {
+    // getOrCreateShareId already showed a toast with the underlying error
+    return;
+  }
   const link    = `${window.location.origin}${window.location.pathname}?wine=${shareId}`;
   document.getElementById('shareLinkInput').value = link;
   document.getElementById('shareCopyBtn').textContent = 'Copy Link';
@@ -4301,17 +4305,22 @@ async function shareWine(id, e) {
 async function getOrCreateShareId(w) {
   if (!_sb) return w.id;
   // Check if already shared
-  const { data: existing } = await _sb
+  const { data: existing, error: selErr } = await _sb
     .from('shared_wines')
     .select('id')
     .eq('wine_id', w.id)
     .limit(1)
     .maybeSingle();
+  if (selErr) {
+    console.error('shared_wines select failed:', selErr);
+    showToast('Could not check share status: ' + (selErr.message || 'unknown error'));
+    return null;
+  }
   if (existing) return existing.id;
 
   // Create share record
   const shareId = generateId();
-  await _sb.from('shared_wines').insert({
+  const { error: insErr } = await _sb.from('shared_wines').insert({
     id:       shareId,
     wine_id:  w.id,
     user_id:  _currentUser?.id,
@@ -4330,6 +4339,11 @@ async function getOrCreateShareId(w) {
     date_tasted: w.dateTasted,
     price:    w.price,
   });
+  if (insErr) {
+    console.error('shared_wines insert failed:', insErr);
+    showToast('Could not create share link: ' + (insErr.message || 'unknown error'));
+    return null;
+  }
   return shareId;
 }
 
