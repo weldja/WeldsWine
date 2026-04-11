@@ -4833,7 +4833,14 @@ async function saveWineToDB(entry) {
     added_by:      entry.addedBy || _currentUser.id
   };
   const { error } = await _sb.from('wines').upsert(row, { onConflict: 'id' });
-  if (error) { console.error('saveWineToDB:', error); return false; }
+  if (error) {
+    console.error('saveWineToDB FAILED', {
+      code: error.code, message: error.message, details: error.details,
+      hint: error.hint, status: error.status, row_id: row.id, cellar_id: row.cellar_id,
+      user_id: row.user_id, added_by: row.added_by
+    });
+    return false;
+  }
   return true;
 }
 
@@ -6220,5 +6227,142 @@ if ('serviceWorker' in navigator) {
   });
 }
 </script>
+
+<!-- ============ DEBUG OVERLAY (remove when done) ============ -->
+<script>
+(function(){
+  if (!/[?&]debug=1/.test(location.search) && sessionStorage.getItem('ww_debug') !== '1') return;
+  sessionStorage.setItem('ww_debug', '1');
+
+  const MAX = 300;
+  let logs = [];
+  try { logs = JSON.parse(sessionStorage.getItem('ww_debug_logs') || '[]'); } catch(e){}
+
+  function persist(){ try { sessionStorage.setItem('ww_debug_logs', JSON.stringify(logs.slice(-MAX))); } catch(e){} }
+  function push(level, args){
+    const time = new Date().toISOString().slice(11,23);
+    let msg;
+    try {
+      msg = args.map(a => {
+        if (a instanceof Error) return a.name+': '+a.message+(a.stack?'\n'+a.stack:'');
+        if (typeof a === 'object') return JSON.stringify(a, null, 2);
+        return String(a);
+      }).join(' ');
+    } catch(e){ msg = '[unserialisable]'; }
+    logs.push({time, level, msg});
+    if (logs.length > MAX) logs = logs.slice(-MAX);
+    persist();
+    render();
+  }
+
+  ['log','info','warn','error','debug'].forEach(level => {
+    const orig = console[level].bind(console);
+    console[level] = function(){ push(level, [...arguments]); orig.apply(console, arguments); };
+  });
+
+  window.addEventListener('error', e => push('error', ['[window.error]', e.message, e.filename+':'+e.lineno+':'+e.colno, e.error || '']));
+  window.addEventListener('unhandledrejection', e => push('error', ['[unhandledrejection]', e.reason && (e.reason.stack || e.reason.message || e.reason) || e]));
+
+  const origFetch = window.fetch.bind(window);
+  window.fetch = async function(input, init){
+    const url = typeof input === 'string' ? input : (input && input.url) || '';
+    const method = (init && init.method) || (typeof input !== 'string' && input && input.method) || 'GET';
+    const t0 = performance.now();
+    try {
+      const res = await origFetch(input, init);
+      const dur = (performance.now()-t0).toFixed(0);
+      if (!res.ok) {
+        let body = '';
+        try { body = (await res.clone().text()).slice(0, 800); } catch(e){}
+        push('error', ['[fetch '+res.status+'] '+method+' '+url+' ('+dur+'ms)', body]);
+      } else {
+        push('log', ['[fetch '+res.status+'] '+method+' '+url+' ('+dur+'ms)']);
+      }
+      return res;
+    } catch (err) {
+      const dur = (performance.now()-t0).toFixed(0);
+      push('error', ['[fetch THROW] '+method+' '+url+' ('+dur+'ms)', err && (err.message || err)]);
+      throw err;
+    }
+  };
+
+  const css = ''
+    + '#wwDbgBtn{position:fixed;left:12px;bottom:12px;z-index:99999;width:44px;height:44px;border-radius:22px;'
+    + 'background:#5a0f1f;color:#fff;border:none;font-size:20px;box-shadow:0 4px 12px rgba(0,0,0,.4);'
+    + '-webkit-tap-highlight-color:transparent;touch-action:manipulation;}'
+    + '#wwDbgBtn .b{background:#d4a017;color:#000;border-radius:10px;padding:1px 5px;font-size:11px;'
+    + 'position:absolute;top:-4px;right:-4px;font-weight:700;}'
+    + '#wwDbgPanel{position:fixed;inset:0;z-index:99998;background:rgba(15,10,12,.97);color:#eee;'
+    + 'font:12px/1.4 ui-monospace,monospace;display:none;flex-direction:column;}'
+    + '#wwDbgPanel.show{display:flex;}'
+    + '#wwDbgBar{padding:10px;display:flex;gap:6px;border-bottom:1px solid #333;flex-wrap:wrap;'
+    + 'padding-top:max(10px,env(safe-area-inset-top));}'
+    + '#wwDbgBar button{background:#2a1a1f;color:#eee;border:1px solid #555;border-radius:6px;'
+    + 'padding:8px 10px;font-size:12px;min-height:36px;-webkit-tap-highlight-color:transparent;}'
+    + '#wwDbgBar button.danger{background:#5a0f1f;}'
+    + '#wwDbgList{flex:1;overflow:auto;padding:8px 10px;-webkit-overflow-scrolling:touch;'
+    + 'padding-bottom:max(10px,env(safe-area-inset-bottom));}'
+    + '.wwDbgRow{padding:6px 0;border-bottom:1px solid #222;white-space:pre-wrap;word-break:break-word;}'
+    + '.wwDbgRow.error{color:#ff7a7a;}'
+    + '.wwDbgRow.warn{color:#ffd479;}'
+    + '.wwDbgRow .t{color:#888;font-size:10px;margin-right:6px;}';
+  const style = document.createElement('style'); style.textContent = css; document.head.appendChild(style);
+
+  const btn = document.createElement('button');
+  btn.id = 'wwDbgBtn'; btn.innerHTML = '\u{1F41B}<span class="b" id="wwDbgCount">0</span>';
+  document.body.appendChild(btn);
+
+  const panel = document.createElement('div');
+  panel.id = 'wwDbgPanel';
+  panel.innerHTML = ''
+    + '<div id="wwDbgBar">'
+    + '<button id="wwDbgClose">Close</button>'
+    + '<button id="wwDbgCopy">Copy all</button>'
+    + '<button id="wwDbgClear" class="danger">Clear</button>'
+    + '<button id="wwDbgErrors">Errors only</button>'
+    + '<button id="wwDbgOff" class="danger">Disable</button>'
+    + '</div>'
+    + '<div id="wwDbgList"></div>';
+  document.body.appendChild(panel);
+
+  let filterErrors = false;
+  function escapeHtml(s){ return String(s).replace(/[&<>]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c]; }); }
+  function render(){
+    const list = document.getElementById('wwDbgList');
+    const cnt = document.getElementById('wwDbgCount');
+    if (!list || !cnt) return;
+    const errs = logs.filter(function(l){ return l.level === 'error'; }).length;
+    cnt.textContent = errs;
+    cnt.style.background = errs ? '#d4a017' : '#666';
+    const src = filterErrors ? logs.filter(function(l){ return l.level==='error'; }) : logs;
+    list.innerHTML = src.map(function(l){
+      return '<div class="wwDbgRow '+l.level+'"><span class="t">'+l.time+'</span>'+escapeHtml(l.msg)+'</div>';
+    }).join('');
+    list.scrollTop = list.scrollHeight;
+  }
+
+  btn.addEventListener('click', function(){ panel.classList.add('show'); render(); });
+  panel.addEventListener('click', function(e){
+    const id = e.target.id;
+    if (id === 'wwDbgClose') panel.classList.remove('show');
+    if (id === 'wwDbgClear') { logs = []; persist(); render(); }
+    if (id === 'wwDbgErrors') {
+      filterErrors = !filterErrors;
+      e.target.style.background = filterErrors?'#d4a017':'#2a1a1f';
+      e.target.style.color = filterErrors?'#000':'#eee';
+      render();
+    }
+    if (id === 'wwDbgCopy') {
+      const txt = logs.map(function(l){ return '['+l.time+'] '+l.level.toUpperCase()+' '+l.msg; }).join('\n');
+      navigator.clipboard.writeText(txt).then(function(){ alert('Copied '+logs.length+' lines'); }, function(){ alert('Copy failed'); });
+    }
+    if (id === 'wwDbgOff') { sessionStorage.removeItem('ww_debug'); sessionStorage.removeItem('ww_debug_logs'); location.reload(); }
+  });
+
+  console.log('[ww-debug] overlay active', new Date().toISOString());
+  render();
+})();
+</script>
+<!-- ============ END DEBUG OVERLAY ============ -->
 </body>
 </html>
