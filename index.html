@@ -3060,9 +3060,9 @@ function _renderCellarAnalytics() {
   ].filter(Boolean);
 
   const highlightsHtml = highlights.slice(0,4).map(h => `
-    <div class="co-highlight" onclick="openDetail(getWineById('${escHtml(h.id)}'),null)">
-      <div class="co-highlight-icon">${h.icon}</div>
-      <div class="co-highlight-label">${h.label}</div>
+    <div class="co-highlight" onclick="openDetail(getWineById('${escJs(h.id)}'),null)">
+      <div class="co-highlight-icon">${escHtml(h.icon)}</div>
+      <div class="co-highlight-label">${escHtml(h.label)}</div>
       <div class="co-highlight-value">${escHtml(h.value)}</div>
       <div class="co-highlight-meta">${escHtml(h.meta)}</div>
     </div>`).join('');
@@ -3484,21 +3484,21 @@ async function openDetail(w, e) {
       ${w.winery?`<div class="detail-winery">${escHtml(w.winery)}</div>`:''}
       <div class="detail-rating-row">
         ${w.rating?`<div class="detail-stars">${renderStarsLarge(w.rating)}</div>`:''}
-        ${(w.country||w.region||w.winery)?`<button class="btn-origin-map btn-origin-map--inline" onclick="openOriginMap(getWineById('${w.id}'))">🗺 Show wine origin on map</button>`:''}
+        ${(w.country||w.region||w.winery)?`<button class="btn-origin-map btn-origin-map--inline" onclick="openOriginMap(getWineById('${escJs(w.id)}'))">🗺 Show wine origin on map</button>`:''}
       </div>
       ${w.sharedBy?`<div class="shared-by-badge" style="margin-bottom:12px">🤝 Shared wine</div>`:''}
       ${addedByLabel}
       <div class="detail-grid">
-        ${fields.map(([l,v])=>`<div class="detail-field"><label>${l}</label><p>${escHtml(String(v))}</p></div>`).join('')}
+        ${fields.map(([l,v])=>`<div class="detail-field"><label>${escHtml(l)}</label><p>${escHtml(String(v))}</p></div>`).join('')}
       </div>
       ${mapHtml}
       ${w.notes?`<div class="detail-notes-label">Tasting Notes</div><div class="detail-notes">${escHtml(w.notes)}</div>`:''}
       <div id="detailCommentsPlaceholder"></div>
       <div class="detail-footer">
-        ${(w.addedBy === _currentUser?.id || w.userId === _currentUser?.id) ? `<button class="btn-danger" onclick="deleteWine('${w.id}',event)">Delete</button>` : ''}
+        ${(w.addedBy === _currentUser?.id || w.userId === _currentUser?.id) ? `<button class="btn-danger" onclick="deleteWine('${escJs(w.id)}',event)">Delete</button>` : ''}
         <div style="display:flex;gap:8px;margin-left:auto">
           <button class="btn-secondary" onclick="closeDetail()">Close</button>
-          <button class="btn-primary" onclick="editWine('${w.id}',event)">Edit</button>
+          <button class="btn-primary" onclick="editWine('${escJs(w.id)}',event)">Edit</button>
         </div>
       </div>
     </div>`;
@@ -4694,6 +4694,7 @@ function formatDate(s) {
   return _dateCache[s];
 }
 function escHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;'); }
+function escJs(s){ return String(s).replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'\\"').replace(/\n/g,'\\n').replace(/\r/g,'\\r').replace(/</g,'\\x3c').replace(/>/g,'\\x3e'); }
 function showToast(m){ const t=document.getElementById('toast'); t.textContent=m; t.classList.add('show'); clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove('show'),3000); }
 function flashAutofill(el){ el.classList.remove('autofilled'); void el.offsetWidth; el.classList.add('autofilled'); }
 // Crypto-safe ID — no collisions across devices
@@ -5686,7 +5687,7 @@ async function _renderMembersList() {
     const row = document.createElement('div');
     row.className = 'cellar-member-row';
     row.innerHTML = `
-      <div class="cellar-member-avatar">${initials}</div>
+      <div class="cellar-member-avatar">${escHtml(initials)}</div>
       <div class="cellar-member-info">
         <div class="cellar-member-name">${escHtml(displayName)}</div>
         <div class="cellar-member-role">${roleLabel}${isMe ? ' · You' : ''}</div>
@@ -5830,10 +5831,10 @@ function renderCommentsSection(wineId, comments) {
             <div class="comment-header">
               <div class="comment-avatar">${escHtml(initials)}</div>
               <span class="comment-author">${escHtml(c.author_name)}</span>
-              <span class="comment-time">${timeStr}</span>
+              <span class="comment-time">${escHtml(timeStr)}</span>
             </div>
             <div class="comment-body">${escHtml(c.body)}</div>
-            ${canDelete ? `<button class="comment-delete" title="Delete comment" onclick="handleDeleteComment('${escHtml(c.id)}', this)">✕</button>` : ''}
+            ${canDelete ? `<button class="comment-delete" title="Delete comment" onclick="handleDeleteComment('${escJs(c.id)}', this)">✕</button>` : ''}
           </div>`;
       }).join('')
     : '<div class="comments-empty">No comments yet — be the first to add one.</div>';
@@ -5849,10 +5850,10 @@ function renderCommentsSection(wineId, comments) {
         <textarea class="comments-input" id="commentInput_${escHtml(wineId)}"
           placeholder="Add a comment…" rows="1"
           oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'"
-          onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();handlePostComment('${escHtml(wineId)}')}"
+          onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();handlePostComment('${escJs(wineId)}')}"
         ></textarea>
         <button class="comments-submit" id="commentSubmit_${escHtml(wineId)}"
-          onclick="handlePostComment('${escHtml(wineId)}')">Post</button>
+          onclick="handlePostComment('${escJs(wineId)}')">Post</button>
       </div>
     </div>`;
 }
@@ -5890,10 +5891,10 @@ async function handlePostComment(wineId) {
     <div class="comment-header">
       <div class="comment-avatar">${escHtml(initials)}</div>
       <span class="comment-author">${escHtml(comment.author_name)}</span>
-      <span class="comment-time">${timeStr}</span>
+      <span class="comment-time">${escHtml(timeStr)}</span>
     </div>
     <div class="comment-body">${escHtml(comment.body)}</div>
-    <button class="comment-delete" title="Delete comment" onclick="handleDeleteComment('${escHtml(comment.id)}', this)">✕</button>
+    <button class="comment-delete" title="Delete comment" onclick="handleDeleteComment('${escJs(comment.id)}', this)">✕</button>
   `;
   list.appendChild(div);
   div.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
