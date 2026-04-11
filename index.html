@@ -3725,37 +3725,94 @@ function closeWorldMap() {
    hit the network once per browser session. Returns {lat,lng}
    or null. Failed lookups are also cached (as null) to prevent
    retry storms. */
+/* ── Clean a region string for geocoding ─────────────────────
+   Strips parentheticals (vineyard descriptors like "Old Bush
+   Vine") and appellation prefixes that confuse Nominatim.
+   "W.O. Paarl (Old Bush Vine)" → "Paarl"
+   "AOC Bordeaux" → "Bordeaux"  */
+function _cleanRegionForGeocode(region) {
+  if (!region) return '';
+  let s = String(region);
+  // Strip parentheticals and their contents
+  s = s.replace(/\s*\([^)]*\)\s*/g, ' ');
+  // Strip appellation prefixes (case-insensitive, with or without dots/spaces)
+  // Order matters: longer prefixes first so "DOCG" isn't shortened to "DOC"
+  const prefixes = [
+    'W\\.?O\\.?',           // South Africa: Wine of Origin
+    'A\\.?O\\.?C\\.?',      // France: Appellation d'Origine Contrôlée
+    'A\\.?O\\.?P\\.?',      // France: Appellation d'Origine Protégée
+    'D\\.?O\\.?C\\.?G\\.?', // Italy: Denominazione di Origine Controllata e Garantita
+    'D\\.?O\\.?C\\.?',      // Italy/Portugal: Denominazione/Denominação di/de Origine Controllata
+    'I\\.?G\\.?T\\.?',      // Italy: Indicazione Geografica Tipica
+    'I\\.?G\\.?P\\.?',      // France/Italy: Indication Géographique Protégée
+    'D\\.?O\\.?Ca\\.?',     // Spain: Denominación de Origen Calificada
+    'D\\.?O\\.?P\\.?',      // Spain: Denominación de Origen Protegida
+    'D\\.?O\\.?',           // Spain: Denominación de Origen
+    'V\\.?D\\.?P\\.?',      // Germany: Verband Deutscher Prädikatsweingüter
+    'QbA',                   // Germany: Qualitätswein bestimmter Anbaugebiete
+    'AVA',                   // USA: American Viticultural Area
+    'GI'                     // Australia: Geographical Indication
+  ];
+  const re = new RegExp('^(?:' + prefixes.join('|') + ')\\s+', 'i');
+  s = s.replace(re, '');
+  // Some regions put the appellation suffix-style ("Napa Valley AVA")
+  const reSuffix = new RegExp('\\s+(?:' + prefixes.join('|') + ')$', 'i');
+  s = s.replace(reSuffix, '');
+  // Collapse whitespace and trim
+  return s.replace(/\s+/g, ' ').trim();
+}
+
+/* ── Geocode wine origin (region, country) via Nominatim ─────
+   Cached in sessionStorage. Tries cleaned-region+country first,
+   falls back to country-only if that fails. Returns
+   {lat, lng, precision} where precision is 'region' or 'country',
+   or null if both attempts fail. */
 async function _geocodeWineOrigin(region, country) {
   if (!region && !country) return null;
-  const query = [region, country].filter(Boolean).join(', ');
-  const cacheKey = 'wwwGeo:' + query.toLowerCase();
 
-  // Cache check
-  try {
-    const cached = sessionStorage.getItem(cacheKey);
+  const cleanRegion = _cleanRegionForGeocode(region);
+
+  // Build candidate queries in order of specificity
+  const candidates = [];
+  if (cleanRegion && country) candidates.push({ q: `${cleanRegion}, ${country}`, precision: 'region' });
+  else if (cleanRegion)       candidates.push({ q: cleanRegion,                    precision: 'region' });
+  if (country)                candidates.push({ q: country,                        precision: 'country' });
+
+  for (const { q, precision } of candidates) {
+    const cacheKey = 'wwwGeo:' + q.toLowerCase();
+
+    // Cache check
+    let cached = null;
+    try { cached = sessionStorage.getItem(cacheKey); } catch(_) {}
     if (cached !== null) {
-      return cached === 'null' ? null : JSON.parse(cached);
+      if (cached === 'null') continue; // known failure, try next candidate
+      try {
+        const parsed = JSON.parse(cached);
+        return { ...parsed, precision };
+      } catch(_) {}
     }
-  } catch(_) {}
 
-  // Network fetch
-  try {
-    const url = `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(query)}`;
-    const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
-    if (!res.ok) throw new Error('geocode failed: ' + res.status);
-    const data = await res.json();
-    if (!Array.isArray(data) || data.length === 0) {
+    // Network fetch
+    try {
+      const url = `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(q)}`;
+      const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
+      if (!res.ok) throw new Error('geocode failed: ' + res.status);
+      const data = await res.json();
+      if (!Array.isArray(data) || data.length === 0) {
+        try { sessionStorage.setItem(cacheKey, 'null'); } catch(_) {}
+        continue; // try next candidate
+      }
+      const result = { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
+      try { sessionStorage.setItem(cacheKey, JSON.stringify(result)); } catch(_) {}
+      return { ...result, precision };
+    } catch (e) {
+      console.warn('Geocode failed for', q, e);
       try { sessionStorage.setItem(cacheKey, 'null'); } catch(_) {}
-      return null;
+      // try next candidate
     }
-    const result = { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
-    try { sessionStorage.setItem(cacheKey, JSON.stringify(result)); } catch(_) {}
-    return result;
-  } catch (e) {
-    console.warn('Geocode failed for', query, e);
-    try { sessionStorage.setItem(cacheKey, 'null'); } catch(_) {}
-    return null;
   }
+
+  return null;
 }
 
 async function _renderWorldMap() {
@@ -3794,13 +3851,19 @@ async function _renderWorldMap() {
 
   // Update no-location note
   const hidden = wines.length - located.length;
+  const countryFallbackCount = located.filter(p => p.precision === 'country').length;
   if (note) {
+    const parts = [];
     if (hidden > 0) {
-      const parts = [];
       if (noOrigin > 0) parts.push(`${noOrigin} with no region/country`);
       const failedGeocode = hidden - noOrigin;
-      if (failedGeocode > 0) parts.push(`${failedGeocode} location not found`);
-      note.textContent = `${hidden} wine${hidden!==1?'s':''} hidden — ${parts.join(', ')}`;
+      if (failedGeocode > 0) parts.push(`${failedGeocode} not found`);
+    }
+    if (countryFallbackCount > 0) {
+      parts.push(`${countryFallbackCount} pinned to country`);
+    }
+    if (parts.length > 0) {
+      note.textContent = parts.join(' · ');
       note.classList.add('show');
     } else {
       note.classList.remove('show');
@@ -3822,19 +3885,22 @@ async function _renderWorldMap() {
   mapMarkers.forEach(m => m.remove());
   mapMarkers = [];
 
-  located.forEach(({ wine: w, lat, lng }) => {
+  located.forEach(({ wine: w, lat, lng, precision }) => {
+    const isApprox = precision === 'country';
     const mk = L.circleMarker([lat, lng], {
-      radius: 9,
-      fillColor: '#6B2737',
+      radius: isApprox ? 8 : 9,
+      fillColor: isApprox ? '#C9A34A' : '#6B2737',
       color: '#F5EFE6',
       weight: 2,
-      fillOpacity: .88
+      fillOpacity: isApprox ? .7 : .88,
+      dashArray: isApprox ? '3,2' : null
     });
     const originLabel = [w.region, w.country].filter(Boolean).join(', ');
+    const precisionNote = isApprox ? ' <span style="opacity:.6">(approx)</span>' : '';
     mk.bindPopup(`
       <div class="map-popup-name">${escHtml(w.name)}</div>
       <div class="map-popup-meta">${escHtml([w.winery, w.vintage].filter(Boolean).join(' · '))}</div>
-      <div class="map-popup-meta" style="font-size:.7rem;opacity:.7;margin-top:2px">📍 ${escHtml(originLabel)}</div>
+      <div class="map-popup-meta" style="font-size:.7rem;opacity:.7;margin-top:2px">📍 ${escHtml(originLabel)}${precisionNote}</div>
       ${w.rating ? `<div class="map-popup-stars">${renderStars(w.rating)}</div>` : ''}
       <button class="map-popup-btn" onclick="closeWorldMap();openDetail(getWineById('${escJs(w.id)}'))">View Details</button>
     `);
