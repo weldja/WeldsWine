@@ -4267,9 +4267,15 @@ async function handleSave(e) {
 
 async function editWine(id,e) {
   if(e) e.stopPropagation();
-  closeDetail();
   const w = wines.find(w=>w.id===id);
   if (!w) return;
+  // Model A: only the original adder can edit
+  const isOwner = w.userId === _currentUser?.id || w.addedBy === _currentUser?.id;
+  if (!isOwner) {
+    showToast('You can only edit wines you added');
+    return;
+  }
+  closeDetail();
   // Fetch photos if not yet loaded
   if (!w.photoFront && _sb && _currentUser) {
     const { data } = await _sb.from('wines').select('photo_front,photo_back').eq('id',id).single();
@@ -5098,9 +5104,15 @@ async function saveWineToDB(entry) {
       if (refreshError) { console.error('saveWineToDB: session refresh failed', refreshError); return false; }
     }
   } catch (e) { console.warn('saveWineToDB: session check failed', e); }
+  // Model A: only the original adder can edit a wine in a shared cellar.
+  if (entry.userId && entry.userId !== _currentUser.id) {
+    showToast('You can only edit wines you added');
+    console.warn('saveWineToDB blocked: not owner', { wine_id: entry.id, owner: entry.userId, current: _currentUser.id });
+    return false;
+  }
   const row = {
     id:            entry.id,
-    user_id:       _currentUser.id,
+    user_id:       entry.userId || _currentUser.id,
     name:          entry.name,
     winery:        entry.winery,
     vintage:       entry.vintage,
