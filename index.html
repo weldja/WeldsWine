@@ -3762,15 +3762,101 @@ function _cleanRegionForGeocode(region) {
   return s.replace(/\s+/g, ' ').trim();
 }
 
+/* ── Known wine region centroids ─────────────
+   Curated coordinates for famous wine regions that Nominatim
+   frequently mis-geocodes (e.g. "Douro" returns the river, not
+   the DOC). Keys are lowercased "region|country" or just
+   "region" for unambiguous matches. */
+const _KNOWN_WINE_REGIONS = {
+  // Portugal
+  'douro|portugal':        { lat: 41.1579, lng: -7.5436 },
+  'alentejo|portugal':     { lat: 38.5667, lng: -7.9000 },
+  'vinho verde|portugal':  { lat: 41.5500, lng: -8.4200 },
+  'dao|portugal':          { lat: 40.5000, lng: -7.9000 },
+  'douro':                 { lat: 41.1579, lng: -7.5436 },
+  // France
+  'bordeaux|france':       { lat: 44.8378, lng: -0.5792 },
+  'burgundy|france':       { lat: 47.0521, lng: 4.3875 },
+  'bourgogne|france':      { lat: 47.0521, lng: 4.3875 },
+  'champagne|france':      { lat: 49.0400, lng: 4.0000 },
+  'rhone|france':          { lat: 44.9000, lng: 4.8500 },
+  'rhône|france':          { lat: 44.9000, lng: 4.8500 },
+  'loire|france':          { lat: 47.2500, lng: 0.6800 },
+  'alsace|france':         { lat: 48.2500, lng: 7.4500 },
+  'languedoc|france':      { lat: 43.6000, lng: 3.8800 },
+  'provence|france':       { lat: 43.5300, lng: 5.4500 },
+  // Italy
+  'tuscany|italy':         { lat: 43.3700, lng: 11.2500 },
+  'toscana|italy':         { lat: 43.3700, lng: 11.2500 },
+  'chianti|italy':         { lat: 43.4700, lng: 11.3000 },
+  'barolo|italy':          { lat: 44.6100, lng: 7.9400 },
+  'piedmont|italy':        { lat: 44.8000, lng: 8.0000 },
+  'piemonte|italy':        { lat: 44.8000, lng: 8.0000 },
+  'veneto|italy':          { lat: 45.6000, lng: 11.5000 },
+  // Spain
+  'rioja|spain':           { lat: 42.4627, lng: -2.4449 },
+  'ribera del duero|spain':{ lat: 41.6300, lng: -3.6900 },
+  'priorat|spain':         { lat: 41.1800, lng: 0.7500 },
+  // Germany
+  'mosel|germany':         { lat: 49.9700, lng: 6.9000 },
+  'moselle|germany':       { lat: 49.9700, lng: 6.9000 },
+  'rheingau|germany':      { lat: 50.0000, lng: 8.0000 },
+  // USA
+  'napa|usa':              { lat: 38.5025, lng: -122.2654 },
+  'napa valley|usa':       { lat: 38.5025, lng: -122.2654 },
+  'napa|united states':    { lat: 38.5025, lng: -122.2654 },
+  'napa valley|united states': { lat: 38.5025, lng: -122.2654 },
+  'sonoma|usa':            { lat: 38.5077, lng: -122.9867 },
+  'sonoma|united states':  { lat: 38.5077, lng: -122.9867 },
+  'willamette valley|usa': { lat: 45.2000, lng: -123.1000 },
+  'willamette valley|united states': { lat: 45.2000, lng: -123.1000 },
+  // New Zealand
+  'marlborough|new zealand': { lat: -41.5134, lng: 173.9612 },
+  // Australia
+  'barossa|australia':     { lat: -34.5333, lng: 138.9500 },
+  'barossa valley|australia': { lat: -34.5333, lng: 138.9500 },
+  // Argentina
+  'mendoza|argentina':     { lat: -32.8908, lng: -68.8272 },
+  // South Africa
+  'stellenbosch|south africa': { lat: -33.9322, lng: 18.8602 }
+};
+
+/* ── ISO country code hints for Nominatim ──────────
+   When we fall back to Nominatim, biasing by countrycodes
+   prevents cross-border mismatches (e.g. Portugal's Douro
+   matching a Spanish river segment). */
+const _COUNTRY_CODES = {
+  'portugal': 'pt', 'france': 'fr', 'italy': 'it', 'spain': 'es',
+  'germany': 'de', 'austria': 'at', 'usa': 'us', 'united states': 'us',
+  'united states of america': 'us', 'australia': 'au', 'new zealand': 'nz',
+  'argentina': 'ar', 'chile': 'cl', 'south africa': 'za', 'greece': 'gr',
+  'hungary': 'hu', 'england': 'gb', 'united kingdom': 'gb', 'uk': 'gb',
+  'canada': 'ca', 'mexico': 'mx', 'croatia': 'hr', 'slovenia': 'si',
+  'georgia': 'ge', 'lebanon': 'lb', 'israel': 'il', 'japan': 'jp'
+};
+
+/* Cache version — bump to invalidate stale/bad entries from
+   earlier geocoding logic. */
+const _GEO_CACHE_VERSION = 'v2';
+
 /* ── Geocode wine origin (region, country) via Nominatim ─────
-   Cached in sessionStorage. Tries cleaned-region+country first,
-   falls back to country-only if that fails. Returns
+   Checks known-regions table first, then falls back to
+   Nominatim. Cached in sessionStorage. Returns
    {lat, lng, precision} where precision is 'region' or 'country',
    or null if both attempts fail. */
 async function _geocodeWineOrigin(region, country) {
   if (!region && !country) return null;
 
   const cleanRegion = _cleanRegionForGeocode(region);
+  const countryLc   = (country || '').toLowerCase().trim();
+  const regionLc    = cleanRegion.toLowerCase().trim();
+
+  // Known-region short-circuit: try "region|country" then "region" alone
+  if (regionLc) {
+    const keyFull = countryLc ? `${regionLc}|${countryLc}` : null;
+    const hit = (keyFull && _KNOWN_WINE_REGIONS[keyFull]) || _KNOWN_WINE_REGIONS[regionLc];
+    if (hit) return { lat: hit.lat, lng: hit.lng, precision: 'region' };
+  }
 
   // Build candidate queries in order of specificity
   const candidates = [];
@@ -3778,8 +3864,10 @@ async function _geocodeWineOrigin(region, country) {
   else if (cleanRegion)       candidates.push({ q: cleanRegion,                    precision: 'region' });
   if (country)                candidates.push({ q: country,                        precision: 'country' });
 
+  const cc = _COUNTRY_CODES[countryLc] || null;
+
   for (const { q, precision } of candidates) {
-    const cacheKey = 'wwwGeo:' + q.toLowerCase();
+    const cacheKey = 'wwwGeo:' + _GEO_CACHE_VERSION + ':' + q.toLowerCase();
 
     // Cache check
     let cached = null;
@@ -3794,7 +3882,8 @@ async function _geocodeWineOrigin(region, country) {
 
     // Network fetch
     try {
-      const url = `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(q)}`;
+      const ccParam = cc ? `&countrycodes=${cc}` : '';
+      const url = `https://nominatim.openstreetmap.org/search?format=json&limit=1${ccParam}&q=${encodeURIComponent(q)}`;
       const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
       if (!res.ok) throw new Error('geocode failed: ' + res.status);
       const data = await res.json();
