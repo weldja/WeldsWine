@@ -3735,6 +3735,15 @@ function _cleanRegionForGeocode(region) {
   let s = String(region);
   // Strip parentheticals and their contents
   s = s.replace(/\s*\([^)]*\)\s*/g, ' ');
+  // Strip full Portuguese/Italian/French/Spanish legal phrases (longhand forms
+  // of DOC/DOCG/AOC/DO) wherever they appear. Accented chars optional.
+  s = s
+    .replace(/\bDenomina[cç][aã]o de Origem (Controlada|Protegida)(\s+e Garantida)?\b/gi, '')
+    .replace(/\bDenominazione di Origine (Controllata|Protetta)(\s+e Garantita)?\b/gi, '')
+    .replace(/\bDenominaci[oó]n de Origen (Calificada|Protegida)?\b/gi, '')
+    .replace(/\bAppellation(\s+d['’]Origine)?\s+(Contr[oô]l[eé]e|Prot[eé]g[eé]e)\b/gi, '')
+    .replace(/\bIndicazione Geografica Tipica\b/gi, '')
+    .replace(/\bIndication G[eé]ographique Prot[eé]g[eé]e\b/gi, '');
   // Strip appellation prefixes (case-insensitive, with or without dots/spaces)
   // Order matters: longer prefixes first so "DOCG" isn't shortened to "DOC"
   const prefixes = [
@@ -3822,9 +3831,8 @@ const _KNOWN_WINE_REGIONS = {
 };
 
 /* ── ISO country code hints for Nominatim ──────────
-   When we fall back to Nominatim, biasing by countrycodes
-   prevents cross-border mismatches (e.g. Portugal's Douro
-   matching a Spanish river segment). */
+   Biasing by countrycodes prevents cross-border mismatches
+   (e.g. Portugal's Douro matching a Spanish river segment). */
 const _COUNTRY_CODES = {
   'portugal': 'pt', 'france': 'fr', 'italy': 'it', 'spain': 'es',
   'germany': 'de', 'austria': 'at', 'usa': 'us', 'united states': 'us',
@@ -3841,9 +3849,8 @@ const _GEO_CACHE_VERSION = 'v2';
 
 /* ── Geocode wine origin (region, country) via Nominatim ─────
    Checks known-regions table first, then falls back to
-   Nominatim. Cached in sessionStorage. Returns
-   {lat, lng, precision} where precision is 'region' or 'country',
-   or null if both attempts fail. */
+   Nominatim with country bias. Cached in sessionStorage.
+   Returns {lat, lng, precision} or null. */
 async function _geocodeWineOrigin(region, country) {
   if (!region && !country) return null;
 
@@ -6395,14 +6402,13 @@ async function openOriginMap(w) {
   document.getElementById('originMapSub').textContent   = [w.winery, w.region, w.country].filter(Boolean).join(' · ');
   document.getElementById('originMapLoading').style.display = 'flex';
 
-  // Build zoom levels from most to least specific.
-  // Clean the region first to strip appellation prefixes/suffixes
-  // and parentheticals (e.g. "W.O. Paarl (Old Bush Vine)" → "Paarl")
+  // Build zoom levels: region and country only. Winery-level geocoding is
+  // unreliable for supermarket wines (e.g. "ASDA" matches a French store)
+  // and disabled here; region is the most specific useful level.
   const cleanedRegion = _cleanRegionForGeocode(w.region);
   const levels = [];
-  if (w.winery && w.country) levels.push({ label: w.winery, query: `${w.winery} ${cleanedRegion||''} ${w.country}`, zoom: 12 });
-  if (cleanedRegion && w.country) levels.push({ label: w.region, query: `${cleanedRegion}, ${w.country}`, zoom: 9 });
-  if (w.country)             levels.push({ label: w.country, query: w.country, zoom: 5 });
+  if (cleanedRegion && w.country) levels.push({ label: w.region, zoom: 9,  kind: 'region'  });
+  if (w.country)                  levels.push({ label: w.country, zoom: 5, kind: 'country' });
 
   if (!levels.length) {
     document.getElementById('originMapLoading').innerHTML = '<span>No location data for this wine</span>';
@@ -6419,12 +6425,17 @@ async function openOriginMap(w) {
   await _ensureLeaflet();
   _initOriginMap();
 
-  // Geocode all levels
-  const geocoded = await Promise.all(levels.map(l => _geocodeQuery(l.query)));
-  window._originLevels = levels.map((l, i) => ({ ...l, geo: geocoded[i] }));
+  // Geocode via the shared resolver (known-regions table + Nominatim fallback
+  // with country bias). Country level uses country only.
+  const regionCoords  = await _geocodeWineOrigin(w.region, w.country);
+  const countryCoords = w.country ? await _geocodeWineOrigin(null, w.country) : null;
+  window._originLevels = levels.map(l => ({
+    ...l,
+    geo: l.kind === 'region' ? regionCoords : countryCoords
+  }));
 
-  // Start at region level (index 1) if available, otherwise most specific
-  const regionIdx = window._originLevels.findIndex((l, i) => i === 1 && l.geo);
+  // Start at region level if available, otherwise country
+  const regionIdx  = window._originLevels.findIndex(l => l.kind === 'region'  && l.geo);
   const firstValid = window._originLevels.findIndex(l => l.geo);
   _originZoomLevel = regionIdx >= 0 ? regionIdx : (firstValid >= 0 ? firstValid : 0);
   _flyToOriginLevel(_originZoomLevel);
