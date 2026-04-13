@@ -3858,11 +3858,28 @@ async function _geocodeWineOrigin(region, country) {
   const countryLc   = (country || '').toLowerCase().trim();
   const regionLc    = cleanRegion.toLowerCase().trim();
 
-  // Known-region short-circuit: try "region|country" then "region" alone
+  // Known-region short-circuit. Try in order of specificity:
+  //   1. full cleaned region + country  (e.g. "douro valley – douro|portugal")
+  //   2. full cleaned region alone       (e.g. "douro valley – douro")
+  //   3. each token split on dashes/commas/slashes, longest first, with country
+  //      (so "Douro Valley – Douro" tries "douro valley|portugal" then "douro|portugal")
+  //   4. same tokens without country
+  // This handles verbose region strings like "Region A – Subregion B" without
+  // needing a table entry for every phrasing.
   if (regionLc) {
-    const keyFull = countryLc ? `${regionLc}|${countryLc}` : null;
-    const hit = (keyFull && _KNOWN_WINE_REGIONS[keyFull]) || _KNOWN_WINE_REGIONS[regionLc];
-    if (hit) return { lat: hit.lat, lng: hit.lng, precision: 'region' };
+    const tryKey = (key) => key && _KNOWN_WINE_REGIONS[key];
+    const full = tryKey(countryLc ? `${regionLc}|${countryLc}` : null) || tryKey(regionLc);
+    if (full) return { lat: full.lat, lng: full.lng, precision: 'region' };
+
+    const tokens = regionLc
+      .split(/[–—,\/]+/)      // en-dash, em-dash, comma, slash
+      .map(t => t.trim())
+      .filter(Boolean)
+      .sort((a, b) => b.length - a.length); // longest (most specific) first
+    for (const tok of tokens) {
+      const hit = tryKey(countryLc ? `${tok}|${countryLc}` : null) || tryKey(tok);
+      if (hit) return { lat: hit.lat, lng: hit.lng, precision: 'region' };
+    }
   }
 
   // Build candidate queries in order of specificity
