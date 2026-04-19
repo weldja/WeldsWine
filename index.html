@@ -2753,15 +2753,8 @@ const Scanner = (() => {
   // Replace the placeholder with your Worker URL before deploying.
   // Example: 'https://wine-scan.yourname.workers.dev'
   // This is the ONLY thing you need to change in this file.
-  
- 
- 
   const WORKER_URL = 'https://aged-wave-00c3.james-weld.workers.dev';
   // ───────────────────────────────────────────────────────────
-  // ── Push notifications ──────────────────────────────────────
-  const VAPID_PUBLIC_KEY    = 'BFfnLR324-GmAa5PU_eHGm1tWOsB-9PTMuV3bWrDoQCfiX7e_mh1Mz-7KVNvf9nUKdnsEPnAwhYS6P7vqP76q-g';
-  const PUSH_PHASE1_USER_ID = '0c21cdcd-9963-405e-b231-00b8f65dee9e'; // Phase 1: James only
-
   // localStorage override — lets you update the URL without redeploying
   const STORE_KEY = 'wwwProxyUrl';
   function getProxyUrl() {
@@ -2831,6 +2824,10 @@ const Scanner = (() => {
 
 <!-- MAIN APP -->
 <script>
+// ── Push notification globals ────────────────────────────────────
+var VAPID_PUBLIC_KEY    = 'BFfnLR324-GmAa5PU_eHGm1tWOsB-9PTMuV3bWrDoQCfiX7e_mh1Mz-7KVNvf9nUKdnsEPnAwhYS6P7vqP76q-g'; // fill in your generated public key
+var PUSH_PHASE1_USER_ID = '0c21cdcd-9963-405e-b231-00b8f65dee9e'; // Phase 1: James only
+// ─────────────────────────────────────
 // Wines populated from Supabase after authentication — see loadWinesFromDB()
 let wines        = [];
 let _winesLoaded = false; // false until first DB load completes
@@ -4487,7 +4484,7 @@ function updatePushBtn() {
 async function notifyWineAdded(entry) {
   if (!window._cellarId) return; // solo cellar — nothing to notify
   try {
-    await fetch(getProxyUrl() + '/notify-wine-added', {
+    await fetch(Scanner.getProxyUrl() + '/notify-wine-added', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
