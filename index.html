@@ -2753,8 +2753,14 @@ const Scanner = (() => {
   // Replace the placeholder with your Worker URL before deploying.
   // Example: 'https://wine-scan.yourname.workers.dev'
   // This is the ONLY thing you need to change in this file.
+  
+ 
+ 
   const WORKER_URL = 'https://aged-wave-00c3.james-weld.workers.dev';
   // ───────────────────────────────────────────────────────────
+  // ── Push notifications ──────────────────────────────────────
+  const VAPID_PUBLIC_KEY    = 'BFfnLR324-GmAa5PU_eHGm1tWOsB-9PTMuV3bWrDoQCfiX7e_mh1Mz-7KVNvf9nUKdnsEPnAwhYS6P7vqP76q-g';
+  const PUSH_PHASE1_USER_ID = '0c21cdcd-9963-405e-b231-00b8f65dee9e'; // Phase 1: James only
 
   // localStorage override — lets you update the URL without redeploying
   const STORE_KEY = 'wwwProxyUrl';
@@ -4336,6 +4342,7 @@ async function handleSave(e) {
   else { wines.unshift(entry); }
 
   showToast(idx >= 0 ? 'Wine updated ✓' : 'Wine saved ✓');
+  if (idx < 0) notifyWineAdded(entry); // fire & forget — push to cellar members
   window._importSharedBy = null;
   closeModal();
 
@@ -4421,6 +4428,75 @@ async function deleteWine(id, e) {
   renderGrid();
   updateStats();
   showToast('Entry deleted');
+}
+
+/* ══ Push notification helpers ───────────────────────────── */
+function _b64uToUint8(b) {
+  const pad = '='.repeat((4 - b.length % 4) % 4);
+  const b64 = (b + pad).replace(/-/g, '+').replace(/_/g, '/');
+  return Uint8Array.from([...atob(b64)].map(c => c.charCodeAt(0)));
+}
+
+async function registerPush() {
+  if (!('PushManager' in window)) { showToast('Push not supported on this browser'); return; }
+  const permission = await Notification.requestPermission();
+  if (permission !== 'granted') { updatePushBtn(); return; }
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    let sub = await reg.pushManager.getSubscription();
+    if (!sub) {
+      sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: _b64uToUint8(VAPID_PUBLIC_KEY)
+      });
+    }
+    const { error } = await _sb.from('push_subscriptions').upsert({
+      user_id:      _currentUser.id,
+      cellar_id:    window._cellarId || null,
+      subscription: sub.toJSON()
+    }, { onConflict: 'user_id' });
+    if (error) throw error;
+    showToast('Notifications enabled ✓');
+  } catch(e) {
+    console.error('registerPush:', e);
+    showToast('Could not enable notifications');
+  }
+  updatePushBtn();
+}
+
+function updatePushBtn() {
+  const btn = document.getElementById('pushNotifBtn');
+  if (!btn) return;
+  // Phase 1: only visible to James
+  if (!_currentUser || _currentUser.id !== PUSH_PHASE1_USER_ID || !('PushManager' in window)) {
+    btn.style.display = 'none'; return;
+  }
+  btn.style.display = '';
+  if (Notification.permission === 'denied') {
+    btn.textContent = '🔕 Blocked — enable in phone Settings';
+    btn.disabled = true; btn.style.opacity = '0.6'; return;
+  }
+  navigator.serviceWorker.ready
+    .then(r => r.pushManager.getSubscription())
+    .then(sub => {
+      if (sub) { btn.textContent = '🔔 Notifications enabled ✓'; btn.disabled = true;  btn.style.opacity = '0.6'; }
+      else     { btn.textContent = '🔔 Enable notifications';        btn.disabled = false; btn.style.opacity = '1'; }
+    });
+}
+
+async function notifyWineAdded(entry) {
+  if (!window._cellarId) return; // solo cellar — nothing to notify
+  try {
+    await fetch(getProxyUrl() + '/notify-wine-added', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        wine_name:     entry.name   || null,
+        winery:        entry.winery || null,
+        added_by_name: (_currentUser && _currentUser.email) ? _currentUser.email.split('@')[0] : null
+      })
+    });
+  } catch(e) { console.warn('notifyWineAdded (non-critical):', e.message); }
 }
 
 /* ── Toggle favourite ────────────────────────────────────── */
@@ -4755,6 +4831,7 @@ async function handleQuickAdd() {
   else { emptyState.style.display = 'none'; wineGrid.style.display = 'grid'; wineGrid.appendChild(card); }
   updateStats();
   showToast(`${name} saved ✓`);
+  notifyWineAdded(entry); // fire & forget — push to cellar members
   btn.disabled = false;
   btn.textContent = 'Save Wine';
 }
@@ -5671,6 +5748,7 @@ function updateKeyBadge() {
       <button onclick="document.getElementById('openAddModal').click();closeMobileMenu()" style="background:none;border:1px solid var(--light-gray);border-radius:var(--r);padding:12px 16px;font-family:var(--font-b);font-size:.95rem;color:var(--charcoal);cursor:pointer;text-align:left;margin-top:4px">➕ Add Wine</button>
       <button onclick="document.getElementById('openQuickAdd').click();closeMobileMenu()" style="background:none;border:1px solid var(--light-gray);border-radius:var(--r);padding:12px 16px;font-family:var(--font-b);font-size:.95rem;color:var(--charcoal);cursor:pointer;text-align:left">⚡ Quick Add</button>
       <button id="mobileMenuCellarBtn" onclick="openCellarSettings();closeMobileMenu()" style="background:none;border:1px solid var(--light-gray);border-radius:var(--r);padding:12px 16px;font-family:var(--font-b);font-size:.95rem;color:var(--charcoal);cursor:pointer;text-align:left">🍾 Cellar &amp; Members</button>
+      <button id="pushNotifBtn" onclick="registerPush();closeMobileMenu()" style="background:none;border:1px solid var(--light-gray);border-radius:var(--r);padding:12px 16px;font-family:var(--font-b);font-size:.95rem;color:var(--charcoal);cursor:pointer;text-align:left;display:none">🔔 Enable notifications</button>
       <button onclick="showFooterModal('about');closeMobileMenu()" style="background:none;border:none;padding:12px 16px;font-family:var(--font-b);font-size:.95rem;color:var(--warm-gray);cursor:pointer;text-align:left">ℹ️ About</button>
       <button onclick="showFooterModal('privacy');closeMobileMenu()" style="background:none;border:none;padding:12px 16px;font-family:var(--font-b);font-size:.95rem;color:var(--warm-gray);cursor:pointer;text-align:left">🔒 Privacy</button>
       <button onclick="handleSignOut();closeMobileMenu()" style="background:none;border:none;padding:12px 16px;font-family:var(--font-b);font-size:.95rem;color:#dc2626;cursor:pointer;text-align:left;border-top:1px solid var(--light-gray);margin-top:8px">🚪 Sign Out</button>
@@ -5685,6 +5763,7 @@ function openMobileMenu(e) {
   if (!el) return;
   var emailEl = document.getElementById('menuUserEmail');
   if (emailEl && _currentUser) emailEl.textContent = _currentUser.email || '';
+  updatePushBtn();
   el.style.display = 'flex';
   el.style.opacity = '1';
   el.style.pointerEvents = 'all';
