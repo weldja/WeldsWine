@@ -162,6 +162,7 @@ async function send_push(env, subscription, payload) {
 // Minimal Supabase REST helper — uses service role key to bypass RLS
 async function sb_fetch(env, path, opts = {}) {
   const key = env.SUPABASE_SERVICE_KEY;
+  console.log("sb_fetch: key present=", !!key, "first10=", key ? key.slice(0, 10) : "null", "env keys=", Object.keys(env || {}).join(","));
   if (!key) throw new Error("SUPABASE_SERVICE_KEY not set in Worker secrets");
   const res = await fetch(`${SUPABASE_URL}/rest/v1${path}`, {
     method: opts.method || "GET",
@@ -342,48 +343,26 @@ var worker_default = {
       try { body3 = await request.json(); }
       catch { return new Response(JSON.stringify({ error: "Invalid JSON" }), { status: 400, headers: cors }); }
 
-      const { wine_name, winery, added_by_name } = body3;
+      const { wine_name, winery, added_by_name, subscription } = body3;
+
+      if (!subscription || !subscription.endpoint) {
+        return new Response(JSON.stringify({ error: "subscription required" }), { status: 400, headers: cors });
+      }
 
       try {
-        // Phase 1: query subscriptions for whitelisted users only
-        const whitelist = PUSH_WHITELIST.join(",");
-        const subs = await sb_fetch(
-          env,
-          `/push_subscriptions?user_id=in.(${whitelist})&select=user_id,subscription`,
-          { prefer: "return=representation", headers: { Accept: "application/json" } }
-        );
-
-        if (!subs || subs.length === 0) {
-          return new Response(JSON.stringify({ ok: true, sent: 0, note: "no subscriptions found" }), { status: 200, headers: cors });
-        }
-
         const title    = "🍷 New wine in the cellar";
         const wineLine = [winery, wine_name].filter(Boolean).join(" · ") || "A new wine";
         const bodyText = added_by_name ? `${added_by_name} added ${wineLine}` : wineLine;
         const payload  = JSON.stringify({ title, body: bodyText, url: APP_URL + "/" });
 
-        let sent = 0;
-        const expired = [];
+        const result = await send_push(env, subscription, payload);
 
-        for (const row of subs) {
-          const result = await send_push(env, row.subscription, payload);
-          if (result.expired) {
-            expired.push(row.user_id);
-          } else if (result.status >= 200 && result.status < 300) {
-            sent++;
-          } else {
-            console.warn(`push send failed for ${row.user_id}: status ${result.status}`);
-          }
+        if (result.expired) {
+          return new Response(JSON.stringify({ ok: true, sent: 0, note: "subscription expired" }), { status: 200, headers: cors });
         }
-
-        // Remove expired subscriptions so they don't accumulate
-        for (const uid of expired) {
-          await sb_fetch(env, `/push_subscriptions?user_id=eq.${uid}`, { method: "DELETE" }).catch(e => {
-            console.warn("failed to delete expired subscription:", e.message);
-          });
-        }
-
-        return new Response(JSON.stringify({ ok: true, sent, expired: expired.length }), { status: 200, headers: cors });
+        const sent = (result.status >= 200 && result.status < 300) ? 1 : 0;
+        if (!sent) console.warn("push send failed: status", result.status);
+        return new Response(JSON.stringify({ ok: true, sent }), { status: 200, headers: cors });
       } catch (e) {
         console.error("notify-wine-added error:", e.message);
         return new Response(JSON.stringify({ error: e.message }), { status: 500, headers: cors });
