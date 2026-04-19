@@ -1444,6 +1444,40 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
 .cellar-pill:hover{background:rgba(255,255,255,.18);color:var(--parchment)}
 .cellar-pill-dot{width:7px;height:7px;border-radius:50%;background:#4ade80;flex-shrink:0}
 
+/* ── iOS install banner ────────────────────────────────────── */
+#iosInstallBanner{
+  display:none;position:fixed;bottom:0;left:0;right:0;z-index:99999;
+  background:linear-gradient(135deg,#3D0F1B,#5C1A2A);
+  border-top:1px solid rgba(201,168,76,.3);
+  padding:14px 16px 28px;box-shadow:0 -8px 32px rgba(44,20,36,.4);
+  animation:slideUpBanner .4s cubic-bezier(.16,1,.3,1) both;
+}
+@keyframes slideUpBanner{from{transform:translateY(100%)}to{transform:translateY(0)}}
+#iosInstallBanner .iib-inner{
+  display:flex;align-items:flex-start;gap:12px;max-width:480px;margin:0 auto;
+}
+#iosInstallBanner .iib-icon{
+  width:44px;height:44px;min-width:44px;border-radius:10px;
+  background:rgba(201,168,76,.15);border:1px solid rgba(201,168,76,.3);
+  display:flex;align-items:center;justify-content:center;font-size:22px;
+}
+#iosInstallBanner .iib-text{flex:1;}
+#iosInstallBanner .iib-title{
+  font-family:'Cormorant Garamond',Georgia,serif;font-size:1rem;font-weight:600;
+  color:#E2C97E;margin-bottom:3px;
+}
+#iosInstallBanner .iib-sub{
+  font-size:.78rem;color:rgba(226,201,126,.65);line-height:1.5;
+}
+#iosInstallBanner .iib-sub span{
+  display:inline-block;vertical-align:middle;
+  width:16px;height:16px;margin:0 2px;
+  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23E2C97E' stroke-width='2'%3E%3Cpath d='M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8'/%3E%3Cpolyline points='16 6 12 2 8 6'/%3E%3Cline x1='12' y1='2' x2='12' y2='15'/%3E%3C/svg%3E") center/contain no-repeat;
+}
+#iosInstallBanner .iib-close{
+  background:none;border:none;color:rgba(226,201,126,.4);font-size:18px;
+  cursor:pointer;padding:0;line-height:1;min-width:28px;min-height:28px;
+}
 </style>
 </head>
 <body>
@@ -6891,5 +6925,33 @@ if ('serviceWorker' in navigator) {
 })();
 </script>
 <!-- ============ END DEBUG OVERLAY ============ -->
+<!-- iOS install banner -->
+<div id="iosInstallBanner">
+  <div class="iib-inner">
+    <div class="iib-icon">🍷</div>
+    <div class="iib-text">
+      <div class="iib-title">Add to Home Screen</div>
+      <div class="iib-sub">Tap <span></span> then <strong style="color:#E2C97E">Add to Home Screen</strong> to enable notifications &amp; the best experience.</div>
+    </div>
+    <button class="iib-close" onclick="dismissInstallBanner()">&#x2715;</button>
+  </div>
+</div>
+
+<script>
+(function() {
+  var isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  var isStandalone = window.navigator.standalone === true;
+  var dismissed = localStorage.getItem('iosInstallBannerDismissed');
+  if (isIOS && !isStandalone && !dismissed) {
+    var banner = document.getElementById('iosInstallBanner');
+    if (banner) banner.style.display = 'block';
+  }
+})();
+function dismissInstallBanner() {
+  localStorage.setItem('iosInstallBannerDismissed', '1');
+  var banner = document.getElementById('iosInstallBanner');
+  if (banner) banner.style.display = 'none';
+}
+</script>
 </body>
 </html>
