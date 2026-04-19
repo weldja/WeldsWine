@@ -4528,8 +4528,9 @@ async function registerPush() {
 window.updatePushBtn = function updatePushBtn() {
   const btn = document.getElementById('pushNotifBtn');
   if (!btn) return;
-  // Phase 1: show to all users with PushManager support
-  if (!_currentUser || !('PushManager' in window)) {
+  // DEBUG: always show button
+  btn.style.display = '';
+  if (false) {
     btn.style.display = 'none'; return;
   }
   btn.style.display = '';
