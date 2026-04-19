@@ -4484,19 +4484,24 @@ async function registerPush() {
 window.updatePushBtn = function updatePushBtn() {
   const btn = document.getElementById('pushNotifBtn');
   if (!btn) return;
-  if (!('PushManager' in window)) { btn.style.display = 'none'; return; }
+  // Always show button with diagnostic state
   btn.style.display = '';
-  if (typeof Notification !== 'undefined' && Notification.permission === 'denied') {
-    btn.textContent = '🔕 Blocked — enable in phone Settings';
-    btn.disabled = true; btn.style.opacity = '0.6'; return;
-  }
-  if (!navigator.serviceWorker) { btn.textContent = '🔔 Enable notifications'; btn.disabled = false; btn.style.opacity = '1'; return; }
+  btn.disabled = false;
+  btn.style.opacity = '1';
+  const hasPush = 'PushManager' in window;
+  const hasNotif = typeof Notification !== 'undefined';
+  const hasSW = 'serviceWorker' in navigator;
+  const isStandalone = window.navigator.standalone === true;
+  if (!hasPush) { btn.textContent = '🔔 Push: no PushManager (iOS<16.4 or not PWA?)'; return; }
+  if (!hasNotif) { btn.textContent = '🔔 Push: no Notification API (not standalone?)'; return; }
+  if (Notification.permission === 'denied') { btn.textContent = '🔕 Push blocked — enable in Settings'; btn.disabled = true; return; }
+  if (!hasSW || !navigator.serviceWorker) { btn.textContent = '🔔 Push: no SW'; return; }
   navigator.serviceWorker.ready
     .then(r => r.pushManager.getSubscription())
     .then(sub => {
-      if (sub) { btn.textContent = '🔔 Notifications enabled ✓'; btn.disabled = true;  btn.style.opacity = '0.6'; }
-      else     { btn.textContent = '🔔 Enable notifications';        btn.disabled = false; btn.style.opacity = '1'; }
-    });
+      if (sub) { btn.textContent = '🔔 Notifications enabled ✓'; btn.disabled = true; btn.style.opacity = '0.6'; }
+      else     { btn.textContent = '🔔 Enable notifications'; }
+    }).catch(e => { btn.textContent = '🔔 Push error: '+e.message; });
 };
 
 async function notifyWineAdded(entry) {
