@@ -4528,8 +4528,8 @@ async function registerPush() {
 window.updatePushBtn = function updatePushBtn() {
   const btn = document.getElementById('pushNotifBtn');
   if (!btn) return;
-  // Phase 1: only visible to James
-  if (!_currentUser || _currentUser.id !== PUSH_PHASE1_USER_ID || !('PushManager' in window)) {
+  // Phase 1: show to all users with PushManager support
+  if (!_currentUser || !('PushManager' in window)) {
     btn.style.display = 'none'; return;
   }
   btn.style.display = '';
