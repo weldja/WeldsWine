@@ -2825,7 +2825,7 @@ const Scanner = (() => {
 <!-- MAIN APP -->
 <script>
 // ── Push notification globals ────────────────────────────────────
-var VAPID_PUBLIC_KEY    = 'var VAPID_PUBLIC_KEY = 'BFfnLR324-GmAa5PU_eHGm1tWOsB-9PTMuV3bWrDoQCfiX7e_mh1Mz-7KVNvf9nUKdnsEPnAwhYS6P7vqP76q-g';'; // fill in your generated public key
+var VAPID_PUBLIC_KEY    = '324-GmAa5PU_eHGm1tWOsB-9PTMuV3bWrDoQCfiX7e_mh1Mz-7KVNvf9nUKdnsEPnAwhYS6P7vqP76q-g'; // fill in your generated public key
 var PUSH_PHASE1_USER_ID = '0c21cdcd-9963-405e-b231-00b8f65dee9e'; // Phase 1: James only
 // ─────────────────────────────────────
 // Wines populated from Supabase after authentication — see loadWinesFromDB()
@@ -4461,7 +4461,7 @@ async function registerPush() {
   updatePushBtn();
 }
 
-function updatePushBtn() {
+window.updatePushBtn = function updatePushBtn() {
   const btn = document.getElementById('pushNotifBtn');
   if (!btn) return;
   // Phase 1: only visible to James
@@ -5764,7 +5764,7 @@ function openMobileMenu(e) {
   if (!el) return;
   var emailEl = document.getElementById('menuUserEmail');
   if (emailEl && _currentUser) emailEl.textContent = _currentUser.email || '';
-  updatePushBtn();
+  if (typeof updatePushBtn === 'function') updatePushBtn();
   el.style.display = 'flex';
   el.style.opacity = '1';
   el.style.pointerEvents = 'all';
