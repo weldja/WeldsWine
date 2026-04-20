@@ -343,10 +343,13 @@ var worker_default = {
       try { body3 = await request.json(); }
       catch { return new Response(JSON.stringify({ error: "Invalid JSON" }), { status: 400, headers: cors }); }
 
-      const { wine_name, winery, added_by_name, subscription } = body3;
+      const { wine_name, winery, added_by_name, subscriptions, subscription } = body3;
 
-      if (!subscription || !subscription.endpoint) {
-        return new Response(JSON.stringify({ error: "subscription required" }), { status: 400, headers: cors });
+      // Accept either an array (Phase 2) or a single subscription (legacy)
+      const subList = subscriptions || (subscription ? [subscription] : []);
+
+      if (!subList.length || !subList[0]?.endpoint) {
+        return new Response(JSON.stringify({ error: "subscriptions required" }), { status: 400, headers: cors });
       }
 
       try {
@@ -355,14 +358,19 @@ var worker_default = {
         const bodyText = added_by_name ? `${added_by_name} added ${wineLine}` : wineLine;
         const payload  = JSON.stringify({ title, body: bodyText, url: APP_URL + "/" });
 
-        const result = await send_push(env, subscription, payload);
-
-        if (result.expired) {
-          return new Response(JSON.stringify({ ok: true, sent: 0, note: "subscription expired" }), { status: 200, headers: cors });
+        let sent = 0;
+        for (const sub of subList) {
+          if (!sub?.endpoint) continue;
+          const result = await send_push(env, sub, payload);
+          if (result.expired) {
+            console.warn("push subscription expired:", sub.endpoint.slice(-20));
+          } else if (result.status >= 200 && result.status < 300) {
+            sent++;
+          } else {
+            console.warn("push send failed: status", result.status);
+          }
         }
-        const sent = (result.status >= 200 && result.status < 300) ? 1 : 0;
-        if (!sent) console.warn("push send failed: status", result.status);
-        return new Response(JSON.stringify({ ok: true, sent }), { status: 200, headers: cors });
+        return new Response(JSON.stringify({ ok: true, sent, total: subList.length }), { status: 200, headers: cors });
       } catch (e) {
         console.error("notify-wine-added error:", e.message);
         return new Response(JSON.stringify({ error: e.message }), { status: 500, headers: cors });

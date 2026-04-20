@@ -4505,11 +4505,16 @@ window.updatePushBtn = function updatePushBtn() {
 };
 
 async function notifyWineAdded(entry) {
-  if (!window._cellarId) return;
+  if (!window._cellarId || !_sb || !_currentUser) return;
   try {
-    const reg = await navigator.serviceWorker.ready;
-    const sub = await reg.pushManager.getSubscription();
-    if (!sub) return;
+    // Fetch all push subscriptions for this cellar (excluding the adder)
+    const { data: subRows } = await _sb
+      .from('push_subscriptions')
+      .select('subscription')
+      .eq('cellar_id', window._cellarId)
+      .neq('user_id', _currentUser.id);
+    const subscriptions = (subRows || []).map(r => r.subscription).filter(Boolean);
+    if (!subscriptions.length) return; // no other subscribers
     await fetch(Scanner.getProxyUrl() + '/notify-wine-added', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -4517,7 +4522,7 @@ async function notifyWineAdded(entry) {
         wine_name:     entry.name   || null,
         winery:        entry.winery || null,
         added_by_name: (_currentUser && _currentUser.email) ? _currentUser.email.split('@')[0] : null,
-        subscription:  sub.toJSON()
+        subscriptions
       })
     });
   } catch(e) { console.warn('notifyWineAdded (non-critical):', e.message); }
