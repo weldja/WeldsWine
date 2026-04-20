@@ -4513,11 +4513,22 @@ window.updatePushBtn = function updatePushBtn() {
 };
 
 async function notifyWineAdded(entry) {
-  if (!window._cellarId) return;
+  if (!window._cellarId || !_sb || !_currentUser) return;
   try {
+    // Get this device's endpoint to exclude it
     const reg = await navigator.serviceWorker.ready;
-    const sub = await reg.pushManager.getSubscription();
-    if (!sub) return;
+    const mySub = await reg.pushManager.getSubscription();
+    const myEndpoint = mySub ? mySub.endpoint : null;
+    // Query ALL subscriptions for this cellar
+    const { data: subRows } = await _sb
+      .from('push_subscriptions')
+      .select('subscription')
+      .eq('cellar_id', window._cellarId);
+    // Exclude current device by endpoint
+    const subscriptions = (subRows || [])
+      .map(r => r.subscription)
+      .filter(s => s && s.endpoint && s.endpoint !== myEndpoint);
+    if (!subscriptions.length) return;
     await fetch(Scanner.getProxyUrl() + '/notify-wine-added', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -4525,7 +4536,7 @@ async function notifyWineAdded(entry) {
         wine_name:     entry.name   || null,
         winery:        entry.winery || null,
         added_by_name: (_currentUser && _currentUser.email) ? _currentUser.email.split('@')[0] : null,
-        subscription:  sub.toJSON()
+        subscriptions
       })
     });
   } catch(e) { console.warn('notifyWineAdded (non-critical):', e.message); }
