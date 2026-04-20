@@ -4456,17 +4456,26 @@ function _b64uToUint8(b) {
 async function registerPush() {
   if (!('PushManager' in window)) { showToast('Push not supported on this browser'); return; }
   if (typeof Notification === 'undefined') { showToast('Open from home screen to enable notifications'); return; }
-  const permission = await Notification.requestPermission();
-  if (permission !== 'granted') { updatePushBtn(); return; }
   try {
     const reg = await navigator.serviceWorker.ready;
-    let sub = await reg.pushManager.getSubscription();
-    if (!sub) {
-      sub = await reg.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: _b64uToUint8(VAPID_PUBLIC_KEY)
-      });
+    const existing = await reg.pushManager.getSubscription();
+    if (existing) {
+      // Already subscribed — unsubscribe (toggle off)
+      await existing.unsubscribe();
+      if (_sb && _currentUser) {
+        await _sb.from('push_subscriptions').delete().eq('endpoint', existing.endpoint);
+      }
+      showToast('Notifications disabled');
+      updatePushBtn();
+      return;
     }
+    // Not subscribed — request permission and subscribe
+    const permission = await Notification.requestPermission();
+    if (permission !== 'granted') { updatePushBtn(); return; }
+    const sub = await reg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: _b64uToUint8(VAPID_PUBLIC_KEY)
+    });
     const subJson = sub.toJSON();
     const { error } = await _sb.from('push_subscriptions').upsert({
       user_id:      _currentUser.id,
@@ -4478,7 +4487,7 @@ async function registerPush() {
     showToast('Notifications enabled ✓');
   } catch(e) {
     console.error('registerPush:', e);
-    showToast('Could not enable notifications');
+    showToast('Could not update notifications');
   }
   updatePushBtn();
 }
@@ -4486,43 +4495,29 @@ async function registerPush() {
 window.updatePushBtn = function updatePushBtn() {
   const btn = document.getElementById('pushNotifBtn');
   if (!btn) return;
-  // Always show button with diagnostic state
+  if (!('PushManager' in window)) { btn.style.display = 'none'; return; }
   btn.style.display = '';
   btn.disabled = false;
   btn.style.opacity = '1';
-  const hasPush = 'PushManager' in window;
-  const hasNotif = typeof Notification !== 'undefined';
-  const hasSW = 'serviceWorker' in navigator;
-  const isStandalone = window.navigator.standalone === true;
-  if (!hasPush) { btn.textContent = '🔔 Push: no PushManager (iOS<16.4 or not PWA?)'; return; }
-  if (!hasNotif) { btn.textContent = '🔔 Push: no Notification API (not standalone?)'; return; }
-  if (Notification.permission === 'denied') { btn.textContent = '🔕 Push blocked — enable in Settings'; btn.disabled = true; return; }
-  if (!hasSW || !navigator.serviceWorker) { btn.textContent = '🔔 Push: no SW'; return; }
+  if (typeof Notification !== 'undefined' && Notification.permission === 'denied') {
+    btn.textContent = '🔕 Blocked — enable in phone Settings';
+    btn.disabled = true; btn.style.opacity = '0.6'; return;
+  }
+  if (!navigator.serviceWorker) { btn.textContent = '🔔 Enable notifications'; return; }
   navigator.serviceWorker.ready
     .then(r => r.pushManager.getSubscription())
     .then(sub => {
-      if (sub) { btn.textContent = '🔔 Notifications enabled ✓'; btn.disabled = true; btn.style.opacity = '0.6'; }
-      else     { btn.textContent = '🔔 Enable notifications'; }
-    }).catch(e => { btn.textContent = '🔔 Push error: '+e.message; });
+      if (sub) { btn.textContent = '🔔 Notifications on — tap to disable'; btn.disabled = false; btn.style.opacity = '1'; }
+      else     { btn.textContent = '🔔 Enable notifications'; btn.disabled = false; btn.style.opacity = '1'; }
+    });
 };
 
 async function notifyWineAdded(entry) {
-  if (!window._cellarId || !_sb || !_currentUser) return;
+  if (!window._cellarId) return;
   try {
-    // Get this device's endpoint so we can exclude it
     const reg = await navigator.serviceWorker.ready;
-    const mySub = await reg.pushManager.getSubscription();
-    const myEndpoint = mySub ? mySub.endpoint : null;
-    // Query ALL subscriptions for this cellar
-    const { data: subRows } = await _sb
-      .from('push_subscriptions')
-      .select('subscription')
-      .eq('cellar_id', window._cellarId);
-    // Exclude current device by endpoint (handles same user on multiple devices)
-    const subscriptions = (subRows || [])
-      .map(r => r.subscription)
-      .filter(s => s && s.endpoint && s.endpoint !== myEndpoint);
-    if (!subscriptions.length) return;
+    const sub = await reg.pushManager.getSubscription();
+    if (!sub) return;
     await fetch(Scanner.getProxyUrl() + '/notify-wine-added', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -4530,7 +4525,7 @@ async function notifyWineAdded(entry) {
         wine_name:     entry.name   || null,
         winery:        entry.winery || null,
         added_by_name: (_currentUser && _currentUser.email) ? _currentUser.email.split('@')[0] : null,
-        subscriptions
+        subscription:  sub.toJSON()
       })
     });
   } catch(e) { console.warn('notifyWineAdded (non-critical):', e.message); }
