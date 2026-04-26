@@ -4514,11 +4514,17 @@ window.updatePushBtn = function updatePushBtn() {
 
 async function notifyWineAdded(entry) {
   if (!window._cellarId || !_currentUser) return;
+  // Get this device's endpoint so the worker can exclude it
+  // Wrapped separately so a missing pushManager (e.g. iOS browser tab) doesn't block the fetch
+  let myEndpoint = null;
   try {
-    // Get this device's endpoint so the worker can exclude it
-    const reg = await navigator.serviceWorker.ready;
-    const mySub = await reg.pushManager.getSubscription();
-    const myEndpoint = mySub ? mySub.endpoint : null;
+    if (navigator.serviceWorker) {
+      const reg = await navigator.serviceWorker.ready;
+      const mySub = reg.pushManager ? await reg.pushManager.getSubscription() : null;
+      myEndpoint = mySub ? mySub.endpoint : null;
+    }
+  } catch(ignore) {}
+  try {
     // Worker fetches subscriptions server-side (bypasses RLS) and sends pushes
     await fetch(Scanner.getProxyUrl() + '/notify-wine-added', {
       method: 'POST',
