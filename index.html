@@ -4526,18 +4526,23 @@ async function notifyWineAdded(entry) {
   } catch(ignore) {}
   try {
     // Worker fetches subscriptions server-side (bypasses RLS) and sends pushes
-    await fetch(Scanner.getProxyUrl() + '/notify-wine-added', {
+    const _notifyUrl = Scanner.getProxyUrl() + '/notify-wine-added';
+    const _notifyBody = JSON.stringify({
+      cellar_id:        window._cellarId,
+      exclude_endpoint: myEndpoint,
+      wine_name:        entry.name   || null,
+      winery:           entry.winery || null,
+      added_by_name:    (_currentUser && _currentUser.email) ? _currentUser.email.split('@')[0] : null
+    });
+    console.log('[notify] firing fetch to', _notifyUrl, 'body=', _notifyBody);
+    const _notifyRes = await fetch(_notifyUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        cellar_id:        window._cellarId,
-        exclude_endpoint: myEndpoint,
-        wine_name:        entry.name   || null,
-        winery:           entry.winery || null,
-        added_by_name:    (_currentUser && _currentUser.email) ? _currentUser.email.split('@')[0] : null
-      })
+      body: _notifyBody
     });
-  } catch(e) { console.warn('notifyWineAdded (non-critical):', e.message); }
+    const _notifyJson = await _notifyRes.json().catch(() => ({}));
+    console.log('[notify] response', _notifyRes.status, JSON.stringify(_notifyJson));
+  } catch(e) { console.warn('[notify] fetch failed:', e.message, e); }
 }
 /* ── Toggle favourite ────────────────────────────────────── */
 async function toggleFavourite(id) {
