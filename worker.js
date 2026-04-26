@@ -9,7 +9,7 @@ var APP_NAME = "Welds Wine Wisdoms";
 var APP_URL = "https://weldswine.co.uk";
 
 // Supabase (URL is public; service key comes from env secret SUPABASE_SERVICE_KEY)
-var SUPABASE_URL = "https://swkaswlzzqzjiuujyupg.supabase.co";
+var SUPABASE_URL = "https://phcnswuwrqarikzjvfqd.supabase.co";
 
 // Phase 1: only notify James
 var PUSH_WHITELIST = ["0c21cdcd-9963-405e-b231-00b8f65dee9e"];
