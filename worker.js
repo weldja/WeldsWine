@@ -322,11 +322,10 @@ var worker_default = {
       }
     }
 
-    // ── /notify-wine-added ─────────────────────────────────────
+    // ── /notify-wine-added ─────────────────────────
     if (url.pathname.endsWith("/notify-wine-added")) {
       if (request.method !== "POST") return new Response(JSON.stringify({ error: "POST only" }), { status: 405, headers: cors });
 
-      // Origin check — same allowed list as /email
       const origin = request.headers.get("Origin") || "";
       const allowedOrigins = [
         "https://weldswine.co.uk",
@@ -343,34 +342,62 @@ var worker_default = {
       try { body3 = await request.json(); }
       catch { return new Response(JSON.stringify({ error: "Invalid JSON" }), { status: 400, headers: cors }); }
 
-      const { wine_name, winery, added_by_name, subscriptions, subscription } = body3;
+      const { cellar_id, exclude_endpoint, wine_name, winery, added_by_name } = body3;
 
-      // Accept either an array (Phase 2) or a single subscription (legacy)
-      const subList = subscriptions || (subscription ? [subscription] : []);
-
-      if (!subList.length || !subList[0]?.endpoint) {
-        return new Response(JSON.stringify({ error: "subscriptions required" }), { status: 400, headers: cors });
+      if (!cellar_id) {
+        return new Response(JSON.stringify({ error: "cellar_id required" }), { status: 400, headers: cors });
       }
 
       try {
+        // Fetch subscriptions server-side using service role key (bypasses RLS)
+        const [subRows, memberRows] = await Promise.all([
+          sb_fetch(env, "/push_subscriptions?cellar_id=eq." + cellar_id + "&select=subscription", { prefer: "return=representation" }),
+          sb_fetch(env, "/cellar_members?cellar_id=eq."      + cellar_id + "&select=user_id",      { prefer: "return=representation" })
+        ]);
+
+        // Also catch subs saved with cellar_id=null whose user is still a cellar member
+        const memberIds = (memberRows || []).map(r => r.user_id);
+        let nullCellarRows = [];
+        if (memberIds.length) {
+          nullCellarRows = await sb_fetch(env,
+            "/push_subscriptions?cellar_id=is.null&user_id=in.(" + memberIds.join(",") + ")&select=subscription",
+            { prefer: "return=representation" }
+          ) || [];
+        }
+
+        // Dedupe by endpoint, exclude the sending device
+        const seen = new Set();
+        const subscriptions = [];
+        for (const row of [...(subRows || []), ...nullCellarRows]) {
+          const s = row.subscription;
+          if (!s || !s.endpoint || seen.has(s.endpoint)) continue;
+          if (exclude_endpoint && s.endpoint === exclude_endpoint) continue;
+          seen.add(s.endpoint);
+          subscriptions.push(s);
+        }
+
+        if (!subscriptions.length) {
+          return new Response(JSON.stringify({ ok: true, sent: 0, total: 0 }), { status: 200, headers: cors });
+        }
+
         const title    = "🍷 New wine in the cellar";
         const wineLine = [winery, wine_name].filter(Boolean).join(" · ") || "A new wine";
-        const bodyText = added_by_name ? `${added_by_name} added ${wineLine}` : wineLine;
+        const bodyText = added_by_name ? (added_by_name + " added " + wineLine) : wineLine;
         const payload  = JSON.stringify({ title, body: bodyText, url: APP_URL + "/" });
 
         let sent = 0;
-        for (const sub of subList) {
-          if (!sub?.endpoint) continue;
+        for (const sub of subscriptions) {
           const result = await send_push(env, sub, payload);
           if (result.expired) {
             console.warn("push subscription expired:", sub.endpoint.slice(-20));
+            await sb_fetch(env, "/push_subscriptions?endpoint=eq." + encodeURIComponent(sub.endpoint), { method: "DELETE" }).catch(() => {});
           } else if (result.status >= 200 && result.status < 300) {
             sent++;
           } else {
             console.warn("push send failed: status", result.status);
           }
         }
-        return new Response(JSON.stringify({ ok: true, sent, total: subList.length }), { status: 200, headers: cors });
+        return new Response(JSON.stringify({ ok: true, sent, total: subscriptions.length }), { status: 200, headers: cors });
       } catch (e) {
         console.error("notify-wine-added error:", e.message);
         return new Response(JSON.stringify({ error: e.message }), { status: 500, headers: cors });
