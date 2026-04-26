@@ -22,7 +22,6 @@ self.addEventListener('install', event => {
   self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE_NAME).then(cache => {
-      // Cache what we can, ignore failures (e.g. opaque cross-origin)
       return Promise.allSettled(
         PRECACHE.map(url => cache.add(url).catch(() => {}))
       );
@@ -72,7 +71,6 @@ self.addEventListener('fetch', event => {
     })
   );
 });
-
 /* ══════════════════════════════════════════════════════════
    Push notifications
 ══════════════════════════════════════════════════════════ */
@@ -87,25 +85,22 @@ self.addEventListener('push', event => {
     self.registration.showNotification(data.title, {
       body:  data.body,
       icon:  '/icon-192.png',
-      badge: '/icon-192.png',
+      badge: '/badge-96.png',
       data:  { url: data.url || '/' }
     })
   );
 });
-
 self.addEventListener('notificationclick', event => {
   event.notification.close();
   const target = (event.notification.data && event.notification.data.url) || '/';
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clientList => {
-      // Focus an existing open window if one exists
       for (const client of clientList) {
         if (client.url.startsWith(self.location.origin) && 'focus' in client) {
           client.navigate(target);
           return client.focus();
         }
       }
-      // Otherwise open a new window
       return clients.openWindow(target);
     })
   );
