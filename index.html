@@ -767,6 +767,46 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
 
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(70px);background:var(--charcoal);color:var(--parchment);padding:10px 22px;border-radius:30px;font-family:var(--font-b);font-size:.88rem;z-index:999;transition:transform .28s ease;white-space:nowrap;pointer-events:none;box-shadow:0 4px 18px rgba(0,0,0,.28)}
 .toast.show{transform:translateX(-50%) translateY(0)}
+
+/* ── Wine splash screens ─────────────────────────────────── */
+.wine-splash{position:fixed;inset:0;z-index:9998;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:48px 32px;opacity:0;pointer-events:none;transition:opacity .35s ease;overflow:hidden}
+.wine-splash.show{opacity:1;pointer-events:auto}
+.wine-splash-icon{font-size:60px;line-height:1}
+.wine-splash-main{font-family:var(--font-d);font-size:clamp(2rem,7vw,3.2rem);letter-spacing:.05em;margin:0;text-align:center;line-height:1.1;font-weight:400}
+.wine-splash-sub{font-family:var(--font-b);font-size:.72rem;letter-spacing:.24em;text-transform:uppercase;margin:0;text-align:center}
+.wine-splash-glow{position:absolute;inset:0;pointer-events:none}
+.wine-splash-bubbles{position:absolute;inset:0;pointer-events:none}
+#splashChard{background:#180a10}
+#splashChard .wine-splash-glow{background:radial-gradient(ellipse at 50% 70%,#4a0e28 0%,transparent 65%)}
+#splashChard .wine-splash-main{background:linear-gradient(90deg,#c9a96e,#fff8ee 35%,#e8c97a 55%,#fff8ee 75%,#c9a96e);background-size:250% auto;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+#splashChard .wine-splash-sub{color:rgba(245,239,230,.5)}
+#splashSauv{background:#0d1a0d}
+#splashSauv .wine-splash-glow{background:radial-gradient(ellipse at 50% 50%,rgba(30,90,20,.35) 0%,transparent 70%)}
+#splashSauv .wine-splash-main{color:#c8e8c0}
+#splashSauv .wine-splash-sub{color:rgba(140,220,130,.5);font-family:monospace}
+.splash-warning-box{border:1.5px solid rgba(255,60,60,.7);border-radius:4px;padding:7px 18px;background:rgba(255,30,30,.07)}
+.splash-warning-box p{font-family:monospace;font-size:.7rem;color:rgba(255,100,100,.9);letter-spacing:.2em;text-transform:uppercase;margin:0;text-align:center}
+.splash-scanline{position:absolute;left:0;right:0;height:3px;background:linear-gradient(90deg,transparent,rgba(0,255,60,.4),transparent);pointer-events:none}
+.splash-crt{position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,255,0,.012) 3px,rgba(0,255,0,.012) 4px);pointer-events:none}
+#splashFizz{background:#0e0e1a}
+#splashFizz .wine-splash-glow{background:radial-gradient(ellipse at 50% 60%,#1a1a4a 0%,transparent 70%)}
+#splashFizz .wine-splash-main{background:linear-gradient(90deg,#9ab0ff,#e8eeff 35%,#b8c8ff 55%,#e8eeff 75%,#9ab0ff);background-size:250% auto;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+#splashFizz .wine-splash-sub{color:rgba(180,200,255,.45)}
+#splashOther{background:#12090f}
+#splashOther .wine-splash-glow{background:radial-gradient(ellipse at 50% 65%,#3a0a20 0%,transparent 65%)}
+#splashOther .wine-splash-main{background:linear-gradient(90deg,#c9a96e,#fff8ee 35%,#e8c97a 55%,#fff8ee 75%,#c9a96e);background-size:250% auto;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+#splashOther .wine-splash-sub{color:rgba(245,239,230,.45)}
+@keyframes splashPopIn{0%{opacity:0;transform:scale(.3) rotate(-15deg)}60%{transform:scale(1.2) rotate(5deg)}80%{transform:scale(.92) rotate(-2deg)}100%{opacity:1;transform:scale(1) rotate(0)}}
+@keyframes splashBounceUp{0%{opacity:0;transform:translateY(30px) scale(.9)}60%{transform:translateY(-8px) scale(1.04)}80%{transform:translateY(4px) scale(.98)}100%{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes splashSubPop{from{opacity:0;transform:scale(.8) translateY(6px)}to{opacity:1;transform:scale(1) translateY(0)}}
+@keyframes splashShimmer{0%{background-position:200% center}100%{background-position:-200% center}}
+@keyframes splashWiggle{0%,100%{transform:rotate(-3deg)}50%{transform:rotate(3deg)}}
+@keyframes splashPulse{0%,100%{opacity:.04}50%{opacity:.09}}
+@keyframes splashBubble{0%{transform:translateY(0) translateX(0) scale(1);opacity:.7}50%{transform:translateY(-55%) translateX(var(--dx)) scale(.8);opacity:.5}100%{transform:translateY(-110%) translateX(calc(var(--dx)*1.6)) scale(.4);opacity:0}}
+@keyframes splashScanline{0%{top:-4px}100%{top:100%}}
+@keyframes splashWarningFlash{0%,100%{opacity:1}20%{opacity:.15}40%{opacity:1}60%{opacity:.3}80%{opacity:1}}
+@keyframes splashSkullPop{0%{opacity:0;transform:scale(2) rotate(20deg)}50%{transform:scale(.85) rotate(-5deg)}70%{transform:scale(1.1) rotate(2deg)}100%{opacity:1;transform:scale(1) rotate(0)}}
+@keyframes splashPoisonSub{from{opacity:0;letter-spacing:.5em}to{opacity:.6;letter-spacing:.18em}}
 ::-webkit-scrollbar{width:5px}
 ::-webkit-scrollbar-track{background:var(--cream)}
 ::-webkit-scrollbar-thumb{background:var(--light-gray);border-radius:3px}
@@ -2167,6 +2207,40 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
 
 
 <div class="toast" id="toast"></div>
+
+<!-- Chardonnay splash -->
+<div class="wine-splash" id="splashChard">
+  <div class="wine-splash-glow" style="animation:splashPulse 2.8s ease-in-out infinite"></div>
+  <div class="wine-splash-bubbles" id="splashChardBubbles"></div>
+  <div class="wine-splash-icon" style="animation:splashPopIn .55s cubic-bezier(.22,1,.36,1) .1s both,splashWiggle 2s ease-in-out .7s infinite">&#x1F942;</div>
+  <p class="wine-splash-main" style="animation:splashBounceUp .55s cubic-bezier(.22,1,.36,1) .35s both,splashShimmer 2.4s linear .9s infinite">Wise choice.</p>
+  <p class="wine-splash-sub" style="animation:splashSubPop .45s ease .75s both">Chardonnay. Obviously.</p>
+</div>
+<!-- Sauvignon Blanc splash -->
+<div class="wine-splash" id="splashSauv">
+  <div class="wine-splash-glow" style="animation:splashPulse 2.8s ease-in-out infinite"></div>
+  <div class="splash-crt"></div>
+  <div class="splash-scanline" style="animation:splashScanline 1.8s linear infinite"></div>
+  <div class="wine-splash-icon" style="animation:splashSkullPop .5s cubic-bezier(.22,1,.36,1) .05s both">&#x2620;&#xFE0F;</div>
+  <div class="splash-warning-box" style="animation:splashWarningFlash 1.1s ease .3s 2 both"><p>&#x26A0; DANGER &mdash; SAUVIGNON BLANC DETECTED &#x26A0;</p></div>
+  <p class="wine-splash-main" style="animation:splashBounceUp .5s ease .55s both">Burnt rubber warning.</p>
+  <p class="wine-splash-sub" style="animation:splashPoisonSub .6s ease 1s both">Proceed with caution. Or don't.</p>
+</div>
+<!-- Sparkling splash -->
+<div class="wine-splash" id="splashFizz">
+  <div class="wine-splash-glow" style="animation:splashPulse 3s ease-in-out infinite"></div>
+  <div class="wine-splash-bubbles" id="splashFizzBubbles"></div>
+  <div class="wine-splash-icon" style="animation:splashPopIn .55s cubic-bezier(.22,1,.36,1) .1s both,splashWiggle 2.5s ease-in-out .7s infinite">&#x1F37E;</div>
+  <p class="wine-splash-main" style="animation:splashBounceUp .55s cubic-bezier(.22,1,.36,1) .35s both,splashShimmer 2.4s linear .9s infinite">...is tolerable.</p>
+  <p class="wine-splash-sub" style="animation:splashSubPop .45s ease .75s both">We suppose. If you must.</p>
+</div>
+<!-- Everything else splash -->
+<div class="wine-splash" id="splashOther">
+  <div class="wine-splash-glow" style="animation:splashPulse 3s ease-in-out infinite"></div>
+  <div class="wine-splash-icon" style="animation:splashPopIn .55s cubic-bezier(.22,1,.36,1) .1s both">&#x1F377;</div>
+  <p class="wine-splash-main" style="animation:splashBounceUp .55s cubic-bezier(.22,1,.36,1) .35s both,splashShimmer 2.4s linear .9s infinite">Solid choice.</p>
+  <p class="wine-splash-sub" style="animation:splashSubPop .45s ease .75s both">We're proud of you.</p>
+</div>
 
 <!-- SHARE MODAL -->
 <div class="modal-overlay" id="shareOverlay">
@@ -5556,26 +5630,62 @@ function importToForm() {
   const back  = scanBackUrl;
 
   closeScanModal();
-  // Pass photos directly into openModal so the reset doesn't wipe them
-  openModal(null, front, back);
 
-  setTimeout(()=>{
-    document.getElementById('aiBanner').style.display='flex';
-    const map={name:'wineName',winery:'winery',vintage:'vintage',country:'country',grape:'grape'};
-    Object.entries(map).forEach(([src,dest])=>{
-      const el=document.getElementById(dest); const v=scanResult[src];
-      if(el&&v!==null&&v!==undefined&&v!=='') { el.value=String(v); flashAutofill(el); }
-    });
-    if(region){ const e=document.getElementById('region'); e.value=region; flashAutofill(e); }
-    if(scanResult.style){ const s=document.getElementById('style'); [...s.options].forEach(o=>{ if(o.value===scanResult.style) s.value=scanResult.style; }); }
-    showToast('Label imported — add your rating and save ✓');
-    // Focus Save Wine so user can press Enter or tap immediately
-    const saveBtn = document.getElementById('saveWineBtn');
-    if (saveBtn) {
-      saveBtn.focus();
-      saveBtn.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  const proceed = () => {
+    openModal(null, front, back);
+    setTimeout(()=>{
+      document.getElementById('aiBanner').style.display='flex';
+      const map={name:'wineName',winery:'winery',vintage:'vintage',country:'country',grape:'grape'};
+      Object.entries(map).forEach(([src,dest])=>{
+        const el=document.getElementById(dest); const v=scanResult[src];
+        if(el&&v!==null&&v!==undefined&&v!=='') { el.value=String(v); flashAutofill(el); }
+      });
+      if(region){ const e=document.getElementById('region'); e.value=region; flashAutofill(e); }
+      if(scanResult.style){ const s=document.getElementById('style'); [...s.options].forEach(o=>{ if(o.value===scanResult.style) s.value=scanResult.style; }); }
+      showToast('Label imported — add your rating and save ✓');
+      const saveBtn = document.getElementById('saveWineBtn');
+      if (saveBtn) {
+        saveBtn.focus();
+        saveBtn.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    },260);
+  };
+
+  showWineSplash(scanResult.grape, scanResult.style, proceed);
+}
+
+function showWineSplash(grape, style, cb) {
+  // Determine which splash to show
+  const g = (grape  || '').toLowerCase();
+  const s = (style  || '').toLowerCase();
+  let id;
+  if      (g.includes('chardonnay'))                          id = 'splashChard';
+  else if (g.includes('sauvignon'))                           id = 'splashSauv';
+  else if (s === 'sparkling' || g.includes('champagne') ||
+           g.includes('prosecco') || g.includes('cava'))      id = 'splashFizz';
+  else                                                         id = 'splashOther';
+
+  // Seed bubbles for chard + fizz
+  function makeBubbles(elId, colour) {
+    const c = document.getElementById(elId); if (!c) return;
+    c.innerHTML = '';
+    for (let i = 0; i < 16; i++) {
+      const b = document.createElement('div');
+      const sz = 3 + Math.random() * 7;
+      b.style.cssText = `position:absolute;bottom:${5+Math.random()*30}%;left:${8+Math.random()*84}%;width:${sz}px;height:${sz}px;border-radius:50%;border:1px solid ${colour};--dx:${(Math.random()-0.5)*36}px;animation:splashBubble ${2+Math.random()*2}s ease-in ${Math.random()*2.5}s infinite;`;
+      c.appendChild(b);
     }
-  },260);
+  }
+  if (id === 'splashChard') makeBubbles('splashChardBubbles', 'rgba(201,169,110,.45)');
+  if (id === 'splashFizz')  makeBubbles('splashFizzBubbles',  'rgba(160,180,255,.35)');
+
+  const el = document.getElementById(id);
+  if (!el) return cb && cb();
+  el.classList.add('show');
+  setTimeout(() => {
+    el.classList.remove('show');
+    setTimeout(() => cb && cb(), 350);
+  }, 2000);
 }
 
 function showScanScreen(id) {
