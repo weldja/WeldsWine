@@ -1503,6 +1503,61 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
 #iosInstallBanner .iib-btns{display:flex;gap:8px}
 #iosInstallBanner .iib-btn-main{flex:1;background:linear-gradient(135deg,#C9A84C,#9E7A2C);border:none;border-radius:10px;padding:13px;font-family:'Cormorant Garamond',Georgia,serif;font-size:.95rem;font-weight:600;color:#1a0a10;cursor:pointer;letter-spacing:.02em}
 #iosInstallBanner .iib-btn-skip{background:transparent;border:1px solid rgba(201,168,76,.2);border-radius:10px;padding:13px 16px;font-size:.78rem;color:rgba(201,168,76,.4);cursor:pointer}
+
+/* BIOHAZARD-EGG-START */
+#bioOverlay{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;padding:24px;opacity:0;pointer-events:none;transition:opacity 0.3s;background:rgba(0,0,0,0.92);backdrop-filter:blur(12px);}
+#bioOverlay.bio-active{opacity:1;pointer-events:all;}
+#bioModal{position:relative;width:100%;max-width:400px;background:#161118;border-radius:20px;border:6px solid #ff3b30;overflow:hidden;transform:scale(0.88) translateY(20px);transition:transform 0.35s cubic-bezier(0.34,1.56,0.64,1);box-shadow:0 0 0 6px rgba(255,59,48,0.12),0 0 50px rgba(255,59,48,0.35),0 40px 80px rgba(0,0,0,0.6);animation:bio-border-flash 0.75s step-end infinite;}
+#bioOverlay.bio-active #bioModal{transform:scale(1) translateY(0);}
+#bioModal.bio-shake{animation:bio-shake 0.55s cubic-bezier(0.36,0.07,0.19,0.97) 3,bio-border-flash 0.75s step-end infinite;}
+@keyframes bio-border-flash{0%,100%{border-color:#ff3b30;box-shadow:0 0 0 6px rgba(255,59,48,0.12),0 0 50px rgba(255,59,48,0.4),0 40px 80px rgba(0,0,0,0.6);}50%{border-color:#f5c400;box-shadow:0 0 0 6px rgba(245,196,0,0.12),0 0 50px rgba(245,196,0,0.25),0 40px 80px rgba(0,0,0,0.6);}}
+@keyframes bio-shake{0%{transform:scale(1) translateY(0) rotate(0deg);}10%{transform:scale(1) translateY(0) rotate(-3deg) translateX(-6px);}20%{transform:scale(1) translateY(0) rotate(3deg) translateX(6px);}30%{transform:scale(1) translateY(0) rotate(-3deg) translateX(-6px);}40%{transform:scale(1) translateY(0) rotate(3deg) translateX(6px);}50%{transform:scale(1) translateY(0) rotate(-2deg) translateX(-4px);}60%{transform:scale(1) translateY(0) rotate(2deg) translateX(4px);}70%{transform:scale(1) translateY(0) rotate(-1deg) translateX(-2px);}80%{transform:scale(1) translateY(0) rotate(1deg) translateX(2px);}100%{transform:scale(1) translateY(0) rotate(0deg);}}
+#bioModal::before{content:'';position:absolute;top:-2px;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,rgba(0,0,0,0.4),transparent);animation:bio-scan 2s ease-in-out infinite;z-index:10;}
+@keyframes bio-scan{0%,100%{opacity:0;transform:translateY(0)}50%{opacity:1;transform:translateY(100px)}}
+.bio-suspended-banner{display:flex;align-items:center;justify-content:center;gap:10px;background:#ff3b30;padding:11px 24px;animation:bio-strobe 0.75s step-end infinite;}
+@keyframes bio-strobe{0%,100%{background:#ff3b30}50%{background:#9e0a04}}
+.bio-siren{font-size:18px;display:inline-block;animation:bio-siren-rock 0.5s ease-in-out infinite alternate;}
+@keyframes bio-siren-rock{from{transform:rotate(-20deg)}to{transform:rotate(20deg)}}
+.bio-suspended-text{font-family:'DM Sans',sans-serif;font-size:11px;letter-spacing:0.16em;color:#fff;text-transform:uppercase;font-weight:600;}
+.bio-header{background:linear-gradient(135deg,#f5c400 0%,#e6b000 100%);padding:20px 24px 18px;text-align:center;border-bottom:1px solid rgba(0,0,0,0.15);position:relative;overflow:hidden;}
+.bio-header::after{content:'';position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(45deg,transparent,transparent 10px,rgba(0,0,0,0.04) 10px,rgba(0,0,0,0.04) 20px);}
+.bio-hazard-icon{font-size:52px;line-height:1;display:block;margin-bottom:2px;animation:bio-icon-pulse 1.5s ease-in-out infinite;filter:drop-shadow(0 0 6px rgba(0,0,0,0.3));}
+@keyframes bio-icon-pulse{0%,100%{filter:drop-shadow(0 0 4px rgba(0,0,0,0.2));transform:scale(1)}50%{filter:drop-shadow(0 0 12px rgba(0,0,0,0.35));transform:scale(1.05)}}
+.bio-toxic-icon{font-size:72px;line-height:1;display:block;margin:2px 0 6px;animation:bio-toxic-pulse 2s ease-in-out infinite;filter:drop-shadow(0 0 8px rgba(0,0,0,0.25));}
+@keyframes bio-toxic-pulse{0%,100%{filter:drop-shadow(0 0 4px rgba(0,0,0,0.2));transform:scale(1)}50%{filter:drop-shadow(0 0 14px rgba(0,0,0,0.3));transform:scale(1.06)}}
+.bio-alert-tags{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:10px;}
+.bio-tag{display:inline-flex;align-items:center;gap:5px;background:rgba(0,0,0,0.12);border:1px solid rgba(0,0,0,0.2);border-radius:5px;padding:3px 9px;}
+.bio-tag span{font-family:'DM Sans',sans-serif;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:#1a1200;}
+.bio-tag-burnt span{font-size:11px;font-weight:700;}
+.bio-title{font-family:'Cormorant Garamond',Georgia,serif;font-size:28px;font-weight:700;color:#1a1200;line-height:1.15;animation:bio-title-flash 0.75s step-end infinite;}
+@keyframes bio-title-flash{0%,100%{opacity:1;color:#1a1200}50%{opacity:0.4;color:#c0150c}}
+.bio-subtitle{font-family:'DM Sans',sans-serif;font-size:11px;letter-spacing:0.14em;color:rgba(0,0,0,0.5);text-transform:uppercase;margin-top:4px;}
+.bio-body{padding:18px 20px 20px;}
+.bio-incident-box{background:rgba(245,196,0,0.06);border:1px solid rgba(245,196,0,0.18);border-radius:10px;padding:12px 14px;margin-bottom:16px;}
+.bio-incident-label{font-family:'DM Sans',sans-serif;font-size:9px;letter-spacing:0.16em;color:rgba(245,196,0,0.5);text-transform:uppercase;margin-bottom:4px;}
+.bio-incident-wine{font-family:'Cormorant Garamond',Georgia,serif;font-size:17px;color:#e8e0d5;font-style:italic;}
+.bio-step-one{transition:opacity 0.25s ease,max-height 0.3s ease;overflow:hidden;max-height:80px;}
+.bio-step-one.bio-hidden{opacity:0;max-height:0;pointer-events:none;}
+.bio-continue-btn{width:100%;background:rgba(245,196,0,0.12);border:1px solid rgba(245,196,0,0.45);border-radius:10px;color:#f5c400;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;padding:14px;cursor:pointer;letter-spacing:0.04em;transition:background 0.2s,box-shadow 0.2s;}
+.bio-continue-btn:hover{background:rgba(245,196,0,0.2);box-shadow:0 0 24px rgba(245,196,0,0.12);}
+.bio-form-section{overflow:hidden;max-height:0;opacity:0;transition:max-height 0.45s cubic-bezier(0.4,0,0.2,1),opacity 0.35s ease;}
+.bio-form-section.bio-open{max-height:300px;opacity:1;}
+.bio-form-label{display:block;font-size:12px;color:#7a7070;margin:14px 0 8px;}
+.bio-form-label strong{color:#e8e0d5;font-weight:500;}
+.bio-textarea{width:100%;background:#1e1622;border:1px solid rgba(255,255,255,0.07);border-radius:10px;color:#e8e0d5;font-family:'DM Sans',sans-serif;font-size:14px;padding:12px 14px;resize:none;height:90px;outline:none;transition:border-color 0.2s;margin-bottom:14px;}
+.bio-textarea:focus{border-color:rgba(245,196,0,0.3);}
+.bio-textarea::placeholder{color:#7a7070;}
+.bio-actions{display:flex;gap:10px;}
+.bio-submit-btn{flex:1;background:rgba(245,196,0,0.12);border:1px solid rgba(245,196,0,0.35);border-radius:10px;color:#f5c400;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;padding:13px;cursor:pointer;letter-spacing:0.04em;transition:background 0.2s,box-shadow 0.2s;}
+.bio-submit-btn:hover{background:rgba(245,196,0,0.18);box-shadow:0 0 20px rgba(245,196,0,0.1);}
+.bio-dismiss-btn{background:transparent;border:1px solid rgba(255,255,255,0.07);border-radius:10px;color:#7a7070;font-family:'DM Sans',sans-serif;font-size:13px;padding:13px 16px;cursor:pointer;transition:color 0.2s,border-color 0.2s;}
+.bio-dismiss-btn:hover{color:#e8e0d5;border-color:rgba(255,255,255,0.15);}
+.bio-footer{padding:8px 20px 6px;border-top:1px solid rgba(255,255,255,0.07);}
+.bio-footer-ref{font-family:'DM Sans',sans-serif;font-size:9px;color:rgba(122,112,112,0.5);letter-spacing:0.08em;}
+.bio-footer-ref span{color:rgba(245,196,0,0.45);}
+.bio-footer-suspended{display:flex;align-items:center;justify-content:center;gap:10px;background:#ff3b30;padding:9px 20px;animation:bio-strobe 0.75s step-end infinite;border-top:1px solid rgba(255,255,255,0.08);}
+.bio-footer-suspended-text{font-family:'DM Sans',sans-serif;font-size:11px;letter-spacing:0.16em;color:#fff;text-transform:uppercase;font-weight:500;}
+/* BIOHAZARD-EGG-END */
 </style>
 </head>
 <body>
@@ -4435,6 +4490,7 @@ async function handleSave(e) {
   if (idx < 0) notifyWineAdded(entry); // fire & forget
   window._importSharedBy = null;
   closeModal();
+  if (idx < 0) _maybeTriggerBiohazard(entry); // easter egg
 
   activeFilter = 'all';
   activeSort   = 'date-desc';
@@ -7090,6 +7146,95 @@ function dismissInstallBanner() {
   if (banner) banner.classList.remove('on');
   localStorage.setItem('iosInstallBannerDismissed', '1');
 }
+
+/* BIOHAZARD EASTER EGG */
+let _bioWineId = null;
+function _maybeTriggerBiohazard(entry) {
+  const hay = ((entry.name||"") + " " + (entry.grape||"")).toLowerCase();
+  if (!hay.includes("sauvignon blanc")) return;
+  _bioWineId = entry.id;
+  document.getElementById("bioWineName").textContent =
+    [entry.name, entry.vintage].filter(Boolean).join(", ");
+  document.getElementById("bioOverlay").classList.add("bio-active");
+  if (navigator.vibrate) navigator.vibrate([200,100,200,100,400]);
+  setTimeout(() => {
+    const m = document.getElementById("bioModal");
+    m.classList.add("bio-shake");
+    m.addEventListener("animationend", () => m.classList.remove("bio-shake"), {once:true});
+  }, 350);
+}
+function _bioRevealForm() {
+  document.getElementById("bioStepOne").classList.add("bio-hidden");
+  setTimeout(() => document.getElementById("bioFormSection").classList.add("bio-open"), 260);
+}
+async function _bioSubmit() {
+  const text = document.getElementById("bioExplanation").value.trim();
+  const body = "☣️ INCIDENT REPORT: " + (text || "No explanation provided.");
+  if (_bioWineId) await postComment(_bioWineId, body);
+  _bioClose();
+  showToast("☣️ Incident report filed. Investigation ongoing.");
+}
+function _bioClose() {
+  document.getElementById("bioOverlay").classList.remove("bio-active");
+  setTimeout(() => {
+    document.getElementById("bioStepOne").classList.remove("bio-hidden");
+    document.getElementById("bioFormSection").classList.remove("bio-open");
+    document.getElementById("bioExplanation").value = "";
+    _bioWineId = null;
+  }, 400);
+}
+/* END BIOHAZARD */
+
 </script>
+
+<!-- BIOHAZARD EASTER EGG MODAL -->
+<div id="bioOverlay">
+  <div id="bioModal">
+    <div class="bio-suspended-banner">
+      <span class="bio-siren">🚨</span>
+      <span class="bio-suspended-text">Your Account Is Immediately Suspended</span>
+      <span class="bio-siren">🚨</span>
+    </div>
+    <div class="bio-header">
+      <span class="bio-hazard-icon">☣</span>
+      <span class="bio-toxic-icon">☠</span>
+      <div class="bio-alert-tags">
+        <div class="bio-tag bio-tag-burnt"><span>⚠ Burnt Rubber Detected</span></div>
+        <div class="bio-tag"><span>☣ Biohazard Detected</span></div>
+      </div>
+      <div class="bio-title">WARNING<br>BIOHAZARD DETECTED</div>
+      <div class="bio-subtitle">WARNING &middot; ACCOUNT SUSPENDED</div>
+    </div>
+    <div class="bio-body">
+      <div class="bio-incident-box">
+        <div class="bio-incident-label">Offending Entry</div>
+        <div class="bio-incident-wine" id="bioWineName">&mdash;</div>
+      </div>
+      <div class="bio-step-one" id="bioStepOne">
+        <button class="bio-continue-btn" onclick="_bioRevealForm()">☠ Explain Yourself &rarr;</button>
+      </div>
+      <div class="bio-form-section" id="bioFormSection">
+        <label class="bio-form-label" for="bioExplanation">
+          <strong>Explain yourself.</strong><br>
+          Your response will be logged in the official wine incident register.
+        </label>
+        <textarea class="bio-textarea" id="bioExplanation"
+          placeholder="e.g. It was a gift. I was coerced. My cat added it..."></textarea>
+        <div class="bio-actions">
+          <button class="bio-submit-btn" onclick="_bioSubmit()">☣ Submit Incident Report</button>
+          <button class="bio-dismiss-btn" onclick="_bioClose()">Lawyer up</button>
+        </div>
+      </div>
+    </div>
+    <div class="bio-footer">
+      <span class="bio-footer-ref">REF: <span>WW-BIO-042</span> &middot; WELDSWINE COMPLIANCE DIVISION</span>
+    </div>
+    <div class="bio-footer-suspended">
+      <span class="bio-siren">🚨</span>
+      <span class="bio-footer-suspended-text">Your Account Is Immediately Suspended</span>
+      <span class="bio-siren">🚨</span>
+    </div>
+  </div>
+</div>
 </body>
 </html>
