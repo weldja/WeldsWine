@@ -3136,7 +3136,29 @@ function getTasteDescriptor(w) {
   const style  = (w.style  || '').toLowerCase();
   const name   = (w.name   || '').toLowerCase();
   const all    = notes + ' ' + grape + ' ' + name;
+  const rating = parseFloat(w.rating);
 
+  // ── Rating-based descriptor ──────────────────────────────
+  // Edit phrases here to change card text per score band
+  if (!isNaN(rating)) {
+    if (rating >= 10)   return 'Impossibly good. Are you sure about that score?';
+    if (rating >= 9.5)  return 'Impossibly good. Are you sure about that score?';
+    if (rating >= 9)    return 'A landmark wine. Remember where you were.';
+    if (rating >= 8.5)  return 'Absolutely outstanding. Tell everyone you know.';
+    if (rating >= 8)    return 'Brilliant. Open another immediately.';
+    if (rating >= 7.5)  return 'A great wine — getting into top level territory now.';
+    if (rating >= 7)    return 'A great wine. Would buy again in a heartbeat.';
+    if (rating >= 6.5)  return 'Decent everyday. Reliable and unfussy.';
+    if (rating >= 6)    return 'Best everyday — solid and unpretentious.';
+    if (rating >= 5.5)  return 'Solid everyday. No fuss, no drama.';
+    if (rating >= 5)    return 'Passable. You\'ve had worse.';
+    if (rating >= 4)    return 'Brave choice. Brave.';
+    if (rating >= 3)    return 'Why is this in the cellar?';
+    if (rating >= 2)    return 'Did someone dare you?';
+    return 'Pour it down the sink.';
+  }
+
+  // ── No rating: fall back to keyword/style matching ───────
   const profiles = [
     { kw:['chocolate','cocoa','dark fruit','blackberry','plum','cab','cabernet','merlot','shiraz','syrah','malbec'],  label:'Great with steak or a hearty meal' },
     { kw:['cherry','raspberry','strawberry','pinot','beaujolais','light','silky'],                                    label:'Easy, no-thinking red for tonight' },
@@ -3153,11 +3175,9 @@ function getTasteDescriptor(w) {
   if (style === 'sparkling') return 'Celebratory — open it tonight';
   if (style === 'rosé')      return 'Light and summery — easy crowd-pleaser';
   if (style === 'dessert' || style === 'fortified') return 'Sweet treat — perfect after dinner';
-
   for (const p of profiles) {
     if (p.kw.some(k => all.includes(k))) return p.label;
   }
-  // Fallback by style
   if (style === 'red')   return 'Easy, no-thinking red for tonight';
   if (style === 'white') return 'Crisp and refreshing — great chilled';
   if (style === 'rosé')  return 'Light and summery — easy crowd-pleaser';
