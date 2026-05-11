@@ -4489,9 +4489,8 @@ async function handleSave(e) {
   showToast(idx >= 0 ? 'Wine updated ✓' : 'Wine saved ✓');
   if (idx < 0) notifyWineAdded(entry); // fire & forget
   window._importSharedBy = null;
+  if (idx < 0) _pendingBioEntry = entry; // easter egg
   closeModal();
-  if (idx < 0) _maybeTriggerBiohazard(entry); // easter egg
-
   activeFilter = 'all';
   activeSort   = 'date-desc';
   activeView   = 'grid';
@@ -4528,6 +4527,11 @@ async function handleSave(e) {
   } finally {
     saveBtn.disabled = false;
     saveBtn.textContent = 'Save Wine';
+  }
+  // Easter egg fires outside try/catch so it never breaks save flow
+  if (typeof _pendingBioEntry !== 'undefined' && _pendingBioEntry) {
+    const _e = _pendingBioEntry; _pendingBioEntry = null;
+    setTimeout(() => _maybeTriggerBiohazard(_e), 100);
   }
 }
 
@@ -7149,6 +7153,7 @@ function dismissInstallBanner() {
 
 /* BIOHAZARD EASTER EGG */
 let _bioWineId = null;
+let _pendingBioEntry = null;
 function _maybeTriggerBiohazard(entry) {
   const hay = ((entry.name||"") + " " + (entry.grape||"")).toLowerCase();
   if (!hay.includes("sauvignon blanc")) return;
