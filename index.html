@@ -3148,7 +3148,7 @@ function getTasteDescriptor(w) {
     if (rating >= 8)    return 'Brilliant. Open another immediately.';
     if (rating >= 7.5)  return 'A great wine — getting into top level territory now.';
     if (rating >= 7)    return 'A great wine. Would buy again in a heartbeat.';
-    if (rating >= 6.5)  return 'Decent everyday. Reliable and unfussy.';
+    if (rating >= 6.5)  return 'Good everyday. Reliable.';
     if (rating >= 6)    return 'Best everyday — solid and unpretentious.';
     if (rating >= 5.5)  return 'Solid everyday. No fuss, no drama.';
     if (rating >= 5)    return 'Passable. You\'ve had worse.';
@@ -3159,29 +3159,8 @@ function getTasteDescriptor(w) {
   }
 
   // ── No rating: fall back to keyword/style matching ───────
-  const profiles = [
-    { kw:['chocolate','cocoa','dark fruit','blackberry','plum','cab','cabernet','merlot','shiraz','syrah','malbec'],  label:'Great with steak or a hearty meal' },
-    { kw:['cherry','raspberry','strawberry','pinot','beaujolais','light','silky'],                                    label:'Easy, no-thinking red for tonight' },
-    { kw:['oak','vanilla','toasty','barrel','smoke','cedar','tempranillo','rioja'],                                   label:'Safe choice — works with most food' },
-    { kw:['citrus','lemon','lime','green apple','crisp','fresh','sauvignon','blanc','albariño','zesty','zingy'],      label:'Crisp and refreshing — great chilled' },
-    { kw:['tropical','mango','pineapple','peach','viognier','riesling','aromatic'],                                   label:'Fruity and easy — crowd-pleaser' },
-    { kw:['butter','creamy','chardonnay','full-bod','full bod'],                                                      label:'Rich and smooth — good with fish or pasta' },
-    { kw:['floral','rose','violet','delicate','ethereal','gewürz'],                                                   label:'Light and delicate — good on its own' },
-    { kw:['mineral','earthy','terroir','loire','chablis'],                                                            label:'Dry and food-friendly all-rounder' },
-    { kw:['sweet','dessert','port','sauternes','honey','late harvest'],                                               label:'Sweet treat — perfect after dinner' },
-    { kw:['sparkling','champagne','prosecco','cava','bubbles'],                                                       label:'Celebratory — open it tonight' },
-    { kw:['rosé','rose','blush','provence'],                                                                          label:'Light and summery — easy crowd-pleaser' },
-  ];
-  if (style === 'sparkling') return 'Celebratory — open it tonight';
-  if (style === 'rosé')      return 'Light and summery — easy crowd-pleaser';
-  if (style === 'dessert' || style === 'fortified') return 'Sweet treat — perfect after dinner';
-  for (const p of profiles) {
-    if (p.kw.some(k => all.includes(k))) return p.label;
-  }
-  if (style === 'red')   return 'Easy, no-thinking red for tonight';
-  if (style === 'white') return 'Crisp and refreshing — great chilled';
-  if (style === 'rosé')  return 'Light and summery — easy crowd-pleaser';
-  return 'Reliable choice — hard to go wrong';
+  // No rating — show nothing
+  return null;
 }
 
 /* ── Curated sections ─────────────────────────────────────── */
