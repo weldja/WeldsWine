@@ -3955,10 +3955,30 @@ const _KNOWN_WINE_REGIONS = {
   'dao|portugal':          { lat: 40.5000, lng: -7.9000 },
   'douro':                 { lat: 41.1579, lng: -7.5436 },
   // France
-  'bordeaux|france':       { lat: 44.8378, lng: -0.5792 },
-  'burgundy|france':       { lat: 47.0521, lng: 4.3875 },
-  'bourgogne|france':      { lat: 47.0521, lng: 4.3875 },
-  'champagne|france':      { lat: 49.0400, lng: 4.0000 },
+  'bordeaux|france':                { lat: 44.8378, lng: -0.5792 },
+  'burgundy|france':                { lat: 47.0521, lng: 4.3875 },
+  'bourgogne|france':               { lat: 47.0521, lng: 4.3875 },
+  // Burgundy appellations (prevent broad "burgundy" centroid being used for villages)
+  'gevrey-chambertin|france':       { lat: 47.2246, lng: 4.9703 },
+  'chambolle-musigny|france':       { lat: 47.1917, lng: 4.9528 },
+  'vosne-romanée|france':         { lat: 47.1717, lng: 4.9583 },
+  'nuits-saint-georges|france':     { lat: 47.1317, lng: 4.9528 },
+  'pommard|france':                 { lat: 47.0717, lng: 4.8333 },
+  'volnay|france':                  { lat: 47.0533, lng: 4.8167 },
+  'meursault|france':               { lat: 47.0217, lng: 4.7667 },
+  'puligny-montrachet|france':      { lat: 46.9883, lng: 4.7667 },
+  'chassagne-montrachet|france':    { lat: 46.9667, lng: 4.7667 },
+  'beaune|france':                  { lat: 47.0233, lng: 4.8400 },
+  'côte de nuits|france':         { lat: 47.1500, lng: 4.9600 },
+  'côte de beaune|france':        { lat: 47.0100, lng: 4.8300 },
+  'côte d'or|france':            { lat: 47.0800, lng: 4.9000 },
+  'chablis|france':                 { lat: 47.8139, lng: 3.7969 },
+  'mâcon|france':                 { lat: 46.3069, lng: 4.8319 },
+  'pouilly-fuissé|france':       { lat: 46.2833, lng: 4.7500 },
+  'morey-saint-denis|france':       { lat: 47.1817, lng: 4.9594 },
+  'flagey-échézeaux|france':     { lat: 47.1733, lng: 4.9597 },
+  'aloxe-corton|france':            { lat: 47.0633, lng: 4.8550 },
+  'champagne|france':               { lat: 49.0400, lng: 4.0000 },
   'rhone|france':          { lat: 44.9000, lng: 4.8500 },
   'rhône|france':          { lat: 44.9000, lng: 4.8500 },
   'loire|france':          { lat: 47.2500, lng: 0.6800 },
@@ -4016,7 +4036,7 @@ const _COUNTRY_CODES = {
 
 /* Cache version — bump to invalidate stale/bad entries from
    earlier geocoding logic. */
-const _GEO_CACHE_VERSION = 'v2';
+const _GEO_CACHE_VERSION = 'v3';
 
 /* ── Geocode wine origin (region, country) via Nominatim ─────
    Checks known-regions table first, then falls back to
@@ -4047,8 +4067,12 @@ async function _geocodeWineOrigin(region, country) {
       .map(t => t.trim())
       .filter(Boolean)
       .sort((a, b) => b.length - a.length); // longest (most specific) first
-    for (const tok of tokens) {
-      const hit = tryKey(countryLc ? `${tok}|${countryLc}` : null) || tryKey(tok);
+    // Only check the single most-specific token. If it isn't in the table,
+    // fall through to Nominatim — don't fall back to a broader token (e.g.
+    // "Burgundy – Gevrey-Chambertin" should NOT resolve to the generic
+    // Burgundy centroid just because "gevrey-chambertin" isn't in the table).
+    if (tokens[0]) {
+      const hit = tryKey(countryLc ? `${tokens[0]}|${countryLc}` : null) || tryKey(tokens[0]);
       if (hit) return { lat: hit.lat, lng: hit.lng, precision: 'region' };
     }
   }
