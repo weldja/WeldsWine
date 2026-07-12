@@ -86,21 +86,34 @@ self.addEventListener('push', event => {
       body:  data.body,
       icon:  '/icon-192.png',
       badge: '/badge-96.png',
-      data:  { url: data.url || '/' }
+      // Grouping: repeat comments on one wine collapse into a single
+      // notification that re-alerts, instead of stacking up.
+      tag:      data.tag || undefined,
+      renotify: !!data.renotify,
+      vibrate:  [80, 40, 80],
+      data:     { url: data.url || '/', wineId: data.wineId || null }
     })
   );
 });
 self.addEventListener('notificationclick', event => {
   event.notification.close();
-  const target = (event.notification.data && event.notification.data.url) || '/';
+  const d      = event.notification.data || {};
+  const target = d.url || '/';
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clientList => {
       for (const client of clientList) {
         if (client.url.startsWith(self.location.origin) && 'focus' in client) {
+          // App already open: focus it and tell the page which wine to show
+          // (postMessage avoids a full reload, unlike client.navigate).
+          if (d.wineId) {
+            client.postMessage({ type: 'open-wine', wineId: d.wineId });
+            return client.focus();
+          }
           client.navigate(target);
           return client.focus();
         }
       }
+      // App closed: open at /?open=<wineId> — the page handles the rest.
       return clients.openWindow(target);
     })
   );
