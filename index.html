@@ -3511,6 +3511,8 @@ function renderGrid() {
   
   // Don't replace skeleton with empty state — wait for DB to respond
   if (!_winesLoaded && wines.length === 0) return;
+  // Loader is holding its minimum display time — it will re-call us when done
+  if (_cellarLoaderHold) return;
   renderCuratedSections();
   const list = getList();
   wineGrid.innerHTML = '';
@@ -6600,6 +6602,12 @@ const _cellarMsgs = [
   'We only fly Malaysian',
   'We like things to be exactly the same as last time'
 ];
+/* Hold the loader (and the grid reveal) for at least this long,
+   so the phrase can actually be read. */
+const _CELLAR_LOADER_MIN_MS = 5000;
+let _cellarLoaderShownAt = 0;
+let _cellarLoaderHold = false;
+
 function showCellarLoader() {
   const loader = document.getElementById('cellarLoader');
   const text   = document.getElementById('cellarLoaderText');
@@ -6610,10 +6618,21 @@ function showCellarLoader() {
   if (grid)  grid.style.display  = 'none';
   if (empty) empty.style.display = 'none';
   _winesLoaded = false;
+  _cellarLoaderShownAt = Date.now();
+  _cellarLoaderHold = true;
 }
 function hideCellarLoader() {
   const loader = document.getElementById('cellarLoader');
-  if (loader) loader.classList.remove('active');
+  if (!loader || !loader.classList.contains('active')) { _cellarLoaderHold = false; return; }
+  const wait = Math.max(0, _CELLAR_LOADER_MIN_MS - (Date.now() - _cellarLoaderShownAt));
+  if (!wait) { _cellarLoaderHold = false; loader.classList.remove('active'); return; }
+  // Data arrived early — let the phrase finish its stay, then reveal
+  setTimeout(() => {
+    _cellarLoaderHold = false;
+    loader.classList.remove('active');
+    renderGrid();
+    updateStats();
+  }, wait);
 }
 
 async function _loadCellarMotto() {
