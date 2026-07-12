@@ -1453,6 +1453,17 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
 .comment-delete{position:absolute;top:8px;right:8px;background:none;border:none;cursor:pointer;color:var(--warm-gray);font-size:.75rem;opacity:0;transition:opacity .15s;padding:2px 5px}
 .comment-item:hover .comment-delete{opacity:.5}
 .comment-delete:hover{opacity:1!important;color:#dc2626}
+.comment-edit{position:absolute;top:8px;right:32px;background:none;border:none;cursor:pointer;color:var(--warm-gray);font-size:.75rem;opacity:0;transition:opacity .15s;padding:2px 5px}
+.comment-item:hover .comment-edit{opacity:.5}
+.comment-edit:hover{opacity:1!important;color:var(--burgundy)}
+@media (hover:none){.comment-delete,.comment-edit{opacity:.45}}
+.comment-edited{font-size:.68rem;color:var(--warm-gray);font-style:italic;margin-left:2px}
+.comment-edit-form{margin-top:6px}
+.comment-edit-input{width:100%;box-sizing:border-box;display:block}
+.comment-edit-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:8px}
+.comment-edit-cancel{background:none;border:1px solid var(--light-gray);border-radius:var(--r);padding:9px 16px;font-family:var(--font-b);font-size:.82rem;color:var(--warm-gray);cursor:pointer;min-height:40px;transition:var(--tr)}
+.comment-edit-cancel:hover{border-color:var(--warm-gray);color:var(--charcoal)}
+.comment-edit-save{min-height:40px}
 .comments-empty{font-family:var(--font-b);font-size:.85rem;color:var(--warm-gray);font-style:italic;padding:8px 0 16px;text-align:center}
 .comments-form{display:flex;gap:8px;align-items:flex-end}
 .comments-input{flex:1;border:1px solid var(--light-gray);border-radius:var(--r);padding:9px 12px;font-family:var(--font-b);font-size:.88rem;color:var(--charcoal);background:var(--cream);outline:none;resize:none;min-height:40px;max-height:120px;transition:border-color .2s;line-height:1.4}
@@ -6701,7 +6712,7 @@ async function loadComments(wineId) {
   try {
     const { data, error } = await _sb
       .from('wine_comments')
-      .select('id, user_id, author_name, body, created_at')
+      .select('id, user_id, author_name, body, created_at, updated_at')
       .eq('wine_id', wineId)
       .eq('cellar_id', window._cellarId)
       .order('created_at', { ascending: true });
@@ -6733,6 +6744,18 @@ async function postComment(wineId, body) {
   return data;
 }
 
+async function updateComment(commentId, body) {
+  if (!_sb || !_currentUser) return null;
+  const { data, error } = await _sb
+    .from('wine_comments')
+    .update({ body: body.trim(), updated_at: new Date().toISOString() })
+    .eq('id', commentId)
+    .select('id, user_id, author_name, body, created_at, updated_at')
+    .single();
+  if (error) { console.error('updateComment:', error); return null; }
+  return data;
+}
+
 async function deleteComment(commentId) {
   if (!_sb) return false;
   const { error } = await _sb
@@ -6750,6 +6773,7 @@ function renderCommentsSection(wineId, comments) {
     ? comments.map(c => {
         const initials = (c.author_name || 'M').slice(0, 2).toUpperCase();
         const canDelete = c.user_id === myId || isOwner;
+        const canEdit   = c.user_id === myId;
         const timeStr   = new Date(c.created_at).toLocaleString('en-GB', {
           day:'numeric', month:'short', hour:'2-digit', minute:'2-digit'
         });
@@ -6759,8 +6783,10 @@ function renderCommentsSection(wineId, comments) {
               <div class="comment-avatar">${escHtml(initials)}</div>
               <span class="comment-author">${escHtml(c.author_name)}</span>
               <span class="comment-time">${escHtml(timeStr)}</span>
+              ${c.updated_at ? '<span class="comment-edited">(edited)</span>' : ''}
             </div>
             <div class="comment-body">${escHtml(c.body)}</div>
+            ${canEdit ? `<button class="comment-edit" title="Edit comment" onclick="handleEditComment('${escJs(c.id)}', this)">✎</button>` : ''}
             ${canDelete ? `<button class="comment-delete" title="Delete comment" onclick="handleDeleteComment('${escJs(c.id)}', this)">✕</button>` : ''}
           </div>`;
       }).join('')
@@ -6822,6 +6848,7 @@ async function handlePostComment(wineId) {
       <span class="comment-time">${escHtml(timeStr)}</span>
     </div>
     <div class="comment-body">${escHtml(comment.body)}</div>
+    <button class="comment-edit" title="Edit comment" onclick="handleEditComment('${escJs(comment.id)}', this)">✎</button>
     <button class="comment-delete" title="Delete comment" onclick="handleDeleteComment('${escJs(comment.id)}', this)">✕</button>
   `;
   list.appendChild(div);
@@ -6842,6 +6869,65 @@ async function handleDeleteComment(commentId, btnEl) {
   const item = btnEl?.closest('.comment-item');
   if (item) item.remove();
   showToast('Comment deleted');
+}
+
+/* ── Inline comment editing (author only) ─────────────────── */
+function handleEditComment(commentId, btnEl) {
+  const item = btnEl?.closest('.comment-item');
+  if (!item || item.querySelector('.comment-edit-form')) return; // already editing
+  const bodyEl = item.querySelector('.comment-body');
+  if (!bodyEl) return;
+  const original = bodyEl.textContent;
+  const form = document.createElement('div');
+  form.className = 'comment-edit-form';
+  form.innerHTML = `
+    <textarea class="comments-input comment-edit-input" rows="2"
+      oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'"
+      onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();handleSaveCommentEdit('${escJs(commentId)}', this)}else if(event.key==='Escape'){handleCancelCommentEdit(this)}"></textarea>
+    <div class="comment-edit-actions">
+      <button class="comment-edit-cancel" onclick="handleCancelCommentEdit(this)">Cancel</button>
+      <button class="comments-submit comment-edit-save" onclick="handleSaveCommentEdit('${escJs(commentId)}', this)">Save</button>
+    </div>`;
+  bodyEl.style.display = 'none';
+  bodyEl.after(form);
+  const ta = form.querySelector('textarea');
+  ta.value = original;                 // set via JS — no HTML injection risk
+  ta.style.height = 'auto';
+  ta.style.height = ta.scrollHeight + 'px';
+  ta.focus();
+  ta.setSelectionRange(original.length, original.length);
+}
+
+function handleCancelCommentEdit(el) {
+  const item = el?.closest('.comment-item');
+  if (!item) return;
+  item.querySelector('.comment-edit-form')?.remove();
+  const bodyEl = item.querySelector('.comment-body');
+  if (bodyEl) bodyEl.style.display = '';
+}
+
+async function handleSaveCommentEdit(commentId, el) {
+  const item = el?.closest('.comment-item');
+  if (!item) return;
+  const ta   = item.querySelector('.comment-edit-input');
+  const save = item.querySelector('.comment-edit-save');
+  const body = (ta?.value || '').trim();
+  if (!body) { showToast('Comment cannot be empty'); return; }
+  if (save) { save.disabled = true; save.textContent = '…'; }
+  const updated = await updateComment(commentId, body);
+  if (save) { save.disabled = false; save.textContent = 'Save'; }
+  if (!updated) { showToast('Could not save changes'); return; }
+  const bodyEl = item.querySelector('.comment-body');
+  if (bodyEl) { bodyEl.textContent = updated.body; bodyEl.style.display = ''; }
+  item.querySelector('.comment-edit-form')?.remove();
+  const header = item.querySelector('.comment-header');
+  if (header && !header.querySelector('.comment-edited')) {
+    const mark = document.createElement('span');
+    mark.className = 'comment-edited';
+    mark.textContent = '(edited)';
+    header.appendChild(mark);
+  }
+  showToast('Comment updated');
 }
 
 /* ══════════════════════════════════════════════════════════════
