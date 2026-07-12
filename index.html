@@ -4794,6 +4794,7 @@ async function notifyWineAdded(entry) {
     const _notifyBody = JSON.stringify({
       cellar_id:        window._cellarId,
       exclude_endpoint: myEndpoint,
+      wine_id:          entry.id     || null,
       wine_name:        entry.name   || null,
       winery:           entry.winery || null,
       added_by_name:    (_currentUser && _currentUser.email) ? _currentUser.email.split('@')[0] : null
@@ -4807,6 +4808,68 @@ async function notifyWineAdded(entry) {
     const _notifyJson = await _notifyRes.json().catch(() => ({}));
     console.log('[notify] response', _notifyRes.status, JSON.stringify(_notifyJson));
   } catch(e) { console.warn('[notify] fetch failed:', e.message, e); }
+}
+
+/* ── Notify cellar members of a new comment (fire & forget) ── */
+async function notifyWineCommented(wine, commentBody) {
+  if (!window._cellarId || !_currentUser || !wine) return;
+  let myEndpoint = null;
+  try {
+    if (navigator.serviceWorker) {
+      const reg = await navigator.serviceWorker.ready;
+      const mySub = reg.pushManager ? await reg.pushManager.getSubscription() : null;
+      myEndpoint = mySub ? mySub.endpoint : null;
+    }
+  } catch(ignore) {}
+  try {
+    const res = await fetch(Scanner.getProxyUrl() + '/notify-wine-commented', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        cellar_id:        window._cellarId,
+        exclude_endpoint: myEndpoint,
+        wine_id:          wine.id     || null,
+        wine_name:        wine.name   || null,
+        winery:           wine.winery || null,
+        grape:            wine.grape  || null,
+        style:            wine.style  || null,
+        rating:           (wine.rating != null) ? Number(wine.rating) : null,
+        comment_body:     String(commentBody || '').replace(/\s+/g, ' ').trim().slice(0, 140),
+        author_name:      (_currentUser && _currentUser.email) ? _currentUser.email.split('@')[0] : null
+      })
+    });
+    const j = await res.json().catch(() => ({}));
+    console.log('[notify-comment] response', res.status, JSON.stringify(j));
+  } catch(e) { console.warn('[notify-comment] fetch failed:', e.message, e); }
+}
+
+/* ── Deep-link: notification tap while app already open ──────
+   sw.js focuses the existing window and posts {type:'open-wine'}. */
+if (navigator.serviceWorker) {
+  navigator.serviceWorker.addEventListener('message', (event) => {
+    const msg = event.data || {};
+    if (msg.type === 'open-wine' && msg.wineId) {
+      const w = getWineById(msg.wineId);
+      if (w) openDetail(w, null);
+    }
+  });
+}
+
+/* ── Deep-link: notification tap with app closed ─────────────
+   sw.js opens /?open=<wineId>; once wines are loaded we pop the
+   detail view and scrub the param so refresh doesn't re-open. */
+function _checkNotifDeepLink() {
+  if (window._deepLinkHandled) return;
+  try {
+    const id = new URLSearchParams(window.location.search).get('open');
+    if (!id) return;
+    window._deepLinkHandled = true;
+    const u = new URL(window.location.href);
+    u.searchParams.delete('open');
+    history.replaceState({}, '', u.pathname + u.search + u.hash);
+    const w = getWineById(id);
+    if (w) setTimeout(() => openDetail(w, null), 250);
+  } catch(_) {}
 }
 /* ── Toggle favourite ────────────────────────────────────── */
 async function toggleFavourite(id) {
@@ -5568,6 +5631,7 @@ async function loadWinesFromDB(cacheKey) {
     updateStats();
     hideLoadBar();
     _checkPendingImport();
+    _checkNotifDeepLink();
 
     try {
       if (window._triggerFirstRunScan && wines.length === 0) {
@@ -6734,6 +6798,7 @@ async function handlePostComment(wineId) {
   btn.disabled = false;
   btn.textContent = 'Post';
   if (!comment) { showToast('Could not post comment — try again'); return; }
+  notifyWineCommented(getWineById(wineId), body); // fire & forget
   input.value = '';
   input.style.height = 'auto';
 
@@ -7264,7 +7329,10 @@ function _bioRevealForm() {
 async function _bioSubmit() {
   const text = document.getElementById("bioExplanation").value.trim();
   const body = "☣️ INCIDENT REPORT: " + (text || "No explanation provided.");
-  if (_bioWineId) await postComment(_bioWineId, body);
+  if (_bioWineId) {
+    await postComment(_bioWineId, body);
+    notifyWineCommented(getWineById(_bioWineId), body); // fire & forget
+  }
   _bioClose();
   showToast("☣️ Incident report filed. Investigation ongoing.");
 }
