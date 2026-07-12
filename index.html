@@ -4010,18 +4010,59 @@ const _COUNTRY_CODES = {
   'argentina': 'ar', 'chile': 'cl', 'south africa': 'za', 'greece': 'gr',
   'hungary': 'hu', 'england': 'gb', 'united kingdom': 'gb', 'uk': 'gb',
   'canada': 'ca', 'mexico': 'mx', 'croatia': 'hr', 'slovenia': 'si',
-  'georgia': 'ge', 'lebanon': 'lb', 'israel': 'il', 'japan': 'jp'
+  'georgia': 'ge', 'lebanon': 'lb', 'israel': 'il', 'japan': 'jp',
+  'switzerland': 'ch', 'romania': 'ro', 'bulgaria': 'bg', 'moldova': 'md',
+  'uruguay': 'uy', 'brazil': 'br', 'china': 'cn', 'india': 'in',
+  'turkey': 'tr', 'türkiye': 'tr', 'cyprus': 'cy', 'malta': 'mt',
+  'morocco': 'ma', 'scotland': 'gb', 'wales': 'gb', 'great britain': 'gb'
 };
 
 /* Cache version — bump to invalidate stale/bad entries from
-   earlier geocoding logic. */
-const _GEO_CACHE_VERSION = 'v3';
+   earlier geocoding logic. v4: country-validated Nominatim results,
+   persistent success cache. */
+const _GEO_CACHE_VERSION = 'v4';
+
+/* Successful lookups persist in localStorage (regions don't move),
+   so repeat visits make zero Nominatim requests. Failures are only
+   cached for the session so transient network errors self-heal. */
+function _geoCacheGet(key) {
+  try { const v = localStorage.getItem(key); if (v !== null) return v; } catch(_) {}
+  try { return sessionStorage.getItem(key); } catch(_) {}
+  return null;
+}
+function _geoCacheSet(key, val, persistent) {
+  try { (persistent ? localStorage : sessionStorage).setItem(key, val); } catch(_) {}
+}
+
+/* Diacritic-insensitive key normaliser so "Macon" / "Cote de Nuits" /
+   "Vosne-Romanee" (e.g. from label scans) still hit the curated table. */
+function _normGeoKey(s) {
+  return String(s).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+}
+/* Accent-stripped index of _KNOWN_WINE_REGIONS, built once. */
+const _KNOWN_WINE_REGIONS_NORM = (() => {
+  const idx = {};
+  for (const k in _KNOWN_WINE_REGIONS) idx[_normGeoKey(k)] = _KNOWN_WINE_REGIONS[k];
+  return idx;
+})();
+
+/* Coalesce concurrent lookups for the same origin so N wines from one
+   region trigger a single network request. */
+const _geoInflight = new Map();
 
 /* ── Geocode wine origin (region, country) via Nominatim ─────
    Checks known-regions table first, then falls back to
    Nominatim with country bias. Cached in sessionStorage.
    Returns {lat, lng, precision} or null. */
 async function _geocodeWineOrigin(region, country) {
+  const flightKey = _normGeoKey((region || '') + '|' + (country || ''));
+  if (_geoInflight.has(flightKey)) return _geoInflight.get(flightKey);
+  const p = _geocodeWineOriginInner(region, country);
+  _geoInflight.set(flightKey, p);
+  try { return await p; } finally { _geoInflight.delete(flightKey); }
+}
+
+async function _geocodeWineOriginInner(region, country) {
   if (!region && !country) return null;
 
   const cleanRegion = _cleanRegionForGeocode(region);
@@ -4037,7 +4078,7 @@ async function _geocodeWineOrigin(region, country) {
   // This handles verbose region strings like "Region A – Subregion B" without
   // needing a table entry for every phrasing.
   if (regionLc) {
-    const tryKey = (key) => key && _KNOWN_WINE_REGIONS[key];
+    const tryKey = (key) => key && (_KNOWN_WINE_REGIONS[key] || _KNOWN_WINE_REGIONS_NORM[_normGeoKey(key)]);
     const full = tryKey(countryLc ? `${regionLc}|${countryLc}` : null) || tryKey(regionLc);
     if (full) return { lat: full.lat, lng: full.lng, precision: 'region' };
 
@@ -4067,9 +4108,8 @@ async function _geocodeWineOrigin(region, country) {
   for (const { q, precision } of candidates) {
     const cacheKey = 'wwwGeo:' + _GEO_CACHE_VERSION + ':' + q.toLowerCase();
 
-    // Cache check
-    let cached = null;
-    try { cached = sessionStorage.getItem(cacheKey); } catch(_) {}
+    // Cache check (localStorage for successes, sessionStorage for failures)
+    const cached = _geoCacheGet(cacheKey);
     if (cached !== null) {
       if (cached === 'null') continue; // known failure, try next candidate
       try {
@@ -4081,20 +4121,28 @@ async function _geocodeWineOrigin(region, country) {
     // Network fetch
     try {
       const ccParam = cc ? `&countrycodes=${cc}` : '';
-      const url = `https://nominatim.openstreetmap.org/search?format=json&limit=1${ccParam}&q=${encodeURIComponent(q)}`;
+      const url = `https://nominatim.openstreetmap.org/search?format=json&limit=3&addressdetails=1${ccParam}&q=${encodeURIComponent(q)}`;
       const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
       if (!res.ok) throw new Error('geocode failed: ' + res.status);
       const data = await res.json();
-      if (!Array.isArray(data) || data.length === 0) {
-        try { sessionStorage.setItem(cacheKey, 'null'); } catch(_) {}
+      // Validate + rank results: require country match when known, and
+      // prefer administrative boundaries / places over streets, rivers,
+      // shops etc. that happen to share a wine region's name.
+      let pick = null;
+      if (Array.isArray(data) && data.length) {
+        const inCountry = data.filter(d => !cc || (d.address && d.address.country_code === cc));
+        pick = inCountry.find(d => d.class === 'boundary' || d.class === 'place') || inCountry[0] || null;
+      }
+      if (!pick) {
+        _geoCacheSet(cacheKey, 'null', false);
         continue; // try next candidate
       }
-      const result = { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
-      try { sessionStorage.setItem(cacheKey, JSON.stringify(result)); } catch(_) {}
+      const result = { lat: parseFloat(pick.lat), lng: parseFloat(pick.lon) };
+      _geoCacheSet(cacheKey, JSON.stringify(result), true);
       return { ...result, precision };
     } catch (e) {
       console.warn('Geocode failed for', q, e);
-      try { sessionStorage.setItem(cacheKey, 'null'); } catch(_) {}
+      _geoCacheSet(cacheKey, 'null', false);
       // try next candidate
     }
   }
@@ -4117,15 +4165,23 @@ async function _renderWorldMap() {
     loading.innerHTML = `<div class="origin-map-spinner"></div><span>Locating ${mappable.length} wine${mappable.length!==1?'s':''}…</span>`;
   }
 
-  // Geocode all in parallel with a small stagger to be polite to Nominatim
+  // Dedupe by origin so each unique region/country pair is geocoded once,
+  // then stagger the unique lookups to stay within Nominatim's rate limits.
+  // (Cache hits resolve instantly; the stagger only costs time on a cold cache.)
   const located = [];
-  const geocodePromises = mappable.map((w, i) => {
+  const originGroups = new Map();
+  mappable.forEach(w => {
+    const k = _normGeoKey((w.region || '') + '|' + (w.country || ''));
+    if (!originGroups.has(k)) originGroups.set(k, { region: w.region, country: w.country, wines: [] });
+    originGroups.get(k).wines.push(w);
+  });
+  const geocodePromises = [...originGroups.values()].map((g, i) => {
     return new Promise(resolve => {
       setTimeout(async () => {
-        const coords = await _geocodeWineOrigin(w.region, w.country);
-        if (coords) located.push({ wine: w, ...coords });
+        const coords = await _geocodeWineOrigin(g.region, g.country);
+        if (coords) g.wines.forEach(w => located.push({ wine: w, ...coords }));
         resolve();
-      }, i * 100); // 100ms stagger
+      }, i * 250); // 250ms stagger between unique origins
     });
   });
   await Promise.all(geocodePromises);
@@ -4171,6 +4227,24 @@ async function _renderWorldMap() {
   // Clear old markers
   mapMarkers.forEach(m => m.remove());
   mapMarkers = [];
+
+  // Fan out wines that share identical coordinates (same region) in a
+  // small ring (~3km) so every marker remains visible and tappable.
+  const byCoord = new Map();
+  located.forEach(p => {
+    const k = p.lat.toFixed(3) + ',' + p.lng.toFixed(3);
+    if (!byCoord.has(k)) byCoord.set(k, []);
+    byCoord.get(k).push(p);
+  });
+  byCoord.forEach(group => {
+    if (group.length < 2) return;
+    const R = 0.03; // ≈3km — visible when zoomed in, negligible at world zoom
+    group.forEach((p, i) => {
+      const ang = (2 * Math.PI * i) / group.length;
+      p.lat += R * Math.sin(ang);
+      p.lng += R * Math.cos(ang) / Math.max(0.2, Math.cos(p.lat * Math.PI / 180));
+    });
+  });
 
   located.forEach(({ wine: w, lat, lng, precision }) => {
     const isApprox = precision === 'country';
@@ -6679,47 +6753,6 @@ let _originMap      = null;
 let _originMarkers  = [];
 let _originWine     = null;
 let _originZoomLevel = 0; // 0=country, 1=region, 2=winery
-
-async function _geocodeQuery(query) {
-  // Clean a region string down to its core geographic name:
-  // - Strip "Appellation ... Contrôlée/Controlée/Protégée" boilerplate
-  // - Strip "AOC", "AOP", "IGP", "DOC", "DOCG" suffixes
-  // - Replace em/en dashes with commas to help Nominatim parse sub-regions
-  function cleanQuery(q) {
-    return q
-      .replace(/\s*[–—]\s*(Appellation|Indicazione Geografica Tipica|Denominazione di Origine|Vino da Tavola)\b.*/i, '') // remove Italian/French legal suffix after dash
-      .replace(/\bAppellation\b.*(Contr[oô]l[eé]e|Prot[eé]g[eé]e)\b/i, '')  // standalone French AOC boilerplate
-      .replace(/\bIndicazione Geografica Tipica\b/gi, '')                        // Italian IGT
-      .replace(/\bDenominazione di Origine (Controllata|Protetta)(\s+e Garantita)?\b/gi, '') // Italian DOC/DOCG
-      .replace(/\b(AOC|AOP|IGP|IGT|DOC|DOCG|DOP|PDO|PGI)\b/gi, '')
-      .replace(/[–—]/g, ',')           // em/en dash → comma (Nominatim handles "Region, Subregion")
-      .replace(/\s+/g, ' ')
-      .trim()
-      .replace(/,\s*$/, '');          // trailing comma
-  }
-  // Build variants to try: cleaned full name, then each dash-separated part cleaned
-  const rawParts = query.split(/[–—]/).map(p => p.trim()).filter(Boolean);
-  const variants = [cleanQuery(query)];
-  if (rawParts.length > 1) {
-    // Most specific part (after last dash), stripped of AOC boilerplate
-    const specific = cleanQuery(rawParts[rawParts.length - 1]);
-    if (specific && !variants.includes(specific)) variants.push(specific);
-    // Broadest part (before first dash)
-    const broad = cleanQuery(rawParts[0]);
-    if (broad && !variants.includes(broad)) variants.push(broad);
-  }
-  for (const v of variants) {
-    try {
-      const cleaned = cleanQuery(v);
-      const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(cleaned)}&format=json&limit=1&accept-language=en`;
-      const r   = await fetch(url, { headers: { 'User-Agent': 'WeldsWineWisdoms/1.0' } });
-      if (!r.ok) continue;
-      const data = await r.json();
-      if (data.length) return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon), name: data[0].display_name };
-    } catch(_) {}
-  }
-  return null;
-}
 
 async function openOriginMap(w) {
   if (!w) return;
