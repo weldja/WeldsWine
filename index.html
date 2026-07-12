@@ -2066,7 +2066,7 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
 
   <div class="cellar-loader" id="cellarLoader">
     <div class="cellar-loader-bottle">🍷</div>
-    <div class="cellar-loader-text" id="cellarLoaderText">Decanting your cellar…</div>
+    <div class="cellar-loader-text" id="cellarLoaderText">Going through the wormhole</div>
     <div class="cellar-loader-sub">Good things take a moment</div>
   </div>
   <div class="wine-grid" id="wineGrid"></div>
@@ -6588,7 +6588,18 @@ function _updateCellarPill() {
   else { pill.style.display = 'none'; }
 }
 
-const _cellarMsgs = ['Decanting your cellar…','Letting the wines breathe…','Checking the vintage…','Consulting the sommelier…','Polishing the glasses…','Uncorking something special…','Aerating the selection…','Bribing the wine fairies…'];
+/* ═══════════════════════════════════════════════════════════
+   CELLAR LOADER PHRASES — EDIT ME
+   One line per phrase, shown at random while the cellar loads.
+   Add, remove or reword freely — just keep the quotes and commas.
+═══════════════════════════════════════════════════════════ */
+const _cellarMsgs = [
+  'We don\u2019t like funky',
+  'We don\u2019t like hazy',
+  'Going through the wormhole',
+  'We only fly Malaysian',
+  'We like things to be exactly the same as last time'
+];
 function showCellarLoader() {
   const loader = document.getElementById('cellarLoader');
   const text   = document.getElementById('cellarLoaderText');
