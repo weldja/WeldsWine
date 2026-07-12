@@ -1464,6 +1464,117 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
 .comment-edit-cancel{background:none;border:1px solid var(--light-gray);border-radius:var(--r);padding:9px 16px;font-family:var(--font-b);font-size:.82rem;color:var(--warm-gray);cursor:pointer;min-height:40px;transition:var(--tr)}
 .comment-edit-cancel:hover{border-color:var(--warm-gray);color:var(--charcoal)}
 .comment-edit-save{min-height:40px}
+
+/* ══ EVENTS ═════════════════════════════════════════════════ */
+.events-overlay{position:fixed;inset:0;background:var(--cream);z-index:250;display:none;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.events-overlay.open{display:block}
+.ev-page{max-width:640px;margin:0 auto;padding-bottom:100px;animation:evRise .4s ease both}
+@keyframes evRise{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.ev-page,.ev-sheet{animation:none!important}}
+.ev-view{display:none}
+.ev-view.active{display:block}
+.ev-topbar{display:flex;align-items:center;gap:8px;padding:14px 22px 0;min-height:44px}
+.ev-back{background:none;border:none;color:var(--warm-gray);font-family:var(--font-b);font-size:.82rem;cursor:pointer;padding:10px 10px 10px 0;min-height:44px;transition:var(--tr)}
+.ev-back:hover{color:var(--burgundy)}
+.ev-head{padding:10px 22px 4px}
+.ev-eyebrow{font-size:.66rem;letter-spacing:.2em;text-transform:uppercase;color:var(--burgundy);display:flex;align-items:center;gap:10px;font-weight:600}
+.ev-eyebrow::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,rgba(139,36,57,.3),transparent)}
+.ev-head h2{font-family:var(--font-d);font-weight:600;font-size:2.2rem;margin-top:10px;line-height:1.05;color:var(--charcoal)}
+.ev-head h2 .ev-hemoji{font-size:1.4rem;vertical-align:5px;margin-left:6px}
+.ev-head p{font-size:.8rem;color:var(--warm-gray);margin-top:8px}
+.ev-year{font-family:var(--font-d);font-style:italic;font-size:1.2rem;color:var(--blush);padding:22px 22px 0}
+.ev-card{margin:12px 22px 0;background:var(--ivory);border:1px solid var(--light-gray);border-radius:var(--rl);padding:16px;display:flex;gap:14px;align-items:center;min-height:44px;position:relative;box-shadow:0 3px 12px var(--shadow);transition:var(--tr);cursor:pointer}
+.ev-card:hover,.ev-card:active{border-color:var(--gold);box-shadow:0 6px 18px var(--shadow-md);transform:translateY(-1px)}
+.ev-stack{position:relative;width:58px;height:66px;flex-shrink:0}
+.ev-stack i{position:absolute;width:42px;height:56px;border-radius:5px;border:1px solid rgba(255,255,255,.5);box-shadow:0 5px 12px var(--shadow-md);background-size:cover;background-position:center}
+.ev-stack i:nth-child(1){left:0;top:6px;transform:rotate(-7deg)}
+.ev-stack i:nth-child(2){left:12px;top:0;transform:rotate(4deg)}
+.ev-g-red{background:linear-gradient(160deg,#5C1525,#2b0a12)}
+.ev-g-gold{background:linear-gradient(160deg,#8a6a24,#3d2e0e)}
+.ev-g-blue{background:linear-gradient(160deg,#33445f,#131a26)}
+.ev-g-green{background:linear-gradient(160deg,#1e4a3c,#0c1f18)}
+.ev-emoji-badge{position:absolute;right:-7px;bottom:-5px;font-size:1.05rem;background:var(--ivory);border:1px solid var(--light-gray);border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px var(--shadow)}
+.ev-card-info{flex:1;min-width:0}
+.ev-card-name{font-family:var(--font-d);font-size:1.2rem;font-weight:600;line-height:1.15;color:var(--charcoal)}
+.ev-card-meta{font-size:.68rem;color:var(--warm-gray);margin-top:4px}
+.ev-card-avg{font-family:var(--font-d);font-weight:700;font-size:1.15rem;color:var(--burgundy);flex-shrink:0;text-align:right}
+.ev-card-avg small{display:block;font-family:var(--font-b);font-weight:500;font-size:.56rem;letter-spacing:.12em;text-transform:uppercase;color:var(--warm-gray)}
+.ev-empty{margin:22px;padding:22px;border:1.5px dashed var(--light-gray);border-radius:var(--rl);text-align:center;font-size:.8rem;color:var(--warm-gray);font-style:italic;background:var(--ivory)}
+.ev-fab{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);min-height:48px;padding:13px 30px;border-radius:999px;border:none;background:var(--burgundy);color:#fff;box-shadow:0 8px 20px rgba(92,21,37,.35);font-family:var(--font-b);font-size:.85rem;font-weight:600;letter-spacing:.03em;transition:var(--tr);z-index:252;cursor:pointer}
+.ev-fab:hover{background:var(--burgundy-lt)}
+.ev-hero{padding:8px 22px 20px;position:relative;background:linear-gradient(180deg,var(--parchment),var(--cream) 85%)}
+.ev-collage{position:relative;height:150px;margin:20px -4px 0}
+.ev-snap{position:absolute;width:96px;height:128px;border-radius:6px;border:4px solid #fff;box-shadow:0 10px 22px var(--shadow-lg);padding:8px;display:flex;flex-direction:column;justify-content:flex-end;background-size:cover;background-position:center}
+.ev-snap .ev-lbl{font-family:var(--font-d);font-size:.72rem;line-height:1.15;font-weight:600;color:var(--parchment);text-shadow:0 1px 4px rgba(0,0,0,.6)}
+.ev-snap1{left:6px;top:14px;transform:rotate(-6deg)}
+.ev-snap2{left:96px;top:0;transform:rotate(2.5deg);z-index:2}
+.ev-snap3{left:186px;top:18px;transform:rotate(7deg)}
+.ev-stamp{position:absolute;right:10px;bottom:0;z-index:3;transform:rotate(-8deg);font-family:var(--font-d);font-style:italic;font-size:.76rem;color:var(--burgundy);border:1.5px solid var(--burgundy);border-radius:999px;padding:4px 12px;background:rgba(255,255,255,.85)}
+.ev-stats{display:flex;margin:2px 22px 0;background:var(--ivory);border:1px solid var(--light-gray);border-radius:var(--r);box-shadow:0 2px 8px var(--shadow)}
+.ev-stat{flex:1;text-align:center;padding:14px 4px}
+.ev-stat + .ev-stat{border-left:1px solid var(--light-gray)}
+.ev-stat b{font-family:var(--font-d);font-size:1.5rem;font-weight:600;display:block;line-height:1;color:var(--charcoal)}
+.ev-stat b.hl{color:var(--burgundy)}
+.ev-stat span{font-size:.58rem;letter-spacing:.16em;text-transform:uppercase;color:var(--warm-gray)}
+.ev-sec{padding:26px 22px 0}
+.ev-sec-title{font-size:.66rem;letter-spacing:.2em;text-transform:uppercase;color:var(--warm-gray);display:flex;align-items:center;gap:10px;margin-bottom:14px;font-weight:600}
+.ev-sec-title::after{content:'';flex:1;height:1px;background:var(--light-gray)}
+.ev-add-mini{margin-left:auto;background:var(--ivory);border:1px solid var(--burgundy);color:var(--burgundy);border-radius:999px;font-family:var(--font-b);font-size:.66rem;letter-spacing:.06em;padding:7px 14px;min-height:32px;font-weight:600;transition:var(--tr);cursor:pointer}
+.ev-add-mini:hover{background:var(--burgundy);color:#fff}
+.ev-bottle{display:flex;gap:12px;align-items:center;background:var(--ivory);border:1px solid var(--light-gray);border-radius:var(--r);padding:11px 12px;margin-top:10px;min-height:44px;box-shadow:0 2px 6px var(--shadow);cursor:pointer;position:relative;transition:var(--tr)}
+.ev-bottle:hover{border-color:var(--gold)}
+.ev-bthumb{width:36px;height:48px;border-radius:4px;flex-shrink:0;border:1px solid rgba(255,255,255,.5);background-size:cover;background-position:center}
+.ev-binfo{flex:1;min-width:0}
+.ev-bname{font-family:var(--font-d);font-size:1rem;font-weight:600;line-height:1.2;color:var(--charcoal)}
+.ev-bmeta{font-size:.66rem;color:var(--warm-gray);margin-top:2px}
+.ev-brate{font-family:var(--font-d);font-weight:700;font-size:1rem;color:var(--burgundy);flex-shrink:0}
+.ev-bremove{background:none;border:none;color:var(--warm-gray);font-size:.75rem;cursor:pointer;padding:8px;opacity:0;transition:opacity .15s;flex-shrink:0}
+.ev-bottle:hover .ev-bremove{opacity:.5}
+.ev-bremove:hover{opacity:1!important;color:#dc2626}
+@media (hover:none){.ev-bremove{opacity:.4}}
+.ev-badge-row{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.ev-chip{font-family:var(--font-b);font-size:.64rem;color:var(--warm-gray);border:1px solid var(--light-gray);border-radius:999px;padding:6px 12px;background:var(--ivory);cursor:pointer;min-height:30px;transition:var(--tr)}
+.ev-chip:hover{border-color:var(--burgundy);color:var(--burgundy)}
+.ev-chip.hl{color:var(--burgundy);border-color:var(--gold);background:rgba(201,163,74,.08);font-weight:600;cursor:default}
+.ev-chip-add{border-style:dashed;color:var(--burgundy)}
+.ev-chip-row{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.ev-chip-row:empty{display:none}
+.ev-pullq{background:var(--ivory);border:1px solid var(--light-gray);border-left:3px solid var(--burgundy);border-radius:var(--r);padding:14px 16px;box-shadow:0 2px 6px var(--shadow)}
+.ev-pullq q{font-family:var(--font-d);font-style:italic;font-size:.95rem;line-height:1.45;color:var(--charcoal)}
+.ev-pullq .ev-who{font-size:.64rem;letter-spacing:.1em;text-transform:uppercase;color:var(--warm-gray);margin-top:8px}
+.ev-danger{background:none;border:none;color:var(--warm-gray);font-family:var(--font-b);font-size:.72rem;text-decoration:underline;cursor:pointer;padding:12px;min-height:44px}
+.ev-danger:hover{color:#dc2626}
+/* sheets */
+.ev-scrim{position:fixed;inset:0;background:rgba(44,36,32,.4);backdrop-filter:blur(2px);z-index:349;display:none}
+.ev-scrim.open{display:block}
+.ev-sheet{position:fixed;left:50%;bottom:0;transform:translateX(-50%);width:100%;max-width:480px;background:var(--ivory);border:1px solid var(--light-gray);border-bottom:none;border-radius:18px 18px 0 0;z-index:350;padding:18px 22px calc(30px + env(safe-area-inset-bottom));display:none;animation:evUp .35s cubic-bezier(.2,.8,.3,1) both;max-height:82vh;overflow-y:auto;-webkit-overflow-scrolling:touch;box-shadow:0 -10px 40px var(--shadow-lg)}
+.ev-sheet.open{display:block}
+@keyframes evUp{from{transform:translate(-50%,40px);opacity:0}to{transform:translate(-50%,0);opacity:1}}
+.ev-grab{width:36px;height:4px;border-radius:2px;background:var(--light-gray);margin:0 auto 16px}
+.ev-sheet h3{font-family:var(--font-d);font-weight:600;font-size:1.5rem;color:var(--charcoal)}
+.ev-hint{font-size:.74rem;color:var(--warm-gray);margin-top:4px}
+.ev-flabel{font-size:.62rem;letter-spacing:.16em;text-transform:uppercase;color:var(--warm-gray);margin:20px 0 8px;font-weight:600}
+.ev-finput{width:100%;background:var(--cream);border:1px solid var(--light-gray);border-radius:var(--r);color:var(--charcoal);font-family:var(--font-b);font-size:.95rem;padding:13px 14px;outline:none;min-height:44px;transition:var(--tr)}
+.ev-finput:focus{border-color:var(--burgundy);background:var(--ivory)}
+.ev-emoji-row{display:flex;gap:8px;flex-wrap:wrap}
+.ev-emo{width:44px;height:44px;border-radius:var(--r);background:var(--cream);border:1px solid var(--light-gray);font-size:1.25rem;display:flex;align-items:center;justify-content:center;transition:var(--tr);cursor:pointer}
+.ev-emo.sel{border-color:var(--burgundy);background:var(--ivory);box-shadow:0 0 0 3px rgba(139,36,57,.12)}
+.ev-daterow{display:flex;gap:10px}
+.ev-daterow .ev-finput{flex:1;min-width:0}
+.ev-sheet-cta{width:100%;margin-top:24px;min-height:48px;border-radius:999px;border:none;background:var(--burgundy);color:#fff;font-family:var(--font-b);font-weight:600;font-size:.9rem;letter-spacing:.03em;transition:var(--tr);cursor:pointer}
+.ev-sheet-cta:hover{background:var(--burgundy-lt)}
+.ev-sheet-cta:disabled{opacity:.4;cursor:not-allowed}
+.ev-stamp-preview{margin-top:22px;text-align:center}
+.ev-stamp-preview .ev-stp{display:inline-block;transform:rotate(-5deg);font-family:var(--font-d);font-style:italic;font-size:1rem;color:var(--burgundy);border:1.5px solid var(--burgundy);border-radius:999px;padding:7px 20px;background:var(--parchment)}
+.ev-stamp-preview .ev-note{font-size:.64rem;color:var(--warm-gray);margin-top:8px;font-style:italic}
+.ev-pick{display:flex;gap:12px;align-items:center;padding:11px 4px;border-bottom:1px solid var(--light-gray);min-height:52px;cursor:pointer}
+.ev-pick:last-of-type{border-bottom:none}
+.ev-cb{width:24px;height:24px;border-radius:50%;border:1.5px solid var(--light-gray);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:.8rem;color:#fff;transition:var(--tr);background:var(--cream)}
+.ev-pick.on .ev-cb{background:var(--burgundy);border-color:var(--burgundy)}
+.ev-cb::after{content:'✓';opacity:0}
+.ev-pick.on .ev-cb::after{opacity:1}
+.ev-pick .ev-tags{font-size:.58rem;color:var(--blush);font-style:italic;flex-shrink:0;max-width:90px;text-align:right}
+.ev-pick-list{max-height:44vh;overflow-y:auto;-webkit-overflow-scrolling:touch}
 .comments-empty{font-family:var(--font-b);font-size:.85rem;color:var(--warm-gray);font-style:italic;padding:8px 0 16px;text-align:center}
 .comments-form{display:flex;gap:8px;align-items:flex-end}
 .comments-input{flex:1;border:1px solid var(--light-gray);border-radius:var(--r);padding:9px 12px;font-family:var(--font-b);font-size:.88rem;color:var(--charcoal);background:var(--cream);outline:none;resize:none;min-height:40px;max-height:120px;transition:border-color .2s;line-height:1.4}
@@ -1887,6 +1998,10 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
       <button class="export-btn" id="exportBtn" title="Export your wines as a CSV file">
         <span class="export-label">⬇ Export Data</span>
         <span class="export-icon">⬇</span>
+      </button>
+      <button class="export-btn" id="eventsBtn" onclick="openEventsView()" title="Cellar events — every occasion, and the bottles that were there">
+        <span class="export-label">🥂 Events</span>
+        <span class="export-icon">🥂</span>
       </button>
     </div>
     <!-- Row 3: search -->
@@ -3736,6 +3851,7 @@ async function openDetail(w, e) {
       </div>
       ${w.sharedBy?`<div class="shared-by-badge" style="margin-bottom:12px">🤝 Shared wine</div>`:''}
       ${addedByLabel}
+      ${window._cellarId ? '<div class="ev-chip-row" id="wineEventChips"></div>' : ''}
       <div class="detail-grid">
         ${fields.map(([l,v])=>`<div class="detail-field"><label>${escHtml(l)}</label><p>${escHtml(String(v))}</p></div>`).join('')}
       </div>
@@ -3755,8 +3871,9 @@ async function openDetail(w, e) {
   document.body.style.overflow='hidden';
   _pushNavState();
 
-  // Load comments async (only when cellar is active)
+  // Event chips + comments load async (only when cellar is active)
   if (window._cellarId) {
+    _renderWineEventChips(w.id);
     const placeholder = document.getElementById('detailCommentsPlaceholder');
     if (placeholder) {
       placeholder.innerHTML = '<div class="comments-loading" style="margin-top:24px">Loading comments…</div>';
@@ -3806,11 +3923,14 @@ function _anyPanelOpen() {
     document.getElementById('quickAddOverlay').classList.contains('open') ||
     document.getElementById('cellarSettingsOverlay').classList.contains('open') ||
     document.getElementById('originMapOverlay').classList.contains('open') ||
-    document.getElementById('worldMapOverlay').classList.contains('open')
+    document.getElementById('worldMapOverlay').classList.contains('open') ||
+    document.getElementById('eventsOverlay').classList.contains('open') ||
+    document.getElementById('evScrim').classList.contains('open')
   );
 }
 function _closeTopPanel() {
   if (document.getElementById('labelLightbox'))                                        { closeLightbox();        return; }
+  if (document.getElementById('evScrim').classList.contains('open'))                   { closeEventSheets();     return; }
   if (document.getElementById('originMapOverlay').classList.contains('open'))         { closeOriginMap();       return; }
   if (document.getElementById('worldMapOverlay').classList.contains('open'))          { closeWorldMap();        return; }
   if (document.getElementById('cellarSettingsOverlay').classList.contains('open'))    { closeCellarSettings();  return; }
@@ -3820,6 +3940,11 @@ function _closeTopPanel() {
   if (document.getElementById('scanOverlay').classList.contains('open'))              { closeScanModal();       return; }
   if (document.getElementById('modalOverlay').classList.contains('open'))             { closeModal();           return; }
   if (detailOverlay.classList.contains('open'))                                        { closeDetail();          return; }
+  if (document.getElementById('eventsOverlay').classList.contains('open')) {
+    if (document.getElementById('evDetailView').classList.contains('active')) { _evShowList(); }
+    else { closeEventsView(); }
+    return;
+  }
 }
 window.addEventListener('popstate', e => {
   // wwwPanel:true  → a panel was open, close the top one
@@ -5643,6 +5768,7 @@ async function loadWinesFromDB(cacheKey) {
     hideLoadBar();
     _checkPendingImport();
     _checkNotifDeepLink();
+    _eventsLoaded = false; // refresh events lazily against the new wine set
 
     try {
       if (window._triggerFirstRunScan && wines.length === 0) {
@@ -6059,6 +6185,77 @@ function updateKeyBadge() {
   btn.style.borderColor = has ? 'var(--burgundy)' : '';
 }
 </script>
+
+<!-- EVENTS OVERLAY -->
+<div class="events-overlay" id="eventsOverlay">
+  <!-- List view -->
+  <div class="ev-view active" id="evListView">
+    <div class="ev-page">
+      <div class="ev-topbar"><button class="ev-back" onclick="closeEventsView()">‹ &nbsp;Back to cellar</button></div>
+      <div class="ev-head">
+        <div class="ev-eyebrow">The cellar's history</div>
+        <h2>Events</h2>
+        <p>Every occasion, and the bottles that were there.</p>
+      </div>
+      <div id="evListBody"></div>
+      <button class="ev-fab" onclick="openCreateEventSheet()">＋ &nbsp;New event</button>
+    </div>
+  </div>
+  <!-- Detail view -->
+  <div class="ev-view" id="evDetailView">
+    <div class="ev-page" id="evDetailBody"></div>
+  </div>
+</div>
+
+<!-- EVENT SHEETS (shared scrim; sheets layer above wine detail too) -->
+<div class="ev-scrim" id="evScrim" onclick="closeEventSheets()"></div>
+
+<div class="ev-sheet" id="evCreateSheet">
+  <div class="ev-grab"></div>
+  <h3>New event</h3>
+  <div class="ev-hint">Name the occasion — add the bottles as they're opened.</div>
+  <div class="ev-flabel">Name</div>
+  <input class="ev-finput" id="evNameInput" placeholder="e.g. Burns Night 2027" maxlength="60" oninput="_evUpdateStamp()"/>
+  <div class="ev-flabel">Mark it with</div>
+  <div class="ev-emoji-row" id="evEmojiRow">
+    <button class="ev-emo sel" onclick="_evPickEmoji(this)">🥂</button>
+    <button class="ev-emo" onclick="_evPickEmoji(this)">🎂</button>
+    <button class="ev-emo" onclick="_evPickEmoji(this)">🎄</button>
+    <button class="ev-emo" onclick="_evPickEmoji(this)">✈️</button>
+    <button class="ev-emo" onclick="_evPickEmoji(this)">💍</button>
+    <button class="ev-emo" onclick="_evPickEmoji(this)">🏆</button>
+    <button class="ev-emo" onclick="_evPickEmoji(this)">🍽️</button>
+    <button class="ev-emo" onclick="_evPickEmoji(this)">🔥</button>
+  </div>
+  <div class="ev-flabel">When</div>
+  <div class="ev-daterow">
+    <input class="ev-finput" type="date" id="evStartDate"/>
+    <input class="ev-finput" type="date" id="evEndDate" title="End date (optional, for trips)"/>
+  </div>
+  <div class="ev-stamp-preview">
+    <span class="ev-stp" id="evStampText">🥂 …</span>
+    <div class="ev-note">every event gets its stamp</div>
+  </div>
+  <button class="ev-sheet-cta" id="evCreateCta" onclick="submitCreateEvent()">Create event</button>
+</div>
+
+<div class="ev-sheet" id="evPickSheet">
+  <div class="ev-grab"></div>
+  <h3 id="evPickTitle">Add wines</h3>
+  <div class="ev-hint">Anyone in the cellar can add. A wine can belong to more than one event.</div>
+  <div class="ev-flabel" style="margin-top:16px">From the cellar</div>
+  <input class="ev-finput" id="evPickSearch" placeholder="Search wines…" oninput="_evRenderPickList()" style="margin-bottom:6px"/>
+  <div class="ev-pick-list" id="evPickList"></div>
+  <button class="ev-sheet-cta" id="evPickCta" onclick="confirmEventPicks()" disabled>Add to event</button>
+</div>
+
+<div class="ev-sheet" id="evWineSheet">
+  <div class="ev-grab"></div>
+  <h3>Add to event</h3>
+  <div class="ev-hint" id="evWineSheetHint">Tap an event to add or remove this wine.</div>
+  <div class="ev-pick-list" id="evWineSheetList" style="margin-top:16px"></div>
+  <button class="ev-sheet-cta" style="background:var(--ivory);color:var(--burgundy);border:1px solid var(--burgundy)" onclick="closeEventSheets();openCreateEventSheet(_evSheetWineId)">＋ &nbsp;New event with this wine</button>
+</div>
 
 <!-- WINE ORIGIN MAP MODAL -->
 <div class="origin-map-overlay" id="originMapOverlay">
@@ -6928,6 +7125,428 @@ async function handleSaveCommentEdit(commentId, el) {
     header.appendChild(mark);
   }
   showToast('Comment updated');
+}
+
+/* ══════════════════════════════════════════════════════════════
+   EVENTS — occasions and the bottles that were there
+══════════════════════════════════════════════════════════════ */
+let _events = [];
+let _eventsLoaded = false;
+let _activeEventId = null;
+let _evPickSel = new Set();
+let _evSheetWineId = null;     // wine whose "add to event" sheet is open
+let _evPendingAttach = null;   // wine to auto-attach to a newly created event
+
+async function _ensureEventsLoaded(force) {
+  if (_eventsLoaded && !force) return;
+  if (!_sb || !window._cellarId) { _events = []; return; }
+  const { data, error } = await _sb.from('events')
+    .select('id, name, emoji, start_date, end_date, created_by, created_at, event_wines(wine_id)')
+    .eq('cellar_id', window._cellarId)
+    .order('start_date', { ascending: false });
+  if (error) { console.error('loadEvents:', error); return; }
+  _events = data || [];
+  _eventsLoaded = true;
+}
+
+function _getEventById(id) { return _events.find(e => e.id === id) || null; }
+function _eventWineIds(ev) { return (ev.event_wines || []).map(x => x.wine_id); }
+function _eventWinesOf(ev) { return _eventWineIds(ev).map(id => getWineById(id)).filter(Boolean); }
+function _eventStats(ev) {
+  const ws = _eventWinesOf(ev);
+  const rated = ws.filter(w => w.rating != null && w.rating !== '' && !isNaN(Number(w.rating)));
+  const avg = rated.length ? rated.reduce((s,w)=>s+Number(w.rating),0)/rated.length : null;
+  const top = rated.length ? rated.reduce((m,w)=>Number(w.rating)>Number(m.rating)?w:m, rated[0]) : null;
+  return { count: ws.length, avg, top, wines: ws };
+}
+const _EV_G = ['ev-g-red','ev-g-gold','ev-g-blue','ev-g-green'];
+function _evThumbStyle(w, i) {
+  const src = w ? safePhotoSrc(w.photoFront || w.photo) : '';
+  return src ? `style="background-image:url('${src}')"` : `class="${_EV_G[i % 4]}"`;
+}
+function _evThumbAttr(w, i, baseClass) {
+  const src = w ? safePhotoSrc(w.photoFront || w.photo) : '';
+  if (src) return `class="${baseClass}" style="background-image:url('${src}')"`;
+  return `class="${baseClass} ${_EV_G[i % 4]}"`;
+}
+function _evDateLabel(ev) {
+  const fmt = d => new Date(d + 'T12:00:00').toLocaleDateString('en-GB', { day:'numeric', month:'short' });
+  if (ev.start_date && ev.end_date && ev.end_date !== ev.start_date) return fmt(ev.start_date) + '–' + fmt(ev.end_date);
+  if (ev.start_date) return fmt(ev.start_date);
+  return '';
+}
+function _evYear(ev) {
+  const d = ev.start_date || (ev.created_at || '').slice(0, 10);
+  return d ? d.slice(0, 4) : '—';
+}
+
+/* ── Open / close the overlay ─────────────────────────────── */
+async function openEventsView(jumpToId) {
+  if (!window._cellarId) { showToast('Events live in a shared cellar'); return; }
+  const overlay = document.getElementById('eventsOverlay');
+  overlay.classList.add('open');
+  document.body.style.overflow = 'hidden';
+  _pushNavState();
+  _evShowList(false);
+  document.getElementById('evListBody').innerHTML = '<div class="ev-empty">Opening the cellar diary…</div>';
+  await _ensureEventsLoaded(true);
+  renderEventsList();
+  if (jumpToId && _getEventById(jumpToId)) openEventDetail(jumpToId);
+}
+function closeEventsView() {
+  document.getElementById('eventsOverlay').classList.remove('open');
+  document.body.style.overflow = '';
+  _activeEventId = null;
+}
+function _evShowList(push) {
+  document.getElementById('evDetailView').classList.remove('active');
+  document.getElementById('evListView').classList.add('active');
+  _activeEventId = null;
+  document.getElementById('eventsOverlay').scrollTop = 0;
+  if (push !== false) renderEventsList();
+}
+
+/* ── List view ────────────────────────────────────────────── */
+function renderEventsList() {
+  const body = document.getElementById('evListBody');
+  if (!_events.length) {
+    body.innerHTML = '<div class="ev-empty">No events yet. Start with the next occasion — or backfill a favourite: Christmas, a birthday, that trip.</div>';
+    return;
+  }
+  let html = '', lastYear = null;
+  for (const ev of _events) {
+    const yr = _evYear(ev);
+    if (yr !== lastYear) { html += `<div class="ev-year">${escHtml(yr)}</div>`; lastYear = yr; }
+    const st = _eventStats(ev);
+    const thumbs = st.wines.slice(0, 2);
+    const dateLbl = _evDateLabel(ev);
+    const meta = [dateLbl, st.count === 1 ? '1 bottle' : st.count + ' bottles'].filter(Boolean).join(' · ');
+    html += `
+      <div class="ev-card" onclick="openEventDetail('${escJs(ev.id)}')">
+        <div class="ev-stack">
+          <i ${_evThumbAttr(thumbs[0], 0, '')}></i>
+          <i ${_evThumbAttr(thumbs[1], 1, '')}></i>
+          <span class="ev-emoji-badge">${escHtml(ev.emoji || '🥂')}</span>
+        </div>
+        <div class="ev-card-info">
+          <div class="ev-card-name">${escHtml(ev.name)}</div>
+          <div class="ev-card-meta">${escHtml(meta)}</div>
+        </div>
+        ${st.avg != null ? `<div class="ev-card-avg">${st.avg.toFixed(1)}<small>avg</small></div>` : ''}
+      </div>`;
+  }
+  body.innerHTML = html;
+}
+
+/* ── Detail view ──────────────────────────────────────────── */
+function openEventDetail(eventId) {
+  const ev = _getEventById(eventId);
+  if (!ev) return;
+  _activeEventId = eventId;
+  document.getElementById('evListView').classList.remove('active');
+  document.getElementById('evDetailView').classList.add('active');
+  document.getElementById('eventsOverlay').scrollTop = 0;
+  _pushNavState();
+  _renderEventDetail(ev);
+}
+function _renderEventDetail(ev) {
+  const st = _eventStats(ev);
+  const sorted = st.wines.slice().sort((a, b) => new Date(a.dateTasted || 0) - new Date(b.dateTasted || 0));
+  const snaps = sorted.slice(0, 3);
+  const dateLbl = _evDateLabel(ev);
+  const yearRoman = _evYear(ev);
+  const isCreator = ev.created_by === _currentUser?.id;
+
+  const snapHtml = snaps.length ? `
+    <div class="ev-collage">
+      ${snaps.map((w, i) => `<div ${_evThumbAttr(w, i, 'ev-snap ev-snap' + (i + 1))}><div class="ev-lbl">${escHtml(w.name || '')}</div></div>`).join('')}
+      <div class="ev-stamp">${escHtml(ev.emoji || '🥂')} ${escHtml(ev.name)} · ${escHtml(yearRoman)}</div>
+    </div>` : '';
+
+  const bottlesHtml = sorted.length
+    ? sorted.map((w, i) => {
+        const meta = [w.winery, w.vintage, w.dateTasted ? formatDate(w.dateTasted) : null].filter(Boolean).join(' · ');
+        return `
+        <div class="ev-bottle" onclick="openDetail(getWineById('${escJs(w.id)}'), null)">
+          <div ${_evThumbAttr(w, i, 'ev-bthumb')}></div>
+          <div class="ev-binfo">
+            <div class="ev-bname">${escHtml(w.name || 'Unnamed wine')}</div>
+            <div class="ev-bmeta">${escHtml(meta)}</div>
+          </div>
+          ${w.rating ? `<div class="ev-brate">${escHtml(String(w.rating))}</div>` : ''}
+          <button class="ev-bremove" title="Remove from event" onclick="event.stopPropagation();removeWineFromEvent('${escJs(ev.id)}','${escJs(w.id)}')">✕</button>
+        </div>`;
+      }).join('')
+    : '<div class="ev-empty">No bottles yet — tap "＋ Add wines" when the first cork pops.</div>';
+
+  const wottChip = st.top ? `<span class="ev-chip hl">🏆 Wine of the night · ${escHtml(st.top.name)}</span>` : '';
+
+  document.getElementById('evDetailBody').innerHTML = `
+    <div class="ev-topbar"><button class="ev-back" onclick="_evShowList()">‹ &nbsp;Events</button></div>
+    <div class="ev-hero">
+      <div class="ev-eyebrow">Event${dateLbl ? ' · ' + escHtml(dateLbl) + ' ' + escHtml(yearRoman) : ''}</div>
+      <div class="ev-head" style="padding:0">
+        <h2>${escHtml(ev.name)}<span class="ev-hemoji">${escHtml(ev.emoji || '')}</span></h2>
+      </div>
+      ${snapHtml}
+    </div>
+    ${st.count ? `
+    <div class="ev-stats">
+      <div class="ev-stat"><b>${st.count}</b><span>bottles</span></div>
+      <div class="ev-stat"><b class="hl">${st.avg != null ? st.avg.toFixed(1) : '—'}</b><span>average</span></div>
+      <div class="ev-stat"><b>${st.top ? Number(st.top.rating).toFixed(1) : '—'}</b><span>top score</span></div>
+    </div>` : ''}
+    <div class="ev-sec">
+      <div class="ev-sec-title">The bottles ${sorted.length > 1 ? '· in order' : ''}
+        <button class="ev-add-mini" onclick="openEventPicker('${escJs(ev.id)}')">＋ Add wines</button>
+      </div>
+      ${bottlesHtml}
+      <div class="ev-badge-row">${wottChip}<span class="ev-chip" id="evCommentChip" style="display:none;cursor:default"></span></div>
+    </div>
+    <div class="ev-sec" id="evChatterSec" style="display:none">
+      <div class="ev-sec-title">Cellar chatter</div>
+      <div class="ev-pullq" id="evChatterPull"></div>
+    </div>
+    <div class="ev-sec" style="text-align:center;padding-bottom:24px">
+      ${isCreator ? `<button class="ev-danger" onclick="deleteEvent('${escJs(ev.id)}')">Delete this event</button>` : ''}
+    </div>`;
+  _loadEventChatter(ev);
+}
+async function _loadEventChatter(ev) {
+  const ids = _eventWineIds(ev);
+  if (!ids.length || !_sb) return;
+  try {
+    const { data, count } = await _sb.from('wine_comments')
+      .select('author_name, body, wine_id', { count: 'exact' })
+      .in('wine_id', ids)
+      .order('created_at', { ascending: false })
+      .limit(1);
+    if (_activeEventId !== ev.id) return; // navigated away
+    const chip = document.getElementById('evCommentChip');
+    if (chip && count) { chip.textContent = '💬 ' + count + (count === 1 ? ' comment' : ' comments'); chip.style.display = ''; }
+    if (data && data.length) {
+      const c = data[0];
+      const w = getWineById(c.wine_id);
+      const sec = document.getElementById('evChatterSec');
+      const pull = document.getElementById('evChatterPull');
+      if (sec && pull) {
+        pull.innerHTML = `<q>${escHtml(c.body)}</q><div class="ev-who">${escHtml(c.author_name || 'A member')}${w ? ' · on ' + escHtml(w.name) : ''}</div>`;
+        sec.style.display = '';
+      }
+    }
+  } catch (e) { console.warn('event chatter:', e); }
+}
+
+/* ── Create event ─────────────────────────────────────────── */
+function openCreateEventSheet(attachWineId) {
+  _evPendingAttach = attachWineId || null;
+  document.getElementById('evNameInput').value = '';
+  document.getElementById('evStartDate').value = new Date().toISOString().slice(0, 10);
+  document.getElementById('evEndDate').value = '';
+  _evUpdateStamp();
+  _evOpenSheet('evCreateSheet');
+  setTimeout(() => document.getElementById('evNameInput').focus(), 350);
+}
+function _evPickEmoji(btn) {
+  document.querySelectorAll('#evEmojiRow .ev-emo').forEach(b => b.classList.remove('sel'));
+  btn.classList.add('sel');
+  _evUpdateStamp();
+}
+function _evUpdateStamp() {
+  const name = document.getElementById('evNameInput').value.trim() || '…';
+  const emoji = document.querySelector('#evEmojiRow .ev-emo.sel')?.textContent || '🥂';
+  document.getElementById('evStampText').textContent = emoji + ' ' + name;
+}
+async function submitCreateEvent() {
+  const name = document.getElementById('evNameInput').value.trim();
+  if (!name) { showToast('Give the event a name'); return; }
+  if (!_sb || !window._cellarId || !_currentUser) return;
+  const btn = document.getElementById('evCreateCta');
+  btn.disabled = true; btn.textContent = '…';
+  const emoji = document.querySelector('#evEmojiRow .ev-emo.sel')?.textContent || '🥂';
+  const start = document.getElementById('evStartDate').value || null;
+  const end   = document.getElementById('evEndDate').value || null;
+  const { data, error } = await _sb.from('events')
+    .insert({ cellar_id: window._cellarId, created_by: _currentUser.id, name, emoji, start_date: start, end_date: end })
+    .select('id, name, emoji, start_date, end_date, created_by, created_at')
+    .single();
+  btn.disabled = false; btn.textContent = 'Create event';
+  if (error || !data) { console.error('createEvent:', error); showToast('Could not create event'); return; }
+  data.event_wines = [];
+  _events.push(data);
+  _events.sort((a, b) => (b.start_date || '') < (a.start_date || '') ? -1 : 1);
+  closeEventSheets();
+  if (_evPendingAttach) {
+    await _evSetMembership(data.id, _evPendingAttach, true, true);
+    _evPendingAttach = null;
+    showToast('Event created — ' + emoji + ' ' + name);
+    if (document.getElementById('detailOverlay').classList.contains('open')) { _renderWineEventChips(_evSheetWineId); return; }
+  } else {
+    showToast('Event created — ' + emoji + ' ' + name);
+  }
+  const overlayOpen = document.getElementById('eventsOverlay').classList.contains('open');
+  if (overlayOpen) openEventDetail(data.id);
+}
+
+/* ── Add-wines picker ─────────────────────────────────────── */
+function openEventPicker(eventId) {
+  _activeEventId = eventId;
+  _evPickSel = new Set();
+  const ev = _getEventById(eventId);
+  if (!ev) return;
+  document.getElementById('evPickTitle').textContent = 'Add wines to ' + ev.name;
+  document.getElementById('evPickSearch').value = '';
+  _evRenderPickList();
+  _evUpdatePickCta();
+  _evOpenSheet('evPickSheet');
+}
+function _evRenderPickList() {
+  const ev = _getEventById(_activeEventId);
+  if (!ev) return;
+  const inEvent = new Set(_eventWineIds(ev));
+  const q = (document.getElementById('evPickSearch').value || '').toLowerCase().trim();
+  const pool = wines
+    .filter(w => !inEvent.has(w.id))
+    .filter(w => !q || [w.name, w.winery, w.grape, w.region].filter(Boolean).join(' ').toLowerCase().includes(q))
+    .sort((a, b) => new Date(b.dateTasted || b.createdAt || 0) - new Date(a.dateTasted || a.createdAt || 0))
+    .slice(0, 60);
+  const list = document.getElementById('evPickList');
+  if (!pool.length) { list.innerHTML = '<div class="ev-empty" style="margin:12px 0">' + (q ? 'No wines match.' : 'Every wine is already in this event.') + '</div>'; return; }
+  list.innerHTML = pool.map((w, i) => {
+    const others = _events.filter(e => e.id !== ev.id && _eventWineIds(e).includes(w.id)).map(e => e.name);
+    const meta = [w.dateTasted ? formatDate(w.dateTasted) : null, w.rating ? Number(w.rating).toFixed(1) : null].filter(Boolean).join(' · ');
+    const sel = _evPickSel.has(w.id) ? ' on' : '';
+    return `
+      <div class="ev-pick${sel}" onclick="_evTogglePick('${escJs(w.id)}', this)">
+        <span class="ev-cb"></span>
+        <div ${_evThumbAttr(w, i, 'ev-bthumb')}></div>
+        <div class="ev-binfo">
+          <div class="ev-bname">${escHtml(w.name || 'Unnamed wine')}</div>
+          <div class="ev-bmeta">${escHtml(meta)}</div>
+        </div>
+        ${others.length ? `<span class="ev-tags">also in: ${escHtml(others[0])}${others.length > 1 ? ' +' + (others.length - 1) : ''}</span>` : ''}
+      </div>`;
+  }).join('');
+}
+function _evTogglePick(wineId, row) {
+  if (_evPickSel.has(wineId)) { _evPickSel.delete(wineId); row.classList.remove('on'); }
+  else { _evPickSel.add(wineId); row.classList.add('on'); }
+  _evUpdatePickCta();
+}
+function _evUpdatePickCta() {
+  const n = _evPickSel.size;
+  const cta = document.getElementById('evPickCta');
+  cta.disabled = n === 0;
+  cta.textContent = n ? 'Add ' + n + (n === 1 ? ' wine' : ' wines') + ' to event' : 'Add to event';
+}
+async function confirmEventPicks() {
+  const ev = _getEventById(_activeEventId);
+  if (!ev || !_evPickSel.size || !_sb) return;
+  const cta = document.getElementById('evPickCta');
+  cta.disabled = true; cta.textContent = '…';
+  const rows = [..._evPickSel].map(wine_id => ({ event_id: ev.id, wine_id, added_by: _currentUser?.id || null }));
+  const { error } = await _sb.from('event_wines').upsert(rows, { onConflict: 'event_id,wine_id', ignoreDuplicates: true });
+  if (error) { console.error('addEventWines:', error); showToast('Could not add wines'); _evUpdatePickCta(); return; }
+  const have = new Set(_eventWineIds(ev));
+  rows.forEach(r => { if (!have.has(r.wine_id)) ev.event_wines.push({ wine_id: r.wine_id }); });
+  const n = _evPickSel.size;
+  _evPickSel = new Set();
+  closeEventSheets();
+  _renderEventDetail(ev);
+  showToast((n === 1 ? '1 wine' : n + ' wines') + ' added to ' + (ev.emoji || '') + ' ' + ev.name);
+}
+async function removeWineFromEvent(eventId, wineId) {
+  const ev = _getEventById(eventId);
+  const w = getWineById(wineId);
+  if (!ev || !_sb) return;
+  if (!confirm('Remove ' + (w ? '"' + (w.name || 'this wine') + '"' : 'this wine') + ' from ' + ev.name + '?')) return;
+  const { error } = await _sb.from('event_wines').delete().eq('event_id', eventId).eq('wine_id', wineId);
+  if (error) { console.error('removeEventWine:', error); showToast('Could not remove wine'); return; }
+  ev.event_wines = (ev.event_wines || []).filter(x => x.wine_id !== wineId);
+  _renderEventDetail(ev);
+  showToast('Removed from ' + ev.name);
+}
+async function deleteEvent(eventId) {
+  const ev = _getEventById(eventId);
+  if (!ev || !_sb) return;
+  if (!confirm('Delete "' + ev.name + '"? The wines stay in the cellar — only the event grouping is removed.')) return;
+  const { error } = await _sb.from('events').delete().eq('id', eventId);
+  if (error) { console.error('deleteEvent:', error); showToast('Could not delete event'); return; }
+  _events = _events.filter(e => e.id !== eventId);
+  _evShowList();
+  showToast('Event deleted');
+}
+
+/* ── Wine detail integration ──────────────────────────────── */
+async function _renderWineEventChips(wineId) {
+  const holder = document.getElementById('wineEventChips');
+  if (!holder || !window._cellarId || !wineId) return;
+  await _ensureEventsLoaded();
+  const mine = _events.filter(ev => _eventWineIds(ev).includes(wineId));
+  holder.innerHTML = mine.map(ev =>
+    `<button class="ev-chip" title="Open event" onclick="closeDetail();openEventsView('${escJs(ev.id)}')">${escHtml(ev.emoji || '🥂')} ${escHtml(ev.name)}</button>`
+  ).join('') +
+  `<button class="ev-chip ev-chip-add" onclick="openWineEventSheet('${escJs(wineId)}')">＋ Event</button>`;
+}
+async function openWineEventSheet(wineId) {
+  _evSheetWineId = wineId;
+  await _ensureEventsLoaded();
+  _evRenderWineSheet();
+  _evOpenSheet('evWineSheet');
+}
+function _evRenderWineSheet() {
+  const list = document.getElementById('evWineSheetList');
+  if (!_events.length) { list.innerHTML = '<div class="ev-empty" style="margin:0 0 12px">No events yet — create the first one below.</div>'; return; }
+  list.innerHTML = _events.map(ev => {
+    const on = _eventWineIds(ev).includes(_evSheetWineId) ? ' on' : '';
+    const st = _eventStats(ev);
+    return `
+      <div class="ev-pick${on}" onclick="_evToggleWineEvent('${escJs(ev.id)}', this)">
+        <span class="ev-cb"></span>
+        <div class="ev-binfo">
+          <div class="ev-bname">${escHtml(ev.emoji || '🥂')} ${escHtml(ev.name)}</div>
+          <div class="ev-bmeta">${escHtml([_evDateLabel(ev) + ' ' + _evYear(ev), st.count + (st.count === 1 ? ' bottle' : ' bottles')].join(' · '))}</div>
+        </div>
+      </div>`;
+  }).join('');
+}
+async function _evToggleWineEvent(eventId, row) {
+  const adding = !row.classList.contains('on');
+  row.classList.toggle('on');
+  const ok = await _evSetMembership(eventId, _evSheetWineId, adding, false);
+  if (!ok) { row.classList.toggle('on'); return; }
+  const ev = _getEventById(eventId);
+  showToast(adding ? 'Added to ' + (ev.emoji || '') + ' ' + ev.name : 'Removed from ' + ev.name);
+  _evRenderWineSheet();
+  _renderWineEventChips(_evSheetWineId);
+}
+async function _evSetMembership(eventId, wineId, adding, silent) {
+  if (!_sb || !wineId) return false;
+  const ev = _getEventById(eventId);
+  if (!ev) return false;
+  if (adding) {
+    const { error } = await _sb.from('event_wines').upsert(
+      { event_id: eventId, wine_id: wineId, added_by: _currentUser?.id || null },
+      { onConflict: 'event_id,wine_id', ignoreDuplicates: true });
+    if (error) { console.error('eventAttach:', error); if (!silent) showToast('Could not update event'); return false; }
+    if (!_eventWineIds(ev).includes(wineId)) ev.event_wines.push({ wine_id: wineId });
+  } else {
+    const { error } = await _sb.from('event_wines').delete().eq('event_id', eventId).eq('wine_id', wineId);
+    if (error) { console.error('eventDetach:', error); if (!silent) showToast('Could not update event'); return false; }
+    ev.event_wines = (ev.event_wines || []).filter(x => x.wine_id !== wineId);
+  }
+  return true;
+}
+
+/* ── Sheets plumbing ──────────────────────────────────────── */
+function _evOpenSheet(id) {
+  document.getElementById('evScrim').classList.add('open');
+  document.getElementById(id).classList.add('open');
+  _pushNavState();
+}
+function closeEventSheets() {
+  document.getElementById('evScrim').classList.remove('open');
+  ['evCreateSheet', 'evPickSheet', 'evWineSheet'].forEach(id => document.getElementById(id).classList.remove('open'));
 }
 
 /* ══════════════════════════════════════════════════════════════
