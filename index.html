@@ -3894,6 +3894,13 @@ function _cleanRegionForGeocode(region) {
     .replace(/\bAppellation(\s+d['’]Origine)?\s+(Contr[oô]l[eé]e|Prot[eé]g[eé]e)\b/gi, '')
     .replace(/\bIndicazione Geografica Tipica\b/gi, '')
     .replace(/\bIndication G[eé]ographique Prot[eé]g[eé]e\b/gi, '');
+  // Strip cru-classification words — quality tiers, not places.
+  // "Meursault 1er Cru Contrôlée" → "Meursault"
+  s = s
+    .replace(/\b(1er|1[eè]re|premiers?|premi[eè]res?|grands?)\s+crus?\b/gi, '')
+    .replace(/\bcrus?\s+(class[eé]s?|bourgeois)\b/gi, '')
+    .replace(/\bcontr[oô]l[eé]e?s?\b/gi, '')
+    .replace(/\bprot[eé]g[eé]e?s?\b/gi, '');
   // Strip appellation prefixes (case-insensitive, with or without dots/spaces)
   // Order matters: longer prefixes first so "DOCG" isn't shortened to "DOC"
   const prefixes = [
@@ -3917,8 +3924,10 @@ function _cleanRegionForGeocode(region) {
   // Some regions put the appellation suffix-style ("Napa Valley AVA")
   const reSuffix = new RegExp('\\s+(?:' + prefixes.join('|') + ')$', 'i');
   s = s.replace(reSuffix, '');
-  // Collapse whitespace and trim
-  return s.replace(/\s+/g, ' ').trim();
+  // Collapse whitespace, trim, and drop separators left dangling by the
+  // strips above ("Meursault –" → "Meursault")
+  return s.replace(/\s+/g, ' ').trim()
+          .replace(/^[\s–—,]+/, '').replace(/[\s–—,]+$/, '').trim();
 }
 
 /* ── Known wine region centroids ─────────────
@@ -4086,15 +4095,39 @@ async function _geocodeWineOriginInner(region, country) {
       .split(/[–—,\/]+/)      // en-dash, em-dash, comma, slash
       .map(t => t.trim())
       .filter(Boolean)
-      .sort((a, b) => b.length - a.length); // longest (most specific) first
-    // Only check the single most-specific token. If it isn't in the table,
-    // fall through to Nominatim — don't fall back to a broader token (e.g.
-    // "Burgundy – Gevrey-Chambertin" should NOT resolve to the generic
-    // Burgundy centroid just because "gevrey-chambertin" isn't in the table).
+      .reverse(); // region strings read broad → specific, so last token first
+    // Only check the single most-specific (last) token. If it isn't in the
+    // table, fall through to the whole-word scan / Nominatim — don't fall
+    // back to a broader token (e.g. "Burgundy – Gevrey-Chambertin" should
+    // NOT resolve to the generic Burgundy centroid just because
+    // "gevrey-chambertin" isn't in the table).
     if (tokens[0]) {
       const hit = tryKey(countryLc ? `${tokens[0]}|${countryLc}` : null) || tryKey(tokens[0]);
       if (hit) return { lat: hit.lat, lng: hit.lng, precision: 'region' };
     }
+
+    // Final table attempt: scan for any curated region name appearing as a
+    // whole word inside the cleaned string, so verbose appellations like
+    // "Meursault Genevrières 1er Cru" still hit the "meursault" entry.
+    // Prefer the rightmost match (region strings read broad → specific),
+    // tie-broken by longest name. Country-specific keys must match country.
+    const normRegion = _normGeoKey(regionLc);
+    const normCountry = _normGeoKey(countryLc);
+    let bestScan = null;
+    for (const key in _KNOWN_WINE_REGIONS_NORM) {
+      const bar = key.indexOf('|');
+      const kRegion  = bar === -1 ? key : key.slice(0, bar);
+      const kCountry = bar === -1 ? ''  : key.slice(bar + 1);
+      if (kCountry && normCountry && kCountry !== normCountry) continue;
+      const esc = kRegion.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const m = normRegion.match(new RegExp('(?:^|[^a-z0-9])(' + esc + ')(?:[^a-z0-9]|$)'));
+      if (!m) continue;
+      const pos = m.index + m[0].indexOf(m[1]);
+      if (!bestScan || pos > bestScan.pos || (pos === bestScan.pos && kRegion.length > bestScan.len)) {
+        bestScan = { pos, len: kRegion.length, hit: _KNOWN_WINE_REGIONS_NORM[key] };
+      }
+    }
+    if (bestScan) return { lat: bestScan.hit.lat, lng: bestScan.hit.lng, precision: 'region' };
   }
 
   // Build candidate queries in order of specificity
