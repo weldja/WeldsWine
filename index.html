@@ -307,6 +307,10 @@ body{font-family:var(--font-b);background:var(--cream);color:var(--charcoal);min
 .sort-wrap select{background:var(--cream);border:1px solid var(--light-gray);border-radius:var(--r);padding:3px 8px;font-family:var(--font-b);font-size:.82rem;color:var(--charcoal);cursor:pointer;outline:none}
 .export-btn{background:none;border:1px solid var(--light-gray);border-radius:var(--r);padding:4px 10px;font-family:var(--font-b);font-size:.78rem;color:var(--warm-gray);cursor:pointer;transition:var(--tr);white-space:nowrap;flex-shrink:0}
 .export-btn:hover{background:var(--parchment)}
+.events-btn{background:var(--burgundy);border:none;border-radius:var(--r);padding:5px 12px;font-family:var(--font-b);font-size:.78rem;color:var(--cream);cursor:pointer;transition:var(--tr);white-space:nowrap;flex-shrink:0;display:flex;align-items:center;gap:4px}
+.events-btn:hover{background:#6e1c2e}
+.events-btn .export-icon{display:none}
+.events-btn .export-label{display:inline}
 .export-icon{display:none}
 .stats-bar{background:var(--ivory);border-bottom:1px solid var(--light-gray);box-shadow:0 1px 4px var(--shadow)}
 .stats-inner{max-width:1200px;margin:0 auto;display:flex;align-items:center;justify-content:center;padding:14px 20px}
@@ -901,6 +905,9 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
   .export-label{display:none}
   .export-icon{display:inline}
   .export-btn{display:block;flex-shrink:0;white-space:nowrap;font-size:.88rem;padding:5px 9px}
+  .events-btn{font-size:.82rem;padding:5px 11px}
+  .events-btn .export-label{display:inline}
+  .events-btn .export-icon{display:none}
   /* Row 3: search */
   .toolbar-search{padding:7px 14px 8px}
   .stats-inner{flex-wrap:wrap}
@@ -1999,7 +2006,7 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
         <span class="export-label">⬇ Export Data</span>
         <span class="export-icon">⬇</span>
       </button>
-      <button class="export-btn" id="eventsBtn" onclick="openEventsView()" title="Cellar events — every occasion, and the bottles that were there">
+      <button class="events-btn" id="eventsBtn" onclick="openEventsView()" title="Cellar events — every occasion, and the bottles that were there">
         <span class="export-label">🥂 Events</span>
         <span class="export-icon">🥂</span>
       </button>
