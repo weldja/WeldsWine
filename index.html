@@ -686,10 +686,13 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
 .autofilled{animation:autofillFlash 1.1s ease forwards}
 .detail-modal{max-width:560px;position:relative}
 .detail-modal .modal-close{position:absolute;top:14px;right:14px;z-index:10}
-.detail-dual-photo{display:grid;grid-template-columns:1fr 1fr}
+.detail-dual-photo{display:grid;grid-template-columns:1fr 1fr;position:relative}
 .detail-dual-photo img{width:100%;height:170px;object-fit:cover}
 .detail-dual-photo img:first-child{border-radius:var(--rl) 0 0 0}
 .detail-dual-photo img:last-child{border-radius:0 var(--rl) 0 0}
+.carousel-dots{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);display:none;gap:7px;z-index:2}
+.carousel-dot{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.45);transition:all .25s;border:none;padding:0}
+.carousel-dot.active{background:#fff;transform:scale(1.2)}
 .detail-photo{width:100%;max-height:220px;object-fit:cover;border-radius:var(--rl) var(--rl) 0 0}
 .detail-strip{height:4px;background:linear-gradient(90deg,var(--burgundy-deep),var(--blush));border-radius:var(--rl) var(--rl) 0 0}
 .detail-body{padding:22px 26px 26px}
@@ -711,6 +714,40 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
 .detail-notes-label{font-size:.66rem;letter-spacing:.1em;text-transform:uppercase;color:var(--warm-gray);margin-bottom:5px}
 .detail-notes{font-family:var(--font-s);font-style:italic;font-size:.93rem;line-height:1.7;color:var(--charcoal);background:var(--parchment);border-left:3px solid var(--blush);padding:10px 14px;border-radius:0 var(--r) var(--r) 0;margin-bottom:16px}
 .detail-footer{display:flex;justify-content:flex-end;gap:8px;padding-top:14px;border-top:1px solid var(--light-gray)}
+.btn-wine-intel{display:inline-flex;align-items:center;gap:5px;background:linear-gradient(135deg,var(--charcoal) 0%,#3D3330 100%);color:var(--cream);border:1px solid rgba(201,163,74,.25);border-radius:var(--r);padding:6px 12px;font-family:var(--font-b);font-size:.78rem;font-weight:500;cursor:pointer;transition:var(--tr);-webkit-tap-highlight-color:transparent;white-space:nowrap;min-height:32px;touch-action:manipulation}
+.btn-wine-intel:active{transform:scale(.97)}
+.intel-panel{background:var(--parchment);border:1px solid var(--light-gray);border-radius:var(--r);margin-bottom:14px;overflow:hidden}
+.intel-panel-header{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+.intel-panel-header-left{display:flex;align-items:center;gap:10px}
+.intel-panel-icon{width:30px;height:30px;border-radius:7px;background:linear-gradient(135deg,var(--charcoal) 0%,#3D3330 100%);display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--gold)}
+.intel-panel-title{font-family:var(--font-d);font-size:.9rem;font-weight:600;color:var(--charcoal)}
+.intel-panel-chevron{color:var(--warm-gray);font-size:14px;transition:transform .25s}
+.intel-panel-body{padding:0 16px 16px}
+.intel-summary{font-family:var(--font-d);font-style:italic;font-size:.86rem;line-height:1.65;color:var(--warm-gray);margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--light-gray)}
+.intel-section{margin-bottom:14px}
+.intel-section:last-of-type{margin-bottom:0}
+.intel-section-label{font-size:.62rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--gold);margin-bottom:5px;font-weight:600}
+.intel-section-text{font-size:.84rem;line-height:1.6;color:var(--charcoal)}
+.intel-chips{display:flex;flex-wrap:wrap;gap:6px}
+.intel-chip{display:inline-flex;align-items:center;gap:4px;padding:5px 10px;border-radius:20px;font-size:.75rem;color:var(--charcoal);background:var(--ivory);border:1px solid var(--light-gray)}
+.intel-scores{display:flex;gap:8px}
+.score-badge{flex:1;text-align:center;padding:10px 8px;border-radius:var(--r);background:var(--ivory);border:1px solid var(--light-gray)}
+.score-value{font-family:var(--font-d);font-size:1.25rem;font-weight:600;color:var(--burgundy);line-height:1}
+.score-source{font-size:.62rem;color:var(--warm-gray);margin-top:3px}
+.score-label{font-size:.6rem;color:var(--warm-gray);text-transform:uppercase;letter-spacing:.5px}
+.producer-block{padding:10px 12px;border-radius:8px;background:rgba(139,36,57,.05);border:1px solid rgba(139,36,57,.12)}
+.producer-name{font-family:var(--font-d);font-size:.85rem;font-weight:600;color:var(--charcoal);margin-bottom:3px}
+.producer-desc{font-size:.78rem;line-height:1.5;color:var(--warm-gray)}
+.intel-footer{display:flex;align-items:center;justify-content:center;gap:4px;padding-top:12px;margin-top:14px;border-top:1px solid var(--light-gray);font-size:.62rem;color:var(--warm-gray);letter-spacing:.3px}
+.intel-footer .ai-dot{width:4px;height:4px;border-radius:50%;background:var(--gold);opacity:.6}
+.intel-shimmer{padding:16px}
+.shimmer-line{height:11px;border-radius:6px;background:linear-gradient(90deg,rgba(0,0,0,.04) 25%,rgba(0,0,0,.08) 50%,rgba(0,0,0,.04) 75%);background-size:200% 100%;animation:intelShimmer 1.8s ease-in-out infinite;margin-bottom:10px}
+.shimmer-line:last-child{margin-bottom:0}
+.shimmer-w80{width:80%}.shimmer-w60{width:60%}.shimmer-w45{width:45%}
+.intel-shimmer-status{font-size:.72rem;color:var(--warm-gray);text-align:center;margin-top:12px;display:flex;align-items:center;justify-content:center;gap:6px}
+.intel-spinner{width:12px;height:12px;border:1.5px solid var(--light-gray);border-top-color:var(--gold);border-radius:50%;animation:intelSpin .8s linear infinite}
+@keyframes intelShimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+@keyframes intelSpin{to{transform:rotate(360deg)}}
 .scan-modal{max-width:520px}
 .scan-instruction{font-family:var(--font-b);font-style:italic;color:var(--warm-gray);font-size:.9rem;line-height:1.6;margin-bottom:16px;text-align:center}
 .scan-panels{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:4px}
@@ -925,9 +962,12 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
   .modal-overlay{align-items:flex-end;padding:0}
   .scan-panels{grid-template-columns:1fr}
   .detail-grid{grid-template-columns:1fr}
-  .detail-dual-photo{grid-template-columns:1fr}
-  .detail-dual-photo img:last-child{display:none}
-  .detail-dual-photo img:first-child{border-radius:var(--rl) var(--rl) 0 0;height:200px}
+  .detail-dual-photo{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;scrollbar-width:none;grid-template-columns:none}
+  .detail-dual-photo::-webkit-scrollbar{display:none}
+  .detail-dual-photo img{flex:0 0 100%;width:100%;height:220px;scroll-snap-align:start;border-radius:0}
+  .detail-dual-photo img:first-child{border-radius:var(--rl) var(--rl) 0 0}
+  .detail-dual-photo img:last-child{border-radius:var(--rl) var(--rl) 0 0;display:block}
+  .carousel-dots{display:flex}
   /* Hero responsive */
   .hero-section{flex-direction:column;padding:24px 20px;gap:16px;border-radius:var(--r)}
   .hero-headline{font-size:1.5rem}
@@ -3822,7 +3862,7 @@ async function openDetail(w, e) {
   const back  = safePhotoSrc(w.photoBack);
   let imgHtml = '';
   if (front && back) {
-    imgHtml = `<div class="detail-dual-photo"><img src="${front}"/><img src="${back}"/></div>`;
+    imgHtml = `<div class="detail-dual-photo" id="photoCarousel"><img src="${front}"/><img src="${back}"/><div class="carousel-dots"><span class="carousel-dot active"></span><span class="carousel-dot"></span></div></div>`;
   } else if (front) {
     imgHtml = `<img class="detail-photo" src="${front}" alt="${escHtml(w.name)}"/>`;
   } else {
@@ -3857,7 +3897,9 @@ async function openDetail(w, e) {
       <div class="detail-rating-row">
         ${w.rating?`<div class="detail-stars">${renderStarsLarge(w.rating)}</div>`:''}
         ${(w.country||w.region||w.winery)?`<button class="btn-origin-map btn-origin-map--inline" onclick="openOriginMap(getWineById('${escJs(w.id)}'))">🗺 Show wine origin on map</button>`:''}
+        <button class="btn-wine-intel" onclick="toggleWineIntel('${escJs(w.id)}')">✦ Wine Intel</button>
       </div>
+      <div id="wineIntelPanel" style="display:none"></div>
       ${w.sharedBy?`<div class="shared-by-badge" style="margin-bottom:12px">🤝 Shared wine</div>`:''}
       ${addedByLabel}
       ${window._cellarId ? '<div class="ev-chip-row" id="wineEventChips"></div>' : ''}
@@ -3879,6 +3921,16 @@ async function openDetail(w, e) {
   detailOverlay.classList.add('open');
   document.body.style.overflow='hidden';
   _pushNavState();
+
+  // Carousel dot indicators for dual photos
+  const _carousel = document.getElementById('photoCarousel');
+  if (_carousel) {
+    const _dots = _carousel.querySelectorAll('.carousel-dot');
+    _carousel.addEventListener('scroll', () => {
+      const idx = Math.round(_carousel.scrollLeft / _carousel.offsetWidth);
+      _dots.forEach((d, i) => d.classList.toggle('active', i === idx));
+    }, { passive: true });
+  }
 
   // Event chips + comments load async (only when cellar is active)
   if (window._cellarId) {
@@ -4955,6 +5007,156 @@ async function notifyWineAdded(entry) {
   } catch(e) { console.warn('[notify] fetch failed:', e.message, e); }
 }
 
+/* ── Wine Intel: enrichment via AI + web search ──────────── */
+let _intelCache = {};
+
+async function toggleWineIntel(wineId) {
+  const panel = document.getElementById('wineIntelPanel');
+  if (!panel) return;
+  if (panel.style.display !== 'none' && panel.dataset.wineId === wineId) {
+    panel.style.display = 'none';
+    return;
+  }
+  panel.dataset.wineId = wineId;
+  panel.style.display = 'block';
+  // Check cache first
+  if (_intelCache[wineId]) {
+    panel.innerHTML = renderIntelPanelHTML(_intelCache[wineId]);
+    return;
+  }
+  // Show shimmer
+  panel.innerHTML = `<div class="intel-panel" style="display:block">
+    <div class="intel-shimmer">
+      <div class="shimmer-line shimmer-w80"></div>
+      <div class="shimmer-line shimmer-w60"></div>
+      <div class="shimmer-line shimmer-w45"></div>
+      <div class="shimmer-line shimmer-w80"></div>
+      <div class="intel-shimmer-status"><span class="intel-spinner"></span>Researching this wine…</div>
+    </div>
+  </div>`;
+  // Try loading from DB first
+  let data = await loadEnrichmentFromDB(wineId);
+  if (data) {
+    _intelCache[wineId] = data;
+    panel.innerHTML = renderIntelPanelHTML(data);
+    return;
+  }
+  // Fetch from worker
+  data = await fetchEnrichment(wineId);
+  if (data) {
+    _intelCache[wineId] = data;
+    panel.innerHTML = renderIntelPanelHTML(data);
+  } else {
+    panel.innerHTML = `<div class="intel-panel" style="display:block">
+      <div style="padding:16px;text-align:center;font-size:.82rem;color:var(--warm-gray);font-style:italic">
+        Couldn't find info for this wine. Try again later.
+      </div>
+    </div>`;
+  }
+}
+
+async function loadEnrichmentFromDB(wineId) {
+  if (!_sb) return null;
+  try {
+    const { data, error } = await _sb.from('wine_enrichments')
+      .select('*')
+      .eq('wine_id', wineId)
+      .maybeSingle();
+    if (error || !data) return null;
+    // Parse JSONB fields if needed
+    if (typeof data.food_pairings === 'string') try { data.food_pairings = JSON.parse(data.food_pairings); } catch {}
+    if (typeof data.critic_scores === 'string') try { data.critic_scores = JSON.parse(data.critic_scores); } catch {}
+    return data;
+  } catch { return null; }
+}
+
+async function fetchEnrichment(wineId) {
+  if (!Scanner.hasUrl()) return null;
+  const w = getWineById(wineId);
+  if (!w) return null;
+  try {
+    const res = await fetch(Scanner.getProxyUrl() + '/enrich', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        wine_id:  w.id,
+        name:     w.name || '',
+        winery:   w.winery || '',
+        grape:    w.grape || '',
+        region:   w.region || '',
+        country:  w.country || '',
+        vintage:  w.vintage || '',
+        style:    w.style || ''
+      })
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (data.error) return null;
+    return data;
+  } catch { return null; }
+}
+
+function fireEnrichment(wineId) {
+  // Fire-and-forget: don't await, don't block
+  fetchEnrichment(wineId).catch(() => {});
+}
+
+function renderIntelPanelHTML(d) {
+  const scores = (Array.isArray(d.critic_scores) ? d.critic_scores : [])
+    .map(s => `<div class="score-badge"><div class="score-value">${escHtml(String(s.score||''))}</div><div class="score-source">${escHtml(s.source||'')}</div>${s.label?`<div class="score-label">${escHtml(s.label)}</div>`:''}</div>`)
+    .join('');
+  const pairings = (Array.isArray(d.food_pairings) ? d.food_pairings : [])
+    .map(p => `<span class="intel-chip">${escHtml(String(p))}</span>`)
+    .join('');
+  return `<div class="intel-panel" style="display:block">
+    <div class="intel-panel-header" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.intel-panel-chevron').style.transform=this.nextElementSibling.style.display==='none'?'rotate(-90deg)':''">
+      <div class="intel-panel-header-left">
+        <div class="intel-panel-icon">✦</div>
+        <div class="intel-panel-title">Wine Intel</div>
+      </div>
+      <span class="intel-panel-chevron">▾</span>
+    </div>
+    <div class="intel-panel-body">
+      ${d.summary?`<div class="intel-summary">${escHtml(d.summary)}</div>`:''}
+      ${d.producer_name?`<div class="intel-section">
+        <div class="intel-section-label">Producer</div>
+        <div class="producer-block">
+          <div class="producer-name">${escHtml(d.producer_name)}</div>
+          ${d.producer_desc?`<div class="producer-desc">${escHtml(d.producer_desc)}</div>`:''}
+        </div>
+      </div>`:''}
+      ${d.blend?`<div class="intel-section">
+        <div class="intel-section-label">Blend</div>
+        <div class="intel-section-text">${escHtml(d.blend)}</div>
+      </div>`:''}
+      ${scores?`<div class="intel-section">
+        <div class="intel-section-label">Critics</div>
+        <div class="intel-scores">${scores}</div>
+      </div>`:''}
+      ${d.price_context?`<div class="intel-section">
+        <div class="intel-section-label">Price</div>
+        <div class="intel-section-text">${escHtml(d.price_context)}</div>
+      </div>`:''}
+      ${d.tasting_notes?`<div class="intel-section">
+        <div class="intel-section-label">Tasting Profile</div>
+        <div class="intel-section-text">${escHtml(d.tasting_notes)}</div>
+      </div>`:''}
+      ${pairings?`<div class="intel-section">
+        <div class="intel-section-label">Food Pairings</div>
+        <div class="intel-chips">${pairings}</div>
+      </div>`:''}
+      ${d.region_context?`<div class="intel-section">
+        <div class="intel-section-label">Region</div>
+        <div class="intel-section-text">${escHtml(d.region_context)}</div>
+      </div>`:''}
+      <div class="intel-footer">
+        <span class="ai-dot"></span>
+        Generated by AI · may contain inaccuracies
+      </div>
+    </div>
+  </div>`;
+}
+
 /* ── Notify cellar members of a new comment (fire & forget) ── */
 async function notifyWineCommented(wine, commentBody) {
   if (!window._cellarId || !_currentUser || !wine) return;
@@ -5854,6 +6056,8 @@ async function saveWineToDB(entry) {
     });
     return false;
   }
+  // Fire-and-forget: enrich wine in background (no delay)
+  if (Scanner.hasUrl()) fireEnrichment(row.id);
   return true;
 }
 
