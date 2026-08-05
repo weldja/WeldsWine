@@ -5095,7 +5095,7 @@ async function fetchEnrichment(wineId, forceRefresh) {
     photoBase64 = photoSrc.split(',')[1] || null;
   }
   try {
-    const res = await fetch(Scanner.getProxyUrl() + '/enrich', {
+    const res = await fetch(Scanner.getProxyUrl() + '/enrich' + (forceRefresh ? '?refresh=1' : ''), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

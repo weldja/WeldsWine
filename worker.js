@@ -441,8 +441,10 @@ var worker_default = {
       if (!enrichKey) return new Response(JSON.stringify({ error: "NO_KEY" }), { status: 500, headers: cors });
       let ebody;
       try { ebody = await request.json(); } catch { return new Response(JSON.stringify({ error: "Invalid JSON" }), { status: 400, headers: cors }); }
-      const { wine_id, name, winery, grape, region, country, vintage, style, photoBase64, refresh } = ebody || {};
+      const { wine_id, name, winery, grape, region, country, vintage, style, photoBase64 } = ebody || {};
       if (!wine_id) return new Response(JSON.stringify({ error: "wine_id required" }), { status: 400, headers: cors });
+      const refresh = url.searchParams.get("refresh") === "1";
+      console.log("enrich: wine_id=", wine_id, "refresh=", refresh);
 
       // If refresh requested, delete existing row first
       if (refresh) {
