@@ -1,0 +1,8 @@
+# Welds Wine Wisdoms — https://weldswine.co.uk
+# Allow all crawlers, point to sitemap
+
+User-agent: *
+Allow: /
+
+# Sitemap location
+Sitemap: https://weldswine.co.uk/sitemap.xml
