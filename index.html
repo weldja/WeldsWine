@@ -3946,6 +3946,18 @@ async function openDetail(w, e) {
     }
   }
 
+  // Auto-show Wine Intel if enrichment already exists
+  loadEnrichmentFromDB(w.id).then(data => {
+    if (!data || !detailOverlay.classList.contains('open')) return;
+    _intelCache[w.id] = data;
+    const panel = document.getElementById('wineIntelPanel');
+    if (panel) {
+      panel.dataset.wineId = w.id;
+      panel.style.display = 'block';
+      panel.innerHTML = renderIntelPanelHTML(data);
+    }
+  });
+
   if (w.locLat && w.locLng) {
     const initMini = () => {
       const el = document.getElementById(mapId);
