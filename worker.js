@@ -441,7 +441,7 @@ var worker_default = {
       if (!enrichKey) return new Response(JSON.stringify({ error: "NO_KEY" }), { status: 500, headers: cors });
       let ebody;
       try { ebody = await request.json(); } catch { return new Response(JSON.stringify({ error: "Invalid JSON" }), { status: 400, headers: cors }); }
-      const { wine_id, name, winery, grape, region, country, vintage, style } = ebody || {};
+      const { wine_id, name, winery, grape, region, country, vintage, style, photoBase64 } = ebody || {};
       if (!wine_id) return new Response(JSON.stringify({ error: "wine_id required" }), { status: 400, headers: cors });
 
       // Check if enrichment already exists
@@ -455,7 +455,9 @@ var worker_default = {
       const wineParts = [name, winery, grape, region, country, vintage, style].filter(Boolean);
       if (wineParts.length < 2) return new Response(JSON.stringify({ error: "Not enough wine info to research" }), { status: 400, headers: cors });
 
-      const enrichPrompt = `You are a wine research assistant. Given the wine details below, use web search to find information about this specific wine and its producer.
+      const enrichPromptText = `You are a wine research assistant. ${photoBase64 ? "I have attached an image of the wine's front label — use it together with the metadata below to identify the exact wine and producer." : "Given the wine details below, identify the wine and producer."}
+
+Use web search to find information about this specific wine.
 
 Wine name: ${name || "Unknown"}
 Winery/Producer: ${winery || "Unknown"}
@@ -484,19 +486,31 @@ Rules:
 - Food pairings: include 3-5 suggestions with an emoji prefix, e.g. "🥩 Steak"
 - Critic scores: only include real published scores you found`;
 
+      // Build message content — include photo if available
+      const enrichContent = [];
+      if (photoBase64) {
+        enrichContent.push({ type: "image", source: { type: "base64", media_type: "image/jpeg", data: photoBase64 } });
+      }
+      enrichContent.push({ type: "text", text: enrichPromptText });
+
       try {
         const enrichResp = await fetch("https://api.anthropic.com/v1/messages", {
           method: "POST",
-          headers: { "Content-Type": "application/json", "x-api-key": enrichKey, "anthropic-version": "2023-06-01" },
+          headers: {
+            "Content-Type": "application/json",
+            "x-api-key": enrichKey,
+            "anthropic-version": "2023-06-01"
+          },
           body: JSON.stringify({
-            model: "claude-haiku-4-5-20251001",
-            max_tokens: 1200,
-            tools: [{ type: "web_search_20250305", name: "web_search", max_uses: 3 }],
-            messages: [{ role: "user", content: enrichPrompt }]
+            model: "claude-sonnet-4-6",
+            max_tokens: 1500,
+            tools: [{ type: "web_search_20250305", name: "web_search" }],
+            messages: [{ role: "user", content: enrichContent }]
           })
         });
         if (!enrichResp.ok) {
           const errB = await enrichResp.json().catch(() => ({}));
+          console.error("enrich: Anthropic error", enrichResp.status, JSON.stringify(errB));
           return new Response(JSON.stringify({ error: errB?.error?.message || `Anthropic ${enrichResp.status}` }), { status: enrichResp.status, headers: cors });
         }
         const enrichData = await enrichResp.json();
@@ -505,7 +519,7 @@ Rules:
         const match2 = cleaned2.match(/\{[\s\S]*\}/);
         let enrichParsed;
         try { enrichParsed = JSON.parse(match2 ? match2[0] : cleaned2); }
-        catch { return new Response(JSON.stringify({ error: "PARSE_ERROR", raw: rawText2 }), { status: 422, headers: cors }); }
+        catch { return new Response(JSON.stringify({ error: "PARSE_ERROR", raw: rawText2.slice(0, 500) }), { status: 422, headers: cors }); }
 
         // Normalise arrays
         if (typeof enrichParsed.food_pairings === "string") try { enrichParsed.food_pairings = JSON.parse(enrichParsed.food_pairings); } catch { enrichParsed.food_pairings = []; }
@@ -513,7 +527,22 @@ Rules:
         if (!Array.isArray(enrichParsed.food_pairings)) enrichParsed.food_pairings = [];
         if (!Array.isArray(enrichParsed.critic_scores)) enrichParsed.critic_scores = [];
 
-        // Write to Supabase (fire-and-forget, don't block response)
+        // Strip web-search citation tags from all string fields
+        const stripCites = s => typeof s === "string" ? s.replace(/<\/?cite[^>]*>/gi, "").replace(/\s{2,}/g, " ").trim() : s;
+        for (const k of Object.keys(enrichParsed)) {
+          if (typeof enrichParsed[k] === "string") enrichParsed[k] = stripCites(enrichParsed[k]);
+          else if (Array.isArray(enrichParsed[k])) {
+            enrichParsed[k] = enrichParsed[k].map(item => {
+              if (typeof item === "string") return stripCites(item);
+              if (item && typeof item === "object") {
+                for (const ik of Object.keys(item)) { if (typeof item[ik] === "string") item[ik] = stripCites(item[ik]); }
+              }
+              return item;
+            });
+          }
+        }
+
+        // Write to Supabase
         const enrichRow = {
           wine_id: wine_id,
           summary: enrichParsed.summary || null,
@@ -525,9 +554,8 @@ Rules:
           critic_scores: enrichParsed.critic_scores,
           region_context: enrichParsed.region_context || null,
           price_context: enrichParsed.price_context || null,
-          model_used: "claude-haiku-4-5-20251001"
+          model_used: "claude-sonnet-4-6"
         };
-        // Use upsert so re-requests don't fail on unique constraint
         sb_fetch(env, "/wine_enrichments", {
           method: "POST",
           prefer: "return=minimal,resolution=merge-duplicates",
@@ -537,6 +565,7 @@ Rules:
         enrichParsed.wine_id = wine_id;
         return new Response(JSON.stringify(enrichParsed), { status: 200, headers: cors });
       } catch (e) {
+        console.error("enrich: exception", e.message);
         return new Response(JSON.stringify({ error: e.message }), { status: 502, headers: cors });
       }
     }

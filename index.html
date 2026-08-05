@@ -5074,6 +5074,12 @@ async function fetchEnrichment(wineId) {
   if (!Scanner.hasUrl()) return null;
   const w = getWineById(wineId);
   if (!w) return null;
+  // Get photo base64 if available (helps AI identify the wine from label)
+  let photoBase64 = null;
+  const photoSrc = w.photoFront || w.photo || '';
+  if (photoSrc && photoSrc.startsWith('data:image')) {
+    photoBase64 = photoSrc.split(',')[1] || null;
+  }
   try {
     const res = await fetch(Scanner.getProxyUrl() + '/enrich', {
       method: 'POST',
@@ -5086,14 +5092,15 @@ async function fetchEnrichment(wineId) {
         region:   w.region || '',
         country:  w.country || '',
         vintage:  w.vintage || '',
-        style:    w.style || ''
+        style:    w.style || '',
+        photoBase64: photoBase64
       })
     });
-    if (!res.ok) return null;
+    if (!res.ok) { console.warn('enrich: HTTP', res.status); return null; }
     const data = await res.json();
-    if (data.error) return null;
+    if (data.error) { console.warn('enrich: API error', data.error); return null; }
     return data;
-  } catch { return null; }
+  } catch (e) { console.warn('enrich: fetch failed', e.message); return null; }
 }
 
 function fireEnrichment(wineId) {
@@ -5102,11 +5109,13 @@ function fireEnrichment(wineId) {
 }
 
 function renderIntelPanelHTML(d) {
+  // Strip any leftover web-search citation tags
+  const _sc = s => typeof s === 'string' ? s.replace(/<\/?cite[^>]*>/gi,'').replace(/\s{2,}/g,' ').trim() : (s||'');
   const scores = (Array.isArray(d.critic_scores) ? d.critic_scores : [])
-    .map(s => `<div class="score-badge"><div class="score-value">${escHtml(String(s.score||''))}</div><div class="score-source">${escHtml(s.source||'')}</div>${s.label?`<div class="score-label">${escHtml(s.label)}</div>`:''}</div>`)
+    .map(s => `<div class="score-badge"><div class="score-value">${escHtml(_sc(s.score))}</div><div class="score-source">${escHtml(_sc(s.source))}</div>${s.label?`<div class="score-label">${escHtml(_sc(s.label))}</div>`:''}</div>`)
     .join('');
   const pairings = (Array.isArray(d.food_pairings) ? d.food_pairings : [])
-    .map(p => `<span class="intel-chip">${escHtml(String(p))}</span>`)
+    .map(p => `<span class="intel-chip">${escHtml(_sc(String(p)))}</span>`)
     .join('');
   return `<div class="intel-panel" style="display:block">
     <div class="intel-panel-header" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.intel-panel-chevron').style.transform=this.nextElementSibling.style.display==='none'?'rotate(-90deg)':''">
@@ -5117,17 +5126,17 @@ function renderIntelPanelHTML(d) {
       <span class="intel-panel-chevron">▾</span>
     </div>
     <div class="intel-panel-body">
-      ${d.summary?`<div class="intel-summary">${escHtml(d.summary)}</div>`:''}
+      ${d.summary?`<div class="intel-summary">${escHtml(_sc(d.summary))}</div>`:''}
       ${d.producer_name?`<div class="intel-section">
         <div class="intel-section-label">Producer</div>
         <div class="producer-block">
-          <div class="producer-name">${escHtml(d.producer_name)}</div>
-          ${d.producer_desc?`<div class="producer-desc">${escHtml(d.producer_desc)}</div>`:''}
+          <div class="producer-name">${escHtml(_sc(d.producer_name))}</div>
+          ${d.producer_desc?`<div class="producer-desc">${escHtml(_sc(d.producer_desc))}</div>`:''}
         </div>
       </div>`:''}
       ${d.blend?`<div class="intel-section">
         <div class="intel-section-label">Blend</div>
-        <div class="intel-section-text">${escHtml(d.blend)}</div>
+        <div class="intel-section-text">${escHtml(_sc(d.blend))}</div>
       </div>`:''}
       ${scores?`<div class="intel-section">
         <div class="intel-section-label">Critics</div>
@@ -5135,11 +5144,11 @@ function renderIntelPanelHTML(d) {
       </div>`:''}
       ${d.price_context?`<div class="intel-section">
         <div class="intel-section-label">Price</div>
-        <div class="intel-section-text">${escHtml(d.price_context)}</div>
+        <div class="intel-section-text">${escHtml(_sc(d.price_context))}</div>
       </div>`:''}
       ${d.tasting_notes?`<div class="intel-section">
         <div class="intel-section-label">Tasting Profile</div>
-        <div class="intel-section-text">${escHtml(d.tasting_notes)}</div>
+        <div class="intel-section-text">${escHtml(_sc(d.tasting_notes))}</div>
       </div>`:''}
       ${pairings?`<div class="intel-section">
         <div class="intel-section-label">Food Pairings</div>
@@ -5147,7 +5156,7 @@ function renderIntelPanelHTML(d) {
       </div>`:''}
       ${d.region_context?`<div class="intel-section">
         <div class="intel-section-label">Region</div>
-        <div class="intel-section-text">${escHtml(d.region_context)}</div>
+        <div class="intel-section-text">${escHtml(_sc(d.region_context))}</div>
       </div>`:''}
       <div class="intel-footer">
         <span class="ai-dot"></span>
