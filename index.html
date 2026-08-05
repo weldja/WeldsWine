@@ -5127,8 +5127,6 @@ async function refreshWineIntel(wineId) {
   if (!wineId) return;
   const panel = document.getElementById('wineIntelPanel');
   if (!panel) return;
-  console.log('refreshWineIntel: starting refresh for', wineId);
-  // Show shimmer
   panel.dataset.wineId = wineId;
   panel.style.display = 'block';
   panel.innerHTML = `<div class="intel-panel" style="display:block">
@@ -5142,11 +5140,7 @@ async function refreshWineIntel(wineId) {
   </div>`;
   // Clear in-memory cache
   delete _intelCache[wineId];
-  // Re-fetch from worker with refresh flag (worker deletes old row server-side)
-  console.log('refreshWineIntel: calling fetchEnrichment with refresh=true');
-  const t0 = Date.now();
   const data = await fetchEnrichment(wineId, true);
-  console.log('refreshWineIntel: got response in', Date.now()-t0, 'ms', data ? 'OK' : 'NULL');
   if (data) {
     _intelCache[wineId] = data;
     panel.innerHTML = renderIntelPanelHTML(data);
