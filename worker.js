@@ -441,16 +441,30 @@ var worker_default = {
       if (!enrichKey) return new Response(JSON.stringify({ error: "NO_KEY" }), { status: 500, headers: cors });
       let ebody;
       try { ebody = await request.json(); } catch { return new Response(JSON.stringify({ error: "Invalid JSON" }), { status: 400, headers: cors }); }
-      const { wine_id, name, winery, grape, region, country, vintage, style, photoBase64 } = ebody || {};
+      const { wine_id, name, winery, grape, region, country, vintage, style, photoBase64, refresh } = ebody || {};
       if (!wine_id) return new Response(JSON.stringify({ error: "wine_id required" }), { status: 400, headers: cors });
 
-      // Check if enrichment already exists
-      try {
-        const existing = await sb_fetch(env, "/wine_enrichments?wine_id=eq." + encodeURIComponent(wine_id) + "&select=wine_id,summary,producer_name,producer_desc,blend,tasting_notes,food_pairings,critic_scores,region_context,price_context", { prefer: "return=representation" });
-        if (existing && existing.length > 0) {
-          return new Response(JSON.stringify(existing[0]), { status: 200, headers: cors });
-        }
-      } catch (e) { console.warn("enrich: existing check failed:", e.message); }
+      // If refresh requested, delete existing row first
+      if (refresh) {
+        try {
+          const sbKey = env.SUPABASE_SERVICE_KEY;
+          await fetch(`${SUPABASE_URL}/rest/v1/wine_enrichments?wine_id=eq.${encodeURIComponent(wine_id)}`, {
+            method: "DELETE",
+            headers: { apikey: sbKey, Authorization: `Bearer ${sbKey}` }
+          });
+          console.log("enrich: deleted existing row for refresh", wine_id);
+        } catch (e) { console.warn("enrich: refresh delete failed:", e.message); }
+      }
+
+      // Check if enrichment already exists (skip if refreshing)
+      if (!refresh) {
+        try {
+          const existing = await sb_fetch(env, "/wine_enrichments?wine_id=eq." + encodeURIComponent(wine_id) + "&select=wine_id,summary,producer_name,producer_desc,blend,tasting_notes,food_pairings,critic_scores,region_context,price_context", { prefer: "return=representation" });
+          if (existing && existing.length > 0) {
+            return new Response(JSON.stringify(existing[0]), { status: 200, headers: cors });
+          }
+        } catch (e) { console.warn("enrich: existing check failed:", e.message); }
+      }
 
       const wineParts = [name, winery, grape, region, country, vintage, style].filter(Boolean);
       if (wineParts.length < 2) return new Response(JSON.stringify({ error: "Not enough wine info to research" }), { status: 400, headers: cors });

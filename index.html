@@ -5084,7 +5084,7 @@ async function loadEnrichmentFromDB(wineId) {
   } catch { return null; }
 }
 
-async function fetchEnrichment(wineId) {
+async function fetchEnrichment(wineId, forceRefresh) {
   if (!Scanner.hasUrl()) return null;
   const w = getWineById(wineId);
   if (!w) return null;
@@ -5107,7 +5107,8 @@ async function fetchEnrichment(wineId) {
         country:  w.country || '',
         vintage:  w.vintage || '',
         style:    w.style || '',
-        photoBase64: photoBase64
+        photoBase64: photoBase64,
+        refresh:  !!forceRefresh
       })
     });
     if (!res.ok) { console.warn('enrich: HTTP', res.status); return null; }
@@ -5138,15 +5139,10 @@ async function refreshWineIntel(wineId) {
       <div class="intel-shimmer-status"><span class="intel-spinner"></span>Refreshing wine intel…</div>
     </div>
   </div>`;
-  // Delete cached row from Supabase
-  if (_sb) {
-    try { await _sb.from('wine_enrichments').delete().eq('wine_id', wineId); }
-    catch (e) { console.warn('refreshIntel: delete failed', e.message); }
-  }
   // Clear in-memory cache
   delete _intelCache[wineId];
-  // Re-fetch from worker (will call Anthropic fresh since DB row is gone)
-  const data = await fetchEnrichment(wineId);
+  // Re-fetch from worker with refresh flag (worker deletes old row server-side)
+  const data = await fetchEnrichment(wineId, true);
   if (data) {
     _intelCache[wineId] = data;
     panel.innerHTML = renderIntelPanelHTML(data);
