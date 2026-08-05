@@ -556,11 +556,26 @@ Rules:
           price_context: enrichParsed.price_context || null,
           model_used: "claude-sonnet-4-6"
         };
-        sb_fetch(env, "/wine_enrichments", {
-          method: "POST",
-          prefer: "return=minimal,resolution=merge-duplicates",
-          body: enrichRow
-        }).catch(e => console.warn("enrich: DB write failed:", e.message));
+        // Await the write — Cloudflare Workers kill unawaited promises on Response return
+        try {
+          const sbKey = env.SUPABASE_SERVICE_KEY;
+          const writeRes = await fetch(`${SUPABASE_URL}/rest/v1/wine_enrichments?on_conflict=wine_id`, {
+            method: "POST",
+            headers: {
+              apikey: sbKey,
+              Authorization: `Bearer ${sbKey}`,
+              "Content-Type": "application/json",
+              Prefer: "resolution=merge-duplicates"
+            },
+            body: JSON.stringify(enrichRow)
+          });
+          if (!writeRes.ok) {
+            const wErr = await writeRes.json().catch(() => ({}));
+            console.error("enrich: DB write failed", writeRes.status, JSON.stringify(wErr));
+          } else {
+            console.log("enrich: DB write OK for wine_id", wine_id);
+          }
+        } catch (wEx) { console.error("enrich: DB write exception", wEx.message); }
 
         enrichParsed.wine_id = wine_id;
         return new Response(JSON.stringify(enrichParsed), { status: 200, headers: cors });
