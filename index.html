@@ -872,6 +872,79 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
 .footer-link:hover{color:var(--burgundy)}
 .footer-admin-btn{background:none;border:none;cursor:pointer;color:var(--light-gray);font-size:.85rem;padding:2px 6px;border-radius:var(--r);transition:var(--tr);opacity:.5}
 .footer-admin-btn:hover{opacity:1;color:var(--warm-gray)}
+
+/* ── Admin Panel ─────────────────────────────────────────── */
+.admin-tabs{display:flex;border-bottom:1px solid var(--light-gray);margin-bottom:0}
+.admin-tab{flex:1;padding:12px 0;text-align:center;font-family:var(--font-b);font-size:.82rem;font-weight:500;color:var(--warm-gray);border-bottom:2px solid transparent;cursor:pointer;background:none;border-top:none;border-left:none;border-right:none;transition:var(--tr)}
+.admin-tab.active{color:var(--burgundy);border-bottom-color:var(--burgundy)}
+.admin-tab .admin-badge{display:inline-flex;align-items:center;justify-content:center;background:var(--burgundy);color:var(--ivory);font-size:.68rem;font-weight:600;min-width:18px;height:18px;border-radius:9px;padding:0 5px;margin-left:4px;position:relative;top:-1px}
+.admin-tab-body{display:none;padding:20px 0 0}
+.admin-tab-body.active{display:block}
+.admin-request-card{background:var(--ivory);border:1px solid var(--light-gray);border-radius:var(--rl);padding:14px;margin-bottom:10px}
+.admin-request-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px}
+.admin-request-name{font-family:var(--font-b);font-weight:600;font-size:.92rem;color:var(--charcoal)}
+.admin-request-time{font-family:var(--font-b);font-size:.72rem;color:var(--warm-gray);white-space:nowrap}
+.admin-request-email{font-family:var(--font-b);font-size:.8rem;color:var(--warm-gray);margin-bottom:6px}
+.admin-request-msg{font-family:var(--font-b);font-size:.82rem;color:var(--charcoal);background:var(--cream);padding:8px 10px;border-radius:var(--r);line-height:1.45;margin-bottom:12px;font-style:italic}
+.admin-request-actions{display:flex;gap:8px}
+.admin-btn-sm{flex:1;padding:9px 12px;border-radius:var(--r);font-family:var(--font-b);font-size:.82rem;font-weight:600;cursor:pointer;border:none;transition:var(--tr);-webkit-tap-highlight-color:transparent}
+.admin-btn-sm:active{transform:scale(.97)}
+.admin-btn-create{background:var(--burgundy);color:var(--ivory)}
+.admin-btn-dismiss{background:transparent;color:var(--warm-gray);border:1px solid var(--light-gray)}
+.admin-cellar-card{background:var(--ivory);border:1px solid var(--light-gray);border-radius:var(--rl);margin-bottom:14px;overflow:hidden}
+.admin-cellar-header{display:flex;justify-content:space-between;align-items:center;padding:14px}
+.admin-cellar-title{font-family:var(--font-d);font-size:1rem;font-weight:600;color:var(--charcoal)}
+.admin-cellar-meta{font-family:var(--font-b);font-size:.72rem;color:var(--warm-gray);margin-top:2px}
+.admin-cellar-delete{width:34px;height:34px;border-radius:var(--r);border:1px solid var(--light-gray);background:transparent;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:.85rem;transition:var(--tr);flex-shrink:0}
+.admin-cellar-delete:hover{background:#fef2f2;border-color:#dc2626}
+.admin-member-list{border-top:1px solid var(--light-gray)}
+.admin-member-row{display:flex;align-items:center;padding:10px 14px;gap:10px}
+.admin-member-row+.admin-member-row{border-top:1px solid #f0ebe5}
+.admin-member-avatar{width:34px;height:34px;border-radius:50%;background:var(--burgundy);color:var(--ivory);font-size:.78rem;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.admin-member-details{flex:1;min-width:0}
+.admin-member-name{font-family:var(--font-b);font-size:.85rem;font-weight:500;color:var(--charcoal)}
+.admin-member-role{font-family:var(--font-b);font-size:.68rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--gold);margin-left:4px}
+.admin-member-email{font-family:var(--font-b);font-size:.72rem;color:var(--warm-gray);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.admin-remove-member{width:30px;height:30px;border-radius:50%;border:none;background:transparent;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;font-size:.8rem;color:var(--light-gray);transition:var(--tr)}
+.admin-remove-member:hover{background:#fef2f2;color:#dc2626}
+.admin-add-member-row{display:flex;gap:6px;padding:10px 14px;border-top:1px solid #f0ebe5;align-items:center}
+.admin-add-member-row select{flex:1;padding:8px 10px;border:1px solid var(--light-gray);border-radius:var(--r);font-family:var(--font-b);font-size:.82rem;background:var(--cream);color:var(--charcoal);outline:none;-webkit-appearance:none;min-width:0}
+.admin-add-member-toggle{display:flex;align-items:center;gap:6px;padding:10px 14px;border-top:1px solid #f0ebe5;cursor:pointer;color:var(--burgundy);font-family:var(--font-b);font-size:.82rem;font-weight:500;background:none;border-left:none;border-right:none;border-bottom:none;width:100%;transition:var(--tr)}
+.admin-add-member-toggle:hover{background:var(--cream)}
+.admin-new-cellar-btn{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;padding:12px;border:2px dashed var(--light-gray);border-radius:var(--rl);background:transparent;font-family:var(--font-b);font-size:.85rem;font-weight:500;color:var(--warm-gray);cursor:pointer;transition:var(--tr)}
+.admin-new-cellar-btn:hover{border-color:var(--burgundy);color:var(--burgundy)}
+.admin-new-cellar-form{background:var(--ivory);border:1.5px solid var(--burgundy);border-radius:var(--rl);padding:14px;display:flex;flex-direction:column;gap:12px}
+.admin-new-cellar-form input{width:100%;padding:10px 12px;border:1px solid var(--light-gray);border-radius:var(--r);font-family:var(--font-b);font-size:.88rem;background:var(--cream);color:var(--charcoal);outline:none}
+.admin-new-cellar-form input:focus{border-color:var(--burgundy)}
+.admin-new-cellar-actions{display:flex;gap:8px}
+.admin-confirm-overlay{position:fixed;inset:0;background:rgba(44,24,16,.45);display:flex;align-items:center;justify-content:center;z-index:9200;opacity:0;pointer-events:none;transition:opacity .2s}
+.admin-confirm-overlay.open{opacity:1;pointer-events:all}
+.admin-confirm-dialog{background:var(--ivory);border-radius:var(--rl);padding:24px 20px 20px;width:min(340px,90vw);text-align:center;box-shadow:0 12px 40px rgba(0,0,0,.2)}
+.admin-confirm-dialog h3{font-family:var(--font-d);font-size:1.1rem;font-weight:600;margin-bottom:6px}
+.admin-confirm-dialog p{font-family:var(--font-b);font-size:.82rem;color:var(--warm-gray);line-height:1.5;margin-bottom:16px}
+.admin-confirm-actions{display:flex;gap:8px}
+.admin-btn-danger{background:#dc2626;color:var(--ivory)}
+.admin-form-help{font-family:var(--font-b);font-size:.72rem;color:var(--warm-gray);line-height:1.4}
+.admin-empty{font-family:var(--font-b);font-size:.88rem;color:var(--warm-gray);text-align:center;padding:32px 0;font-style:italic}
+.admin-cellar-select{display:flex;flex-direction:column;gap:8px;margin-top:4px}
+.admin-cellar-option{display:flex;align-items:center;gap:10px;padding:12px 14px;background:var(--ivory);border:1.5px solid var(--light-gray);border-radius:var(--rl);cursor:pointer;transition:var(--tr)}
+.admin-cellar-option.selected{border-color:var(--burgundy);background:var(--cream)}
+.admin-cellar-option-radio{width:18px;height:18px;border-radius:50%;border:2px solid var(--light-gray);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.admin-cellar-option.selected .admin-cellar-option-radio{border-color:var(--burgundy)}
+.admin-cellar-option-radio-inner{width:9px;height:9px;border-radius:50%;background:transparent}
+.admin-cellar-option.selected .admin-cellar-option-radio-inner{background:var(--burgundy)}
+.admin-cellar-option-info{flex:1}
+.admin-cellar-option-name{font-family:var(--font-b);font-size:.88rem;font-weight:500;color:var(--charcoal)}
+.admin-cellar-option-members{font-family:var(--font-b);font-size:.72rem;color:var(--warm-gray);margin-top:1px}
+
+/* ── Request Access section (replaces Create Account tab) ── */
+.auth-request-section{margin-top:4px}
+.auth-request-divider{display:flex;align-items:center;gap:10px;margin:14px 0;color:var(--light-gray);font-family:var(--font-b);font-size:.75rem}
+.auth-request-divider::before,.auth-request-divider::after{content:'';flex:1;height:1px;background:var(--light-gray)}
+.auth-request-success{text-align:center;padding:24px 0}
+.auth-request-success-icon{width:48px;height:48px;border-radius:50%;background:#f0fdf4;display:inline-flex;align-items:center;justify-content:center;font-size:1.3rem;margin-bottom:12px}
+.auth-request-success-title{font-family:var(--font-d);font-size:1rem;font-weight:600;color:var(--charcoal);margin-bottom:6px}
+.auth-request-success-msg{font-family:var(--font-b);font-size:.84rem;color:var(--warm-gray);line-height:1.5}
 .empty-state{text-align:center;padding:70px 20px}
 .empty-icon{font-size:3rem;margin-bottom:14px;opacity:.55}
 .empty-state h2{font-family:var(--font-d);font-size:1.5rem;color:var(--warm-gray);font-weight:400;margin-bottom:10px}
@@ -1895,7 +1968,7 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
       <div class="landing-bottom-cta">
         <h2 class="landing-bottom-title">Start with your next bottle</h2>
         <p class="landing-bottom-sub">Scan a label tonight — no account needed.<br>Create a free account to save your wines.</p>
-        <button class="landing-bottom-btn" onclick="document.querySelector('.auth-panel').scrollIntoView({behavior:'smooth'})">Create free account ↓</button>
+        <button class="landing-bottom-btn" onclick="document.querySelector('.auth-panel').scrollIntoView({behavior:'smooth'})">Request access ↓</button>
         <div class="landing-bottom-note">Free forever · No credit card</div>
       </div>
     </div>
@@ -1912,13 +1985,8 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
 
     <div class="auth-card">
 
-      <!-- State: sign-in / sign-up (default) -->
+      <!-- State: sign-in (default) -->
       <div id="authStateMain">
-        <div class="auth-tabs">
-          <button class="auth-tab active" id="tabSignIn" onclick="switchAuthTab('signin')">Sign In</button>
-          <button class="auth-tab" id="tabSignUp" onclick="switchAuthTab('signup')">Create Account</button>
-        </div>
-
         <div class="auth-form-group">
           <label for="authEmail">Email</label>
           <input type="email" id="authEmail" placeholder="you@example.com" autocomplete="email"/>
@@ -1944,6 +2012,35 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
             style="background:none;border:none;color:var(--warm-gray);font-family:var(--font-b);font-size:.78rem;cursor:pointer;text-decoration:underline;text-underline-offset:2px;font-style:italic;padding:0">
             Forgot password? Reset it here
           </button>
+        </div>
+
+        <!-- Request Access (replaces Create Account) -->
+        <div class="auth-request-section" id="authRequestSection">
+          <div class="auth-request-divider"><span>New here?</span></div>
+          <div id="authRequestForm">
+            <div class="auth-form-group">
+              <label for="reqName">Your name</label>
+              <input type="text" id="reqName" placeholder="e.g. Dave" autocomplete="name"/>
+            </div>
+            <div class="auth-form-group">
+              <label for="reqEmail">Email</label>
+              <input type="email" id="reqEmail" placeholder="you@example.com" autocomplete="email"/>
+            </div>
+            <div class="auth-form-group">
+              <label for="reqMessage">Quick message <span style="font-weight:400;color:var(--warm-gray)">(optional)</span></label>
+              <textarea id="reqMessage" placeholder="e.g. Rob's mate, keen to track some wines" rows="2" style="width:100%;border:1px solid var(--light-gray);border-radius:var(--r);padding:10px 12px;font-family:var(--font-b);font-size:.9rem;color:var(--charcoal);background:var(--cream);resize:none;outline:none"></textarea>
+            </div>
+            <button class="auth-btn-primary" style="background:transparent;color:var(--burgundy);border:1.5px solid var(--burgundy)" id="reqSubmitBtn" onclick="handleRequestAccess()">
+              <span id="reqSubmitLabel">Request access</span>
+              <span id="reqSubmitSpinner" style="display:none">Sending…</span>
+            </button>
+            <div class="auth-msg" id="reqMsg"></div>
+          </div>
+          <div id="authRequestSuccess" style="display:none" class="auth-request-success">
+            <div class="auth-request-success-icon">✓</div>
+            <div class="auth-request-success-title">Request sent</div>
+            <div class="auth-request-success-msg">We'll let you know when your account is ready. Keep an eye on your inbox.</div>
+          </div>
         </div>
       </div>
 
@@ -2811,6 +2908,9 @@ async function showApp() {
   await bootstrapCellar();
   console.log('[showApp] bootstrap done cellarId=' + (window._cellarId || 'null') + ' role=' + window._cellarRole);
 
+  // Check admin status (non-blocking)
+  _checkAdminStatus().catch(() => {});
+
   // Include cellarId in cache key so stale solo cache never renders for cellar members
   const cacheKey = 'wwwCache_' + userId + '_' + (window._cellarId || 'solo');
   await loadWinesFromDB(cacheKey);
@@ -2893,57 +2993,72 @@ function togglePasswordVisibility() {
 
 /* ── Tab switching ───────────────────────────────────────── */
 function switchAuthTab(tab) {
-  const isSignIn = tab === 'signin';
-  document.getElementById('tabSignIn').classList.toggle('active', isSignIn);
-  document.getElementById('tabSignUp').classList.toggle('active', !isSignIn);
-  document.getElementById('authSubmitLabel').textContent = isSignIn ? 'Sign In' : 'Create Account';
-  document.getElementById('magicLinkRow').style.display = isSignIn ? '' : 'none';
-  document.getElementById('authPasswordGroup').querySelector('input').autocomplete =
-    isSignIn ? 'current-password' : 'new-password';
+  // Legacy compat — no-op since tabs removed, sign-in is always active
   clearAuthMsg();
 }
 
-/* ── Email / password ────────────────────────────────────── */
+/* ── Email / password (sign-in only — signup disabled) ───── */
 async function handleAuthSubmit() {
   if (!_ensureSb()) { showAuthMsg('err', _sbInitError ? 'Configuration error — Supabase credentials are not set.' : 'Still loading — please wait a moment and try again'); return; }
   const email    = document.getElementById('authEmail').value.trim();
   const password = document.getElementById('authPassword').value;
-  const isSignIn = document.getElementById('tabSignIn').classList.contains('active');
 
   if (!email)    { showAuthMsg('err', 'Please enter your email'); return; }
   if (!password) { showAuthMsg('err', 'Please enter a password'); return; }
-  if (!isSignIn && password.length < 8) { showAuthMsg('err', 'Password must be at least 8 characters'); return; }
 
   setAuthLoading(true);
   try {
-    const { error } = isSignIn
-      ? await _sb.auth.signInWithPassword({ email, password })
-      : await _sb.auth.signUp({ email, password });
-
+    const { error } = await _sb.auth.signInWithPassword({ email, password });
     if (error) throw error;
-
-    if (!isSignIn) {
-      // Supabase requires email confirmation before the session is active.
-      // If there's a pending wine import, move it to localStorage so it
-      // survives the email confirmation redirect (sessionStorage doesn't).
-      try {
-        const pending = sessionStorage.getItem('wwwImportWine');
-        if (pending) {
-          localStorage.setItem('wwwPendingImport', pending);
-          sessionStorage.removeItem('wwwImportWine');
-        }
-      } catch(_) {}
-      showAuthMsg('ok', 'Account created! Check your email and click the confirmation link — your wine will be waiting when you sign in.');
-      setAuthLoading(false);
-      return;
-    }
   } catch(e) {
     const msg = e.message || '';
     if (msg.includes('Invalid login')) showAuthMsg('err', 'Incorrect email or password');
-    else if (msg.includes('already registered')) showAuthMsg('err', 'An account with that email already exists — sign in instead');
     else showAuthMsg('err', msg || 'Something went wrong, please try again');
   } finally {
     setAuthLoading(false);
+  }
+}
+
+/* ── Request Access (public, no auth) ────────────────────── */
+async function handleRequestAccess() {
+  const name    = document.getElementById('reqName').value.trim();
+  const email   = document.getElementById('reqEmail').value.trim();
+  const message = document.getElementById('reqMessage').value.trim();
+  const btn     = document.getElementById('reqSubmitBtn');
+  const label   = document.getElementById('reqSubmitLabel');
+  const spinner = document.getElementById('reqSubmitSpinner');
+  const msg     = document.getElementById('reqMsg');
+
+  if (!name)  { msg.className = 'auth-msg err'; msg.textContent = 'Please enter your name'; return; }
+  if (!email) { msg.className = 'auth-msg err'; msg.textContent = 'Please enter your email'; return; }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { msg.className = 'auth-msg err'; msg.textContent = 'Please enter a valid email'; return; }
+
+  btn.disabled = true;
+  label.style.display = 'none';
+  spinner.style.display = 'inline';
+  msg.style.display = 'none';
+
+  try {
+    const proxyUrl = typeof Scanner !== 'undefined' && Scanner.getUrl ? Scanner.getUrl() : '';
+    if (!proxyUrl) throw new Error('App not configured');
+    const res = await fetch(proxyUrl.replace(/\/$/, '') + '/api/access-request', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, email, message: message || null })
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || 'Request failed');
+    }
+    document.getElementById('authRequestForm').style.display = 'none';
+    document.getElementById('authRequestSuccess').style.display = 'block';
+  } catch (e) {
+    msg.className = 'auth-msg err';
+    msg.textContent = e.message || 'Something went wrong — try again';
+  } finally {
+    btn.disabled = false;
+    label.style.display = '';
+    spinner.style.display = 'none';
   }
 }
 
@@ -5584,9 +5699,9 @@ async function handleQuickAdd() {
     setTimeout(function() {
       var panel = document.querySelector('.auth-panel');
       if (panel) panel.scrollIntoView({behavior:'smooth'});
-      switchAuthTab('signup');
+      switchAuthTab('signin');
     }, 100);
-    showToast('Create a free account to save your wines');
+    showToast('Sign in or request access to save your wines');
     return;
   }
   const name = document.getElementById('qaName').value.trim();
@@ -6642,6 +6757,84 @@ function updateKeyBadge() {
   </div>
 </div>
 
+<!-- ADMIN PANEL OVERLAY -->
+<div class="modal-overlay" id="adminOverlay" role="dialog" aria-modal="true">
+  <div class="modal" style="max-width:460px">
+    <div class="modal-header">
+      <h2 class="modal-title">👤 User Management</h2>
+      <button class="modal-close" onclick="closeAdminPanel()" aria-label="Close">✕</button>
+    </div>
+    <div class="admin-tabs">
+      <button class="admin-tab active" data-admin-tab="requests" onclick="switchAdminTab('requests')">Requests <span class="admin-badge" id="adminReqBadge" style="display:none">0</span></button>
+      <button class="admin-tab" data-admin-tab="create" onclick="switchAdminTab('create')">Create User</button>
+      <button class="admin-tab" data-admin-tab="cellars" onclick="switchAdminTab('cellars')">Cellars</button>
+    </div>
+    <div class="modal-body" style="padding-top:0">
+
+      <!-- Requests tab -->
+      <div class="admin-tab-body active" id="adminTabRequests">
+        <div id="adminRequestsList">
+          <div class="admin-empty">Loading…</div>
+        </div>
+      </div>
+
+      <!-- Create User tab -->
+      <div class="admin-tab-body" id="adminTabCreate">
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div class="auth-form-group" style="margin:0">
+            <label for="adminCreateEmail">Email</label>
+            <input type="email" id="adminCreateEmail" placeholder="their@email.com"/>
+          </div>
+          <div class="auth-form-group" style="margin:0">
+            <label for="adminCreateName">Display name</label>
+            <input type="text" id="adminCreateName" placeholder="e.g. Dave"/>
+          </div>
+          <div style="font-family:var(--font-b);font-size:.72rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--warm-gray);margin-top:4px">Assign to cellar</div>
+          <div class="admin-form-help">Optional — they can also be added later from the Cellars tab.</div>
+          <div class="admin-cellar-select" id="adminCellarSelect">
+            <!-- Populated dynamically -->
+          </div>
+          <button class="auth-btn-primary" id="adminCreateBtn" onclick="handleAdminCreateUser()" style="margin-top:4px">
+            <span id="adminCreateLabel">Create &amp; send invite</span>
+            <span id="adminCreateSpinner" style="display:none">Creating…</span>
+          </button>
+          <div class="admin-form-help" style="text-align:center">They'll receive an email to set their password.</div>
+          <div class="auth-msg" id="adminCreateMsg"></div>
+        </div>
+      </div>
+
+      <!-- Cellars tab -->
+      <div class="admin-tab-body" id="adminTabCellars">
+        <div id="adminCellarsList">
+          <div class="admin-empty">Loading…</div>
+        </div>
+        <button class="admin-new-cellar-btn" id="adminNewCellarBtn" onclick="showNewCellarForm()" style="margin-top:4px">＋ New cellar</button>
+        <div class="admin-new-cellar-form" id="adminNewCellarForm" style="display:none;margin-top:10px">
+          <div style="font-family:var(--font-d);font-size:.95rem;font-weight:600;color:var(--charcoal)">New cellar</div>
+          <input type="text" id="adminNewCellarName" placeholder="e.g. Weekend Wines"/>
+          <div class="admin-new-cellar-actions">
+            <button class="admin-btn-sm admin-btn-dismiss" style="flex:1" onclick="hideNewCellarForm()">Cancel</button>
+            <button class="admin-btn-sm admin-btn-create" style="flex:1" onclick="handleAdminCreateCellar()">Create</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Admin confirm dialog -->
+<div class="admin-confirm-overlay" id="adminConfirmOverlay">
+  <div class="admin-confirm-dialog">
+    <div style="font-size:1.5rem;margin-bottom:12px" id="adminConfirmIcon">⚠️</div>
+    <h3 id="adminConfirmTitle">Are you sure?</h3>
+    <p id="adminConfirmMsg">This action cannot be undone.</p>
+    <div class="admin-confirm-actions">
+      <button class="admin-btn-sm admin-btn-dismiss" style="flex:1" onclick="closeAdminConfirm()">Cancel</button>
+      <button class="admin-btn-sm admin-btn-danger" style="flex:1" id="adminConfirmAction">Remove</button>
+    </div>
+  </div>
+</div>
+
 <!-- MOBILE MENU -->
 <div class="modal-overlay" id="mobileMenuOverlay" style="align-items:flex-end;padding:0">
   <div style="background:var(--ivory);border-radius:var(--rl) var(--rl) 0 0;width:100%;padding:20px 24px 36px;box-shadow:0 -8px 40px rgba(44,20,36,.25)">
@@ -6656,6 +6849,7 @@ function updateKeyBadge() {
       <button onclick="document.getElementById('openAddModal').click();closeMobileMenu()" style="background:none;border:1px solid var(--light-gray);border-radius:var(--r);padding:12px 16px;font-family:var(--font-b);font-size:.95rem;color:var(--charcoal);cursor:pointer;text-align:left;margin-top:4px">➕ Add Wine</button>
       <button onclick="document.getElementById('openQuickAdd').click();closeMobileMenu()" style="background:none;border:1px solid var(--light-gray);border-radius:var(--r);padding:12px 16px;font-family:var(--font-b);font-size:.95rem;color:var(--charcoal);cursor:pointer;text-align:left">⚡ Quick Add</button>
       <button id="mobileMenuCellarBtn" onclick="openCellarSettings();closeMobileMenu()" style="background:none;border:1px solid var(--light-gray);border-radius:var(--r);padding:12px 16px;font-family:var(--font-b);font-size:.95rem;color:var(--charcoal);cursor:pointer;text-align:left">🍾 Cellar &amp; Members</button>
+      <button id="mobileMenuAdminBtn" onclick="openAdminPanel();closeMobileMenu()" style="background:none;border:1px solid var(--light-gray);border-radius:var(--r);padding:12px 16px;font-family:var(--font-b);font-size:.95rem;color:var(--charcoal);cursor:pointer;text-align:left;display:none">👤 User Management</button>
       <button id="pushNotifBtn" onclick="registerPush();closeMobileMenu()" style="background:none;border:1px solid var(--light-gray);border-radius:var(--r);padding:12px 16px;font-family:var(--font-b);font-size:.95rem;color:var(--charcoal);cursor:pointer;text-align:left;display:none">🔔 Enable notifications</button>
       <button onclick="showFooterModal('about');closeMobileMenu()" style="background:none;border:none;padding:12px 16px;font-family:var(--font-b);font-size:.95rem;color:var(--warm-gray);cursor:pointer;text-align:left">ℹ️ About</button>
       <button onclick="showFooterModal('privacy');closeMobileMenu()" style="background:none;border:none;padding:12px 16px;font-family:var(--font-b);font-size:.95rem;color:var(--warm-gray);cursor:pointer;text-align:left">🔒 Privacy</button>
@@ -7217,6 +7411,437 @@ async function regenerateInviteToken() {
     showToast('Could not regenerate link');
   } finally {
     if (btn) { btn.disabled = false; btn.textContent = '↺ Generate new link'; }
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   ADMIN PANEL
+══════════════════════════════════════════════════════════════ */
+window._isAdmin = false;
+let _adminCellars = [];
+let _adminUsers = [];
+
+async function _checkAdminStatus() {
+  if (!_sb || !_currentUser) return;
+  try {
+    const { data } = await _sb.from('profiles').select('is_admin').eq('id', _currentUser.id).maybeSingle();
+    window._isAdmin = !!(data && data.is_admin);
+  } catch(e) { window._isAdmin = false; }
+  // Show/hide admin button in mobile menu
+  const adminBtn = document.getElementById('mobileMenuAdminBtn');
+  if (adminBtn) adminBtn.style.display = window._isAdmin ? '' : 'none';
+  // Auto-open admin panel if ?admin= param
+  if (window._isAdmin) {
+    const p = new URLSearchParams(window.location.search);
+    if (p.get('admin')) {
+      window.history.replaceState({}, '', window.location.pathname);
+      setTimeout(() => openAdminPanel(p.get('admin')), 500);
+    }
+  }
+}
+
+function _adminFetch(path, opts = {}) {
+  const proxyUrl = typeof Scanner !== 'undefined' && Scanner.getUrl ? Scanner.getUrl() : '';
+  if (!proxyUrl) return Promise.reject(new Error('No worker URL'));
+  return _sb.auth.getSession().then(({ data }) => {
+    const token = data?.session?.access_token || '';
+    return fetch(proxyUrl.replace(/\/$/, '') + path, {
+      method: opts.method || 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + token,
+        ...(opts.headers || {})
+      },
+      body: opts.body ? JSON.stringify(opts.body) : undefined
+    });
+  });
+}
+
+async function openAdminPanel(tab) {
+  if (!window._isAdmin) { showToast('Admin access required'); return; }
+  document.getElementById('adminOverlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+  switchAdminTab(tab || 'requests');
+}
+
+function closeAdminPanel() {
+  document.getElementById('adminOverlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+// Close on backdrop click
+document.addEventListener('DOMContentLoaded', function() {
+  var ao = document.getElementById('adminOverlay');
+  if (ao) ao.addEventListener('click', function(e) { if (e.target === ao) closeAdminPanel(); });
+});
+
+function switchAdminTab(tab) {
+  document.querySelectorAll('.admin-tab').forEach(t => t.classList.toggle('active', t.dataset.adminTab === tab));
+  document.getElementById('adminTabRequests').classList.toggle('active', tab === 'requests');
+  document.getElementById('adminTabCreate').classList.toggle('active', tab === 'create');
+  document.getElementById('adminTabCellars').classList.toggle('active', tab === 'cellars');
+  if (tab === 'requests') loadAdminRequests();
+  if (tab === 'create') loadAdminCreateTab();
+  if (tab === 'cellars') loadAdminCellars();
+}
+
+/* ── Requests tab ──────────────────────────────────────────── */
+async function loadAdminRequests() {
+  const container = document.getElementById('adminRequestsList');
+  container.innerHTML = '<div class="admin-empty">Loading…</div>';
+  try {
+    const res = await _adminFetch('/api/admin/requests');
+    if (!res.ok) throw new Error('Failed to load requests');
+    const requests = await res.json();
+    const badge = document.getElementById('adminReqBadge');
+    if (badge) {
+      badge.textContent = requests.length;
+      badge.style.display = requests.length > 0 ? '' : 'none';
+    }
+    if (!requests.length) {
+      container.innerHTML = '<div class="admin-empty">No pending requests</div>';
+      return;
+    }
+    container.innerHTML = '';
+    requests.forEach(r => {
+      const ago = _timeAgo(r.created_at);
+      const card = document.createElement('div');
+      card.className = 'admin-request-card';
+      card.innerHTML = `
+        <div class="admin-request-header">
+          <div class="admin-request-name">${escHtml(r.name)}</div>
+          <div class="admin-request-time">${escHtml(ago)}</div>
+        </div>
+        <div class="admin-request-email">${escHtml(r.email)}</div>
+        ${r.message ? `<div class="admin-request-msg">\u201C${escHtml(r.message)}\u201D</div>` : ''}
+        <div class="admin-request-actions">
+          <button class="admin-btn-sm admin-btn-dismiss" onclick="dismissRequest('${escJs(r.id)}',this)">Dismiss</button>
+          <button class="admin-btn-sm admin-btn-create" onclick="createFromRequest('${escJs(r.id)}','${escJs(r.email)}','${escJs(r.name)}')">Create account</button>
+        </div>
+      `;
+      container.appendChild(card);
+    });
+  } catch (e) {
+    container.innerHTML = '<div class="admin-empty">Could not load requests</div>';
+  }
+}
+
+function _timeAgo(dateStr) {
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return 'Just now';
+  if (mins < 60) return mins + 'm ago';
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return hrs + 'h ago';
+  const days = Math.floor(hrs / 24);
+  if (days === 1) return 'Yesterday';
+  return days + 'd ago';
+}
+
+async function dismissRequest(id, btn) {
+  if (btn) btn.disabled = true;
+  try {
+    const res = await _adminFetch('/api/admin/requests/' + id, { method: 'DELETE' });
+    if (!res.ok) throw new Error('Failed');
+    loadAdminRequests();
+    showToast('Request dismissed');
+  } catch (e) {
+    showToast('Could not dismiss request');
+    if (btn) btn.disabled = false;
+  }
+}
+
+function createFromRequest(requestId, email, name) {
+  // Switch to Create tab with pre-filled data
+  switchAdminTab('create');
+  document.getElementById('adminCreateEmail').value = email;
+  document.getElementById('adminCreateName').value = name;
+  // Store request ID for auto-dismiss on create
+  document.getElementById('adminCreateBtn').dataset.dismissId = requestId;
+}
+
+/* ── Create User tab ───────────────────────────────────────── */
+async function loadAdminCreateTab() {
+  const container = document.getElementById('adminCellarSelect');
+  container.innerHTML = '<div class="admin-form-help">Loading cellars…</div>';
+  try {
+    const res = await _adminFetch('/api/admin/cellars');
+    if (!res.ok) throw new Error('Failed');
+    _adminCellars = await res.json();
+    container.innerHTML = '';
+    _adminCellars.forEach((c, i) => {
+      const memberNames = c.members.map(m => m.display_name).join(', ');
+      const opt = document.createElement('div');
+      opt.className = 'admin-cellar-option' + (i === 0 ? ' selected' : '');
+      opt.dataset.cellarId = c.id;
+      opt.onclick = function() {
+        container.querySelectorAll('.admin-cellar-option').forEach(o => o.classList.remove('selected'));
+        this.classList.add('selected');
+      };
+      opt.innerHTML = `
+        <div class="admin-cellar-option-radio"><div class="admin-cellar-option-radio-inner"></div></div>
+        <div class="admin-cellar-option-info">
+          <div class="admin-cellar-option-name">${escHtml(c.name)}</div>
+          <div class="admin-cellar-option-members">${escHtml(memberNames || 'No members')}</div>
+        </div>
+      `;
+      container.appendChild(opt);
+    });
+    // Add "No cellar" option
+    const nopt = document.createElement('div');
+    nopt.className = 'admin-cellar-option';
+    nopt.dataset.cellarId = '';
+    nopt.onclick = function() {
+      container.querySelectorAll('.admin-cellar-option').forEach(o => o.classList.remove('selected'));
+      this.classList.add('selected');
+    };
+    nopt.innerHTML = `
+      <div class="admin-cellar-option-radio"><div class="admin-cellar-option-radio-inner"></div></div>
+      <div class="admin-cellar-option-info">
+        <div class="admin-cellar-option-name">No cellar</div>
+        <div class="admin-cellar-option-members">User creates or joins one later</div>
+      </div>
+    `;
+    container.appendChild(nopt);
+  } catch (e) {
+    container.innerHTML = '<div class="admin-form-help">Could not load cellars</div>';
+  }
+}
+
+async function handleAdminCreateUser() {
+  const email = document.getElementById('adminCreateEmail').value.trim();
+  const name  = document.getElementById('adminCreateName').value.trim();
+  const btn   = document.getElementById('adminCreateBtn');
+  const label = document.getElementById('adminCreateLabel');
+  const spin  = document.getElementById('adminCreateSpinner');
+  const msg   = document.getElementById('adminCreateMsg');
+  const dismissId = btn.dataset.dismissId || null;
+
+  if (!email) { msg.className = 'auth-msg err'; msg.textContent = 'Email is required'; return; }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { msg.className = 'auth-msg err'; msg.textContent = 'Invalid email'; return; }
+
+  const selectedCellar = document.querySelector('#adminCellarSelect .admin-cellar-option.selected');
+  const cellarId = selectedCellar ? selectedCellar.dataset.cellarId : '';
+
+  btn.disabled = true;
+  label.style.display = 'none';
+  spin.style.display = 'inline';
+  msg.style.display = 'none';
+
+  try {
+    const res = await _adminFetch('/api/admin/create-user', {
+      method: 'POST',
+      body: {
+        email,
+        display_name: name || email.split('@')[0],
+        cellar_id: cellarId || null,
+        dismiss_request_id: dismissId || null
+      }
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to create user');
+    msg.className = 'auth-msg ok';
+    msg.textContent = 'Account created — invite email sent to ' + email;
+    // Clear form
+    document.getElementById('adminCreateEmail').value = '';
+    document.getElementById('adminCreateName').value = '';
+    btn.dataset.dismissId = '';
+    // Refresh requests badge
+    loadAdminRequests();
+  } catch (e) {
+    msg.className = 'auth-msg err';
+    msg.textContent = e.message || 'Could not create user';
+  } finally {
+    btn.disabled = false;
+    label.style.display = '';
+    spin.style.display = 'none';
+  }
+}
+
+/* ── Cellars tab ───────────────────────────────────────────── */
+async function loadAdminCellars() {
+  const container = document.getElementById('adminCellarsList');
+  container.innerHTML = '<div class="admin-empty">Loading…</div>';
+  try {
+    const res = await _adminFetch('/api/admin/cellars');
+    if (!res.ok) throw new Error('Failed');
+    _adminCellars = await res.json();
+    // Also load all users for the add-member dropdown
+    const uRes = await _adminFetch('/api/admin/users');
+    if (uRes.ok) _adminUsers = await uRes.json();
+
+    if (!_adminCellars.length) {
+      container.innerHTML = '<div class="admin-empty">No cellars yet</div>';
+      return;
+    }
+    container.innerHTML = '';
+    _adminCellars.forEach(c => {
+      const card = document.createElement('div');
+      card.className = 'admin-cellar-card';
+      card.id = 'adminCellar_' + c.id;
+
+      const memberRows = c.members.map(m => {
+        const initials = (m.display_name || 'M').slice(0, 2).toUpperCase();
+        const colors = ['var(--burgundy)', 'var(--gold)', '#2D6A4F', '#6366f1', '#ea580c'];
+        const color = m.is_admin ? 'var(--burgundy)' : colors[Math.abs(hashStr(m.user_id)) % colors.length];
+        const isAdmin = m.is_admin;
+        const removeBtn = isAdmin ? '' : `<button class="admin-remove-member" onclick="confirmRemoveMember('${escJs(c.id)}','${escJs(c.name)}','${escJs(m.user_id)}','${escJs(m.display_name)}')" title="Remove from cellar">✕</button>`;
+        return `<div class="admin-member-row">
+          <div class="admin-member-avatar" style="background:${color}">${escHtml(initials)}</div>
+          <div class="admin-member-details">
+            <div class="admin-member-name">${escHtml(m.display_name)}${isAdmin ? '<span class="admin-member-role">Admin</span>' : ''}</div>
+            <div class="admin-member-email">${escHtml(m.email)}</div>
+          </div>
+          ${removeBtn}
+        </div>`;
+      }).join('');
+
+      card.innerHTML = `
+        <div class="admin-cellar-header">
+          <div>
+            <div class="admin-cellar-title">${escHtml(c.name)}</div>
+            <div class="admin-cellar-meta">${c.members.length} member${c.members.length !== 1 ? 's' : ''} · ${c.wine_count} wine${c.wine_count !== 1 ? 's' : ''}</div>
+          </div>
+          <button class="admin-cellar-delete" onclick="confirmDeleteCellar('${escJs(c.id)}','${escJs(c.name)}')" title="Delete cellar">🗑</button>
+        </div>
+        <div class="admin-member-list">
+          ${memberRows}
+          <button class="admin-add-member-toggle" onclick="toggleAddMember(this,'${escJs(c.id)}')">＋ Add member</button>
+        </div>
+      `;
+      container.appendChild(card);
+    });
+  } catch (e) {
+    container.innerHTML = '<div class="admin-empty">Could not load cellars</div>';
+  }
+}
+
+function hashStr(s) {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) { h = ((h << 5) - h) + s.charCodeAt(i); h |= 0; }
+  return h;
+}
+
+function toggleAddMember(btn, cellarId) {
+  const existing = btn.parentElement.querySelector('.admin-add-member-row');
+  if (existing) { existing.remove(); return; }
+
+  // Get users not already in this cellar
+  const cellar = _adminCellars.find(c => c.id === cellarId);
+  const memberIds = cellar ? cellar.members.map(m => m.user_id) : [];
+  const available = _adminUsers.filter(u => !memberIds.includes(u.id));
+
+  if (!available.length) { showToast('All users are already in this cellar'); return; }
+
+  const row = document.createElement('div');
+  row.className = 'admin-add-member-row';
+  const opts = available.map(u => `<option value="${escHtml(u.id)}">${escHtml(u.display_name)} (${escHtml(u.email)})</option>`).join('');
+  row.innerHTML = `
+    <select>${opts}</select>
+    <button class="admin-btn-sm admin-btn-create" onclick="handleAddMember('${escJs(cellarId)}',this.parentElement.querySelector('select').value,this)">Add</button>
+  `;
+  btn.before(row);
+}
+
+async function handleAddMember(cellarId, userId, btn) {
+  if (!userId) return;
+  if (btn) btn.disabled = true;
+  try {
+    const res = await _adminFetch('/api/admin/cellars/' + cellarId + '/members', {
+      method: 'POST',
+      body: { user_id: userId }
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || 'Failed');
+    }
+    showToast('Member added');
+    loadAdminCellars();
+  } catch (e) {
+    showToast(e.message || 'Could not add member');
+    if (btn) btn.disabled = false;
+  }
+}
+
+function confirmRemoveMember(cellarId, cellarName, userId, userName) {
+  const overlay = document.getElementById('adminConfirmOverlay');
+  document.getElementById('adminConfirmIcon').textContent = '⚠️';
+  document.getElementById('adminConfirmTitle').textContent = 'Remove ' + userName + '?';
+  document.getElementById('adminConfirmMsg').textContent = 'They\u2019ll lose access to ' + cellarName + ' and its wines. You can re-add them later.';
+  const actionBtn = document.getElementById('adminConfirmAction');
+  actionBtn.textContent = 'Remove';
+  actionBtn.className = 'admin-btn-sm admin-btn-danger';
+  actionBtn.onclick = async function() {
+    actionBtn.disabled = true;
+    actionBtn.textContent = 'Removing…';
+    try {
+      const res = await _adminFetch('/api/admin/cellars/' + cellarId + '/members/' + userId, { method: 'DELETE' });
+      if (!res.ok) throw new Error('Failed');
+      showToast(userName + ' removed');
+      closeAdminConfirm();
+      loadAdminCellars();
+    } catch (e) {
+      showToast('Could not remove member');
+      actionBtn.disabled = false;
+      actionBtn.textContent = 'Remove';
+    }
+  };
+  overlay.classList.add('open');
+}
+
+function confirmDeleteCellar(cellarId, cellarName) {
+  const overlay = document.getElementById('adminConfirmOverlay');
+  document.getElementById('adminConfirmIcon').textContent = '🗑';
+  document.getElementById('adminConfirmTitle').textContent = 'Delete ' + cellarName + '?';
+  document.getElementById('adminConfirmMsg').textContent = 'All members will be removed. Wines will be unlinked but not deleted.';
+  const actionBtn = document.getElementById('adminConfirmAction');
+  actionBtn.textContent = 'Delete cellar';
+  actionBtn.className = 'admin-btn-sm admin-btn-danger';
+  actionBtn.onclick = async function() {
+    actionBtn.disabled = true;
+    actionBtn.textContent = 'Deleting…';
+    try {
+      const res = await _adminFetch('/api/admin/cellars/' + cellarId, { method: 'DELETE' });
+      if (!res.ok) throw new Error('Failed');
+      showToast(cellarName + ' deleted');
+      closeAdminConfirm();
+      loadAdminCellars();
+    } catch (e) {
+      showToast('Could not delete cellar');
+      actionBtn.disabled = false;
+      actionBtn.textContent = 'Delete cellar';
+    }
+  };
+  overlay.classList.add('open');
+}
+
+function closeAdminConfirm() {
+  document.getElementById('adminConfirmOverlay').classList.remove('open');
+}
+
+function showNewCellarForm() {
+  document.getElementById('adminNewCellarBtn').style.display = 'none';
+  document.getElementById('adminNewCellarForm').style.display = '';
+  document.getElementById('adminNewCellarName').value = '';
+  document.getElementById('adminNewCellarName').focus();
+}
+
+function hideNewCellarForm() {
+  document.getElementById('adminNewCellarBtn').style.display = '';
+  document.getElementById('adminNewCellarForm').style.display = 'none';
+}
+
+async function handleAdminCreateCellar() {
+  const name = document.getElementById('adminNewCellarName').value.trim();
+  if (!name) return;
+  try {
+    const res = await _adminFetch('/api/admin/cellars', { method: 'POST', body: { name } });
+    if (!res.ok) throw new Error('Failed');
+    showToast('Cellar created');
+    hideNewCellarForm();
+    loadAdminCellars();
+  } catch (e) {
+    showToast('Could not create cellar');
   }
 }
 

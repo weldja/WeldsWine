@@ -281,7 +281,22 @@ var templates = {
       <p style="font-family:Georgia,serif;font-size:1rem;color:#2C2420;line-height:1.6;margin:0 0 12px">Welcome to ${APP_NAME} \u2014 your personal wine journal.</p>
       <p style="font-family:Georgia,serif;font-size:.92rem;color:#6B5D58;line-height:1.7;margin:0 0 24px">Scan labels, track tastings, build your collection. Every bottle tells a story.</p>
       ${btn(APP_URL, "Open My Journal")}`)
-  }), "welcome")
+  }), "welcome"),
+  invite: /* @__PURE__ */ __name2((url, name) => ({
+    subject: `You're invited to ${APP_NAME} \u{1F377}`,
+    html: baseEmail(`
+      <p style="font-family:Georgia,serif;font-size:1rem;color:#2C2420;line-height:1.6;margin:0 0 12px">${name ? "Hi " + name + "! You've" : "You've"} been invited to join ${APP_NAME}.</p>
+      <p style="font-family:Georgia,serif;font-size:.92rem;color:#6B5D58;line-height:1.7;margin:0 0 24px">Click below to set your password and start tracking wines with friends.</p>
+      ${btn(url, "Set Up My Account")}`)
+  }), "invite"),
+  access_request_notify: /* @__PURE__ */ __name2((name, email, message) => ({
+    subject: `\u{1F514} New access request: ${name}`,
+    html: baseEmail(`
+      <p style="font-family:Georgia,serif;font-size:1rem;color:#2C2420;line-height:1.6;margin:0 0 12px"><strong>${name}</strong> has requested access to ${APP_NAME}.</p>
+      <p style="font-family:Georgia,serif;font-size:.92rem;color:#6B5D58;line-height:1.7;margin:0 0 8px"><strong>Email:</strong> ${email}</p>
+      ${message ? `<p style="font-family:Georgia,serif;font-size:.92rem;color:#6B5D58;line-height:1.7;margin:0 0 24px;padding:12px;background:#F5EFE6;border-radius:6px;font-style:italic">\u201C${message}\u201D</p>` : ""}
+      ${btn(APP_URL, "Open Admin Panel")}`)
+  }), "access_request_notify")
 };
 async function sendEmail(env, { to, subject, html }) {
   const key = env?.RESEND_API_KEY || RESEND_API_KEY;
@@ -299,6 +314,38 @@ async function sendEmail(env, { to, subject, html }) {
 }
 __name(sendEmail, "sendEmail");
 __name2(sendEmail, "sendEmail");
+/* ═══════════════════════════════════════════════════════════════
+   ADMIN HELPERS
+   ═══════════════════════════════════════════════════════════════ */
+async function verifyAdmin(env, request) {
+  const authHeader = request.headers.get("Authorization") || "";
+  const token = authHeader.replace(/^Bearer\s+/i, "").trim();
+  if (!token) return null;
+  const key = env.SUPABASE_SERVICE_KEY;
+  if (!key) return null;
+  try {
+    const res = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
+      headers: { apikey: key, Authorization: `Bearer ${token}` }
+    });
+    if (!res.ok) return null;
+    const user = await res.json();
+    if (!user || !user.id) return null;
+    // Check is_admin flag in profiles
+    const profileRes = await fetch(
+      `${SUPABASE_URL}/rest/v1/profiles?id=eq.${user.id}&select=is_admin`,
+      { headers: { apikey: key, Authorization: `Bearer ${key}`, "Content-Type": "application/json" } }
+    );
+    if (!profileRes.ok) return null;
+    const profiles = await profileRes.json();
+    if (!profiles || !profiles.length || !profiles[0].is_admin) return null;
+    return user;
+  } catch (e) {
+    console.error("verifyAdmin error:", e.message);
+    return null;
+  }
+}
+__name(verifyAdmin, "verifyAdmin");
+
 /* ═══════════════════════════════════════════════════════════════
    PUBLIC WINE PAGE RENDERERS
    ═══════════════════════════════════════════════════════════════ */
@@ -525,8 +572,8 @@ var worker_default = {
   async fetch(request, env) {
     const cors = {
       "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Headers": "Content-Type",
-      "Access-Control-Allow-Methods": "POST, GET, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type, Authorization",
+      "Access-Control-Allow-Methods": "POST, GET, DELETE, PATCH, OPTIONS",
       "Content-Type": "application/json"
     };
     if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: cors });
@@ -584,6 +631,369 @@ var worker_default = {
     }
     /* ═══════════════════════════════════════════════════════════
        END PUBLIC WINE PAGES
+       ═══════════════════════════════════════════════════════════ */
+
+    /* ═══════════════════════════════════════════════════════════
+       ACCESS REQUEST (public, no auth)
+       ═══════════════════════════════════════════════════════════ */
+    if (url.pathname.endsWith("/api/access-request") && request.method === "POST") {
+      if (!origin_ok(request)) return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403, headers: cors });
+      let body;
+      try { body = await request.json(); } catch { return new Response(JSON.stringify({ error: "Invalid JSON" }), { status: 400, headers: cors }); }
+      const { name, email, message } = body || {};
+      if (!name || !email) return new Response(JSON.stringify({ error: "name and email required" }), { status: 400, headers: cors });
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return new Response(JSON.stringify({ error: "Invalid email" }), { status: 400, headers: cors });
+      try {
+        await sb_fetch(env, "/access_requests", {
+          method: "POST",
+          body: { name, email, message: message || null, status: "pending" },
+          prefer: "return=minimal",
+          headers: { Prefer: "return=minimal" }
+        });
+        // Notify admin via push (to all admin subscriptions)
+        try {
+          // Find admin user IDs
+          const admins = await sb_fetch(env, "/profiles?is_admin=eq.true&select=id", { prefer: "return=representation" });
+          if (admins && admins.length) {
+            for (const admin of admins) {
+              const adminSubs = await sb_fetch(env, "/push_subscriptions?user_id=eq." + admin.id + "&select=subscription", { prefer: "return=representation" }) || [];
+              const payload = JSON.stringify({
+                title: "\u{1F514} New access request",
+                body: name + " (" + email + ") wants to join",
+                url: APP_URL + "/?admin=requests",
+                tag: "access-request"
+              });
+              for (const row of adminSubs) {
+                if (row.subscription) await send_push(env, row.subscription, payload).catch(() => {});
+              }
+            }
+          }
+        } catch (e) { console.warn("access-request push notify failed:", e.message); }
+        // Also try email notify
+        try {
+          const admins = await sb_fetch(env, "/profiles?is_admin=eq.true&select=id", { prefer: "return=representation" });
+          if (admins && admins.length) {
+            const adminUsers = [];
+            for (const a of admins) {
+              const uRes = await fetch(`${SUPABASE_URL}/auth/v1/admin/users/${a.id}`, {
+                headers: { apikey: env.SUPABASE_SERVICE_KEY, Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}` }
+              });
+              if (uRes.ok) { const u = await uRes.json(); if (u.email) adminUsers.push(u.email); }
+            }
+            for (const adminEmail of adminUsers) {
+              const { subject, html } = templates.access_request_notify(name, email, message);
+              await sendEmail(env, { to: adminEmail, subject, html }).catch(() => {});
+            }
+          }
+        } catch (e) { console.warn("access-request email notify failed:", e.message); }
+        return new Response(JSON.stringify({ ok: true }), { status: 200, headers: cors });
+      } catch (e) {
+        console.error("access-request error:", e.message);
+        return new Response(JSON.stringify({ error: e.message }), { status: 500, headers: cors });
+      }
+    }
+
+    /* ═══════════════════════════════════════════════════════════
+       ADMIN API — all routes require verified admin
+       ═══════════════════════════════════════════════════════════ */
+
+    // ── GET /api/admin/requests — list pending access requests ──
+    if (url.pathname.endsWith("/api/admin/requests") && request.method === "GET") {
+      const admin = await verifyAdmin(env, request);
+      if (!admin) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: cors });
+      try {
+        const rows = await sb_fetch(env, "/access_requests?status=eq.pending&order=created_at.desc&select=id,name,email,message,created_at", { prefer: "return=representation" });
+        return new Response(JSON.stringify(rows || []), { status: 200, headers: cors });
+      } catch (e) {
+        return new Response(JSON.stringify({ error: e.message }), { status: 500, headers: cors });
+      }
+    }
+
+    // ── DELETE /api/admin/requests/:id — dismiss a request ──────
+    if (url.pathname.match(/\/api\/admin\/requests\/[^/]+$/) && request.method === "DELETE") {
+      const admin = await verifyAdmin(env, request);
+      if (!admin) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: cors });
+      const reqId = url.pathname.split("/").pop();
+      try {
+        await sb_fetch(env, "/access_requests?id=eq." + encodeURIComponent(reqId), {
+          method: "PATCH",
+          body: { status: "dismissed" },
+          prefer: "return=minimal",
+          headers: { Prefer: "return=minimal" }
+        });
+        return new Response(JSON.stringify({ ok: true }), { status: 200, headers: cors });
+      } catch (e) {
+        return new Response(JSON.stringify({ error: e.message }), { status: 500, headers: cors });
+      }
+    }
+
+    // ── POST /api/admin/create-user — create user + optional cellar ─
+    if (url.pathname.endsWith("/api/admin/create-user") && request.method === "POST") {
+      const admin = await verifyAdmin(env, request);
+      if (!admin) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: cors });
+      let body;
+      try { body = await request.json(); } catch { return new Response(JSON.stringify({ error: "Invalid JSON" }), { status: 400, headers: cors }); }
+      const { email, display_name, cellar_id, dismiss_request_id } = body || {};
+      if (!email) return new Response(JSON.stringify({ error: "email required" }), { status: 400, headers: cors });
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return new Response(JSON.stringify({ error: "Invalid email" }), { status: 400, headers: cors });
+      try {
+        // Create user via Supabase Admin API (inviteUserByEmail equivalent)
+        const createRes = await fetch(`${SUPABASE_URL}/auth/v1/admin/users`, {
+          method: "POST",
+          headers: {
+            apikey: env.SUPABASE_SERVICE_KEY,
+            Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}`,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            email,
+            email_confirm: false,
+            user_metadata: { full_name: display_name || email.split("@")[0] }
+          })
+        });
+        if (!createRes.ok) {
+          const err = await createRes.json().catch(() => ({}));
+          // Check if user already exists
+          if (err.msg && err.msg.includes("already been registered")) {
+            return new Response(JSON.stringify({ error: "A user with that email already exists" }), { status: 409, headers: cors });
+          }
+          throw new Error(err.msg || err.message || `Supabase Admin ${createRes.status}`);
+        }
+        const newUser = await createRes.json();
+        const userId = newUser.id;
+
+        // Create profile
+        await sb_fetch(env, "/profiles", {
+          method: "POST",
+          body: { id: userId, display_name: display_name || email.split("@")[0] },
+          prefer: "return=minimal",
+          headers: { Prefer: "return=minimal" }
+        }).catch(e => console.warn("profile create:", e.message));
+
+        // Assign to cellar if specified
+        if (cellar_id) {
+          await sb_fetch(env, "/cellar_members", {
+            method: "POST",
+            body: { cellar_id, user_id: userId, role: "member" },
+            prefer: "return=minimal",
+            headers: { Prefer: "return=minimal" }
+          }).catch(e => console.warn("cellar assign:", e.message));
+        }
+
+        // Generate password reset link (acts as invite)
+        const resetRes = await fetch(`${SUPABASE_URL}/auth/v1/admin/users/${userId}/factors`, {
+          headers: { apikey: env.SUPABASE_SERVICE_KEY, Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}` }
+        }).catch(() => null);
+        // Use generate_link to create an invite/magic link
+        const linkRes = await fetch(`${SUPABASE_URL}/auth/v1/admin/generate_link`, {
+          method: "POST",
+          headers: {
+            apikey: env.SUPABASE_SERVICE_KEY,
+            Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}`,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            type: "invite",
+            email,
+            options: { redirectTo: APP_URL + "/?type=recovery" }
+          })
+        });
+        let inviteUrl = APP_URL;
+        if (linkRes.ok) {
+          const linkData = await linkRes.json();
+          // The action_link is the full invite URL
+          if (linkData.action_link) inviteUrl = linkData.action_link;
+        } else {
+          console.warn("generate_link failed:", await linkRes.text().catch(() => ""));
+        }
+
+        // Send invite email
+        try {
+          const { subject, html } = templates.invite(inviteUrl, display_name);
+          await sendEmail(env, { to: email, subject, html });
+        } catch (e) { console.warn("invite email failed:", e.message); }
+
+        // Dismiss the access request if linked
+        if (dismiss_request_id) {
+          await sb_fetch(env, "/access_requests?id=eq." + encodeURIComponent(dismiss_request_id), {
+            method: "PATCH",
+            body: { status: "dismissed" },
+            prefer: "return=minimal",
+            headers: { Prefer: "return=minimal" }
+          }).catch(() => {});
+        }
+
+        return new Response(JSON.stringify({ ok: true, user_id: userId }), { status: 200, headers: cors });
+      } catch (e) {
+        console.error("create-user error:", e.message);
+        return new Response(JSON.stringify({ error: e.message }), { status: 500, headers: cors });
+      }
+    }
+
+    // ── GET /api/admin/cellars — list all cellars with members ──
+    if (url.pathname.endsWith("/api/admin/cellars") && request.method === "GET") {
+      const admin = await verifyAdmin(env, request);
+      if (!admin) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: cors });
+      try {
+        const cellars = await sb_fetch(env, "/cellars?select=id,name,owner_id,created_at&order=created_at.asc", { prefer: "return=representation" });
+        const result = [];
+        for (const c of (cellars || [])) {
+          const members = await sb_fetch(env, "/cellar_members?cellar_id=eq." + c.id + "&select=user_id,role", { prefer: "return=representation" }) || [];
+          // Get profiles for members
+          const memberDetails = [];
+          for (const m of members) {
+            const profile = await sb_fetch(env, "/profiles?id=eq." + m.user_id + "&select=display_name,is_admin", { prefer: "return=representation" });
+            const p = profile && profile[0];
+            // Get email from auth
+            let email = "";
+            try {
+              const uRes = await fetch(`${SUPABASE_URL}/auth/v1/admin/users/${m.user_id}`, {
+                headers: { apikey: env.SUPABASE_SERVICE_KEY, Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}` }
+              });
+              if (uRes.ok) { const u = await uRes.json(); email = u.email || ""; }
+            } catch (_) {}
+            memberDetails.push({
+              user_id: m.user_id,
+              role: m.role,
+              display_name: p?.display_name || "Member",
+              is_admin: p?.is_admin || false,
+              email
+            });
+          }
+          // Count wines
+          const wineCount = await sb_fetch(env, "/wines?cellar_id=eq." + c.id + "&select=id", { prefer: "return=representation" }) || [];
+          result.push({ ...c, members: memberDetails, wine_count: wineCount.length });
+        }
+        return new Response(JSON.stringify(result), { status: 200, headers: cors });
+      } catch (e) {
+        return new Response(JSON.stringify({ error: e.message }), { status: 500, headers: cors });
+      }
+    }
+
+    // ── POST /api/admin/cellars — create a new cellar ──────────
+    if (url.pathname.endsWith("/api/admin/cellars") && request.method === "POST") {
+      const admin = await verifyAdmin(env, request);
+      if (!admin) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: cors });
+      let body;
+      try { body = await request.json(); } catch { return new Response(JSON.stringify({ error: "Invalid JSON" }), { status: 400, headers: cors }); }
+      const { name } = body || {};
+      if (!name) return new Response(JSON.stringify({ error: "name required" }), { status: 400, headers: cors });
+      try {
+        const created = await sb_fetch(env, "/cellars", {
+          method: "POST",
+          body: { name, owner_id: admin.id },
+          prefer: "return=representation",
+          headers: { Prefer: "return=representation" }
+        });
+        // Add admin as owner member
+        if (created && created[0]) {
+          await sb_fetch(env, "/cellar_members", {
+            method: "POST",
+            body: { cellar_id: created[0].id, user_id: admin.id, role: "owner" },
+            prefer: "return=minimal",
+            headers: { Prefer: "return=minimal" }
+          }).catch(() => {});
+        }
+        return new Response(JSON.stringify(created ? created[0] : {}), { status: 200, headers: cors });
+      } catch (e) {
+        return new Response(JSON.stringify({ error: e.message }), { status: 500, headers: cors });
+      }
+    }
+
+    // ── DELETE /api/admin/cellars/:id — delete a cellar ─────────
+    if (url.pathname.match(/\/api\/admin\/cellars\/[^/]+$/) && request.method === "DELETE" && !url.pathname.includes("/members/")) {
+      const admin = await verifyAdmin(env, request);
+      if (!admin) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: cors });
+      const cellarId = url.pathname.split("/").pop();
+      try {
+        // Remove all members first
+        await sb_fetch(env, "/cellar_members?cellar_id=eq." + encodeURIComponent(cellarId), { method: "DELETE" }).catch(() => {});
+        // Unlink wines (set cellar_id to null, not delete)
+        const key = env.SUPABASE_SERVICE_KEY;
+        await fetch(`${SUPABASE_URL}/rest/v1/wines?cellar_id=eq.${encodeURIComponent(cellarId)}`, {
+          method: "PATCH",
+          headers: { apikey: key, Authorization: `Bearer ${key}`, "Content-Type": "application/json", Prefer: "return=minimal" },
+          body: JSON.stringify({ cellar_id: null })
+        }).catch(() => {});
+        // Delete cellar
+        await sb_fetch(env, "/cellars?id=eq." + encodeURIComponent(cellarId), { method: "DELETE" });
+        return new Response(JSON.stringify({ ok: true }), { status: 200, headers: cors });
+      } catch (e) {
+        return new Response(JSON.stringify({ error: e.message }), { status: 500, headers: cors });
+      }
+    }
+
+    // ── POST /api/admin/cellars/:id/members — add member ────────
+    if (url.pathname.match(/\/api\/admin\/cellars\/[^/]+\/members$/) && request.method === "POST") {
+      const admin = await verifyAdmin(env, request);
+      if (!admin) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: cors });
+      const parts = url.pathname.split("/");
+      const cellarId = parts[parts.length - 2];
+      let body;
+      try { body = await request.json(); } catch { return new Response(JSON.stringify({ error: "Invalid JSON" }), { status: 400, headers: cors }); }
+      const { user_id } = body || {};
+      if (!user_id) return new Response(JSON.stringify({ error: "user_id required" }), { status: 400, headers: cors });
+      try {
+        // Check user isn't already in this cellar
+        const existing = await sb_fetch(env, "/cellar_members?cellar_id=eq." + encodeURIComponent(cellarId) + "&user_id=eq." + encodeURIComponent(user_id) + "&select=user_id", { prefer: "return=representation" });
+        if (existing && existing.length) return new Response(JSON.stringify({ error: "User is already in this cellar" }), { status: 409, headers: cors });
+        // Remove from any existing cellar first (user can only be in one)
+        await sb_fetch(env, "/cellar_members?user_id=eq." + encodeURIComponent(user_id), { method: "DELETE" }).catch(() => {});
+        // Add to new cellar
+        await sb_fetch(env, "/cellar_members", {
+          method: "POST",
+          body: { cellar_id: cellarId, user_id, role: "member" },
+          prefer: "return=minimal",
+          headers: { Prefer: "return=minimal" }
+        });
+        return new Response(JSON.stringify({ ok: true }), { status: 200, headers: cors });
+      } catch (e) {
+        return new Response(JSON.stringify({ error: e.message }), { status: 500, headers: cors });
+      }
+    }
+
+    // ── DELETE /api/admin/cellars/:cellarId/members/:userId — remove member
+    if (url.pathname.match(/\/api\/admin\/cellars\/[^/]+\/members\/[^/]+$/) && request.method === "DELETE") {
+      const admin = await verifyAdmin(env, request);
+      if (!admin) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: cors });
+      const parts = url.pathname.split("/");
+      const userId = parts.pop();
+      parts.pop(); // skip "members"
+      const cellarId = parts.pop();
+      try {
+        await sb_fetch(env, "/cellar_members?cellar_id=eq." + encodeURIComponent(cellarId) + "&user_id=eq." + encodeURIComponent(userId), { method: "DELETE" });
+        return new Response(JSON.stringify({ ok: true }), { status: 200, headers: cors });
+      } catch (e) {
+        return new Response(JSON.stringify({ error: e.message }), { status: 500, headers: cors });
+      }
+    }
+
+    // ── GET /api/admin/users — list all users (for member search) ─
+    if (url.pathname.endsWith("/api/admin/users") && request.method === "GET") {
+      const admin = await verifyAdmin(env, request);
+      if (!admin) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: cors });
+      try {
+        const profiles = await sb_fetch(env, "/profiles?select=id,display_name,is_admin&order=display_name.asc", { prefer: "return=representation" }) || [];
+        // Enrich with emails
+        const result = [];
+        for (const p of profiles) {
+          let email = "";
+          try {
+            const uRes = await fetch(`${SUPABASE_URL}/auth/v1/admin/users/${p.id}`, {
+              headers: { apikey: env.SUPABASE_SERVICE_KEY, Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}` }
+            });
+            if (uRes.ok) { const u = await uRes.json(); email = u.email || ""; }
+          } catch (_) {}
+          result.push({ ...p, email });
+        }
+        return new Response(JSON.stringify(result), { status: 200, headers: cors });
+      } catch (e) {
+        return new Response(JSON.stringify({ error: e.message }), { status: 500, headers: cors });
+      }
+    }
+
+    /* ═══════════════════════════════════════════════════════════
+       END ADMIN API
        ═══════════════════════════════════════════════════════════ */
 
     if (url.pathname.endsWith("/geocode")) {
