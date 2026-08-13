@@ -3039,7 +3039,7 @@ async function handleRequestAccess() {
   msg.style.display = 'none';
 
   try {
-    const proxyUrl = typeof Scanner !== 'undefined' && Scanner.getUrl ? Scanner.getUrl() : '';
+    const proxyUrl = typeof Scanner !== 'undefined' && Scanner.getProxyUrl ? Scanner.getProxyUrl() : '';
     if (!proxyUrl) throw new Error('App not configured');
     const res = await fetch(proxyUrl.replace(/\/$/, '') + '/api/access-request', {
       method: 'POST',
@@ -7441,15 +7441,11 @@ async function _checkAdminStatus() {
 }
 
 function _adminFetch(path, opts = {}) {
-  const proxyUrl = typeof Scanner !== 'undefined' && Scanner.getUrl ? Scanner.getUrl() : '';
-  console.log('[adminFetch] proxyUrl=' + proxyUrl, 'path=' + path);
-  if (!proxyUrl) return Promise.reject(new Error('No worker URL — configure scan settings first'));
+  const proxyUrl = typeof Scanner !== 'undefined' && Scanner.getProxyUrl ? Scanner.getProxyUrl() : '';
+  if (!proxyUrl) return Promise.reject(new Error('No worker URL'));
   return _sb.auth.getSession().then(({ data }) => {
     const token = data?.session?.access_token || '';
-    console.log('[adminFetch] token=' + (token ? 'yes(' + token.length + ')' : 'EMPTY'));
-    const fullUrl = proxyUrl.replace(/\/$/, '') + path;
-    console.log('[adminFetch] fetching', opts.method || 'GET', fullUrl);
-    return fetch(fullUrl, {
+    return fetch(proxyUrl.replace(/\/$/, '') + path, {
       method: opts.method || 'GET',
       headers: {
         'Content-Type': 'application/json',
