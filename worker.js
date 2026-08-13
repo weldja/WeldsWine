@@ -299,6 +299,229 @@ async function sendEmail(env, { to, subject, html }) {
 }
 __name(sendEmail, "sendEmail");
 __name2(sendEmail, "sendEmail");
+/* ═══════════════════════════════════════════════════════════════
+   PUBLIC WINE PAGE RENDERERS
+   ═══════════════════════════════════════════════════════════════ */
+function esc(s) { return (s || "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+__name(esc, "esc");
+
+function wine_meta_desc(w) {
+  const parts = [w.winery, w.name, w.vintage].filter(Boolean).join(" ");
+  const extra = [w.grape, w.region, w.country].filter(Boolean).join(", ");
+  const r = w.rating != null ? ` Rated ${w.rating}/10.` : "";
+  return esc((parts + (extra ? " — " + extra : "") + "." + r).slice(0, 160));
+}
+__name(wine_meta_desc, "wine_meta_desc");
+
+function wine_title(w) {
+  return esc([w.winery, w.name, w.vintage].filter(Boolean).join(" · ") || "Wine");
+}
+__name(wine_title, "wine_title");
+
+function style_colour(style) {
+  const m = { Red: "#8B2439", White: "#C9A34A", "Rosé": "#D4849A", Sparkling: "#B8A44C", Dessert: "#D4A574", Fortified: "#6B3A2A" };
+  return m[style] || "#8B2439";
+}
+__name(style_colour, "style_colour");
+
+function render_wine_page(w) {
+  const title = wine_title(w);
+  const desc = wine_meta_desc(w);
+  const pageUrl = APP_URL + "/wine/" + encodeURIComponent(w.id);
+  const accent = style_colour(w.style);
+  const photoHtml = (w.photo_front || w.photo_back) ? `<div class="photos">${w.photo_front ? `<img src="${esc(w.photo_front)}" alt="${esc((w.winery||"")+" "+(w.name||""))} front label" loading="lazy"/>` : ""}${w.photo_back ? `<img src="${esc(w.photo_back)}" alt="${esc((w.winery||"")+" "+(w.name||""))} back label" loading="lazy"/>` : ""}</div>` : "";
+  const details = [
+    w.grape   ? ["Grape", w.grape] : null,
+    w.region  ? ["Region", w.region] : null,
+    w.country ? ["Country", w.country] : null,
+    w.appellation ? ["Appellation", w.appellation] : null,
+    w.vintage ? ["Vintage", w.vintage] : null,
+    w.style   ? ["Style", w.style] : null
+  ].filter(Boolean).map(([l,v]) => `<div class="detail"><span class="detail-label">${esc(l)}</span><span class="detail-value">${esc(String(v))}</span></div>`).join("");
+  const ratingHtml = w.rating != null ? `<div class="rating"><span class="rating-num">${w.rating}</span><span class="rating-of">/10</span></div>` : "";
+  const notesHtml = w.notes ? `<div class="notes"><h2>Tasting Notes</h2><p>${esc(w.notes)}</p></div>` : "";
+  const schema = JSON.stringify({
+    "@context": "https://schema.org", "@type": "Product", "name": [w.winery, w.name].filter(Boolean).join(" "),
+    "description": desc.replace(/&amp;/g,"&").replace(/&lt;/g,"<").replace(/&gt;/g,">").replace(/&quot;/g,'"'),
+    "brand": w.winery ? { "@type": "Brand", "name": w.winery } : undefined,
+    "image": w.photo_front || undefined, "url": pageUrl,
+    ...(w.rating != null ? { "review": { "@type": "Review", "reviewRating": { "@type": "Rating", "ratingValue": w.rating, "bestRating": 10 }, "author": { "@type": "Organization", "name": "Welds Wine Wisdoms" } } } : {})
+  });
+
+  return `<!DOCTYPE html><html lang="en"><head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>${title} — Welds Wine Wisdoms</title>
+<meta name="description" content="${desc}"/>
+<meta name="robots" content="index, follow"/>
+<link rel="canonical" href="${esc(pageUrl)}"/>
+<meta property="og:type" content="article"/><meta property="og:site_name" content="Welds Wine Wisdoms"/>
+<meta property="og:title" content="${title}"/><meta property="og:description" content="${desc}"/>
+<meta property="og:url" content="${esc(pageUrl)}"/><meta property="og:locale" content="en_GB"/>
+${w.photo_front ? `<meta property="og:image" content="${esc(w.photo_front)}"/>` : `<meta property="og:image" content="${APP_URL}/og-image.png"/>`}
+<meta name="twitter:card" content="summary_large_image"/><meta name="twitter:title" content="${title}"/>
+<meta name="twitter:description" content="${desc}"/>
+${w.photo_front ? `<meta name="twitter:image" content="${esc(w.photo_front)}"/>` : ""}
+<script type="application/ld+json">${schema}</script>
+<link rel="icon" href="/favicon.ico" sizes="32x32"/>
+<link href="https://fonts.googleapis.com/css2?family=Lora:wght@500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#F9F5F0;color:#2C2420;font-family:Inter,system-ui,sans-serif;min-height:100vh}
+.topbar{background:#2C0A16;padding:14px 20px;display:flex;align-items:center;justify-content:space-between}
+.topbar a{color:#F5EDE2;text-decoration:none;font-family:Lora,Georgia,serif;font-size:1rem;font-weight:600;letter-spacing:.03em}
+.topbar-cta{background:#C9A34A;color:#2C0A16;padding:7px 16px;border-radius:6px;font-size:.8rem;font-weight:600;text-decoration:none;font-family:Inter,sans-serif}
+.accent{height:4px;background:${accent}}
+.container{max-width:640px;margin:0 auto;padding:24px 20px 60px}
+.photos{display:flex;gap:12px;margin-bottom:24px;overflow-x:auto;scroll-snap-type:x mandatory}
+.photos img{width:100%;max-width:300px;border-radius:10px;object-fit:cover;scroll-snap-align:start;max-height:400px;border:1px solid rgba(0,0,0,.08)}
+.wine-header{margin-bottom:20px}
+.wine-winery{font-family:Inter,sans-serif;font-size:.78rem;letter-spacing:.1em;text-transform:uppercase;color:#C9A34A;margin-bottom:4px;font-weight:600}
+.wine-name{font-family:Lora,Georgia,serif;font-size:1.6rem;font-weight:600;color:#2C0A16;line-height:1.25}
+.wine-vintage{font-family:Lora,Georgia,serif;font-size:1.1rem;color:#8B7355;margin-left:6px;font-weight:500}
+.rating{display:inline-flex;align-items:baseline;gap:2px;background:#2C0A16;color:#F5EDE2;padding:8px 16px;border-radius:8px;margin:12px 0 20px}
+.rating-num{font-family:Lora,Georgia,serif;font-size:1.6rem;font-weight:600}
+.rating-of{font-family:Inter,sans-serif;font-size:.8rem;color:#C9A34A}
+.details{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:24px}
+.detail{background:#fff;border-radius:8px;padding:12px 14px;border:1px solid rgba(0,0,0,.06)}
+.detail-label{display:block;font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;color:#8B7355;margin-bottom:3px;font-weight:600}
+.detail-value{font-size:.92rem;font-weight:500;color:#2C0A16}
+.notes{margin-top:24px;padding-top:20px;border-top:1px solid rgba(0,0,0,.08)}
+.notes h2{font-family:Lora,Georgia,serif;font-size:1rem;font-weight:600;color:#2C0A16;margin-bottom:8px}
+.notes p{font-size:.92rem;line-height:1.7;color:#5A4E44}
+.cta-box{margin-top:32px;background:#2C0A16;border-radius:12px;padding:24px;text-align:center}
+.cta-box p{color:#F5EDE2;font-family:Lora,Georgia,serif;font-size:1rem;margin-bottom:14px}
+.cta-btn{display:inline-block;background:#C9A34A;color:#2C0A16;padding:12px 28px;border-radius:8px;font-weight:600;text-decoration:none;font-size:.92rem}
+.footer{text-align:center;margin-top:40px;font-size:.75rem;color:#8B7355}
+.footer a{color:#8B2439;text-decoration:none}
+.back{display:inline-flex;align-items:center;gap:4px;color:#8B2439;text-decoration:none;font-size:.85rem;margin-bottom:16px;font-weight:500}
+@media(max-width:480px){.photos img{max-width:85vw}.wine-name{font-size:1.3rem}}
+</style></head><body>
+<div class="topbar"><a href="${APP_URL}">🍷 Welds Wine Wisdoms</a><a class="topbar-cta" href="${APP_URL}">Open App</a></div>
+<div class="accent"></div>
+<div class="container">
+<a class="back" href="${APP_URL}/wines">← All wines</a>
+<div class="wine-header">
+${w.winery ? `<div class="wine-winery">${esc(w.winery)}</div>` : ""}
+<span class="wine-name">${esc(w.name || "Unnamed Wine")}</span>${w.vintage ? `<span class="wine-vintage">${esc(String(w.vintage))}</span>` : ""}
+</div>
+${ratingHtml}
+${photoHtml}
+<div class="details">${details}</div>
+${notesHtml}
+<div class="cta-box">
+<p>Scan wine labels with AI and build your personal wine journal</p>
+<a class="cta-btn" href="${APP_URL}">Try Welds Wine Wisdoms — Free</a>
+</div>
+<div class="footer"><a href="${APP_URL}">weldswine.co.uk</a> · Free AI-powered wine journal</div>
+</div></body></html>`;
+}
+__name(render_wine_page, "render_wine_page");
+
+function render_wine_list(wines) {
+  const cards = wines.map(w => {
+    const accent = style_colour(w.style);
+    const rating = w.rating != null ? `<span class="card-rating">${w.rating}</span>` : "";
+    const sub = [w.grape, w.region, w.vintage].filter(Boolean).join(" · ");
+    const photo = w.photo_front ? `<img src="${esc(w.photo_front)}" alt="${esc((w.winery||"")+" "+(w.name||""))}" loading="lazy"/>` : `<div class="card-nophoto" style="background:${accent}20;color:${accent}">🍷</div>`;
+    return `<a class="card" href="${APP_URL}/wine/${encodeURIComponent(w.id)}">
+<div class="card-photo">${photo}</div>
+<div class="card-body"><div class="card-accent" style="background:${accent}"></div>
+<div class="card-winery">${esc(w.winery || "")}</div>
+<div class="card-name">${esc(w.name || "Unnamed")}</div>
+<div class="card-sub">${esc(sub)}</div>
+${rating}</div></a>`;
+  }).join("");
+
+  return `<!DOCTYPE html><html lang="en"><head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Wine Collection — Welds Wine Wisdoms</title>
+<meta name="description" content="Browse ${wines.length} wines in our collection. Scan wine labels with AI, rate bottles, and build your personal wine journal. Free wine app."/>
+<meta name="robots" content="index, follow"/>
+<link rel="canonical" href="${APP_URL}/wines"/>
+<meta property="og:type" content="website"/><meta property="og:site_name" content="Welds Wine Wisdoms"/>
+<meta property="og:title" content="Wine Collection — Welds Wine Wisdoms"/>
+<meta property="og:url" content="${APP_URL}/wines"/>
+<meta property="og:image" content="${APP_URL}/og-image.png"/>
+<meta name="twitter:card" content="summary_large_image"/>
+<link rel="icon" href="/favicon.ico" sizes="32x32"/>
+<link href="https://fonts.googleapis.com/css2?family=Lora:wght@500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#F9F5F0;color:#2C2420;font-family:Inter,system-ui,sans-serif;min-height:100vh}
+.topbar{background:#2C0A16;padding:14px 20px;display:flex;align-items:center;justify-content:space-between}
+.topbar a{color:#F5EDE2;text-decoration:none;font-family:Lora,Georgia,serif;font-size:1rem;font-weight:600;letter-spacing:.03em}
+.topbar-cta{background:#C9A34A;color:#2C0A16;padding:7px 16px;border-radius:6px;font-size:.8rem;font-weight:600;text-decoration:none;font-family:Inter,sans-serif}
+.container{max-width:720px;margin:0 auto;padding:28px 20px 60px}
+h1{font-family:Lora,Georgia,serif;font-size:1.6rem;font-weight:600;color:#2C0A16;margin-bottom:4px}
+.count{font-size:.85rem;color:#8B7355;margin-bottom:24px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}
+.card{display:flex;background:#fff;border-radius:10px;overflow:hidden;text-decoration:none;color:inherit;border:1px solid rgba(0,0,0,.06);transition:box-shadow .15s}
+.card:hover{box-shadow:0 4px 16px rgba(44,20,36,.1)}
+.card-photo{width:80px;min-height:100px;flex-shrink:0;overflow:hidden;display:flex;align-items:center;justify-content:center;background:#f4f0eb}
+.card-photo img{width:100%;height:100%;object-fit:cover}
+.card-nophoto{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:1.6rem}
+.card-body{flex:1;padding:12px 14px;position:relative;padding-left:18px}
+.card-accent{position:absolute;left:0;top:8px;bottom:8px;width:3px;border-radius:2px}
+.card-winery{font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;color:#C9A34A;font-weight:600}
+.card-name{font-family:Lora,Georgia,serif;font-size:.95rem;font-weight:600;color:#2C0A16;margin:2px 0 4px;line-height:1.3}
+.card-sub{font-size:.78rem;color:#8B7355;line-height:1.4}
+.card-rating{display:inline-block;background:#2C0A16;color:#F5EDE2;padding:2px 8px;border-radius:4px;font-size:.75rem;font-weight:600;margin-top:6px}
+.footer{text-align:center;margin-top:40px;font-size:.75rem;color:#8B7355}
+.footer a{color:#8B2439;text-decoration:none}
+.cta-box{margin-top:32px;background:#2C0A16;border-radius:12px;padding:24px;text-align:center}
+.cta-box p{color:#F5EDE2;font-family:Lora,Georgia,serif;font-size:1rem;margin-bottom:14px}
+.cta-btn{display:inline-block;background:#C9A34A;color:#2C0A16;padding:12px 28px;border-radius:8px;font-weight:600;text-decoration:none;font-size:.92rem}
+@media(max-width:480px){.grid{grid-template-columns:1fr}h1{font-size:1.3rem}}
+</style></head><body>
+<div class="topbar"><a href="${APP_URL}">🍷 Welds Wine Wisdoms</a><a class="topbar-cta" href="${APP_URL}">Open App</a></div>
+<div class="container">
+<h1>Wine Collection</h1>
+<p class="count">${wines.length} wine${wines.length===1?"":"s"} in our cellar</p>
+<div class="grid">${cards}</div>
+<div class="cta-box">
+<p>Scan wine labels with AI and build your own wine journal</p>
+<a class="cta-btn" href="${APP_URL}">Try Welds Wine Wisdoms — Free</a>
+</div>
+<div class="footer"><a href="${APP_URL}">weldswine.co.uk</a> · Free AI-powered wine journal</div>
+</div></body></html>`;
+}
+__name(render_wine_list, "render_wine_list");
+
+function render_sitemap(wines) {
+  const today = new Date().toISOString().slice(0, 10);
+  const entries = wines.map(w => {
+    const lastmod = w.created_at ? w.created_at.slice(0, 10) : today;
+    return `  <url><loc>${APP_URL}/wine/${encodeURIComponent(w.id)}</loc><lastmod>${lastmod}</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>`;
+  }).join("\n");
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>${APP_URL}/</loc><lastmod>${today}</lastmod><changefreq>monthly</changefreq><priority>1.0</priority></url>
+  <url><loc>${APP_URL}/wines</loc><lastmod>${today}</lastmod><changefreq>weekly</changefreq><priority>0.9</priority></url>
+${entries}
+</urlset>`;
+}
+__name(render_sitemap, "render_sitemap");
+
+function render_404() {
+  return `<!DOCTYPE html><html lang="en"><head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Wine not found — Welds Wine Wisdoms</title>
+<meta name="robots" content="noindex"/>
+<link rel="icon" href="/favicon.ico" sizes="32x32"/>
+<link href="https://fonts.googleapis.com/css2?family=Lora:wght@600&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<style>*{margin:0;padding:0;box-sizing:border-box}body{background:#F9F5F0;font-family:Inter,system-ui,sans-serif;display:flex;flex-direction:column;min-height:100vh}
+.topbar{background:#2C0A16;padding:14px 20px}.topbar a{color:#F5EDE2;text-decoration:none;font-family:Lora,Georgia,serif;font-size:1rem;font-weight:600}
+.content{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 24px;text-align:center}
+h1{font-family:Lora,Georgia,serif;font-size:1.8rem;color:#2C0A16;margin:16px 0 8px}
+p{color:#8B7355;font-size:.95rem;margin-bottom:20px}
+a.btn{background:#8B2439;color:#F5EDE2;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:600;font-size:.9rem}</style>
+</head><body><div class="topbar"><a href="${APP_URL}">🍷 Welds Wine Wisdoms</a></div>
+<div class="content"><div style="font-size:3rem">🍷</div><h1>Wine not found</h1><p>This bottle may have been drunk or removed from the cellar.</p>
+<a class="btn" href="${APP_URL}/wines">Browse all wines</a></div></body></html>`;
+}
+__name(render_404, "render_404");
+/* ═══════════════════════════════════════════════════════════════ */
+
 var worker_default = {
   async fetch(request, env) {
     const cors = {
@@ -309,6 +532,61 @@ var worker_default = {
     };
     if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: cors });
     const url = new URL(request.url);
+
+    /* ═══════════════════════════════════════════════════════════
+       PUBLIC WINE PAGES (SEO)
+       Remove or comment out this block to disable public pages.
+       ═══════════════════════════════════════════════════════════ */
+    const htmlHeaders = { "Content-Type": "text/html;charset=UTF-8", "Cache-Control": "public, max-age=3600, s-maxage=86400" };
+    const CELLAR_ID = "8c1f5417-b9c7-49e3-915d-f9239cf48ff2";
+    const PUBLIC_WINE_FIELDS = "id,name,winery,vintage,country,region,appellation,grape,style,rating,notes,photo_front,photo_back,created_at";
+
+    // ── GET /wine/:id — individual wine page ───────────────
+    const wineMatch = url.pathname.match(/^\/wine\/([^/]+)$/);
+    if (wineMatch && request.method === "GET") {
+      const wineId = decodeURIComponent(wineMatch[1]);
+      try {
+        const rows = await sb_fetch(env,
+          "/wines?id=eq." + encodeURIComponent(wineId) + "&cellar_id=eq." + CELLAR_ID + "&select=" + PUBLIC_WINE_FIELDS,
+          { prefer: "return=representation" });
+        if (!rows || !rows.length) return new Response(render_404(), { status: 404, headers: htmlHeaders });
+        const w = rows[0];
+        return new Response(render_wine_page(w), { status: 200, headers: htmlHeaders });
+      } catch (e) {
+        console.error("public wine page error:", e.message);
+        return new Response(render_404(), { status: 500, headers: htmlHeaders });
+      }
+    }
+
+    // ── GET /wines — wine listing page ─────────────────────
+    if (url.pathname === "/wines" && request.method === "GET") {
+      try {
+        const wines = await sb_fetch(env,
+          "/wines?cellar_id=eq." + CELLAR_ID + "&select=" + PUBLIC_WINE_FIELDS + "&order=created_at.desc",
+          { prefer: "return=representation" });
+        return new Response(render_wine_list(wines || []), { status: 200, headers: htmlHeaders });
+      } catch (e) {
+        console.error("public wine list error:", e.message);
+        return new Response(render_wine_list([]), { status: 200, headers: htmlHeaders });
+      }
+    }
+
+    // ── GET /sitemap.xml — dynamic sitemap ─────────────────
+    if (url.pathname === "/sitemap.xml" && request.method === "GET") {
+      try {
+        const wines = await sb_fetch(env,
+          "/wines?cellar_id=eq." + CELLAR_ID + "&select=id,created_at&order=created_at.desc",
+          { prefer: "return=representation" });
+        return new Response(render_sitemap(wines || []), { status: 200, headers: { "Content-Type": "application/xml;charset=UTF-8", "Cache-Control": "public, max-age=3600, s-maxage=86400" } });
+      } catch (e) {
+        console.error("sitemap error:", e.message);
+        return new Response(render_sitemap([]), { status: 200, headers: { "Content-Type": "application/xml;charset=UTF-8" } });
+      }
+    }
+    /* ═══════════════════════════════════════════════════════════
+       END PUBLIC WINE PAGES
+       ═══════════════════════════════════════════════════════════ */
+
     if (url.pathname.endsWith("/geocode")) {
       const lat = url.searchParams.get("lat"), lon = url.searchParams.get("lon");
       if (!lat || !lon) return new Response(JSON.stringify({ error: "lat and lon required" }), { status: 400, headers: cors });
@@ -600,7 +878,8 @@ Rules:
         return new Response(JSON.stringify({ error: e.message }), { status: 502, headers: cors });
       }
     }
-    if (request.method !== "POST") return new Response(JSON.stringify({ error: "POST only" }), { status: 405, headers: cors });
+    // No API route matched — pass non-POST requests through to static origin (Cloudflare Pages)
+    if (request.method !== "POST") return fetch(request);
     const anthropicKey = env?.ANTHROPIC_API_KEY || ANTHROPIC_API_KEY;
     if (!anthropicKey || anthropicKey === "PASTE_YOUR_ANTHROPIC_KEY_HERE") return new Response(JSON.stringify({ error: "NO_KEY_IN_WORKER" }), { status: 500, headers: cors });
     let body;
