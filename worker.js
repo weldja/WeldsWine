@@ -334,7 +334,6 @@ function render_wine_page(w) {
     w.grape   ? ["Grape", w.grape] : null,
     w.region  ? ["Region", w.region] : null,
     w.country ? ["Country", w.country] : null,
-    w.appellation ? ["Appellation", w.appellation] : null,
     w.vintage ? ["Vintage", w.vintage] : null,
     w.style   ? ["Style", w.style] : null
   ].filter(Boolean).map(([l,v]) => `<div class="detail"><span class="detail-label">${esc(l)}</span><span class="detail-value">${esc(String(v))}</span></div>`).join("");
@@ -539,7 +538,7 @@ var worker_default = {
        ═══════════════════════════════════════════════════════════ */
     const htmlHeaders = { "Content-Type": "text/html;charset=UTF-8", "Cache-Control": "public, max-age=3600, s-maxage=86400" };
     const CELLAR_ID = "8c1f5417-b9c7-49e3-915d-f9239cf48ff2";
-    const PUBLIC_WINE_FIELDS = "id,name,winery,vintage,country,region,appellation,grape,style,rating,notes,photo_front,photo_back,created_at";
+    const PUBLIC_WINE_FIELDS = "id,name,winery,vintage,country,region,grape,style,rating,notes,photo_front,photo_back,created_at";
 
     // ── GET /wine/:id — individual wine page ───────────────
     const wineMatch = url.pathname.match(/^\/wine\/([^/]+)$/);
