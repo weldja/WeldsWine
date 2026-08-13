@@ -320,28 +320,42 @@ __name2(sendEmail, "sendEmail");
 async function verifyAdmin(env, request) {
   const authHeader = request.headers.get("Authorization") || "";
   const token = authHeader.replace(/^Bearer\s+/i, "").trim();
-  if (!token) return null;
+  if (!token) { console.log("verifyAdmin: no token"); return { user: null, reason: "no_token" }; }
   const key = env.SUPABASE_SERVICE_KEY;
-  if (!key) return null;
+  if (!key) { console.log("verifyAdmin: no service key"); return { user: null, reason: "no_service_key" }; }
   try {
     const res = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
       headers: { apikey: key, Authorization: `Bearer ${token}` }
     });
-    if (!res.ok) return null;
+    if (!res.ok) {
+      console.log("verifyAdmin: auth/user failed status=" + res.status);
+      return { user: null, reason: "token_invalid_" + res.status };
+    }
     const user = await res.json();
-    if (!user || !user.id) return null;
+    if (!user || !user.id) { console.log("verifyAdmin: no user in response"); return { user: null, reason: "no_user" }; }
+    console.log("verifyAdmin: user=" + user.id + " email=" + user.email);
     // Check is_admin flag in profiles
     const profileRes = await fetch(
       `${SUPABASE_URL}/rest/v1/profiles?id=eq.${user.id}&select=is_admin`,
       { headers: { apikey: key, Authorization: `Bearer ${key}`, "Content-Type": "application/json" } }
     );
-    if (!profileRes.ok) return null;
+    if (!profileRes.ok) {
+      const pErr = await profileRes.text().catch(() => "");
+      console.log("verifyAdmin: profile query failed status=" + profileRes.status + " body=" + pErr);
+      return { user: null, reason: "profile_query_failed" };
+    }
     const profiles = await profileRes.json();
-    if (!profiles || !profiles.length || !profiles[0].is_admin) return null;
-    return user;
+    console.log("verifyAdmin: profiles=" + JSON.stringify(profiles));
+    if (!profiles || !profiles.length) {
+      return { user: null, reason: "no_profile_found" };
+    }
+    if (!profiles[0].is_admin) {
+      return { user: null, reason: "not_admin" };
+    }
+    return { user, reason: null };
   } catch (e) {
     console.error("verifyAdmin error:", e.message);
-    return null;
+    return { user: null, reason: "exception: " + e.message };
   }
 }
 __name(verifyAdmin, "verifyAdmin");
@@ -699,8 +713,8 @@ var worker_default = {
 
     // ── GET /api/admin/requests — list pending access requests ──
     if (url.pathname.endsWith("/api/admin/requests") && request.method === "GET") {
-      const admin = await verifyAdmin(env, request);
-      if (!admin) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: cors });
+      const { user: admin, reason: _authReason } = await verifyAdmin(env, request);
+      if (!admin) return new Response(JSON.stringify({ error: "Unauthorized", reason: _authReason }), { status: 401, headers: cors });
       try {
         const rows = await sb_fetch(env, "/access_requests?status=eq.pending&order=created_at.desc&select=id,name,email,message,created_at", { prefer: "return=representation" });
         return new Response(JSON.stringify(rows || []), { status: 200, headers: cors });
@@ -711,8 +725,8 @@ var worker_default = {
 
     // ── DELETE /api/admin/requests/:id — dismiss a request ──────
     if (url.pathname.match(/\/api\/admin\/requests\/[^/]+$/) && request.method === "DELETE") {
-      const admin = await verifyAdmin(env, request);
-      if (!admin) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: cors });
+      const { user: admin, reason: _authReason } = await verifyAdmin(env, request);
+      if (!admin) return new Response(JSON.stringify({ error: "Unauthorized", reason: _authReason }), { status: 401, headers: cors });
       const reqId = url.pathname.split("/").pop();
       try {
         await sb_fetch(env, "/access_requests?id=eq." + encodeURIComponent(reqId), {
@@ -729,8 +743,8 @@ var worker_default = {
 
     // ── POST /api/admin/create-user — create user + optional cellar ─
     if (url.pathname.endsWith("/api/admin/create-user") && request.method === "POST") {
-      const admin = await verifyAdmin(env, request);
-      if (!admin) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: cors });
+      const { user: admin, reason: _authReason } = await verifyAdmin(env, request);
+      if (!admin) return new Response(JSON.stringify({ error: "Unauthorized", reason: _authReason }), { status: 401, headers: cors });
       let body;
       try { body = await request.json(); } catch { return new Response(JSON.stringify({ error: "Invalid JSON" }), { status: 400, headers: cors }); }
       const { email, display_name, cellar_id, dismiss_request_id } = body || {};
@@ -832,8 +846,8 @@ var worker_default = {
 
     // ── GET /api/admin/cellars — list all cellars with members ──
     if (url.pathname.endsWith("/api/admin/cellars") && request.method === "GET") {
-      const admin = await verifyAdmin(env, request);
-      if (!admin) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: cors });
+      const { user: admin, reason: _authReason } = await verifyAdmin(env, request);
+      if (!admin) return new Response(JSON.stringify({ error: "Unauthorized", reason: _authReason }), { status: 401, headers: cors });
       try {
         const cellars = await sb_fetch(env, "/cellars?select=id,name,owner_id,created_at&order=created_at.asc", { prefer: "return=representation" });
         const result = [];
@@ -872,8 +886,8 @@ var worker_default = {
 
     // ── POST /api/admin/cellars — create a new cellar ──────────
     if (url.pathname.endsWith("/api/admin/cellars") && request.method === "POST") {
-      const admin = await verifyAdmin(env, request);
-      if (!admin) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: cors });
+      const { user: admin, reason: _authReason } = await verifyAdmin(env, request);
+      if (!admin) return new Response(JSON.stringify({ error: "Unauthorized", reason: _authReason }), { status: 401, headers: cors });
       let body;
       try { body = await request.json(); } catch { return new Response(JSON.stringify({ error: "Invalid JSON" }), { status: 400, headers: cors }); }
       const { name } = body || {};
@@ -902,8 +916,8 @@ var worker_default = {
 
     // ── DELETE /api/admin/cellars/:id — delete a cellar ─────────
     if (url.pathname.match(/\/api\/admin\/cellars\/[^/]+$/) && request.method === "DELETE" && !url.pathname.includes("/members/")) {
-      const admin = await verifyAdmin(env, request);
-      if (!admin) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: cors });
+      const { user: admin, reason: _authReason } = await verifyAdmin(env, request);
+      if (!admin) return new Response(JSON.stringify({ error: "Unauthorized", reason: _authReason }), { status: 401, headers: cors });
       const cellarId = url.pathname.split("/").pop();
       try {
         // Remove all members first
@@ -925,8 +939,8 @@ var worker_default = {
 
     // ── POST /api/admin/cellars/:id/members — add member ────────
     if (url.pathname.match(/\/api\/admin\/cellars\/[^/]+\/members$/) && request.method === "POST") {
-      const admin = await verifyAdmin(env, request);
-      if (!admin) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: cors });
+      const { user: admin, reason: _authReason } = await verifyAdmin(env, request);
+      if (!admin) return new Response(JSON.stringify({ error: "Unauthorized", reason: _authReason }), { status: 401, headers: cors });
       const parts = url.pathname.split("/");
       const cellarId = parts[parts.length - 2];
       let body;
@@ -954,8 +968,8 @@ var worker_default = {
 
     // ── DELETE /api/admin/cellars/:cellarId/members/:userId — remove member
     if (url.pathname.match(/\/api\/admin\/cellars\/[^/]+\/members\/[^/]+$/) && request.method === "DELETE") {
-      const admin = await verifyAdmin(env, request);
-      if (!admin) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: cors });
+      const { user: admin, reason: _authReason } = await verifyAdmin(env, request);
+      if (!admin) return new Response(JSON.stringify({ error: "Unauthorized", reason: _authReason }), { status: 401, headers: cors });
       const parts = url.pathname.split("/");
       const userId = parts.pop();
       parts.pop(); // skip "members"
@@ -970,8 +984,8 @@ var worker_default = {
 
     // ── GET /api/admin/users — list all users (for member search) ─
     if (url.pathname.endsWith("/api/admin/users") && request.method === "GET") {
-      const admin = await verifyAdmin(env, request);
-      if (!admin) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: cors });
+      const { user: admin, reason: _authReason } = await verifyAdmin(env, request);
+      if (!admin) return new Response(JSON.stringify({ error: "Unauthorized", reason: _authReason }), { status: 401, headers: cors });
       try {
         const profiles = await sb_fetch(env, "/profiles?select=id,display_name,is_admin&order=display_name.asc", { prefer: "return=representation" }) || [];
         // Enrich with emails

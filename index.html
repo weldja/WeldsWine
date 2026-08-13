@@ -7442,10 +7442,14 @@ async function _checkAdminStatus() {
 
 function _adminFetch(path, opts = {}) {
   const proxyUrl = typeof Scanner !== 'undefined' && Scanner.getUrl ? Scanner.getUrl() : '';
-  if (!proxyUrl) return Promise.reject(new Error('No worker URL'));
+  console.log('[adminFetch] proxyUrl=' + proxyUrl, 'path=' + path);
+  if (!proxyUrl) return Promise.reject(new Error('No worker URL — configure scan settings first'));
   return _sb.auth.getSession().then(({ data }) => {
     const token = data?.session?.access_token || '';
-    return fetch(proxyUrl.replace(/\/$/, '') + path, {
+    console.log('[adminFetch] token=' + (token ? 'yes(' + token.length + ')' : 'EMPTY'));
+    const fullUrl = proxyUrl.replace(/\/$/, '') + path;
+    console.log('[adminFetch] fetching', opts.method || 'GET', fullUrl);
+    return fetch(fullUrl, {
       method: opts.method || 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -7491,7 +7495,11 @@ async function loadAdminRequests() {
   container.innerHTML = '<div class="admin-empty">Loading…</div>';
   try {
     const res = await _adminFetch('/api/admin/requests');
-    if (!res.ok) throw new Error('Failed to load requests');
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      console.error('Admin requests error:', res.status, errData);
+      throw new Error(errData.reason || errData.error || 'Failed to load requests');
+    }
     const requests = await res.json();
     const badge = document.getElementById('adminReqBadge');
     if (badge) {
@@ -7522,7 +7530,8 @@ async function loadAdminRequests() {
       container.appendChild(card);
     });
   } catch (e) {
-    container.innerHTML = '<div class="admin-empty">Could not load requests</div>';
+    console.error('Admin requests load error:', e);
+    container.innerHTML = '<div class="admin-empty">' + escHtml(e.message || 'Could not load requests') + '</div>';
   }
 }
 
@@ -7664,7 +7673,11 @@ async function loadAdminCellars() {
   container.innerHTML = '<div class="admin-empty">Loading…</div>';
   try {
     const res = await _adminFetch('/api/admin/cellars');
-    if (!res.ok) throw new Error('Failed');
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      console.error('Admin cellars error:', res.status, errData);
+      throw new Error(errData.reason || errData.error || 'Failed');
+    }
     _adminCellars = await res.json();
     // Also load all users for the add-member dropdown
     const uRes = await _adminFetch('/api/admin/users');
@@ -7712,7 +7725,8 @@ async function loadAdminCellars() {
       container.appendChild(card);
     });
   } catch (e) {
-    container.innerHTML = '<div class="admin-empty">Could not load cellars</div>';
+    console.error('Admin cellars load error:', e);
+    container.innerHTML = '<div class="admin-empty">' + escHtml(e.message || 'Could not load cellars') + '</div>';
   }
 }
 
