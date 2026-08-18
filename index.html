@@ -862,6 +862,79 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
 @keyframes splashWarningFlash{0%,100%{opacity:1}20%{opacity:.15}40%{opacity:1}60%{opacity:.3}80%{opacity:1}}
 @keyframes splashSkullPop{0%{opacity:0;transform:scale(2) rotate(20deg)}50%{transform:scale(.85) rotate(-5deg)}70%{transform:scale(1.1) rotate(2deg)}100%{opacity:1;transform:scale(1) rotate(0)}}
 @keyframes splashPoisonSub{from{opacity:0;letter-spacing:.5em}to{opacity:.6;letter-spacing:.18em}}
+
+/* ── Duplicate detection overlay ──────────────────────────── */
+.dup-overlay{position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.55);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity .3s ease}
+.dup-overlay.open{opacity:1;pointer-events:auto}
+.dup-sheet{background:var(--cream);border-radius:20px 20px 0 0;width:100%;max-width:500px;max-height:92vh;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0 20px 28px;transform:translateY(100%);transition:transform .35s cubic-bezier(.22,1,.36,1)}
+.dup-overlay.open .dup-sheet{transform:translateY(0)}
+.dup-sheet-handle{width:36px;height:4px;border-radius:2px;background:var(--light-gray);margin:10px auto 12px}
+.dup-clink-stage{position:relative;height:130px;border-radius:14px;background:linear-gradient(135deg,var(--charcoal),#1a1a1a);overflow:hidden;margin-bottom:16px}
+.dup-clink-bottle{position:absolute;bottom:14px;width:44px}
+.dup-clink-bottle.left{left:-50px;transform:rotate(12deg);animation:dupSlideL .6s .3s cubic-bezier(.34,1.56,.64,1) forwards}
+.dup-clink-bottle.right{right:-50px;transform:rotate(-12deg);animation:dupSlideR .6s .3s cubic-bezier(.34,1.56,.64,1) forwards}
+@keyframes dupSlideL{to{left:calc(50% - 50px)}}
+@keyframes dupSlideR{to{right:calc(50% - 50px)}}
+.dup-sparkles{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:90px;height:90px;pointer-events:none}
+.dup-sparkle{position:absolute;width:5px;height:5px;border-radius:50%;background:var(--gold);opacity:0;animation:dupSpark .8s ease-out forwards}
+.dup-sparkle:nth-child(1){top:10%;left:50%;animation-delay:.85s}
+.dup-sparkle:nth-child(2){top:25%;left:15%;animation-delay:.9s;width:4px;height:4px}
+.dup-sparkle:nth-child(3){top:20%;left:80%;animation-delay:.95s}
+.dup-sparkle:nth-child(4){top:50%;left:5%;animation-delay:.88s;width:3px;height:3px}
+.dup-sparkle:nth-child(5){top:45%;left:90%;animation-delay:.92s;width:4px;height:4px}
+.dup-sparkle:nth-child(6){top:70%;left:25%;animation-delay:.97s}
+.dup-sparkle:nth-child(7){top:65%;left:75%;animation-delay:.87s}
+.dup-sparkle-star{position:absolute;color:var(--gold);font-size:14px;opacity:0;animation:dupStarPop .7s ease-out forwards}
+.dup-sparkle-star:nth-of-type(1){top:5%;left:45%;animation-delay:.9s;font-size:16px}
+.dup-sparkle-star:nth-of-type(2){top:35%;left:10%;animation-delay:1s;font-size:11px}
+.dup-sparkle-star:nth-of-type(3){top:30%;left:85%;animation-delay:.95s;font-size:13px}
+@keyframes dupSpark{0%{opacity:0;transform:scale(0)}40%{opacity:1;transform:scale(1.8)}100%{opacity:0;transform:scale(.5) translateY(-18px)}}
+@keyframes dupStarPop{0%{opacity:0;transform:scale(0) rotate(0)}50%{opacity:1;transform:scale(1.3) rotate(20deg)}100%{opacity:0;transform:scale(.6) rotate(45deg) translateY(-12px)}}
+.dup-clink-text{position:absolute;top:10px;left:0;right:0;text-align:center;font-family:var(--font-d);font-size:17px;font-weight:500;color:var(--gold);opacity:0;animation:dupTextIn .5s 1s ease-out forwards}
+.dup-clink-sub{position:absolute;top:33px;left:0;right:0;text-align:center;font-size:11px;color:rgba(255,255,255,.45);opacity:0;animation:dupTextIn .5s 1.15s ease-out forwards}
+@keyframes dupTextIn{to{opacity:1;transform:translateY(0)}}
+.dup-warn{padding:12px 14px;background:#FFF8E6;border:1px solid #E8C84A;border-radius:10px;display:flex;align-items:flex-start;gap:9px;margin-bottom:16px;opacity:0;animation:dupTextIn .4s 1.3s ease-out forwards}
+.dup-warn-icon{font-size:16px;flex-shrink:0;margin-top:1px}
+.dup-warn-text{font-size:13px;color:var(--charcoal);line-height:1.45}
+.dup-warn-text strong{font-weight:600}
+.dup-existing{border:1.5px solid rgba(139,36,57,.15);border-radius:12px;overflow:hidden;background:var(--ivory);margin-bottom:16px;opacity:0;animation:dupTextIn .4s 1.5s ease-out forwards}
+.dup-existing-header{padding:10px 14px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(0,0,0,.06)}
+.dup-existing-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:var(--warm-gray)}
+.dup-bottle-badge{display:inline-flex;align-items:center;gap:3px;background:var(--charcoal);color:var(--cream);font-size:10px;font-weight:600;padding:2px 8px;border-radius:10px}
+.dup-existing-body{display:flex;gap:12px;padding:12px 14px}
+.dup-existing-img{width:52px;height:72px;border-radius:6px;flex-shrink:0;object-fit:cover}
+.dup-existing-img.placeholder{background:linear-gradient(135deg,var(--burgundy),#5a1525);display:flex;align-items:center;justify-content:center;color:var(--gold);font-size:20px}
+.dup-existing-name{font-family:var(--font-d);font-size:14px;font-weight:600;color:var(--charcoal);margin-bottom:3px}
+.dup-existing-meta{font-size:12px;color:var(--warm-gray)}
+.dup-existing-rating{margin-top:6px;display:flex;align-items:center;gap:5px}
+.dup-rating-pill{font-size:12px;font-weight:600;color:var(--gold);background:rgba(201,163,74,.12);padding:2px 7px;border-radius:5px}
+.dup-rating-label{font-size:10px;color:var(--warm-gray)}
+.dup-rate-section{margin-bottom:16px;opacity:0;animation:dupTextIn .4s 1.7s ease-out forwards}
+.dup-rate-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.7px;color:var(--warm-gray);margin-bottom:8px}
+.dup-rate-row{display:flex;align-items:center;gap:10px;padding:12px 14px;background:var(--ivory);border-radius:12px;border:1.5px solid rgba(201,163,74,.25)}
+.dup-tap-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:5px;flex:1}
+.dup-tap-grid .r-btn{aspect-ratio:1;border-radius:50%;border:1.5px solid var(--light-gray);background:var(--cream);color:var(--warm-gray);font-family:var(--font-b);font-size:.75rem;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;min-width:36px;min-height:36px;-webkit-tap-highlight-color:transparent;touch-action:manipulation;transition:background .13s,border-color .13s,color .13s}
+.dup-tap-grid .r-btn.r-filled{background:rgba(139,36,57,.18);border-color:rgba(139,36,57,.35);color:var(--burgundy)}
+.dup-tap-grid .r-btn.r-selected-whole{background:var(--burgundy);border-color:var(--burgundy);color:#fff;box-shadow:0 3px 10px rgba(139,36,57,.35)}
+.dup-rate-display{font-family:var(--font-d);font-size:22px;font-weight:600;color:var(--gold);min-width:36px;text-align:right}
+.dup-actions{opacity:0;animation:dupTextIn .4s 1.9s ease-out forwards}
+.dup-add-btn{width:100%;padding:15px;border-radius:12px;background:var(--burgundy);color:var(--cream);font-family:var(--font-b);font-size:14px;font-weight:600;border:none;cursor:pointer;min-height:52px;-webkit-tap-highlight-color:transparent;touch-action:manipulation;display:flex;align-items:center;justify-content:center;gap:6px}
+.dup-add-btn .dup-btn-sub{font-size:11px;font-weight:400;opacity:.7}
+.dup-cancel-btn{width:100%;padding:12px;border-radius:12px;background:transparent;color:var(--charcoal);font-family:var(--font-b);font-size:13px;font-weight:500;border:1.5px solid rgba(0,0,0,.12);cursor:pointer;margin-top:8px;min-height:44px;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+
+/* ── Bottle count badge on cards ──────────────────────────── */
+.card-bottle-count{position:absolute;top:5px;right:5px;z-index:5;display:flex;align-items:center;gap:2px;background:rgba(44,44,44,.88);color:var(--cream);font-family:var(--font-b);font-size:10px;font-weight:600;padding:2px 7px;border-radius:10px;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);pointer-events:none}
+
+/* ── Individual ratings on cards ──────────────────────────── */
+.card-ratings-bar{display:flex;align-items:center;gap:6px;padding:6px 0 2px;margin-top:4px;border-top:1px solid var(--light-gray)}
+.card-ratings-avg{font-family:var(--font-d);font-size:15px;font-weight:600;color:var(--gold);min-width:24px}
+.card-ratings-avg-label{font-size:8px;color:var(--warm-gray);text-transform:uppercase;letter-spacing:.4px;line-height:1.2}
+.card-ratings-divider{width:1px;height:20px;background:var(--light-gray);margin:0 2px}
+.card-ind-ratings{display:flex;gap:4px;flex-wrap:wrap;flex:1}
+.card-ind-rating{display:flex;flex-direction:column;align-items:center;background:rgba(201,163,74,.08);border-radius:6px;padding:2px 6px}
+.card-ind-rating-score{font-size:11px;font-weight:600;color:var(--charcoal)}
+.card-ind-rating-date{font-size:7px;color:var(--warm-gray)}
+
 ::-webkit-scrollbar{width:5px}
 ::-webkit-scrollbar-track{background:var(--cream)}
 ::-webkit-scrollbar-thumb{background:var(--light-gray);border-radius:3px}
@@ -2592,6 +2665,34 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
   <p class="wine-splash-sub" style="animation:splashSubPop .45s ease .75s both">We're proud of you.</p>
 </div>
 
+<!-- DUPLICATE DETECTION OVERLAY -->
+<div class="dup-overlay" id="dupOverlay">
+  <div class="dup-sheet">
+    <div class="dup-sheet-handle"></div>
+    <div class="dup-clink-stage" id="dupClinkStage">
+      <svg class="dup-clink-bottle left" viewBox="0 0 50 120" fill="none"><rect x="18" y="0" width="14" height="20" rx="3" fill="#5a1525"/><rect x="20" y="16" width="10" height="8" rx="2" fill="var(--burgundy)"/><rect x="12" y="24" width="26" height="90" rx="6" fill="var(--burgundy)"/><rect x="15" y="40" width="20" height="35" rx="2" fill="var(--cream)" opacity=".9"/><text x="25" y="57" text-anchor="middle" fill="var(--burgundy)" font-family="Lora,serif" font-size="6" font-weight="600">MATCH</text><text x="25" y="70" text-anchor="middle" fill="var(--gold)" font-family="Lora,serif" font-size="7" font-weight="600">✦</text><ellipse cx="25" cy="112" rx="13" ry="4" fill="#4a1020"/></svg>
+      <svg class="dup-clink-bottle right" viewBox="0 0 50 120" fill="none"><rect x="18" y="0" width="14" height="20" rx="3" fill="#5a1525"/><rect x="20" y="16" width="10" height="8" rx="2" fill="var(--burgundy)"/><rect x="12" y="24" width="26" height="90" rx="6" fill="var(--burgundy)"/><rect x="15" y="40" width="20" height="35" rx="2" fill="var(--cream)" opacity=".9"/><text x="25" y="57" text-anchor="middle" fill="var(--burgundy)" font-family="Lora,serif" font-size="6" font-weight="600">MATCH</text><text x="25" y="70" text-anchor="middle" fill="var(--gold)" font-family="Lora,serif" font-size="7" font-weight="600">✦</text><ellipse cx="25" cy="112" rx="13" ry="4" fill="#4a1020"/></svg>
+      <div class="dup-sparkles"><div class="dup-sparkle"></div><div class="dup-sparkle"></div><div class="dup-sparkle"></div><div class="dup-sparkle"></div><div class="dup-sparkle"></div><div class="dup-sparkle"></div><div class="dup-sparkle"></div><span class="dup-sparkle-star">✦</span><span class="dup-sparkle-star">✧</span><span class="dup-sparkle-star">✦</span></div>
+      <div class="dup-clink-text">Déjà vu! 🍷</div>
+      <div class="dup-clink-sub">This one's already in the cellar</div>
+    </div>
+    <div class="dup-warn"><span class="dup-warn-icon">⚠️</span><div class="dup-warn-text" id="dupWarnText"><strong>This wine is already in your cellar</strong><br>Rate this bottle and add it to your collection.</div></div>
+    <div class="dup-existing" id="dupExistingCard"></div>
+    <div class="dup-rate-section">
+      <div class="dup-rate-label">Rate This Bottle</div>
+      <div class="dup-rate-row">
+        <div class="dup-tap-grid" id="dupStarInput"></div>
+        <div class="dup-rate-display" id="dupRatingDisplay">—</div>
+      </div>
+    </div>
+    <input type="hidden" id="dupRating" value="">
+    <div class="dup-actions">
+      <button class="dup-add-btn" id="dupAddBtn">Add Bottle to Existing</button>
+      <button class="dup-cancel-btn" id="dupCancelBtn">Cancel</button>
+    </div>
+  </div>
+</div>
+
 <!-- SHARE MODAL -->
 <div class="modal-overlay" id="shareOverlay">
   <div class="modal" style="max-width:480px">
@@ -3350,6 +3451,11 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById(id).addEventListener('keydown', e => { if (e.key === 'Enter') handleQuickAdd(); });
   });
 
+  // Duplicate detection overlay
+  document.getElementById('dupAddBtn').addEventListener('click', handleAddToExisting);
+  document.getElementById('dupCancelBtn').addEventListener('click', closeDuplicateOverlay);
+  document.getElementById('dupOverlay').addEventListener('click', e => { if (e.target === document.getElementById('dupOverlay')) closeDuplicateOverlay(); });
+
   // Signal MAIN APP is ready; if auth already completed, run showApp now
   _appReady = true;
   if (_pendingShowApp) showApp();
@@ -3789,6 +3895,14 @@ function createCard(w) {
     imgWrap.appendChild(rb);
   }
 
+  // Bottle count badge — top right of image
+  if (w.bottleCount && w.bottleCount > 1) {
+    const bcBadge = document.createElement('div');
+    bcBadge.className = 'card-bottle-count';
+    bcBadge.textContent = `🍾 ${w.bottleCount}`;
+    imgWrap.appendChild(bcBadge);
+  }
+
   card.appendChild(imgWrap);
 
   // ── Body column ─────────────────────────────────────────
@@ -3861,6 +3975,26 @@ function createCard(w) {
     ab.className = 'card-added-by';
     ab.innerHTML = `<span class="card-added-by-dot">${escHtml(initials)}</span>${escHtml(name)}`;
     body.appendChild(ab);
+  }
+
+  // Individual ratings bar (only when multiple ratings exist)
+  const wRatings = Array.isArray(w.ratings) ? w.ratings : [];
+  if (wRatings.length > 1) {
+    const rBar = document.createElement('div');
+    rBar.className = 'card-ratings-bar';
+    const avgVal = (wRatings.reduce((s,r) => s + r.score, 0) / wRatings.length).toFixed(1);
+    rBar.innerHTML = `<div class="card-ratings-avg">${avgVal}</div><div class="card-ratings-avg-label">avg</div><div class="card-ratings-divider"></div>`;
+    const indWrap = document.createElement('div');
+    indWrap.className = 'card-ind-ratings';
+    wRatings.forEach(r => {
+      const d = document.createElement('div');
+      d.className = 'card-ind-rating';
+      const dateLabel = r.date ? new Date(r.date + 'T00:00:00').toLocaleDateString('en-GB', { month:'short', year:'2-digit' }) : '';
+      d.innerHTML = `<span class="card-ind-rating-score">${r.score}</span>${dateLabel ? `<span class="card-ind-rating-date">${dateLabel}</span>` : ''}`;
+      indWrap.appendChild(d);
+    });
+    rBar.appendChild(indWrap);
+    body.appendChild(rBar);
   }
 
   // Footer row: date left, menu right
@@ -4138,10 +4272,12 @@ function _anyPanelOpen() {
     document.getElementById('originMapOverlay').classList.contains('open') ||
     document.getElementById('worldMapOverlay').classList.contains('open') ||
     document.getElementById('eventsOverlay').classList.contains('open') ||
-    document.getElementById('evScrim').classList.contains('open')
+    document.getElementById('evScrim').classList.contains('open') ||
+    document.getElementById('dupOverlay').classList.contains('open')
   );
 }
 function _closeTopPanel() {
+  if (document.getElementById('dupOverlay').classList.contains('open'))               { closeDuplicateOverlay(); return; }
   if (document.getElementById('labelLightbox'))                                        { closeLightbox();        return; }
   if (document.getElementById('evScrim').classList.contains('open'))                   { closeEventSheets();     return; }
   if (document.getElementById('originMapOverlay').classList.contains('open'))         { closeOriginMap();       return; }
@@ -6119,13 +6255,13 @@ async function loadWinesFromDB(cacheKey) {
     if (window._cellarId && memberIds.length > 0) {
       const idFilter = memberIds.map(id => `user_id.eq.${id}`).join(',');
       metaQuery = _sb.from('wines')
-        .select('id,name,winery,vintage,country,region,grape,style,price,purchased_from,date_tasted,notes,rating,is_favourite,buy_again,loc_lat,loc_lng,loc_label,created_at,shared_by,added_by,cellar_id,user_id')
+        .select('id,name,winery,vintage,country,region,grape,style,price,purchased_from,date_tasted,notes,rating,is_favourite,buy_again,loc_lat,loc_lng,loc_label,created_at,shared_by,added_by,cellar_id,user_id,bottle_count,ratings')
         .or(idFilter)
         .order('created_at', { ascending: false });
       photoQuery = _sb.from('wines').select('id,photo_front,photo_back').or(idFilter);
     } else {
       metaQuery = _sb.from('wines')
-        .select('id,name,winery,vintage,country,region,grape,style,price,purchased_from,date_tasted,notes,rating,is_favourite,buy_again,loc_lat,loc_lng,loc_label,created_at,shared_by,added_by,cellar_id,user_id')
+        .select('id,name,winery,vintage,country,region,grape,style,price,purchased_from,date_tasted,notes,rating,is_favourite,buy_again,loc_lat,loc_lng,loc_label,created_at,shared_by,added_by,cellar_id,user_id,bottle_count,ratings')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
       photoQuery = _sb.from('wines').select('id,photo_front,photo_back').eq('user_id', user.id);
@@ -6163,7 +6299,9 @@ async function loadWinesFromDB(cacheKey) {
       locLat:       row.loc_lat,
       locLng:       row.loc_lng,
       locLabel:     row.loc_label,
-      createdAt:    new Date(row.created_at).getTime()
+      createdAt:    new Date(row.created_at).getTime(),
+      bottleCount:  row.bottle_count || 1,
+      ratings:      row.ratings || []
     }));
 
     _winesLoaded = true;
@@ -6427,6 +6565,14 @@ function importToForm() {
   const front = scanFrontUrl;
   const back  = scanBackUrl;
 
+  // ── Duplicate check ──────────────────────────────────────
+  const duplicate = _currentUser ? findDuplicateWine(scanResult) : null;
+  if (duplicate) {
+    closeScanModal();
+    showDuplicateOverlay(duplicate, scanResult, front, back);
+    return;
+  }
+
   closeScanModal();
 
   const proceed = () => {
@@ -6484,6 +6630,176 @@ function showWineSplash(grape, style, cb) {
     el.classList.remove('show');
     setTimeout(() => cb && cb(), 350);
   }, 2000);
+}
+
+/* ── Duplicate detection ─────────────────────────────────── */
+let _dupMatchedWine = null;
+let _dupScanFront   = null;
+let _dupScanBack    = null;
+let _dupRatingVal   = 0;
+
+function findDuplicateWine(scanData) {
+  const sName    = (scanData.name    || '').toLowerCase().replace(/[''`]/g, '').trim();
+  const sWinery  = (scanData.winery  || '').toLowerCase().replace(/[''`]/g, '').trim();
+  const sVintage = (scanData.vintage || '').toString().trim();
+  if (!sName) return null;
+
+  let best = null;
+  let bestScore = 0;
+
+  for (const w of wines) {
+    const wName    = (w.name    || '').toLowerCase().replace(/[''`]/g, '').trim();
+    const wWinery  = (w.winery  || '').toLowerCase().replace(/[''`]/g, '').trim();
+    const wVintage = (w.vintage || '').toString().trim();
+    let score = 0;
+
+    // Name match
+    if (wName === sName) score += 3;
+    else if (wName.includes(sName) || sName.includes(wName)) score += 2;
+    else continue; // no name overlap → skip
+
+    // Vintage match
+    if (sVintage && wVintage && sVintage === wVintage) score += 2;
+    else if (sVintage && wVintage && sVintage !== wVintage) score -= 1;
+
+    // Winery match
+    if (sWinery && wWinery && (sWinery === wWinery || wWinery.includes(sWinery) || sWinery.includes(wWinery))) score += 1;
+
+    if (score > bestScore) { bestScore = score; best = w; }
+  }
+
+  return bestScore >= 4 ? best : null;
+}
+
+function showDuplicateOverlay(existingWine, scanData, frontPhoto, backPhoto) {
+  _dupMatchedWine = existingWine;
+  _dupScanFront   = frontPhoto;
+  _dupScanBack    = backPhoto;
+  _dupRatingVal   = 0;
+
+  // Populate existing wine card
+  const bc = existingWine.bottleCount || 1;
+  const ratings = existingWine.ratings || [];
+  const lastRating = ratings.length ? ratings[ratings.length - 1].score : existingWine.rating;
+
+  const cardEl = document.getElementById('dupExistingCard');
+  const front  = safePhotoSrc(existingWine.photoFront || existingWine.photo);
+  const imgHtml = front
+    ? `<img class="dup-existing-img" src="${front}" alt="">`
+    : `<div class="dup-existing-img placeholder">🍷</div>`;
+
+  cardEl.innerHTML = `
+    <div class="dup-existing-header">
+      <span class="dup-existing-label">Existing in cellar</span>
+      <span class="dup-bottle-badge">🍾 ${bc} bottle${bc>1?'s':''}</span>
+    </div>
+    <div class="dup-existing-body">
+      ${imgHtml}
+      <div>
+        <div class="dup-existing-name">${escHtml(existingWine.name || '')}</div>
+        <div class="dup-existing-meta">${[existingWine.vintage, existingWine.region || existingWine.country].filter(Boolean).join(' · ')}</div>
+        ${lastRating ? `<div class="dup-existing-rating"><span class="dup-rating-pill">${lastRating}</span><span class="dup-rating-label">last rating</span></div>` : ''}
+      </div>
+    </div>`;
+
+  // Warning text
+  document.getElementById('dupWarnText').innerHTML =
+    `<strong>This wine is already in your cellar</strong><br>You currently have ${bc} bottle${bc>1?'s':''}. Rate this bottle and add it to your collection.`;
+
+  // Update add button
+  const addBtn = document.getElementById('dupAddBtn');
+  addBtn.innerHTML = `Add Bottle to Existing <span class="dup-btn-sub">(→ ${bc + 1} bottles)</span>`;
+  addBtn.disabled = false;
+  addBtn.textContent !== '' && (addBtn.innerHTML = `Add Bottle to Existing <span class="dup-btn-sub">(→ ${bc + 1} bottles)</span>`);
+
+  // Build tap grid
+  _dupRatingVal = 0;
+  document.getElementById('dupRatingDisplay').textContent = '—';
+  document.getElementById('dupRating').value = '';
+  _buildTapGrid(
+    document.getElementById('dupStarInput'),
+    document.getElementById('dupRating'),
+    document.getElementById('dupRatingDisplay')
+  );
+
+  // Reset animation by cloning clink stage
+  const stage = document.getElementById('dupClinkStage');
+  const clone = stage.cloneNode(true);
+  clone.id = 'dupClinkStage';
+  stage.parentNode.replaceChild(clone, stage);
+
+  // Open overlay
+  const overlay = document.getElementById('dupOverlay');
+  overlay.classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeDuplicateOverlay() {
+  const overlay = document.getElementById('dupOverlay');
+  overlay.classList.remove('open');
+  document.body.style.overflow = '';
+  _dupMatchedWine = null;
+}
+
+async function handleAddToExisting() {
+  if (!_dupMatchedWine) return;
+  const btn = document.getElementById('dupAddBtn');
+  btn.disabled = true;
+  btn.textContent = 'Adding…';
+
+  try {
+    const newRating = parseFloat(document.getElementById('dupRating').value) || null;
+    const w = _dupMatchedWine;
+    const oldCount  = w.bottleCount || 1;
+    const oldRatings = Array.isArray(w.ratings) ? [...w.ratings] : [];
+
+    // If the wine had a single rating but no ratings array, seed it
+    if (oldRatings.length === 0 && w.rating) {
+      oldRatings.push({ score: w.rating, date: w.dateTasted || new Date().toISOString().slice(0,10) });
+    }
+
+    // Add new rating if entered
+    if (newRating) {
+      oldRatings.push({ score: newRating, date: new Date().toISOString().slice(0,10) });
+    }
+
+    // Compute average
+    const avg = oldRatings.length
+      ? parseFloat((oldRatings.reduce((s,r) => s + r.score, 0) / oldRatings.length).toFixed(1))
+      : w.rating;
+
+    // Update local wine object
+    w.bottleCount = oldCount + 1;
+    w.ratings     = oldRatings;
+    w.rating      = avg;
+
+    // Save to DB
+    const { error } = await _sb.from('wines').update({
+      bottle_count: w.bottleCount,
+      ratings:      w.ratings,
+      rating:       w.rating
+    }).eq('id', w.id);
+
+    if (error) throw error;
+
+    // Update card in grid
+    const existingCard = wineGrid.querySelector(`[data-id="${w.id}"]`);
+    if (existingCard) {
+      const newCard = createCard(w);
+      wineGrid.replaceChild(newCard, existingCard);
+    }
+    updateStats();
+
+    closeDuplicateOverlay();
+    closeScanModal();
+    showToast(`Bottle added! Now ${w.bottleCount} bottles ✓`);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  } catch (err) {
+    console.error('handleAddToExisting error:', err);
+    showToast('Failed to add — check your connection');
+    btn.disabled = false;
+    btn.innerHTML = `Add Bottle to Existing`;
+  }
 }
 
 function showScanScreen(id) {
