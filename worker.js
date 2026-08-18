@@ -601,6 +601,11 @@ var worker_default = {
     const CELLAR_ID = "8c1f5417-b9c7-49e3-915d-f9239cf48ff2";
     const PUBLIC_WINE_FIELDS = "id,name,winery,vintage,country,region,grape,style,rating,notes,photo_front,photo_back,created_at";
 
+    // ── GET /robots.txt ──────────────────────────────────────
+    if (url.pathname === "/robots.txt" && request.method === "GET") {
+      return new Response("User-agent: *\nAllow: /\n\nSitemap: https://weldswine.co.uk/sitemap.xml\n", { headers: { "Content-Type": "text/plain", "Cache-Control": "public, max-age=86400" } });
+    }
+
     // ── GET /wine/:id — individual wine page ───────────────
     const wineMatch = url.pathname.match(/^\/wine\/([^/]+)$/);
     if (wineMatch && request.method === "GET") {
