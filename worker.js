@@ -366,7 +366,8 @@ __name(verifyAdmin, "verifyAdmin");
 function esc(s) { return (s || "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
 __name(esc, "esc");
 
-function wine_meta_desc(w) {
+function wine_meta_desc(w, enrich) {
+  if (enrich && enrich.summary) return esc(enrich.summary.slice(0, 160));
   const parts = [w.winery, w.name, w.vintage].filter(Boolean).join(" ");
   const extra = [w.grape, w.region, w.country].filter(Boolean).join(", ");
   const r = w.rating != null ? ` Rated ${w.rating}/10.` : "";
@@ -385,9 +386,29 @@ function style_colour(style) {
 }
 __name(style_colour, "style_colour");
 
-function render_wine_page(w) {
+function render_intel(e) {
+  if (!e) return "";
+  const sections = [];
+  if (e.summary) sections.push(`<p class="intel-summary">${esc(e.summary)}</p>`);
+  if (e.producer_desc) sections.push(`<div class="intel-section"><h3>${esc(e.producer_name || "Producer")}</h3><p>${esc(e.producer_desc)}</p></div>`);
+  if (e.blend) sections.push(`<div class="intel-section"><h3>Blend</h3><p>${esc(e.blend)}</p></div>`);
+  if (e.tasting_notes) sections.push(`<div class="intel-section"><h3>Tasting Profile</h3><p>${esc(e.tasting_notes)}</p></div>`);
+  if (e.region_context) sections.push(`<div class="intel-section"><h3>Region</h3><p>${esc(e.region_context)}</p></div>`);
+  if (e.price_context) sections.push(`<div class="intel-section"><h3>Price Context</h3><p>${esc(e.price_context)}</p></div>`);
+  if (Array.isArray(e.food_pairings) && e.food_pairings.length) {
+    sections.push(`<div class="intel-section"><h3>Food Pairings</h3><div class="intel-pairings">${e.food_pairings.map(p => `<span class="intel-pairing">${esc(String(p))}</span>`).join("")}</div></div>`);
+  }
+  if (Array.isArray(e.critic_scores) && e.critic_scores.length) {
+    sections.push(`<div class="intel-section"><h3>Critic Scores</h3><div class="intel-scores">${e.critic_scores.map(c => `<span class="intel-score"><strong>${esc(String(c.score || ""))}</strong> ${esc(c.source || "")}</span>`).join("")}</div></div>`);
+  }
+  if (!sections.length) return "";
+  return `<div class="intel"><div class="intel-head"><h2>✦ Wine Intel</h2><span class="intel-badge">AI Researched</span></div>${sections.join("")}</div>`;
+}
+__name(render_intel, "render_intel");
+
+function render_wine_page(w, enrich) {
   const title = wine_title(w);
-  const desc = wine_meta_desc(w);
+  const desc = wine_meta_desc(w, enrich);
   const pageUrl = APP_URL + "/wine/" + encodeURIComponent(w.id);
   const accent = style_colour(w.style);
   const photoHtml = (w.photo_front || w.photo_back) ? `<div class="photos">${w.photo_front ? `<img src="${esc(w.photo_front)}" alt="${esc((w.winery||"")+" "+(w.name||""))} front label" loading="lazy"/>` : ""}${w.photo_back ? `<img src="${esc(w.photo_back)}" alt="${esc((w.winery||"")+" "+(w.name||""))} back label" loading="lazy"/>` : ""}</div>` : "";
@@ -400,6 +421,7 @@ function render_wine_page(w) {
   ].filter(Boolean).map(([l,v]) => `<div class="detail"><span class="detail-label">${esc(l)}</span><span class="detail-value">${esc(String(v))}</span></div>`).join("");
   const ratingHtml = w.rating != null ? `<div class="rating"><span class="rating-num">${w.rating}</span><span class="rating-of">/10</span></div>` : "";
   const notesHtml = w.notes ? `<div class="notes"><h2>Tasting Notes</h2><p>${esc(w.notes)}</p></div>` : "";
+  const intelHtml = render_intel(enrich);
   const schema = JSON.stringify({
     "@context": "https://schema.org", "@type": "Product", "name": [w.winery, w.name].filter(Boolean).join(" "),
     "description": desc.replace(/&amp;/g,"&").replace(/&lt;/g,"<").replace(/&gt;/g,">").replace(/&quot;/g,'"'),
@@ -455,6 +477,19 @@ body{background:#F9F5F0;color:#2C2420;font-family:Inter,system-ui,sans-serif;min
 .footer a{color:#8B2439;text-decoration:none}
 .back{display:inline-flex;align-items:center;gap:4px;color:#8B2439;text-decoration:none;font-size:.85rem;margin-bottom:16px;font-weight:500}
 @media(max-width:480px){.photos img{max-width:85vw}.wine-name{font-size:1.3rem}}
+.intel{margin-top:28px;padding-top:24px;border-top:1px solid rgba(0,0,0,.08)}
+.intel-head{display:flex;align-items:center;gap:6px;margin-bottom:16px}
+.intel-head h2{font-family:Lora,Georgia,serif;font-size:1.1rem;font-weight:600;color:#2C0A16}
+.intel-badge{font-size:.65rem;letter-spacing:.08em;text-transform:uppercase;color:#C9A34A;font-weight:600;background:#2C0A16;padding:3px 8px;border-radius:4px}
+.intel-summary{font-size:.92rem;line-height:1.7;color:#5A4E44;margin-bottom:20px}
+.intel-section{margin-bottom:18px}
+.intel-section h3{font-family:Inter,sans-serif;font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;color:#8B7355;font-weight:600;margin-bottom:6px}
+.intel-section p{font-size:.88rem;line-height:1.65;color:#2C2420}
+.intel-pairings{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
+.intel-pairing{background:#fff;border:1px solid rgba(0,0,0,.06);border-radius:6px;padding:6px 12px;font-size:.82rem;color:#2C2420}
+.intel-scores{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
+.intel-score{background:#2C0A16;color:#F5EDE2;border-radius:6px;padding:6px 12px;font-size:.82rem}
+.intel-score strong{color:#C9A34A}
 </style></head><body>
 <div class="topbar"><a href="${APP_URL}">🍷 Welds Wine Wisdoms</a><a class="topbar-cta" href="${APP_URL}">Open App</a></div>
 <div class="accent"></div>
@@ -468,6 +503,7 @@ ${ratingHtml}
 ${photoHtml}
 <div class="details">${details}</div>
 ${notesHtml}
+${intelHtml}
 <div class="cta-box">
 <p>Scan wine labels with AI and build your personal wine journal</p>
 <a class="cta-btn" href="${APP_URL}">Try Welds Wine Wisdoms — Free</a>
@@ -611,12 +647,19 @@ var worker_default = {
     if (wineMatch && request.method === "GET") {
       const wineId = decodeURIComponent(wineMatch[1]);
       try {
-        const rows = await sb_fetch(env,
-          "/wines?id=eq." + encodeURIComponent(wineId) + "&cellar_id=eq." + CELLAR_ID + "&select=" + PUBLIC_WINE_FIELDS,
-          { prefer: "return=representation" });
+        const encId = encodeURIComponent(wineId);
+        const [rows, enrichRows] = await Promise.all([
+          sb_fetch(env,
+            "/wines?id=eq." + encId + "&cellar_id=eq." + CELLAR_ID + "&select=" + PUBLIC_WINE_FIELDS,
+            { prefer: "return=representation" }),
+          sb_fetch(env,
+            "/wine_enrichments?wine_id=eq." + encId + "&select=summary,producer_name,producer_desc,blend,tasting_notes,food_pairings,critic_scores,region_context,price_context",
+            { prefer: "return=representation" }).catch(() => [])
+        ]);
         if (!rows || !rows.length) return new Response(render_404(), { status: 404, headers: htmlHeaders });
         const w = rows[0];
-        return new Response(render_wine_page(w), { status: 200, headers: htmlHeaders });
+        const enrich = (enrichRows && enrichRows.length) ? enrichRows[0] : null;
+        return new Response(render_wine_page(w, enrich), { status: 200, headers: htmlHeaders });
       } catch (e) {
         console.error("public wine page error:", e.message);
         return new Response(render_404(), { status: 500, headers: htmlHeaders });
