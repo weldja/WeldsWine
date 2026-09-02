@@ -1112,7 +1112,7 @@ var worker_default = {
       } catch {
         return new Response(JSON.stringify({ error: "Invalid JSON" }), { status: 400, headers: cors });
       }
-      const { cellar_id, exclude_endpoint, wine_id, wine_name, winery, added_by_name } = body3;
+      const { cellar_id, exclude_endpoint, wine_id, wine_name, winery, added_by_name, bottle_count } = body3;
       if (!cellar_id) {
         return new Response(JSON.stringify({ error: "cellar_id required" }), { status: 400, headers: cors });
       }
@@ -1121,14 +1121,18 @@ var worker_default = {
         if (!subscriptions.length) {
           return new Response(JSON.stringify({ ok: true, sent: 0, total: 0 }), { status: 200, headers: cors });
         }
-        const title = "\u{1F377} New wine in the cellar";
         const wineLine = [winery, wine_name].filter(Boolean).join(" \xB7 ") || "A new wine";
-        const bodyText = added_by_name ? added_by_name + " added " + wineLine : wineLine;
+        const extraBottle = Number(bottle_count) > 1;
+        const title = extraBottle ? "\u{1F37E} Another bottle in the cellar" : "\u{1F377} New wine in the cellar";
+        const bodyText = extraBottle
+          ? (added_by_name ? added_by_name + " added another bottle of " + wineLine + " (now " + Number(bottle_count) + ")" : "Another bottle of " + wineLine + " (now " + Number(bottle_count) + ")")
+          : (added_by_name ? added_by_name + " added " + wineLine : wineLine);
         const payload = JSON.stringify({
           title,
           body: bodyText,
           url: wine_id ? APP_URL + "/?open=" + encodeURIComponent(wine_id) : APP_URL + "/",
-          tag: wine_id ? "wine-" + wine_id : void 0,
+          tag: (wine_id ? "wine-" + wine_id : "cellar-wine") + "-" + Date.now(),
+          renotify: true,
           wineId: wine_id || null
         });
         const sent = await dispatch_pushes(env, subscriptions, payload);
@@ -1172,7 +1176,7 @@ var worker_default = {
           title,
           body: bodyText,
           url: wine_id ? APP_URL + "/?open=" + encodeURIComponent(wine_id) : APP_URL + "/",
-          tag: wine_id ? "comment-" + wine_id : "cellar-comment",
+          tag: (wine_id ? "comment-" + wine_id : "cellar-comment") + "-" + Date.now(),
           renotify: true,
           wineId: wine_id || null
         });

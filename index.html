@@ -5264,7 +5264,7 @@ window.updatePushBtn = function updatePushBtn() {
     });
 };
 
-async function notifyWineAdded(entry) {
+async function notifyWineAdded(entry, bottleCount) {
   if (!window._cellarId || !_currentUser) return;
   // Get this device's endpoint so the worker can exclude it
   // Wrapped separately so a missing pushManager (e.g. iOS browser tab) doesn't block the fetch
@@ -5285,6 +5285,7 @@ async function notifyWineAdded(entry) {
       wine_id:          entry.id     || null,
       wine_name:        entry.name   || null,
       winery:           entry.winery || null,
+      bottle_count:     (bottleCount && bottleCount > 1) ? bottleCount : null,
       added_by_name:    (_currentUser && _currentUser.email) ? _currentUser.email.split('@')[0] : null
     });
     console.log('[notify] firing fetch to', _notifyUrl, 'body=', _notifyBody);
@@ -6784,6 +6785,8 @@ async function handleAddToExisting() {
     }).eq('id', w.id);
 
     if (error) throw error;
+
+    notifyWineAdded(w, w.bottleCount); // fire & forget
 
     // Update card in grid
     const existingCard = wineGrid.querySelector(`[data-id="${w.id}"]`);
