@@ -6608,7 +6608,7 @@ function showWineSplash(grape, style, cb) {
   const s = (style  || '').toLowerCase();
   let id;
   if      (g.includes('chardonnay'))                          id = 'splashChard';
-  else if (g.includes('sauvignon'))                           id = 'splashSauv';
+  else if (/sauvignon\s*blanc/i.test(g))                      id = 'splashSauv';
   else if (s === 'sparkling' || g.includes('champagne') ||
            g.includes('prosecco') || g.includes('cava'))      id = 'splashFizz';
   else                                                         id = 'splashOther';
