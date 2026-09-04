@@ -238,7 +238,7 @@
   --font-i: 'Lora', Georgia, serif;
   --r: 10px; --rl: 16px; --tr: 0.18s ease;
   /* Paper grain — speckle layered over background colours */
-  --paper: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='0.3'/%3E%3C/svg%3E");
+  --paper: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.1' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='0.12'/%3E%3C/svg%3E");
   /* Fallback accent until a label photo is sampled */
   --card-accent: #8B2439;
   --card-wash:   rgba(139,36,57,.07);
@@ -1462,9 +1462,11 @@ body{
 .wine-card::before{
   content:'';
   position:absolute;left:0;top:0;bottom:0;width:4px;
-  background:var(--card-accent);
+  background-color:var(--card-accent);
   opacity:.85;
   pointer-events:none;
+  /* Sampling finishes a beat after render — bleed the colour in */
+  transition:background-color .35s ease;
 }
 .wine-card .card-rating-badge-num{color:var(--card-accent)}
 
@@ -1480,6 +1482,9 @@ body{
   color:var(--card-accent);
   flex-shrink:0;
   font-variant-numeric:lining-nums;
+  /* Letterpress — light above, dark below */
+  text-shadow:0 -1px 0 rgba(255,255,255,.85), 0 1px 0 rgba(60,30,10,.22);
+  transition:color .35s ease;
 }
 .card-vintage-num.nv{font-size:.95rem;letter-spacing:.04em}
 .card-vintage-row .card-descriptor{margin-bottom:0;min-width:0;flex:1 1 auto}
@@ -1499,6 +1504,42 @@ body{
   font-family:var(--font-b);font-style:normal;
   color:var(--warm-gray);font-size:.9rem;opacity:1;
   margin:0 auto 24px;max-width:30ch;line-height:1.55;
+}
+
+/* ─── Motion ──────────────────────────────────────────── */
+/* Filter changes slide cards to their new spot instead of
+   re-running the staggered entrance on every tap.          */
+.wine-card.no-enter{animation:none!important}
+
+/* Thumbnail settles as the photo decodes — covers lazy-load pop */
+.card-thumb-wrap img,.card-thumb-single-wrap img{
+  transition:transform .3s ease, opacity .3s ease;
+}
+.card-thumb-wrap img.settling,.card-thumb-single-wrap img.settling{
+  transform:scale(1.04);opacity:0;
+}
+.card-rating-badge-num{font-variant-numeric:tabular-nums}
+
+/* ─── Long-press to open the label ────────────────────── */
+/* Suppresses the iOS/Android native image callout */
+.card-thumb-wrap,.card-thumb-single-wrap{
+  -webkit-touch-callout:none;
+  -webkit-user-select:none;user-select:none;
+  touch-action:pan-y;
+}
+/* Slow squeeze while held — tells you something is happening */
+.card-thumb-wrap.lp-hold img,.card-thumb-single-wrap.lp-hold img{
+  transform:scale(.93);
+  transition:transform .5s cubic-bezier(.3,0,.5,1);
+}
+
+@media (prefers-reduced-motion:reduce){
+  .wine-card{animation:none!important}
+  .wine-card::before,.card-vintage-num,
+  .card-thumb-wrap img,.card-thumb-single-wrap img{transition:none!important}
+  .card-thumb-wrap img.settling,.card-thumb-single-wrap img.settling{
+    transform:none;opacity:1;
+  }
 }
 
 /* ─── Featured / Top Pick badge ──────────────────────── */
@@ -3892,6 +3933,19 @@ function renderGrid() {
   if (_cellarLoaderHold) return;
   renderCuratedSections();
   const list = getList();
+
+  // FIRST — where every card sits right now, so we can slide them
+  // to their new positions instead of re-running the entrance.
+  const _flipFrom = new Map();
+  const _canFlip = typeof Element !== 'undefined' &&
+                   typeof Element.prototype.animate === 'function' &&
+                   !_prefersReducedMotion();
+  if (_canFlip) {
+    wineGrid.querySelectorAll('.wine-card').forEach(c => {
+      if (c.dataset.id) _flipFrom.set(c.dataset.id, c.getBoundingClientRect());
+    });
+  }
+
   wineGrid.innerHTML = '';
   if (!list.length) {
     wineGrid.style.display = 'none';
@@ -3929,9 +3983,12 @@ function renderGrid() {
   wineGrid.style.display = 'grid';
   // Apply featured badge to top-pick in the full grid
   const topPickWine = [...wines].sort((a,b) => (b.rating||0) - (a.rating||0))[0];
+  const _isRerender = _flipFrom.size > 0;
   list.forEach((w, i) => {
     const c = createCard(w);
-    c.style.animationDelay = `${i * .04}s`;
+    // Stagger only on a genuine first paint, never on a filter tap
+    if (_isRerender) c.classList.add('no-enter');
+    else c.style.animationDelay = `${i * .04}s`;
     if (topPickWine && w.id === topPickWine.id) {
       c.classList.add('featured');
       const body = c.querySelector('.card-body');
@@ -3944,6 +4001,25 @@ function renderGrid() {
     }
     wineGrid.appendChild(c);
   });
+
+  // LAST, INVERT, PLAY — transform only, so it stays on the compositor
+  if (_isRerender) {
+    wineGrid.querySelectorAll('.wine-card').forEach(c => {
+      const from = _flipFrom.get(c.dataset.id);
+      if (!from) {
+        c.animate([{ opacity: 0, transform: 'translateY(8px)' },
+                   { opacity: 1, transform: 'none' }],
+                  { duration: 220, easing: 'ease-out' });
+        return;
+      }
+      const to = c.getBoundingClientRect();
+      const dx = from.left - to.left, dy = from.top - to.top;
+      if (!dx && !dy) return;
+      c.animate([{ transform: `translate(${dx}px, ${dy}px)` },
+                 { transform: 'none' }],
+                { duration: 340, easing: 'cubic-bezier(.22,1,.36,1)' });
+    });
+  }
 }
 
 function safePhotoSrc(url) {
@@ -3962,6 +4038,90 @@ function safePhotoSrc(url) {
    filter change.
    ──────────────────────────────────────────────────────────── */
 const _accentCache = new Map();
+const _countedRatings = new Set();   // count-up runs once per wine per session
+
+function _prefersReducedMotion() {
+  try { return window.matchMedia('(prefers-reduced-motion: reduce)').matches; }
+  catch (_) { return false; }
+}
+
+/* Rating badge ticks up to its score the first time it appears */
+function countUpRating(el, target, wineId) {
+  const val = Number(target);
+  if (!el || !isFinite(val)) return;
+  const done = () => { el.textContent = target + '/10'; };
+  if (_prefersReducedMotion() || (wineId && _countedRatings.has(wineId))) { done(); return; }
+  if (wineId) _countedRatings.add(wineId);
+  const dur = 420, t0 = performance.now();
+  el.textContent = '0/10';
+  const step = now => {
+    const p = Math.min(1, (now - t0) / dur);
+    const eased = 1 - Math.pow(1 - p, 3);
+    // Snap to half points so 6.5 lands cleanly
+    const v = Math.round(val * eased * 2) / 2;
+    el.textContent = String(v) + '/10';
+    if (p < 1) requestAnimationFrame(step); else done();
+  };
+  requestAnimationFrame(step);
+}
+
+/* Fade + settle the label photo as it decodes */
+function settleThumb(img) {
+  if (!img || _prefersReducedMotion()) return;
+  img.classList.add('settling');
+  const go = () => requestAnimationFrame(() => img.classList.remove('settling'));
+  if (img.complete && img.naturalWidth) go();
+  else img.addEventListener('load', go, { once: true });
+  img.addEventListener('error', () => img.classList.remove('settling'), { once: true });
+}
+
+/* Long-press a thumbnail to open the label full-screen.
+   Cancels on movement, suppresses the OS image callout, and
+   swallows the click that would otherwise open the detail view. */
+function attachLongPressLabel(el, wineId) {
+  if (!el) return;
+  const HOLD = 500, SLOP = 10;
+  let timer = null, sx = 0, sy = 0, fired = false;
+
+  const cancel = () => {
+    if (timer) { clearTimeout(timer); timer = null; }
+    el.classList.remove('lp-hold');
+  };
+  const start = (x, y) => {
+    cancel(); fired = false; sx = x; sy = y;
+    el.classList.add('lp-hold');
+    timer = setTimeout(() => {
+      timer = null; fired = true;
+      el.classList.remove('lp-hold');
+      try { if (navigator.vibrate) navigator.vibrate(12); } catch (_) {}
+      openLightbox(wineId, null);
+    }, HOLD);
+  };
+  const moved = (x, y) => {
+    if (timer && (Math.abs(x - sx) > SLOP || Math.abs(y - sy) > SLOP)) cancel();
+  };
+
+  el.addEventListener('touchstart', e => {
+    if (e.touches.length !== 1) { cancel(); return; }
+    start(e.touches[0].clientX, e.touches[0].clientY);
+  }, { passive: true });
+  el.addEventListener('touchmove', e => {
+    if (e.touches.length) moved(e.touches[0].clientX, e.touches[0].clientY);
+  }, { passive: true });
+  el.addEventListener('touchend', cancel);
+  el.addEventListener('touchcancel', cancel);
+  el.addEventListener('mousedown', e => { if (e.button === 0) start(e.clientX, e.clientY); });
+  el.addEventListener('mousemove', e => moved(e.clientX, e.clientY));
+  el.addEventListener('mouseup', cancel);
+  el.addEventListener('mouseleave', cancel);
+  // Block the native 'Save image' sheet
+  el.addEventListener('contextmenu', e => e.preventDefault());
+  // Capture phase, so the card's own click handler never sees it
+  el.addEventListener('click', e => {
+    if (fired) { fired = false; e.preventDefault(); e.stopPropagation(); }
+  }, true);
+}
+
 
 function _dominantRGB(img) {
   const N = 24;                       // tiny canvas — fast and accurate enough
@@ -3969,7 +4129,12 @@ function _dominantRGB(img) {
   c.width = c.height = N;
   const ctx = c.getContext('2d', { willReadFrequently: true });
   if (!ctx) return null;
-  ctx.drawImage(img, 0, 0, N, N);
+  // Photos are whole-bottle shots: dark glass, dim rooms, tablecloths.
+  // Sampling the full frame makes every wine converge on the same brown,
+  // so read only the middle 50% — which is where the label sits.
+  const iw = img.naturalWidth, ih = img.naturalHeight;
+  if (iw > 8 && ih > 8) ctx.drawImage(img, iw * 0.25, ih * 0.25, iw * 0.5, ih * 0.5, 0, 0, N, N);
+  else                  ctx.drawImage(img, 0, 0, N, N);
   let d;
   try { d = ctx.getImageData(0, 0, N, N).data; } catch (_) { return null; }
 
@@ -4063,11 +4228,13 @@ function createCard(w) {
   imgWrap.style.position = 'relative';
 
   if (front) {
-    // Click bubbles up to card → opens detail view (no separate lightbox from grid)
+    // Tap bubbles up to the card → detail view. Hold → label lightbox.
     const img = document.createElement('img');
-    img.src = front; img.loading = 'lazy';
+    img.src = front; img.loading = 'lazy'; img.decoding = 'async';
     imgWrap.appendChild(img);
+    settleThumb(img);                     // ease in as the photo decodes
     tintCardFromLabel(card, img, w.id);   // accent colour from the label
+    attachLongPressLabel(imgWrap, w.id);  // hold to open the label
     if (back) {
       const badge = document.createElement('span');
       badge.className = 'card-thumb-badge';
@@ -4082,8 +4249,9 @@ function createCard(w) {
   if (w.rating) {
     const rb = document.createElement('div');
     rb.className = 'card-rating-badge';
-    rb.innerHTML = `<span class="card-rating-badge-icon">♥</span><span class="card-rating-badge-num">${w.rating}/10</span>`;
+    rb.innerHTML = `<span class="card-rating-badge-icon">♥</span><span class="card-rating-badge-num"></span>`;
     imgWrap.appendChild(rb);
+    countUpRating(rb.querySelector('.card-rating-badge-num'), w.rating, w.id);
   }
 
   // Bottle count badge — top right of image
