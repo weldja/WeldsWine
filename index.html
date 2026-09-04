@@ -7461,6 +7461,7 @@ function updateKeyBadge() {
       <button class="admin-tab active" data-admin-tab="requests" onclick="switchAdminTab('requests')">Requests <span class="admin-badge" id="adminReqBadge" style="display:none">0</span></button>
       <button class="admin-tab" data-admin-tab="create" onclick="switchAdminTab('create')">Create User</button>
       <button class="admin-tab" data-admin-tab="cellars" onclick="switchAdminTab('cellars')">Cellars</button>
+      <button class="admin-tab" data-admin-tab="intel" onclick="switchAdminTab('intel')">Intel</button>
     </div>
     <div class="modal-body" style="padding-top:0">
 
@@ -7494,6 +7495,20 @@ function updateKeyBadge() {
           <div class="admin-form-help" style="text-align:center">They'll receive an email to set their password.</div>
           <div class="auth-msg" id="adminCreateMsg"></div>
         </div>
+      </div>
+
+      <!-- Wine Intel tab -->
+      <div class="admin-tab-body" id="adminTabIntel">
+        <div id="adminIntelSummary" class="admin-empty">Loading…</div>
+        <div id="adminIntelProgressWrap" style="display:none;margin-top:16px">
+          <div style="height:6px;background:var(--light-gray);border-radius:3px;overflow:hidden">
+            <div id="adminIntelBar" style="height:100%;width:0%;background:var(--burgundy);-webkit-transition:width .3s ease;transition:width .3s ease"></div>
+          </div>
+          <div id="adminIntelStatus" style="font-family:var(--font-b);font-size:.78rem;color:var(--warm-gray);margin-top:10px;text-align:center;line-height:1.5"></div>
+        </div>
+        <button class="auth-btn-primary" id="adminIntelBtn" onclick="startBulkEnrich()" style="margin-top:16px;display:none;min-height:44px">Enrich all</button>
+        <button class="admin-btn-sm admin-btn-dismiss" id="adminIntelStopBtn" onclick="stopBulkEnrich()" style="margin-top:10px;width:100%;display:none;min-height:44px">Stop</button>
+        <div class="admin-form-help" style="text-align:center;margin-top:12px">Each wine takes ~20–30s to research. Keep this panel open while it runs.</div>
       </div>
 
       <!-- Cellars tab -->
@@ -8152,9 +8167,90 @@ function switchAdminTab(tab) {
   document.getElementById('adminTabRequests').classList.toggle('active', tab === 'requests');
   document.getElementById('adminTabCreate').classList.toggle('active', tab === 'create');
   document.getElementById('adminTabCellars').classList.toggle('active', tab === 'cellars');
+  document.getElementById('adminTabIntel').classList.toggle('active', tab === 'intel');
   if (tab === 'requests') loadAdminRequests();
   if (tab === 'create') loadAdminCreateTab();
   if (tab === 'cellars') loadAdminCellars();
+  if (tab === 'intel') loadAdminIntelTab();
+}
+
+/* ── Wine Intel tab: bulk enrichment ──────────────────── */
+var _bulkEnrichRunning = false;
+var _bulkEnrichStop = false;
+
+async function _findWinesMissingIntel() {
+  if (!_sb) throw new Error('Not connected');
+  const { data, error } = await _sb.from('wine_enrichments').select('wine_id');
+  if (error) throw new Error(error.message);
+  const have = new Set((data || []).map(r => r.wine_id));
+  return wines.filter(w => !have.has(w.id));
+}
+
+async function loadAdminIntelTab() {
+  const summary = document.getElementById('adminIntelSummary');
+  const btn = document.getElementById('adminIntelBtn');
+  if (!summary || !btn) return;
+  if (_bulkEnrichRunning) return;
+  summary.textContent = 'Checking\u2026';
+  btn.style.display = 'none';
+  try {
+    const missing = await _findWinesMissingIntel();
+    if (!missing.length) {
+      summary.textContent = 'All ' + wines.length + ' wines have Wine Intel \u2713';
+      return;
+    }
+    summary.textContent = missing.length + ' of ' + wines.length + ' wines have no Wine Intel yet.';
+    btn.textContent = 'Enrich ' + missing.length + ' wine' + (missing.length === 1 ? '' : 's');
+    btn.style.display = '';
+  } catch (e) {
+    summary.textContent = 'Could not check: ' + (e.message || 'unknown error');
+  }
+}
+
+function stopBulkEnrich() {
+  _bulkEnrichStop = true;
+  const stopBtn = document.getElementById('adminIntelStopBtn');
+  if (stopBtn) stopBtn.textContent = 'Stopping after this wine\u2026';
+}
+
+async function startBulkEnrich() {
+  if (_bulkEnrichRunning) return;
+  let queue;
+  try { queue = await _findWinesMissingIntel(); }
+  catch (e) { showToast('Could not load wines'); return; }
+  if (!queue.length) { loadAdminIntelTab(); return; }
+
+  const btn = document.getElementById('adminIntelBtn');
+  const stopBtn = document.getElementById('adminIntelStopBtn');
+  const wrap = document.getElementById('adminIntelProgressWrap');
+  const bar = document.getElementById('adminIntelBar');
+  const status = document.getElementById('adminIntelStatus');
+
+  _bulkEnrichRunning = true;
+  _bulkEnrichStop = false;
+  btn.style.display = 'none';
+  stopBtn.textContent = 'Stop';
+  stopBtn.style.display = '';
+  wrap.style.display = '';
+  bar.style.width = '0%';
+
+  let done = 0, ok = 0, failed = 0;
+  for (const w of queue) {
+    if (_bulkEnrichStop) break;
+    const label = [w.winery, w.name].filter(Boolean).join(' ') || 'wine';
+    status.textContent = (done + 1) + ' of ' + queue.length + ' \u2014 ' + label;
+    try {
+      const r = await fetchEnrichment(w.id);
+      if (r && !r.error) ok++; else failed++;
+    } catch (e) { failed++; }
+    done++;
+    bar.style.width = Math.round(done / queue.length * 100) + '%';
+  }
+
+  _bulkEnrichRunning = false;
+  stopBtn.style.display = 'none';
+  status.textContent = (_bulkEnrichStop ? 'Stopped. ' : 'Finished. ') + ok + ' enriched' + (failed ? ', ' + failed + ' failed' : '');
+  loadAdminIntelTab();
 }
 
 /* ── Requests tab ──────────────────────────────────────────── */
