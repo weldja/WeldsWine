@@ -1250,6 +1250,7 @@ Search for this wine. Return ONLY a valid JSON object with no markdown or explan
 }
 
 Rules:
+- Use at most 2 web searches — make them count, then answer from what you found
 - Only include information you found via search — never fabricate scores or reviews
 - If you cannot find information for a field, set it to null (or empty array for arrays)
 - Food pairings: include 3-5 suggestions with an emoji prefix, e.g. "🥩 Steak"
@@ -1273,7 +1274,7 @@ Rules:
           body: JSON.stringify({
             model: "claude-sonnet-4-6",
             max_tokens: 1500,
-            tools: [{ type: "web_search_20250305", name: "web_search" }],
+            tools: [{ type: "web_search_20250305", name: "web_search", max_uses: 2 }],
             messages: [{ role: "user", content: enrichContent }]
           })
         });
