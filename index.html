@@ -434,7 +434,20 @@ body{font-family:var(--font-b);background:var(--cream);color:var(--charcoal);min
   backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
   box-shadow:0 1px 5px rgba(0,0,0,.12);
   white-space:nowrap;pointer-events:none;
+  overflow:hidden;
 }
+/* Liquid fill — rises to the score like wine in a glass.
+   scaleY on a full-height layer, so it stays on the compositor. */
+.card-rating-badge-fill{
+  position:absolute;left:0;right:0;top:0;bottom:0;z-index:0;
+  background:rgba(139,36,57,.20);
+  -webkit-transform:scaleY(0);transform:scaleY(0);
+  -webkit-transform-origin:bottom;transform-origin:bottom;
+  -webkit-transition:-webkit-transform .55s cubic-bezier(.3,.8,.4,1);
+  transition:transform .55s cubic-bezier(.3,.8,.4,1);
+  pointer-events:none;
+}
+.card-rating-badge-icon,.card-rating-badge-num{position:relative;z-index:1}
 .card-rating-badge-icon{font-size:9px;color:#b83232;line-height:1}
 .card-rating-badge-num{font-size:10.5px;font-weight:600;color:var(--charcoal);line-height:1;font-family:var(--font-b)}
 
@@ -1462,7 +1475,7 @@ body{
 .wine-card::before{
   content:'';
   position:absolute;left:0;top:0;bottom:0;width:4px;
-  background-color:var(--card-accent);
+  background-color:var(--card-region,var(--card-accent));
   opacity:.85;
   pointer-events:none;
   /* Sampling finishes a beat after render — bleed the colour in */
@@ -1527,6 +1540,16 @@ body{
   -webkit-user-select:none;user-select:none;
   touch-action:pan-y;
 }
+/* Touch has no hover, so the card nearest the middle of the screen
+   expands its label instead. Laptops keep the hover version. */
+@media(hover:none){
+  .wine-card.in-focus .card-thumb-wrap:not(.lp-hold) img:not(.settling),
+  .wine-card.in-focus .card-thumb-single-wrap:not(.lp-hold) img:not(.settling){
+    -webkit-transform:scale(1.10);transform:scale(1.10);
+    transition-duration:.42s;
+  }
+}
+
 /* Slow squeeze while held — tells you something is happening */
 .card-thumb-wrap.lp-hold img,.card-thumb-single-wrap.lp-hold img{
   transform:scale(.93);
@@ -1535,7 +1558,9 @@ body{
 
 @media (prefers-reduced-motion:reduce){
   .wine-card{animation:none!important}
-  .wine-card::before,.card-vintage-num,
+  .wine-card.in-focus .card-thumb-wrap img,
+  .wine-card.in-focus .card-thumb-single-wrap img{transform:none!important}
+  .wine-card::before,.card-vintage-num,.card-rating-badge-fill,
   .card-thumb-wrap img,.card-thumb-single-wrap img{transition:none!important}
   .card-thumb-wrap img.settling,.card-thumb-single-wrap img.settling{
     transform:none;opacity:1;
@@ -3642,6 +3667,7 @@ function getList() {
 
 function showSkeletonGrid(count = 4) {
   wineGrid.innerHTML = '';
+  resetCardFocus();
   wineGrid.style.display = 'grid';
   emptyState.style.display = 'none';
   for (let i = 0; i < count; i++) {
@@ -3947,6 +3973,7 @@ function renderGrid() {
   }
 
   wineGrid.innerHTML = '';
+  resetCardFocus();
   if (!list.length) {
     wineGrid.style.display = 'none';
     emptyState.style.display = 'block';
@@ -4063,6 +4090,37 @@ function countUpRating(el, target, wineId) {
     if (p < 1) requestAnimationFrame(step); else done();
   };
   requestAnimationFrame(step);
+}
+
+/* Whichever card crosses the middle of the screen gets .in-focus.
+   rootMargin collapses the root to a line at 50% height, so there is
+   no scroll handler and no per-frame measuring. Touch devices only. */
+let _focusObs = null, _focusObsOff = false;
+function observeCardFocus(card) {
+  if (_focusObsOff || !card) return;
+  if (!_focusObs) {
+    const hasHover = window.matchMedia && window.matchMedia('(hover: hover)').matches;
+    if (typeof IntersectionObserver === 'undefined' || hasHover || _prefersReducedMotion()) {
+      _focusObsOff = true; return;
+    }
+    _focusObs = new IntersectionObserver(entries => {
+      entries.forEach(e => e.target.classList.toggle('in-focus', e.isIntersecting));
+    }, { rootMargin: '-50% 0px -50% 0px', threshold: 0 });
+  }
+  _focusObs.observe(card);
+}
+function resetCardFocus() {
+  if (_focusObs) _focusObs.disconnect();
+}
+
+/* Badge fills from the bottom in proportion to the score */
+function fillRatingBadge(el, rating) {
+  const val = Number(rating);
+  if (!el || !isFinite(val)) return;
+  const level = Math.max(0, Math.min(1, val / 10));
+  const set = () => { el.style.transform = 'scaleY(' + level.toFixed(3) + ')'; };
+  if (_prefersReducedMotion()) { set(); return; }
+  requestAnimationFrame(() => requestAnimationFrame(set));
 }
 
 /* Fade + settle the label photo as it decodes */
@@ -4210,10 +4268,38 @@ function tintCardFromLabel(card, img, wineId) {
 }
 
 
+/* Country colours for the card's left edge. Muted enough to sit inside
+   the warm palette; anything unlisted falls back to the label accent. */
+const REGION_SPINE = {
+  'france':'#5C6E8A', 'italy':'#B5623C', 'spain':'#C79A33',
+  'portugal':'#4F7A5A', 'germany':'#7B8B4A', 'austria':'#A45C74',
+  'usa':'#3F6E8C', 'argentina':'#6FA3B5', 'chile':'#A8474F',
+  'australia':'#8A6A9E', 'new zealand':'#3E8C7B', 'south africa':'#C2803A'
+};
+const REGION_ALIASES = {
+  'united states':'usa', 'united states of america':'usa', 'us':'usa',
+  'u.s.a.':'usa', 'u.s.':'usa', 'america':'usa',
+  'nz':'new zealand', 'aotearoa':'new zealand',
+  'rsa':'south africa', 'deutschland':'germany',
+  'italia':'italy', 'espana':'spain', 'espa\u00f1a':'spain',
+  'osterreich':'austria', '\u00f6sterreich':'austria'
+};
+function spineColour(country) {
+  if (!country) return '';
+  let k = String(country).trim().toLowerCase();
+  if (REGION_ALIASES[k]) k = REGION_ALIASES[k];
+  return REGION_SPINE[k] || '';
+}
+
 function createCard(w) {
   const card = document.createElement('div');
   card.className = 'wine-card';
   card.dataset.id = w.id;
+
+  // Left edge tells you the country at a glance
+  const spine = spineColour(w.country);
+  if (spine) card.style.setProperty('--card-region', spine);
+  observeCardFocus(card);
 
   const front = safePhotoSrc(w.photoFront || w.photo);
   const back  = safePhotoSrc(w.photoBack);
@@ -4249,8 +4335,9 @@ function createCard(w) {
   if (w.rating) {
     const rb = document.createElement('div');
     rb.className = 'card-rating-badge';
-    rb.innerHTML = `<span class="card-rating-badge-icon">♥</span><span class="card-rating-badge-num"></span>`;
+    rb.innerHTML = `<span class="card-rating-badge-fill"></span><span class="card-rating-badge-icon">♥</span><span class="card-rating-badge-num"></span>`;
     imgWrap.appendChild(rb);
+    fillRatingBadge(rb.querySelector('.card-rating-badge-fill'), w.rating);
     countUpRating(rb.querySelector('.card-rating-badge-num'), w.rating, w.id);
   }
 
