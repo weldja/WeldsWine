@@ -508,9 +508,9 @@ ${notesHtml}
 ${intelHtml}
 <div class="cta-box">
 <p>Scan wine labels with AI and build your personal wine journal</p>
-<a class="cta-btn" href="${APP_URL}">Try Welds Wine Wisdoms — Free</a>
+<a class="cta-btn" href="${APP_URL}">Visit Welds Wine Wisdoms</a>
 </div>
-<div class="footer"><a href="${APP_URL}">weldswine.co.uk</a> · Free AI-powered wine journal</div>
+<div class="footer"><a href="${APP_URL}">weldswine.co.uk</a> · An AI-powered wine journal</div>
 </div></body></html>`;
 }
 __name(render_wine_page, "render_wine_page");
@@ -533,7 +533,7 @@ ${rating}</div></a>`;
   return `<!DOCTYPE html><html lang="en"><head>
 <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>Wine Collection — Welds Wine Wisdoms</title>
-<meta name="description" content="Browse ${wines.length} wines in our collection. Scan wine labels with AI, rate bottles, and build your personal wine journal. Free wine app."/>
+<meta name="description" content="Browse ${wines.length} wines in our collection. Scan wine labels with AI, rate bottles, and build your personal wine journal."/>
 <meta name="robots" content="index, follow"/>
 <link rel="canonical" href="${APP_URL}/wines"/>
 <meta property="og:type" content="website"/><meta property="og:site_name" content="Welds Wine Wisdoms"/>
@@ -578,9 +578,9 @@ h1{font-family:Lora,Georgia,serif;font-size:1.6rem;font-weight:600;color:#2C0A16
 <div class="grid">${cards}</div>
 <div class="cta-box">
 <p>Scan wine labels with AI and build your own wine journal</p>
-<a class="cta-btn" href="${APP_URL}">Try Welds Wine Wisdoms — Free</a>
+<a class="cta-btn" href="${APP_URL}">Visit Welds Wine Wisdoms</a>
 </div>
-<div class="footer"><a href="${APP_URL}">weldswine.co.uk</a> · Free AI-powered wine journal</div>
+<div class="footer"><a href="${APP_URL}">weldswine.co.uk</a> · An AI-powered wine journal</div>
 </div></body></html>`;
 }
 __name(render_wine_list, "render_wine_list");
