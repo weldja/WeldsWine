@@ -411,8 +411,8 @@ function render_wine_page(w, enrich) {
   const desc = wine_meta_desc(w, enrich);
   const pageUrl = APP_URL + "/wine/" + encodeURIComponent(w.id);
   const accent = style_colour(w.style);
-  const frontUrl = pageUrl + "/photo-front.jpg";
-  const backUrl = pageUrl + "/photo-back.jpg";
+  const frontUrl = pageUrl + "?photo=front";
+  const backUrl = pageUrl + "?photo=back";
   const photoHtml = (w.photo_front || w.photo_back) ? `<div class="photos">${w.photo_front ? `<img src="${esc(frontUrl)}" alt="${esc((w.winery||"")+" "+(w.name||""))} front label" loading="lazy" decoding="async"/>` : ""}${w.photo_back ? `<img src="${esc(backUrl)}" alt="${esc((w.winery||"")+" "+(w.name||""))} back label" loading="lazy" decoding="async"/>` : ""}</div>` : "";
   const details = [
     w.grape   ? ["Grape", w.grape] : null,
@@ -520,7 +520,7 @@ function render_wine_list(wines) {
     const accent = style_colour(w.style);
     const rating = w.rating != null ? `<span class="card-rating">${w.rating}</span>` : "";
     const sub = [w.grape, w.region, w.vintage].filter(Boolean).join(" · ");
-    const photo = `<img src="${APP_URL}/wine/${encodeURIComponent(w.id)}/photo-front.jpg" alt="${esc((w.winery||"")+" "+(w.name||""))}" loading="lazy" decoding="async" width="80" height="100"/>`;
+    const photo = `<img src="${APP_URL}/wine/${encodeURIComponent(w.id)}?photo=front" alt="${esc((w.winery||"")+" "+(w.name||""))}" loading="lazy" decoding="async" width="80" height="100"/>`;
     return `<a class="card" href="${APP_URL}/wine/${encodeURIComponent(w.id)}">
 <div class="card-photo">${photo}</div>
 <div class="card-body"><div class="card-accent" style="background:${accent}"></div>
@@ -646,13 +646,17 @@ var worker_default = {
       return new Response("User-agent: *\nAllow: /\nDisallow: /api/\n\nSitemap: https://weldswine.co.uk/sitemap.xml\n", { headers: { "Content-Type": "text/plain", "Cache-Control": "public, max-age=86400" } });
     }
 
-    // ── GET /wine/:id/photo-(front|back).jpg — label bytes ──
-    const photoMatch = url.pathname.match(/^\/wine\/([^/]+)\/photo-(front|back)\.jpg$/);
-    if (photoMatch && request.method === "GET") {
+    // ── GET /wine/:id — individual wine page ───────────────
+    const wineMatch = url.pathname.match(/^\/wine\/([^/]+)$/);
+
+    // GET /wine/:id?photo=front|back -- label image bytes (query param keeps it
+    // under the same Worker route that already serves /wine/:id)
+    const photoSide = (wineMatch && request.method === "GET") ? url.searchParams.get("photo") : null;
+    if (photoSide === "front" || photoSide === "back") {
       const svgHeaders = { "Content-Type": "image/svg+xml", "Cache-Control": "public, max-age=3600" };
       try {
-        const encId = encodeURIComponent(decodeURIComponent(photoMatch[1]));
-        const col = "photo_" + photoMatch[2];
+        const encId = encodeURIComponent(decodeURIComponent(wineMatch[1]));
+        const col = "photo_" + photoSide;
         const rows = await sb_fetch(env,
           "/wines?id=eq." + encId + "&cellar_id=eq." + CELLAR_ID + "&select=" + col,
           { prefer: "return=representation" });
@@ -673,8 +677,6 @@ var worker_default = {
       }
     }
 
-    // ── GET /wine/:id — individual wine page ───────────────
-    const wineMatch = url.pathname.match(/^\/wine\/([^/]+)$/);
     if (wineMatch && request.method === "GET") {
       const wineId = decodeURIComponent(wineMatch[1]);
       try {
