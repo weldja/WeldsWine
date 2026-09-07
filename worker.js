@@ -411,7 +411,9 @@ function render_wine_page(w, enrich) {
   const desc = wine_meta_desc(w, enrich);
   const pageUrl = APP_URL + "/wine/" + encodeURIComponent(w.id);
   const accent = style_colour(w.style);
-  const photoHtml = (w.photo_front || w.photo_back) ? `<div class="photos">${w.photo_front ? `<img src="${esc(w.photo_front)}" alt="${esc((w.winery||"")+" "+(w.name||""))} front label" loading="lazy"/>` : ""}${w.photo_back ? `<img src="${esc(w.photo_back)}" alt="${esc((w.winery||"")+" "+(w.name||""))} back label" loading="lazy"/>` : ""}</div>` : "";
+  const frontUrl = pageUrl + "/photo-front.jpg";
+  const backUrl = pageUrl + "/photo-back.jpg";
+  const photoHtml = (w.photo_front || w.photo_back) ? `<div class="photos">${w.photo_front ? `<img src="${esc(frontUrl)}" alt="${esc((w.winery||"")+" "+(w.name||""))} front label" loading="lazy" decoding="async"/>` : ""}${w.photo_back ? `<img src="${esc(backUrl)}" alt="${esc((w.winery||"")+" "+(w.name||""))} back label" loading="lazy" decoding="async"/>` : ""}</div>` : "";
   const details = [
     w.grape   ? ["Grape", w.grape] : null,
     w.region  ? ["Region", w.region] : null,
@@ -426,7 +428,7 @@ function render_wine_page(w, enrich) {
     "@context": "https://schema.org", "@type": "Product", "name": [w.winery, w.name].filter(Boolean).join(" "),
     "description": desc.replace(/&amp;/g,"&").replace(/&lt;/g,"<").replace(/&gt;/g,">").replace(/&quot;/g,'"'),
     "brand": w.winery ? { "@type": "Brand", "name": w.winery } : undefined,
-    "image": w.photo_front || undefined, "url": pageUrl,
+    "image": w.photo_front ? frontUrl : undefined, "url": pageUrl,
     ...(w.rating != null ? { "review": { "@type": "Review", "reviewRating": { "@type": "Rating", "ratingValue": w.rating, "bestRating": 10 }, "author": { "@type": "Organization", "name": "Welds Wine Wisdoms" } } } : {})
   });
 
@@ -439,10 +441,10 @@ function render_wine_page(w, enrich) {
 <meta property="og:type" content="article"/><meta property="og:site_name" content="Welds Wine Wisdoms"/>
 <meta property="og:title" content="${title}"/><meta property="og:description" content="${desc}"/>
 <meta property="og:url" content="${esc(pageUrl)}"/><meta property="og:locale" content="en_GB"/>
-${w.photo_front ? `<meta property="og:image" content="${esc(w.photo_front)}"/>` : `<meta property="og:image" content="${APP_URL}/og-image.png"/>`}
+<meta property="og:image" content="${w.photo_front ? esc(frontUrl) : APP_URL + "/og-image.png"}"/>
 <meta name="twitter:card" content="summary_large_image"/><meta name="twitter:title" content="${title}"/>
 <meta name="twitter:description" content="${desc}"/>
-${w.photo_front ? `<meta name="twitter:image" content="${esc(w.photo_front)}"/>` : ""}
+<meta name="twitter:image" content="${w.photo_front ? esc(frontUrl) : APP_URL + "/og-image.png"}"/>
 <script type="application/ld+json">${schema}</script>
 <link rel="icon" href="/favicon.ico" sizes="32x32"/>
 <link href="https://fonts.googleapis.com/css2?family=Lora:wght@500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
@@ -518,7 +520,7 @@ function render_wine_list(wines) {
     const accent = style_colour(w.style);
     const rating = w.rating != null ? `<span class="card-rating">${w.rating}</span>` : "";
     const sub = [w.grape, w.region, w.vintage].filter(Boolean).join(" · ");
-    const photo = w.photo_front ? `<img src="${esc(w.photo_front)}" alt="${esc((w.winery||"")+" "+(w.name||""))}" loading="lazy"/>` : `<div class="card-nophoto" style="background:${accent}20;color:${accent}">🍷</div>`;
+    const photo = `<img src="${APP_URL}/wine/${encodeURIComponent(w.id)}/photo-front.jpg" alt="${esc((w.winery||"")+" "+(w.name||""))}" loading="lazy" decoding="async" width="80" height="100"/>`;
     return `<a class="card" href="${APP_URL}/wine/${encodeURIComponent(w.id)}">
 <div class="card-photo">${photo}</div>
 <div class="card-body"><div class="card-accent" style="background:${accent}"></div>
@@ -636,10 +638,39 @@ var worker_default = {
     const htmlHeaders = { "Content-Type": "text/html;charset=UTF-8", "Cache-Control": "public, max-age=3600, s-maxage=86400" };
     const CELLAR_ID = "8c1f5417-b9c7-49e3-915d-f9239cf48ff2";
     const PUBLIC_WINE_FIELDS = "id,name,winery,vintage,country,region,grape,style,rating,notes,photo_front,photo_back,created_at";
+    const LIST_WINE_FIELDS = "id,name,winery,vintage,region,grape,style,rating,created_at";
+    const PLACEHOLDER_SVG = '<svg xmlns="http://www.w3.org/2000/svg" width="160" height="200" viewBox="0 0 160 200"><rect width="160" height="200" fill="#F4F0EB"/><path d="M62 58h36v22a18 18 0 0 1-36 0z" fill="#8B2439"/><rect x="78" y="98" width="4" height="30" fill="#8B2439"/><rect x="66" y="128" width="28" height="4" rx="2" fill="#8B2439"/></svg>';
 
     // ── GET /robots.txt ──────────────────────────────────────
     if (url.pathname === "/robots.txt" && request.method === "GET") {
-      return new Response("User-agent: *\nAllow: /\n\nSitemap: https://weldswine.co.uk/sitemap.xml\n", { headers: { "Content-Type": "text/plain", "Cache-Control": "public, max-age=86400" } });
+      return new Response("User-agent: *\nAllow: /\nDisallow: /api/\n\nSitemap: https://weldswine.co.uk/sitemap.xml\n", { headers: { "Content-Type": "text/plain", "Cache-Control": "public, max-age=86400" } });
+    }
+
+    // ── GET /wine/:id/photo-(front|back).jpg — label bytes ──
+    const photoMatch = url.pathname.match(/^\/wine\/([^/]+)\/photo-(front|back)\.jpg$/);
+    if (photoMatch && request.method === "GET") {
+      const svgHeaders = { "Content-Type": "image/svg+xml", "Cache-Control": "public, max-age=3600" };
+      try {
+        const encId = encodeURIComponent(decodeURIComponent(photoMatch[1]));
+        const col = "photo_" + photoMatch[2];
+        const rows = await sb_fetch(env,
+          "/wines?id=eq." + encId + "&cellar_id=eq." + CELLAR_ID + "&select=" + col,
+          { prefer: "return=representation" });
+        const uri = (rows && rows[0] && rows[0][col]) || "";
+        const m = uri.match(/^data:(image\/[a-z0-9.+-]+);base64,(.*)$/i);
+        if (!m) return new Response(PLACEHOLDER_SVG, { status: 200, headers: svgHeaders });
+        const bin = atob(m[2]);
+        const bytes = new Uint8Array(bin.length);
+        for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+        return new Response(bytes, { status: 200, headers: {
+          "Content-Type": m[1],
+          "Cache-Control": "public, max-age=31536000, immutable",
+          "CDN-Cache-Control": "public, max-age=31536000"
+        } });
+      } catch (e) {
+        console.error("wine photo error:", e.message);
+        return new Response(PLACEHOLDER_SVG, { status: 200, headers: svgHeaders });
+      }
     }
 
     // ── GET /wine/:id — individual wine page ───────────────
@@ -670,7 +701,7 @@ var worker_default = {
     if (url.pathname === "/wines" && request.method === "GET") {
       try {
         const wines = await sb_fetch(env,
-          "/wines?cellar_id=eq." + CELLAR_ID + "&select=" + PUBLIC_WINE_FIELDS + "&order=created_at.desc",
+          "/wines?cellar_id=eq." + CELLAR_ID + "&select=" + LIST_WINE_FIELDS + "&order=created_at.desc",
           { prefer: "return=representation" });
         return new Response(render_wine_list(wines || []), { status: 200, headers: htmlHeaders });
       } catch (e) {
