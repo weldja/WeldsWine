@@ -1387,6 +1387,117 @@ Rules:
         return new Response(JSON.stringify({ error: e.message }), { status: 502, headers: cors });
       }
     }
+    // ── POST /deals — which UK supermarkets have "25% off 6" on today ──────
+    // One shared result, saved in supermarket_deals and reused for 24 hours.
+    if (url.pathname.endsWith("/deals")) {
+      if (request.method !== "POST") return new Response(JSON.stringify({ error: "POST only" }), { status: 405, headers: cors });
+      if (!origin_ok(request)) return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403, headers: cors });
+      const DEAL_RETAILERS = ["Tesco", "Sainsbury's", "Asda", "Morrisons", "Waitrose", "Co-op", "M&S", "Ocado"];
+      const DEALS_TTL_MS = 24 * 60 * 60 * 1000;
+
+      // Saved result still under a day old? Return it without searching.
+      try {
+        const saved = await sb_fetch(env, "/supermarket_deals?id=eq.latest&select=checked_at,offers", { prefer: "return=representation" });
+        if (saved && saved.length > 0 && Date.now() - new Date(saved[0].checked_at).getTime() < DEALS_TTL_MS) {
+          return new Response(JSON.stringify({ checked_at: saved[0].checked_at, offers: saved[0].offers || [], retailers: DEAL_RETAILERS, cached: true }), { status: 200, headers: cors });
+        }
+      } catch (e) { console.warn("deals: saved result check failed:", e.message); }
+
+      const dealsKey = env?.ANTHROPIC_API_KEY || ANTHROPIC_API_KEY;
+      if (!dealsKey) return new Response(JSON.stringify({ error: "NO_KEY" }), { status: 500, headers: cors });
+      const todayUK = new Date().toLocaleDateString("en-CA", { timeZone: "Europe/London" }); // YYYY-MM-DD
+      const dealsPrompt = `Today's date is ${todayUK} (UK).
+
+Use web search to find out which of these UK supermarkets are running a "25% off when you buy 6 or more bottles of wine" promotion that is live today:
+${DEAL_RETAILERS.join(", ")}
+
+Return ONLY a valid JSON object with no markdown or explanation:
+{
+  "offers": [
+    {
+      "retailer": "Supermarket name, exactly as written in the list above",
+      "offer": "Short description, e.g. '25% off when you buy 6 or more bottles'",
+      "ends": "End date as YYYY-MM-DD, or null if not stated",
+      "conditions": "Short plain-text conditions (loyalty card needed, minimum bottle price, excluded regions such as Scotland), or null",
+      "source_url": "URL of the page where you found this"
+    }
+  ]
+}
+
+Rules:
+- Only include an offer if a search result clearly shows it is running today: it started on or before ${todayUK} and has not ended
+- Leave out offers that have ended, that are rumoured or predicted, or that are announced but have not started yet
+- Leave out other kinds of offer (25% off 3, single-bottle price cuts, spirits or beer deals)
+- source_url must be a real URL from your search results \u2014 never invent one
+- If none of the supermarkets are running the offer today, return {"offers": []}`;
+
+      try {
+        const dealsResp = await fetch("https://api.anthropic.com/v1/messages", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-api-key": dealsKey,
+            "anthropic-version": "2023-06-01"
+          },
+          body: JSON.stringify({
+            model: "claude-sonnet-4-6",
+            max_tokens: 1500,
+            tools: [{ type: "web_search_20250305", name: "web_search", max_uses: 5 }],
+            messages: [{ role: "user", content: dealsPrompt }]
+          })
+        });
+        if (!dealsResp.ok) {
+          const errD = await dealsResp.json().catch(() => ({}));
+          console.error("deals: Anthropic error", dealsResp.status, JSON.stringify(errD));
+          return new Response(JSON.stringify({ error: errD?.error?.message || `Anthropic ${dealsResp.status}` }), { status: dealsResp.status, headers: cors });
+        }
+        const dealsData = await dealsResp.json();
+        const dealsRaw = (dealsData.content || []).filter(b => b.type === "text").map(b => b.text).join("");
+        const dealsCleaned = dealsRaw.replace(/```json\s*/gi, "").replace(/```\s*/gi, "").trim();
+        const dealsMatch = dealsCleaned.match(/\{[\s\S]*\}/);
+        let dealsParsed;
+        try { dealsParsed = JSON.parse(dealsMatch ? dealsMatch[0] : dealsCleaned); }
+        catch { return new Response(JSON.stringify({ error: "PARSE_ERROR", raw: dealsRaw.slice(0, 500) }), { status: 422, headers: cors }); }
+
+        // Keep only offers with a named retailer, a real source link and an end date that hasn't passed
+        const dealsText = v => typeof v === "string" ? (v.replace(/<\/?cite[^>]*>/gi, "").replace(/\s{2,}/g, " ").trim().slice(0, 300) || null) : null;
+        const offers = (Array.isArray(dealsParsed.offers) ? dealsParsed.offers : [])
+          .filter(o => o && typeof o === "object")
+          .map(o => ({
+            retailer: dealsText(o.retailer),
+            offer: dealsText(o.offer),
+            ends: typeof o.ends === "string" && /^\d{4}-\d{2}-\d{2}$/.test(o.ends) ? o.ends : null,
+            conditions: dealsText(o.conditions),
+            source_url: typeof o.source_url === "string" ? o.source_url.trim() : null
+          }))
+          .filter(o => o.retailer && /^https?:\/\//i.test(o.source_url || "") && (!o.ends || o.ends >= todayUK));
+
+        // Await the write — Cloudflare Workers kill unawaited promises on Response return
+        const checkedAt = new Date().toISOString();
+        try {
+          const sbKey = env.SUPABASE_SERVICE_KEY;
+          const writeRes = await fetch(`${SUPABASE_URL}/rest/v1/supermarket_deals?on_conflict=id`, {
+            method: "POST",
+            headers: {
+              apikey: sbKey,
+              Authorization: `Bearer ${sbKey}`,
+              "Content-Type": "application/json",
+              Prefer: "resolution=merge-duplicates"
+            },
+            body: JSON.stringify({ id: "latest", checked_at: checkedAt, offers })
+          });
+          if (!writeRes.ok) {
+            const wErr = await writeRes.json().catch(() => ({}));
+            console.error("deals: DB write failed", writeRes.status, JSON.stringify(wErr));
+          }
+        } catch (wEx) { console.error("deals: DB write exception", wEx.message); }
+
+        return new Response(JSON.stringify({ checked_at: checkedAt, offers, retailers: DEAL_RETAILERS, cached: false }), { status: 200, headers: cors });
+      } catch (e) {
+        console.error("deals: exception", e.message);
+        return new Response(JSON.stringify({ error: e.message }), { status: 502, headers: cors });
+      }
+    }
     // No API route matched — pass non-POST requests through to static origin (Cloudflare Pages)
     if (request.method !== "POST") return fetch(request);
     const anthropicKey = env?.ANTHROPIC_API_KEY || ANTHROPIC_API_KEY;

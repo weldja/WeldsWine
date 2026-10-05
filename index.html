@@ -329,6 +329,27 @@ body{font-family:var(--font-b);background:var(--cream);color:var(--charcoal);min
 .events-btn .export-icon{display:none}
 .events-btn .export-label{display:inline}
 .export-icon{display:none}
+/* Supermarket deals check (25% off six) */
+.deals-btn{background:none;border:1px solid var(--burgundy);border-radius:var(--r);padding:4px 11px;font-family:var(--font-b);font-size:.78rem;color:var(--burgundy);cursor:pointer;-webkit-transition:var(--tr);transition:var(--tr);white-space:nowrap;flex-shrink:0;touch-action:manipulation}
+.deals-btn:hover{background:var(--parchment)}
+@media(max-width:768px){.deals-btn{font-size:.82rem;padding:5px 11px}}
+.deals-hero{display:-webkit-flex;display:flex;-webkit-align-items:baseline;align-items:baseline;gap:12px;margin-bottom:14px}
+.deals-pct{font-family:var(--font-d);font-size:2.75rem;font-weight:600;line-height:1;color:var(--burgundy)}
+.deals-pct-sub{font-family:var(--font-d);font-size:1.25rem;font-weight:500;line-height:1.2;color:var(--charcoal)}
+.deals-text{font-size:.94rem;line-height:1.5;color:var(--warm-gray);margin-bottom:16px}
+.deals-go{width:100%;min-height:48px;border:none;border-radius:12px;background:var(--burgundy);color:var(--ivory);font-family:var(--font-b);font-size:1rem;font-weight:600;cursor:pointer;display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;-webkit-justify-content:center;justify-content:center;gap:10px;touch-action:manipulation;-webkit-tap-highlight-color:transparent;-webkit-transition:var(--tr);transition:var(--tr)}
+.deals-go:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.deals-go:disabled{background:#EFE8DF;color:var(--warm-gray);cursor:default}
+.deals-spin{width:16px;height:16px;border-radius:50%;border:2px solid #E0D3B0;border-top-color:var(--gold);-webkit-animation:spin .8s linear infinite;animation:spin .8s linear infinite}
+.deals-head{font-family:var(--font-d);font-size:1.375rem;font-weight:600;line-height:1.25;color:var(--burgundy);margin-bottom:16px}
+.deals-head-none{color:var(--charcoal)}
+.deals-row{border-top:1px solid var(--light-gray);padding:16px 0 8px}
+.deals-shop{font-family:var(--font-d);font-size:1.125rem;font-weight:600;line-height:1.3;color:var(--charcoal)}
+.deals-offer{font-size:.94rem;line-height:1.5}
+.deals-ends{font-size:.94rem;line-height:1.5;font-weight:500}
+.deals-cond{font-size:.875rem;line-height:1.5;color:var(--warm-gray)}
+.deals-src{display:-webkit-inline-flex;display:inline-flex;-webkit-align-items:center;align-items:center;min-height:44px;font-size:.94rem;font-weight:500;color:var(--burgundy)}
+.deals-foot{border-top:1px solid var(--light-gray);padding-top:16px;font-size:.8125rem;line-height:1.5;color:var(--warm-gray)}
 .stats-bar{background:var(--ivory);border-bottom:1px solid var(--light-gray);box-shadow:0 1px 4px var(--shadow)}
 .stats-inner{max-width:1200px;margin:0 auto;display:flex;align-items:center;justify-content:center;padding:14px 20px}
 .stat{display:flex;flex-direction:column;align-items:center;padding:0 28px;flex:1;max-width:180px}
@@ -2383,6 +2404,7 @@ body{
         <span class="export-label">🥂 Events</span>
         <span class="export-icon">🥂</span>
       </button>
+      <button class="deals-btn" id="dealsBtn" onclick="openDealsCheck()" title="See which supermarkets have 25% off six bottles right now">🛒 25% off 6</button>
     </div>
     <!-- Row 3: search -->
     <div class="toolbar-search">
@@ -2472,7 +2494,7 @@ body{
   <span class="footer-sep">·</span>
   <a href="#" class="footer-link" onclick="showFooterModal('privacy');return false">Privacy</a>
   <span class="footer-sep">·</span>
-  <a href="/cdn-cgi/l/email-protection#6e060b0202012e190b020a1d1907000b400d01401b05" class="footer-link">Contact</a>
+  <a href="mailto:hello@weldswine.co.uk" class="footer-link">Contact</a>
   <span class="footer-sep">·</span>
   <button class="footer-admin-btn" id="openKeyModal" title="Settings">⚙</button>
 </footer>
@@ -2770,6 +2792,17 @@ body{
 </div>
 
 
+<!-- SUPERMARKET DEALS MODAL (25% off six) -->
+<div class="modal-overlay" id="dealsOverlay" role="dialog" aria-modal="true" aria-labelledby="dealsTitle" onclick="if(event.target===this)closeDealsCheck()">
+  <div class="modal" style="max-width:430px">
+    <div class="modal-header">
+      <h2 class="modal-title" id="dealsTitle">Supermarket offers</h2>
+      <button class="modal-close" aria-label="Close" onclick="closeDealsCheck()">✕</button>
+    </div>
+    <div class="modal-body" id="dealsBody"></div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <!-- Chardonnay splash -->
@@ -2905,7 +2938,7 @@ body{
 </div>
 
 <!-- AUTH MODULE -->
-<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+<script>
 /* ══════════════════════════════════════════════════════════════
    SUPABASE CONFIG — replace with your project values
    supabase.com → your project → Settings → API
@@ -3639,7 +3672,7 @@ function setupEvents() {
   document.getElementById('shareOverlay').addEventListener('click', e=>{ if(e.target===document.getElementById('shareOverlay')) closeShareModal(); });
   document.getElementById('closeInfoModal').addEventListener('click', closeInfoModal);
   document.getElementById('infoOverlay').addEventListener('click', e=>{ if(e.target===document.getElementById('infoOverlay')) closeInfoModal(); });
-  document.addEventListener('keydown', e=>{ if(e.key==='Escape'){ closeModal(); closeDetail(); closeScanModal(); closeLightbox(); closeShareModal(); closeInfoModal(); closeQuickAdd(); } });
+  document.addEventListener('keydown', e=>{ if(e.key==='Escape'){ closeModal(); closeDetail(); closeScanModal(); closeLightbox(); closeShareModal(); closeInfoModal(); closeDealsCheck(); closeQuickAdd(); } });
   // Public wine share link is handled early in DOMContentLoaded — no need to call again here
 }
 
@@ -4733,6 +4766,7 @@ function _anyPanelOpen() {
     document.getElementById('scanOverlay').classList.contains('open') ||
     document.getElementById('shareOverlay').classList.contains('open') ||
     document.getElementById('infoOverlay').classList.contains('open') ||
+    document.getElementById('dealsOverlay').classList.contains('open') ||
     document.getElementById('quickAddOverlay').classList.contains('open') ||
     document.getElementById('cellarSettingsOverlay').classList.contains('open') ||
     document.getElementById('originMapOverlay').classList.contains('open') ||
@@ -4751,6 +4785,7 @@ function _closeTopPanel() {
   if (document.getElementById('cellarSettingsOverlay').classList.contains('open'))    { closeCellarSettings();  return; }
   if (document.getElementById('quickAddOverlay').classList.contains('open'))          { closeQuickAdd();        return; }
   if (document.getElementById('shareOverlay').classList.contains('open'))             { closeShareModal();      return; }
+  if (document.getElementById('dealsOverlay').classList.contains('open'))             { closeDealsCheck();      return; }
   if (document.getElementById('infoOverlay').classList.contains('open'))              { closeInfoModal();       return; }
   if (document.getElementById('scanOverlay').classList.contains('open'))              { closeScanModal();       return; }
   if (document.getElementById('modalOverlay').classList.contains('open'))             { closeModal();           return; }
@@ -6226,6 +6261,86 @@ function processPendingImport(data) {
 
 function closeInfoModal() {
   document.getElementById('infoOverlay').classList.remove('open');
+}
+
+/* ── Supermarket deals check (25% off six) ──────────────────────
+   One tap asks the Worker (/deals). The Worker returns the saved
+   result if it is under a day old, otherwise runs a web search.   */
+let _dealsLast = null;
+function _dealsIntroHtml(busy, failed) {
+  const text = busy ? 'Searching for current offers. This can take a little while.'
+    : failed ? 'The check didn\u2019t finish. Try again in a minute.'
+    : 'See which supermarkets are running the offer right now.';
+  return '<div class="deals-hero"><span class="deals-pct">25%</span><span class="deals-pct-sub">off six bottles</span></div>'
+    + '<p class="deals-text">' + text + '</p>'
+    + '<button type="button" class="deals-go" onclick="runDealsCheck()"' + (busy ? ' disabled' : '') + '>'
+    + (busy ? '<span class="deals-spin"></span><span>Checking supermarkets\u2026</span>' : 'Check supermarkets')
+    + '</button>';
+}
+function _dealsWhen(iso) {
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return '';
+  const day = d.toDateString() === new Date().toDateString() ? 'today' : 'yesterday';
+  return 'Checked ' + day + ' at ' + d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) + '. ';
+}
+function _dealsEnds(s) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s || '');
+  if (!m) return 'End date not stated';
+  const d = new Date(+m[1], +m[2] - 1, +m[3]);
+  return 'Ends ' + d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
+}
+function _dealsList(names) {
+  const n = (names || []).map(escHtml);
+  return n.length > 1 ? n.slice(0, -1).join(', ') + ' and ' + n[n.length - 1] : (n[0] || 'the main supermarkets');
+}
+function _dealsResultHtml(data) {
+  const offers = data.offers || [];
+  const when = _dealsWhen(data.checked_at);
+  if (!offers.length) {
+    return '<div class="deals-head deals-head-none">No 25% off six offers right now</div>'
+      + '<p class="deals-text">Checked ' + _dealsList(data.retailers) + '.</p>'
+      + '<div class="deals-foot">' + when + 'Found by web search, so an offer that started in the last few hours may be missing.</div>';
+  }
+  const rows = offers.map(function (o) {
+    const src = /^https?:\/\//i.test(o.source_url || '')
+      ? '<a class="deals-src" href="' + escHtml(o.source_url) + '" target="_blank" rel="noopener noreferrer">Where this came from</a>' : '';
+    return '<div class="deals-row">'
+      + '<div class="deals-shop">' + escHtml(o.retailer || '') + '</div>'
+      + '<div class="deals-offer">' + escHtml(o.offer || '25% off when you buy 6 or more bottles') + '</div>'
+      + '<div class="deals-ends">' + _dealsEnds(o.ends) + '</div>'
+      + (o.conditions ? '<div class="deals-cond">' + escHtml(o.conditions) + '</div>' : '')
+      + src + '</div>';
+  }).join('');
+  return '<div class="deals-head">On now at ' + offers.length + (offers.length === 1 ? ' supermarket' : ' supermarkets') + '</div>'
+    + rows
+    + '<div class="deals-foot">' + when + 'Found by web search, so confirm with the supermarket before you shop.</div>';
+}
+function openDealsCheck() {
+  const fresh = _dealsLast && (Date.now() - new Date(_dealsLast.checked_at).getTime() < 24 * 60 * 60 * 1000);
+  document.getElementById('dealsBody').innerHTML = fresh ? _dealsResultHtml(_dealsLast) : _dealsIntroHtml(false, false);
+  document.getElementById('dealsOverlay').classList.add('open');
+  _pushNavState();
+}
+function closeDealsCheck() {
+  document.getElementById('dealsOverlay').classList.remove('open');
+}
+async function runDealsCheck() {
+  const body = document.getElementById('dealsBody');
+  body.innerHTML = _dealsIntroHtml(true, false);
+  try {
+    const res = await fetch(Scanner.getProxyUrl() + '/deals', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: '{}'
+    });
+    const data = await res.json().catch(function () { return {}; });
+    if (!res.ok || !Array.isArray(data.offers)) throw new Error(data.error || ('HTTP ' + res.status));
+    _dealsLast = data;
+    body.innerHTML = _dealsResultHtml(data);
+  } catch (e) {
+    console.warn('deals check failed:', e.message);
+    body.innerHTML = _dealsIntroHtml(false, true);
+  }
 }
 
 
