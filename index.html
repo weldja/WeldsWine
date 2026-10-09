@@ -862,6 +862,119 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(70px);background:var(--charcoal);color:var(--parchment);padding:10px 22px;border-radius:30px;font-family:var(--font-b);font-size:.88rem;z-index:999;transition:transform .28s ease;white-space:nowrap;pointer-events:none;box-shadow:0 4px 18px rgba(0,0,0,.28)}
 .toast.show{transform:translateX(-50%) translateY(0)}
 
+/* ── Line icons ───────────────────────────────────────────── */
+.wi{width:1.15em;height:1.15em;flex-shrink:0;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;vertical-align:-.2em;pointer-events:none}
+.logo-icon{display:flex;align-items:center}
+.logo-icon .wi{width:26px;height:26px;color:var(--gold-lt);stroke-width:1.4}
+.btn-scan-primary,.btn-quick-add,.hero-btn-secondary{display:-webkit-inline-flex;display:inline-flex;align-items:center;gap:7px}
+.btn-scan-primary .wi{width:17px;height:17px;stroke-width:1.9}
+.btn-hamburger .wi{width:20px;height:20px}
+.card-label-strip .wi{width:26px;height:26px;color:rgba(255,255,255,.9);stroke-width:1.4}
+.card-rating-badge-icon .wi{display:block;width:9px;height:9px;fill:currentColor;stroke-width:2}
+.card-bottle-count .wi{width:11px;height:11px}
+.card-top-pick .wi{width:11px;height:11px;fill:currentColor}
+.card-menu-dropdown button{display:flex;align-items:center;gap:9px}
+.card-menu-dropdown button .wi{width:16px;height:16px;color:var(--warm-gray)}
+.card-menu-dropdown .danger .wi{color:inherit}
+.comments-title .wi{width:17px;height:17px;color:var(--burgundy);margin-right:4px}
+.shared-by-badge .wi{width:13px;height:13px}
+.hlr-photo .wi{width:30px;height:30px;color:rgba(255,255,255,.9);stroke-width:1.4}
+
+/* ── Toolbar: one row of filters, search and tools ────────── */
+.tbar{position:-webkit-sticky;position:sticky;top:var(--hdr-h,60px);z-index:100;background:var(--ivory);border-bottom:1px solid var(--light-gray);box-shadow:0 1px 6px var(--shadow);-webkit-transition:-webkit-transform .22s ease;transition:transform .22s ease}
+.tbar-inner{max-width:1200px;margin:0 auto;padding:0 20px;min-height:52px;display:flex;align-items:center;gap:12px}
+.tbar-filters{flex:1 1 auto;min-width:0;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.tbar-filters::-webkit-scrollbar{display:none}
+.tbar .filter-tabs{display:flex;flex-wrap:nowrap;gap:3px}
+.tbar .filter-tab{display:-webkit-inline-flex;display:inline-flex;align-items:center;gap:5px;flex-shrink:0;white-space:nowrap;min-height:32px;padding:5px 12px;font-size:.85rem;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+.tbar .filter-tab .wi{width:14px;height:14px}
+.tbar-search{flex:0 1 230px;min-width:150px;display:flex;align-items:center;gap:8px;height:36px;padding:0 6px 0 12px;background:var(--cream);border:1px solid var(--light-gray);border-radius:30px;color:var(--warm-gray);transition:var(--tr)}
+.tbar-search:focus-within{background:var(--ivory);border-color:var(--burgundy)}
+.tbar-search .wi{width:16px;height:16px}
+.tbar-search input{flex:1;min-width:0;height:100%;border:none;background:none;outline:none;font-family:var(--font-b);font-size:.9rem;color:var(--charcoal);-webkit-appearance:none;appearance:none}
+.tbar-search input::placeholder{color:var(--warm-gray);opacity:.6}
+.tbar-search-close{display:none;align-items:center;justify-content:center;width:44px;height:44px;margin-right:-6px;background:none;border:none;color:var(--charcoal);cursor:pointer;-webkit-tap-highlight-color:transparent}
+.tbar-tools{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.tb-tool{position:relative;display:-webkit-inline-flex;display:inline-flex;align-items:center;gap:6px;height:34px;margin:0;padding:0 12px;background:none;border:1px solid var(--light-gray);border-radius:var(--r);font-family:var(--font-b);font-size:.8rem;font-weight:400;line-height:1;letter-spacing:normal;text-transform:none;color:var(--charcoal);white-space:nowrap;cursor:pointer;transition:var(--tr);-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+.tb-tool .wi{width:16px;height:16px}
+.tb-tool:focus-visible,.tb-sort:focus-within{outline:2px solid var(--gold);outline-offset:2px}
+.tb-events{background:var(--burgundy);border-color:var(--burgundy);color:var(--cream)}
+.tb-deals{border-color:var(--burgundy);color:var(--burgundy)}
+.tb-short,.tb-search-toggle{display:none}
+.tb-sort select{position:absolute;top:0;left:0;width:100%;height:100%;margin:0;opacity:0;cursor:pointer;border:none;font-size:16px;-webkit-appearance:none;appearance:none}
+@media(hover:hover){.tb-tool:hover{background:var(--parchment)}.tb-events:hover{background:#6e1c2e}}
+@media(max-width:768px){
+  .tbar{top:var(--hdr-h,56px)}
+  .tbar.tucked{-webkit-transform:translateY(-110%);transform:translateY(-110%)}
+  .tbar-inner{padding:0;gap:0;min-height:54px;align-items:stretch}
+  .tbar-filters{display:flex;align-items:center;padding:0 14px 0 10px;-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 24px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 24px),transparent)}
+  .tbar .filter-tabs{gap:4px}
+  .tbar .filter-tab{min-height:36px;padding:6px 12px;font-size:.84rem}
+  .tbar-tools{gap:0;border-left:1px solid var(--light-gray)}
+  .tb-tool{-webkit-flex-direction:column;flex-direction:column;justify-content:center;gap:4px;width:48px;height:54px;padding:0;border:none;border-radius:0;background:none;font-size:.58rem;font-weight:500;color:var(--charcoal)}
+  .tb-tool .wi{width:20px;height:20px}
+  .tb-events,.tb-deals{background:none;color:var(--burgundy)}
+  .tb-export,.tb-full{display:none}
+  .tb-short{display:inline}
+  .tb-search-toggle{display:-webkit-inline-flex;display:inline-flex}
+  .tbar-search{display:none;flex:1 1 auto;min-width:0;height:auto;min-height:38px;margin:8px 8px 8px 10px;padding-left:14px}
+  .tbar-search input{font-size:16px}
+  .tbar-search-close{display:flex}
+  .tbar.searching .tbar-filters,.tbar.searching .tbar-tools{display:none}
+  .tbar.searching .tbar-search{display:flex}
+}
+@media(min-width:769px) and (max-width:1023px){.tb-export>span{display:none}.tbar-search{flex-basis:170px}.tbar-inner{gap:8px}}
+@media(prefers-reduced-motion:reduce){.tbar{-webkit-transition:none;transition:none}}
+
+/* ── Wine detail: the label leads ─────────────────────────── */
+.detail-modal{background:var(--cream)}
+.detail-modal .modal-close{position:-webkit-sticky;position:sticky;top:10px;right:auto;z-index:12;width:44px;height:44px;margin:10px 0 -54px 10px;background:rgba(29,23,20,.45);color:#fff;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);-webkit-tap-highlight-color:transparent}
+.detail-modal .modal-close:hover{background:rgba(29,23,20,.65);color:#fff}
+.detail-modal .modal-close .wi{width:22px;height:22px}
+.dh-hero{position:-webkit-sticky;position:sticky;top:0;height:52vh;max-height:520px;min-height:280px;overflow:hidden;display:flex;align-items:center;justify-content:center;background:var(--charcoal)}
+.dh-bg{position:absolute;top:-12%;left:-12%;width:124%;height:124%;max-width:none;object-fit:cover;-webkit-filter:blur(26px) saturate(1.2) brightness(.7);filter:blur(26px) saturate(1.2) brightness(.7);pointer-events:none}
+.dh-hero::after{content:'';position:absolute;left:0;right:0;bottom:0;height:40%;background:linear-gradient(rgba(29,23,20,0),rgba(29,23,20,.5));pointer-events:none}
+.dh-label{position:relative;z-index:1;height:76%;width:auto;max-width:80%;object-fit:cover;border-radius:14px;box-shadow:0 26px 60px rgba(0,0,0,.55);margin-bottom:24px}
+.dh-fav{position:absolute;left:14px;bottom:40px;z-index:3;width:44px;height:44px;padding:0;border:none;border-radius:50%;display:flex;align-items:center;justify-content:center;background:rgba(29,23,20,.45);color:#fff;cursor:pointer;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+.dh-fav .wi{width:22px;height:22px}
+.dh-fav.on{color:#ff8fa8}
+.dh-fav.on .wi{fill:currentColor}
+.dh-sides{position:absolute;left:50%;bottom:40px;z-index:3;display:flex;padding:3px;border-radius:24px;background:rgba(29,23,20,.5);-webkit-transform:translateX(-50%);transform:translateX(-50%);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+.dh-sides button{min-height:40px;padding:0 18px;border:none;border-radius:20px;background:none;color:rgba(255,255,255,.78);font-family:var(--font-b);font-size:.8rem;font-weight:500;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+.dh-sides button.on{background:var(--ivory);color:var(--charcoal)}
+.dh-sheet{position:relative;z-index:2;background:var(--cream);padding:24px 24px 26px}
+.dh-hero + .dh-sheet{margin-top:-28px;border-radius:26px 26px 0 0;box-shadow:0 -10px 30px rgba(0,0,0,.22)}
+.detail-modal.no-hero .dh-sheet{padding-top:66px}
+.dh-score{position:absolute;top:14px;right:22px;width:70px;height:70px;border-radius:50%;background:var(--ivory);border:2px solid var(--gold);box-shadow:0 8px 22px rgba(44,36,32,.22);display:flex;align-items:baseline;justify-content:center;padding-top:19px;font-family:var(--font-d);font-size:1.55rem;font-weight:600;line-height:1;color:var(--charcoal);font-variant-numeric:tabular-nums}
+.dh-hero + .dh-sheet .dh-score{top:-32px}
+.dh-score small{font-family:var(--font-b);font-size:.6rem;font-weight:400;color:var(--warm-gray);margin-left:1px}
+.dh-head.has-score .dh-desc{padding-right:84px}
+.dh-desc{font-family:var(--font-d);font-style:italic;font-size:.92rem;line-height:1.35;color:var(--burgundy)}
+.dh-name{font-family:var(--font-d);font-size:1.7rem;font-weight:600;line-height:1.12;color:var(--charcoal);margin-top:8px;overflow-wrap:break-word}
+.dh-sub{font-family:var(--font-b);font-size:.9rem;color:var(--warm-gray);margin-top:4px}
+.dh-facts{list-style:none;margin:18px 0 16px;padding:0;border-top:1px solid var(--light-gray)}
+.dh-facts li{display:flex;align-items:center;gap:12px;min-height:46px;padding:8px 0;border-bottom:1px solid var(--light-gray);font-family:var(--font-b);font-size:.9rem;color:var(--charcoal)}
+.dh-facts li>.wi{width:19px;height:19px;color:var(--gold)}
+.dh-facts li>span{flex:1;min-width:0}
+.dh-facts small{font-size:.76rem;color:var(--warm-gray);white-space:nowrap}
+.dh-link{min-height:44px;margin:-8px 0;padding:0 0 0 12px;background:none;border:none;font-family:var(--font-b);font-size:.78rem;color:var(--burgundy);white-space:nowrap;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.dh-label-sm{font-family:var(--font-b);font-size:.8rem;font-weight:600;color:var(--warm-gray);margin-bottom:5px}
+.dh-notes{font-family:var(--font-d);font-size:1rem;line-height:1.6;color:var(--charcoal);margin-bottom:18px}
+.dh-row{display:flex;align-items:center;gap:12px;width:100%;min-height:56px;margin:0 0 12px;padding:8px 14px;text-align:left;background:var(--ivory);border:1px solid var(--light-gray);border-radius:14px;font-family:var(--font-b);font-size:.92rem;font-weight:500;color:var(--charcoal);cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+.dh-row>span{flex:1;min-width:0}
+.dh-row small{display:block;font-size:.74rem;font-weight:400;color:var(--warm-gray)}
+.dh-row>.wi{width:20px;height:20px;color:var(--burgundy)}
+.dh-row>.dh-chev{color:var(--warm-gray);-webkit-transform:rotate(-90deg);transform:rotate(-90deg)}
+.dh-sheet #wineIntelPanel{margin-bottom:12px}
+.dh-fav:focus-visible,.dh-sides button:focus-visible,.dh-row:focus-visible,.dh-link:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+@media(max-width:768px){
+  #detailOverlay .detail-modal:not(.no-hero){height:94vh;height:94dvh;max-height:94vh;max-height:94dvh}
+  .dh-hero{height:50vh;max-height:none}
+  .dh-hero + .dh-sheet{min-height:calc(44vh + 28px)}
+  .dh-sheet{padding-left:20px;padding-right:20px}
+  .dh-score{right:18px}
+}
+
 /* ── Home highlights reel ("From the cellar") ─────────────── */
 .hlr-wrap{--hlr-pad:14px;margin:0 calc(-1 * var(--hlr-pad)) 18px}
 .hlr-head{display:flex;align-items:baseline;justify-content:space-between;padding:0 calc(var(--hlr-pad) + 2px) 8px}
@@ -2081,6 +2194,33 @@ body{
 </style>
 </head>
 <body>
+<!-- Line icons. One stroke style everywhere: <svg class="wi"><use href="#wi-name"/></svg> -->
+<svg xmlns="http://www.w3.org/2000/svg" style="position:absolute;width:0;height:0;overflow:hidden" aria-hidden="true" focusable="false">
+  <symbol id="wi-glass" viewBox="0 0 24 24"><path d="M7.5 3h9c.3 4.8-1.2 8-4.5 8S7.2 7.8 7.5 3z"/><path d="M7.7 6.6h8.6M12 11v8M8.5 21h7"/></symbol>
+  <symbol id="wi-camera" viewBox="0 0 24 24"><path d="M4 8h3l1.5-2h7L17 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.5"/></symbol>
+  <symbol id="wi-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></symbol>
+  <symbol id="wi-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></symbol>
+  <symbol id="wi-sort" viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></symbol>
+  <symbol id="wi-heart" viewBox="0 0 24 24"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/></symbol>
+  <symbol id="wi-users" viewBox="0 0 24 24"><circle cx="9" cy="9" r="3"/><path d="M3.5 19c.4-3 2.6-5 5.5-5s5.1 2 5.5 5"/><circle cx="17" cy="8" r="2.3"/><path d="M16.5 13.2c2.3.2 3.8 1.9 4 4.3"/></symbol>
+  <symbol id="wi-user" viewBox="0 0 24 24"><circle cx="12" cy="8.5" r="3.5"/><path d="M5 20c.6-3.6 3.3-6 7-6s6.4 2.4 7 6"/></symbol>
+  <symbol id="wi-calendar" viewBox="0 0 24 24"><rect x="4" y="5.5" width="16" height="14.5" rx="2"/><path d="M4 10h16M8.5 3.5v4M15.5 3.5v4"/></symbol>
+  <symbol id="wi-tag" viewBox="0 0 24 24"><path d="M3.5 12.2V5A1.5 1.5 0 0 1 5 3.5h7.2l8.3 8.3a1.5 1.5 0 0 1 0 2.1l-6.6 6.6a1.5 1.5 0 0 1-2.1 0z"/><circle cx="8" cy="8" r="1.3"/></symbol>
+  <symbol id="wi-back" viewBox="0 0 24 24"><path d="M14.5 5.5L8 12l6.5 6.5"/></symbol>
+  <symbol id="wi-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+  <symbol id="wi-pin" viewBox="0 0 24 24"><path d="M12 21s-6-5.6-6-10.5a6 6 0 0 1 12 0C18 15.4 12 21 12 21z"/><circle cx="12" cy="10.5" r="2.2"/></symbol>
+  <symbol id="wi-grapes" viewBox="0 0 24 24"><circle cx="8.6" cy="10.5" r="2.9"/><circle cx="15.4" cy="10.5" r="2.9"/><circle cx="12" cy="16.4" r="2.9"/><path d="M12 7.6V4.8c1-.9 2.2-1.2 3.5-1"/></symbol>
+  <symbol id="wi-book" viewBox="0 0 24 24"><path d="M12 6.5C10 5 7.5 4.5 4 4.5v13c3.5 0 6 .5 8 2 2-1.5 4.5-2 8-2v-13c-3.5 0-6 .5-8 2zM12 6.5v13"/></symbol>
+  <symbol id="wi-message" viewBox="0 0 24 24"><path d="M5 5h14a1.5 1.5 0 0 1 1.5 1.5v8A1.5 1.5 0 0 1 19 16h-6.5L8 20v-4H5a1.5 1.5 0 0 1-1.5-1.5v-8A1.5 1.5 0 0 1 5 5z"/></symbol>
+  <symbol id="wi-bottle" viewBox="0 0 24 24"><path d="M10 2.5h4v4.2c0 .9.5 1.6 1.2 2.2.8.7 1.3 1.7 1.3 2.8V20a1.5 1.5 0 0 1-1.5 1.5H9A1.5 1.5 0 0 1 7.5 20v-8.3c0-1.1.5-2.1 1.3-2.8.7-.6 1.2-1.3 1.2-2.2zM7.5 14h9"/></symbol>
+  <symbol id="wi-star" viewBox="0 0 24 24"><path d="M12 3.5l2.6 5.4 5.9.8-4.3 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8-4.3-4.1 5.9-.8z"/></symbol>
+  <symbol id="wi-bolt" viewBox="0 0 24 24"><path d="M13 3L5.5 13.5H11L10 21l7.5-10.5H12z"/></symbol>
+  <symbol id="wi-download" viewBox="0 0 24 24"><path d="M12 4v11M7.5 11l4.5 4.5 4.5-4.5M5 19.5h14"/></symbol>
+  <symbol id="wi-eye" viewBox="0 0 24 24"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="2.8"/></symbol>
+  <symbol id="wi-edit" viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16zM13.5 6.5l4 4"/></symbol>
+  <symbol id="wi-share" viewBox="0 0 24 24"><path d="M10 5H6a1.5 1.5 0 0 0-1.5 1.5v11A1.5 1.5 0 0 0 6 19h11a1.5 1.5 0 0 0 1.5-1.5V14M14 4.5h5.5V10M19.5 4.5L11 13"/></symbol>
+  <symbol id="wi-trash" viewBox="0 0 24 24"><path d="M4.5 7h15M9.5 7V4.5h5V7M6.5 7l1 12.5h9l1-12.5"/></symbol>
+</svg>
 
 <noscript>
   <div style="max-width:480px;margin:60px auto;padding:24px;font-family:Inter,system-ui,sans-serif;text-align:center;color:#333">
@@ -2383,7 +2523,7 @@ body{
 <header class="site-header">
   <div class="header-inner">
     <div class="logo">
-      <span class="logo-icon">🍷</span>
+      <span class="logo-icon"><svg class="wi" aria-hidden="true" focusable="false"><use href="#wi-glass"/></svg></span>
       <div>
         <span class="logo-title">Welds Wine Wisdoms</span>
         <p class="logo-sub">Personal Wine Journal</p>
@@ -2391,62 +2531,53 @@ body{
     </div>
     <div class="header-actions">
       <div class="scan-cta">
-        <button class="btn-scan-primary" id="openScanModal" aria-label="Scan wine label"><span class="scan-label-full">📷 Scan Wine Label</span><span class="scan-label-short">📷 Scan</span></button>
+        <button class="btn-scan-primary" id="openScanModal" aria-label="Scan wine label"><svg class="wi" aria-hidden="true" focusable="false"><use href="#wi-camera"/></svg><span class="scan-label-full">Scan Wine Label</span><span class="scan-label-short">Scan</span></button>
         <span class="scan-hint">Fastest way to add a wine</span>
       </div>
       <button class="btn-add-subtle" id="openAddModal" aria-label="Add wine manually">+ Add Wine</button>
-      <button class="btn-quick-add" id="openQuickAdd" aria-label="Quick add wine" title="Log a wine in seconds">⚡ Quick Add</button>
+      <button class="btn-quick-add" id="openQuickAdd" aria-label="Quick add wine" title="Log a wine in seconds"><svg class="wi" aria-hidden="true" focusable="false"><use href="#wi-bolt"/></svg>Quick Add</button>
       <button class="cellar-pill" id="cellarPill" onclick="openCellarSettings()" style="display:none" title="Cellar members">
         <span class="cellar-pill-dot"></span>
         <span id="cellarPillLabel">Cellar</span>
       </button>
-      <button id="userBadge" onclick="openMobileMenu(event)" aria-label="Menu" class="btn-hamburger" style="display:none">☰</button>
+      <button id="userBadge" onclick="openMobileMenu(event)" aria-label="Menu" class="btn-hamburger" style="display:none"><svg class="wi" aria-hidden="true" focusable="false"><use href="#wi-menu"/></svg></button>
     </div>
   </div>
 </header>
 
-<!-- TOOLBAR -->
-<div class="toolbar">
-  <div class="toolbar-inner">
-    <!-- Row 1: filter tabs — wraps freely on mobile -->
-    <div class="toolbar-filters">
+<!-- TOOLBAR — one row: filters · search · tools -->
+<div class="tbar" id="tbar">
+  <div class="tbar-inner">
+    <div class="tbar-filters">
       <div class="filter-tabs">
         <button class="filter-tab active" data-filter="all">All</button>
-        <button class="filter-tab" data-filter="fav">♥ Favs</button>
-        <button class="filter-tab" data-filter="shared">🤝 Shared</button>
+        <button class="filter-tab" data-filter="fav"><svg class="wi" aria-hidden="true" focusable="false"><use href="#wi-heart"/></svg>Favs</button>
+        <button class="filter-tab" data-filter="shared"><svg class="wi" aria-hidden="true" focusable="false"><use href="#wi-users"/></svg>Shared</button>
         <button class="filter-tab" data-filter="9">9–10</button>
         <button class="filter-tab" data-filter="7">7+</button>
         <button class="filter-tab" data-filter="recent">Recent</button>
       </div>
     </div>
-    <!-- Row 2: view toggle, sort, export -->
-    <div class="toolbar-controls">
-
-      <div class="sort-wrap">
-        <label for="sortSelect">Sort:</label>
-        <select id="sortSelect">
+    <!-- Search: always open on laptop; opens from the Search tool on phones -->
+    <div class="tbar-search">
+      <svg class="wi" aria-hidden="true" focusable="false"><use href="#wi-search"/></svg>
+      <input type="text" id="searchInput" placeholder="Search wines…" aria-label="Search wines" autocomplete="off"/>
+      <button type="button" class="tbar-search-close" id="searchClose" aria-label="Close search"><svg class="wi" aria-hidden="true" focusable="false"><use href="#wi-close"/></svg></button>
+    </div>
+    <div class="tbar-tools">
+      <button class="tb-tool tb-events" id="eventsBtn" onclick="openEventsView()" title="Cellar events — every occasion, and the bottles that were there"><svg class="wi" aria-hidden="true" focusable="false"><use href="#wi-calendar"/></svg><span>Events</span></button>
+      <button class="tb-tool tb-deals" id="dealsBtn" onclick="openDealsCheck()" title="See which supermarkets have 25% off six bottles right now"><svg class="wi" aria-hidden="true" focusable="false"><use href="#wi-tag"/></svg><span class="tb-full">25% off 6</span><span class="tb-short">25% off</span></button>
+      <button type="button" class="tb-tool tb-search-toggle" id="searchToggle" aria-label="Search wines"><svg class="wi" aria-hidden="true" focusable="false"><use href="#wi-search"/></svg><span>Search</span></button>
+      <label class="tb-tool tb-sort" title="Sort wines"><svg class="wi" aria-hidden="true" focusable="false"><use href="#wi-sort"/></svg><span class="tb-short">Sort</span><span class="tb-full" id="sortValue">Newest</span>
+        <select id="sortSelect" aria-label="Sort wines">
           <option value="date-desc">Newest</option>
           <option value="date-asc">Oldest</option>
           <option value="rating-desc">Top rated</option>
           <option value="rating-asc">Lowest rated</option>
           <option value="name-asc">A–Z</option>
         </select>
-      </div>
-      <button class="export-btn" id="exportBtn" title="Export your wines as a CSV file">
-        <span class="export-label">⬇ Export Data</span>
-        <span class="export-icon">⬇</span>
-      </button>
-      <button class="events-btn" id="eventsBtn" onclick="openEventsView()" title="Cellar events — every occasion, and the bottles that were there">
-        <span class="export-label">🥂 Events</span>
-        <span class="export-icon">🥂</span>
-      </button>
-      <button class="deals-btn" id="dealsBtn" onclick="openDealsCheck()" title="See which supermarkets have 25% off six bottles right now">🛒 25% off 6</button>
-    </div>
-    <!-- Row 3: search -->
-    <div class="toolbar-search">
-      <div class="search-wrap">
-        <input type="text" id="searchInput" placeholder="Search wines…" class="search-input-toolbar"/>
-      </div>
+      </label>
+      <button class="tb-tool tb-export" id="exportBtn" title="Export your wines as a CSV file"><svg class="wi" aria-hidden="true" focusable="false"><use href="#wi-download"/></svg><span>Export</span></button>
     </div>
   </div>
 </div>
@@ -2500,7 +2631,7 @@ body{
         </div>
       </div>
       <div class="co-header-right">
-        <button class="hero-btn-secondary" onclick="event.stopPropagation();document.getElementById('openScanModal').click()" style="padding:6px 12px;font-size:.75rem">📷 Scan</button>
+        <button class="hero-btn-secondary" onclick="event.stopPropagation();document.getElementById('openScanModal').click()" style="padding:6px 12px;font-size:.75rem"><svg class="wi" aria-hidden="true" focusable="false"><use href="#wi-camera"/></svg>Scan</button>
         <button class="co-minimise-btn" id="coMinBtn" title="Minimise">▲</button>
       </div>
     </div>
@@ -2739,7 +2870,7 @@ body{
 <!-- DETAIL / VIEW MODAL -->
 <div class="modal-overlay" id="detailOverlay">
   <div class="modal detail-modal">
-    <button class="modal-close" id="closeDetail" aria-label="Close">✕</button>
+    <button class="modal-close" id="closeDetail" aria-label="Close"><svg class="wi" aria-hidden="true" focusable="false"><use href="#wi-back"/></svg></button>
     <div id="detailContent"></div>
   </div>
 </div>
@@ -3804,6 +3935,62 @@ function getTasteDescriptor(w) {
 }
 
 /* ── Curated sections ─────────────────────────────────────── */
+/* ── Line icon helper ────────────────────────────────────── */
+function wiIcon(name, cls) {
+  return '<svg class="wi' + (cls ? ' ' + cls : '') + '" aria-hidden="true" focusable="false"><use href="#wi-' + name + '"/></svg>';
+}
+
+/* ══ Toolbar ════════════════════════════════════════════════════
+   One row under the header. On phones it tucks away while scrolling
+   down and comes back on the way up; search opens in place of the row.
+────────────────────────────────────────────────────────────── */
+let _tbLastY = 0;
+function _tbSetHeaderHeight() {
+  const h = document.querySelector('.site-header');
+  if (h && h.offsetHeight) document.documentElement.style.setProperty('--hdr-h', h.offsetHeight + 'px');
+}
+function _tbOnScroll() {
+  const tb = document.getElementById('tbar');
+  if (!tb) return;
+  const y = Math.max(0, window.pageYOffset || document.documentElement.scrollTop || 0);
+  const dy = y - _tbLastY;
+  if (Math.abs(dy) < 8) return;
+  _tbLastY = y;
+  if (tb.classList.contains('searching')) { tb.classList.remove('tucked'); return; }
+  tb.classList.toggle('tucked', dy > 0 && y > 140);      // only styled on phones
+}
+/* Close the phone search row once the box has been emptied elsewhere
+   (saving a wine and "clear filters" both reset the search). */
+function _tbSync() {
+  const tb = document.getElementById('tbar');
+  if (tb && tb.classList.contains('searching') && !searchInput.value && document.activeElement !== searchInput) {
+    tb.classList.remove('searching');
+  }
+}
+(function _tbInit() {
+  const tb = document.getElementById('tbar');
+  if (!tb) return;
+  const toggle = document.getElementById('searchToggle'), close = document.getElementById('searchClose'), val = document.getElementById('sortValue');
+  if (toggle) toggle.addEventListener('click', () => {
+    tb.classList.add('searching'); tb.classList.remove('tucked');
+    try { searchInput.focus(); } catch (_) {}
+  });
+  if (close) close.addEventListener('click', () => {
+    if (searchInput.value) { searchInput.value = ''; searchInput.dispatchEvent(new Event('input', { bubbles: true })); }
+    tb.classList.remove('searching');
+    searchInput.blur();
+  });
+  searchInput.addEventListener('blur', () => setTimeout(_tbSync, 200));
+  if (val) sortSelect.addEventListener('change', () => {
+    const o = sortSelect.options[sortSelect.selectedIndex];
+    if (o) val.textContent = o.text;
+  });
+  window.addEventListener('scroll', _tbOnScroll, { passive: true });
+  window.addEventListener('resize', _tbSetHeaderHeight);
+  window.addEventListener('load', _tbSetHeaderHeight);
+  _tbSetHeaderHeight();
+})();
+
 /* ══ Home highlights reel ("From the cellar") ══════════════════
    One spotlight card at a time above the cellar panel, moving on
    every few seconds while the home page is idle. It stops while any
@@ -3908,7 +4095,7 @@ function _hlrCompute() {
   // 4. Back for more
   const multi = wines.filter(w => (w.bottleCount || 1) > 1)
     .sort((a, b) => b.bottleCount - a.bottleCount || newest(a, b))[0];
-  if (multi) add('again', multi, 'Back for more', '🍾 ' + multi.bottleCount + ' bottles and counting');
+  if (multi) add('again', multi, 'Back for more', multi.bottleCount + ' bottles and counting');
 
   // 5. This week in an earlier year
   let anniv = null;
@@ -3944,7 +4131,7 @@ function _hlrCardHtml(it) {
   const meta  = [w.vintage, [w.region, w.country].filter(Boolean).join(', ')].filter(Boolean).join(' · ');
   const score = w.rating ? String(Math.round(w.rating * 10) / 10) : '';
   return '<div class="hlr-card' + (it.bio ? ' hlr-bio' : '') + '" data-id="' + escHtml(w.id) + '" role="button" tabindex="0">'
-    + '<div class="hlr-photo">' + (src ? '<img src="' + src + '" alt="" decoding="async">' : '🍷') + '</div>'
+    + '<div class="hlr-photo">' + (src ? '<img src="' + src + '" alt="" decoding="async">' : wiIcon('glass')) + '</div>'
     + '<div class="hlr-body">'
     +   '<div class="hlr-kicker">' + escHtml(it.kicker) + '</div>'
     +   '<div class="hlr-name">' + escHtml(w.name || 'Unnamed wine') + '</div>'
@@ -3981,7 +4168,7 @@ function _hlrPaused(wrap) {
   if (wrap.style.display === 'none' || _hlrItems.length < 2) return true;
   if (_hlrReduced || document.hidden) return true;
   if (document.body.style.overflow === 'hidden') return true;       // scan, add, detail or any other sheet is open
-  if (document.querySelector('.wine-splash.show')) return true;
+  if (document.querySelector('.wine-splash.show, #dealsOverlay.open')) return true;
   if (performance.now() < _hlrHoldUntil) return true;
   const r = wrap.getBoundingClientRect();
   return r.bottom < 60 || r.top > (window.innerHeight || 0);        // scrolled out of view
@@ -4096,6 +4283,7 @@ function renderCuratedSections() {
   const overview  = document.getElementById('cellarOverview');
   const isFiltered = searchQuery || activeFilter !== 'all';
   renderHighlightsReel();
+  _tbSync();
 
   if (!_winesLoaded || wines.length === 0 || isFiltered) {
     if (overview) overview.style.display = 'none';
@@ -4396,7 +4584,7 @@ function renderGrid() {
       if (body) {
         const badge = document.createElement('div');
         badge.className = 'card-top-pick';
-        badge.textContent = '⭐ Top pick';
+        badge.innerHTML = wiIcon('star') + 'Top pick';
         body.insertBefore(badge, body.firstChild);
       }
     }
@@ -4702,14 +4890,14 @@ function createCard(w) {
       imgWrap.appendChild(badge);
     }
   } else {
-    imgWrap.textContent = '🍷';
+    imgWrap.innerHTML = wiIcon('glass');
   }
 
   // Rating badge — overlaid on image bottom
   if (w.rating) {
     const rb = document.createElement('div');
     rb.className = 'card-rating-badge';
-    rb.innerHTML = `<span class="card-rating-badge-fill"></span><span class="card-rating-badge-icon">♥</span><span class="card-rating-badge-num"></span>`;
+    rb.innerHTML = `<span class="card-rating-badge-fill"></span><span class="card-rating-badge-icon">${wiIcon('heart')}</span><span class="card-rating-badge-num"></span>`;
     imgWrap.appendChild(rb);
     fillRatingBadge(rb.querySelector('.card-rating-badge-fill'), w.rating);
     countUpRating(rb.querySelector('.card-rating-badge-num'), w.rating, w.id);
@@ -4719,7 +4907,7 @@ function createCard(w) {
   if (w.bottleCount && w.bottleCount > 1) {
     const bcBadge = document.createElement('div');
     bcBadge.className = 'card-bottle-count';
-    bcBadge.textContent = `🍾 ${w.bottleCount}`;
+    bcBadge.innerHTML = wiIcon('bottle') + (parseInt(w.bottleCount, 10) || '');
     imgWrap.appendChild(bcBadge);
   }
 
@@ -4878,15 +5066,15 @@ function createCard(w) {
     _dropdown.className = 'card-menu-dropdown';
     const _canDelete = w.addedBy === _currentUser?.id || w.userId === _currentUser?.id;
     const actions = [
-      ['👁 View',   () => openDetail(getWineById(w.id), null)],
-      ['✏️ Edit',   (ev) => editWine(w.id, ev)],
-      ['↗️ Share',  (ev) => shareWine(w.id, ev)],
-      ...(_canDelete ? [['🗑 Delete', (ev) => deleteWine(w.id, ev), 'danger']] : []),
+      ['eye',   'View',   () => openDetail(getWineById(w.id), null)],
+      ['edit',  'Edit',   (ev) => editWine(w.id, ev)],
+      ['share', 'Share',  (ev) => shareWine(w.id, ev)],
+      ...(_canDelete ? [['trash', 'Delete', (ev) => deleteWine(w.id, ev), 'danger']] : []),
     ];
-    actions.forEach(([label, handler, cls]) => {
+    actions.forEach(([ic, label, handler, cls]) => {
       const btn = document.createElement('button');
       if (cls) btn.className = cls;
-      btn.textContent = label;
+      btn.innerHTML = wiIcon(ic) + escHtml(label);
       btn.addEventListener('click', ev => { ev.stopPropagation(); closeMenu(); handler(ev); });
       _dropdown.appendChild(btn);
     });
@@ -4969,11 +5157,17 @@ async function openDetail(w, e) {
 
   const front = safePhotoSrc(w.photoFront || w.photo);
   const back  = safePhotoSrc(w.photoBack);
+  const wid   = escJs(w.id);
+
+  // Label hero: the photo, sharp, over a blurred copy of itself
   let imgHtml = '';
-  if (front && back) {
-    imgHtml = `<div class="detail-dual-photo" id="photoCarousel"><img src="${front}"/><img src="${back}"/><div class="carousel-dots"><span class="carousel-dot active"></span><span class="carousel-dot"></span></div></div>`;
-  } else if (front) {
-    imgHtml = `<img class="detail-photo" src="${front}" alt="${escHtml(w.name)}"/>`;
+  if (front) {
+    imgHtml = `<div class="dh-hero">
+      <img class="dh-bg" id="dhBg" src="${front}" alt="" aria-hidden="true"/>
+      <img class="dh-label" id="dhLabel" src="${front}" alt="${escHtml(w.name)}"/>
+      <button type="button" class="dh-fav${w.isFavourite ? ' on' : ''}" aria-label="Favourite" onclick="toggleFavourite('${wid}');this.classList.toggle('on')">${wiIcon('heart')}</button>
+      ${back ? `<div class="dh-sides" id="dhSides" role="group" aria-label="Label side"><button type="button" class="on" data-side="front">Front</button><button type="button" data-side="back">Back</button></div>` : ''}
+    </div>`;
   } else {
     imgHtml = `<div class="detail-strip"></div>`;
   }
@@ -4981,51 +5175,77 @@ async function openDetail(w, e) {
   const mapId = 'detailMiniMap_'+w.id;
   const mapHtml = (w.locLat&&w.locLng) ? `<div class="detail-map-wrap" id="${mapId}"></div>` : '';
 
+  const place      = [w.region, w.country].filter(Boolean).join(', ');
+  const subline    = [w.winery, w.vintage].filter(v => v != null && String(v).trim() !== '').map(String).join(', ');
+  const scoreTxt   = w.rating ? String(Math.round(w.rating * 10) / 10) : '';
+  const descriptor = getTasteDescriptor(w) || '';
+
+  // Added-by line for shared cellars
+  const addedBy = (() => {
+    if (!window._cellarId || !w.addedBy) return '';
+    if (w.addedBy === _currentUser?.id) return 'Added by you';
+    const m = (window._cellarMembers || []).find(x => x.user_id === w.addedBy);
+    return 'Added by ' + ((m && m.display_name && m.display_name !== 'Member') ? m.display_name : 'a cellar member');
+  })();
+
+  const facts = [
+    place ? `<li>${wiIcon('pin')}<span>${escHtml(place)}</span><button type="button" class="dh-link" onclick="openOriginMap(getWineById('${wid}'))">View on map</button></li>` : '',
+    (w.grape || w.style) ? `<li>${wiIcon('grapes')}<span>${escHtml(w.grape || w.style)}</span>${(w.grape && w.style) ? `<small>${escHtml(w.style)}</small>` : ''}</li>` : '',
+    w.dateTasted ? `<li>${wiIcon('calendar')}<span>Tasted ${escHtml(formatDate(w.dateTasted))}</span></li>` : '',
+    addedBy ? `<li>${wiIcon('user')}<span>${escHtml(addedBy)}</span></li>` : '',
+    w.sharedBy ? `<li>${wiIcon('users')}<span>Shared wine</span></li>` : ''
+  ].join('');
+
+  // Everything else that has a value
   const fields = [
-    ['Winery',    w.winery],['Vintage',   w.vintage],['Country',   w.country],
-    ['Region',    w.region], ['Grape',     w.grape],  ['Style',     w.style],
-    ['Price',     w.price],  ['Purchased', w.purchasedFrom],
-    ['Tasted',    w.dateTasted?formatDate(w.dateTasted):null],
+    ['Price',     w.price],
+    ['Purchased', w.purchasedFrom],
     ['Location',  w.locLabel]
   ].filter(([,v])=>v);
 
-  // Added-by label for shared cellars
-  const addedByLabel = (() => {
-    if (!window._cellarId) return '';
-    const isMe = w.addedBy === _currentUser?.id;
-    if (isMe) return '<div style="font-family:var(--font-b);font-size:.75rem;color:var(--warm-gray);margin-bottom:12px;font-style:italic">Added by you</div>';
-    if (w.addedBy) return '<div style="font-family:var(--font-b);font-size:.75rem;color:var(--warm-gray);margin-bottom:12px;font-style:italic">Added by a cellar member</div>';
-    return '';
-  })();
-
   document.getElementById('detailContent').innerHTML = `
     ${imgHtml}
-    <div class="detail-body">
-      <div class="detail-title">${escHtml(w.name)}</div>
-      ${w.winery?`<div class="detail-winery">${escHtml(w.winery)}</div>`:''}
-      <div class="detail-rating-row">
-        ${w.rating?`<div class="detail-stars">${renderStarsLarge(w.rating)}</div>`:''}
-        ${(w.country||w.region||w.winery)?`<button class="btn-origin-map btn-origin-map--inline" onclick="openOriginMap(getWineById('${escJs(w.id)}'))">🗺 Show wine origin on map</button>`:''}
-        <button class="btn-wine-intel" onclick="toggleWineIntel('${escJs(w.id)}')">✦ Wine Intel</button>
+    <div class="detail-body dh-sheet">
+      ${scoreTxt ? `<div class="dh-score" aria-label="Rated ${escHtml(scoreTxt)} out of 10">${escHtml(scoreTxt)}<small>/10</small></div>` : ''}
+      <div class="dh-head${scoreTxt ? ' has-score' : ''}">
+        ${descriptor ? `<p class="dh-desc">${escHtml(descriptor)}</p>` : ''}
+        <div class="dh-name" role="heading" aria-level="2">${escHtml(w.name)}</div>
+        ${subline ? `<p class="dh-sub">${escHtml(subline)}</p>` : ''}
       </div>
-      <div id="wineIntelPanel" style="display:none"></div>
-      ${w.sharedBy?`<div class="shared-by-badge" style="margin-bottom:12px">🤝 Shared wine</div>`:''}
-      ${addedByLabel}
+      ${facts ? `<ul class="dh-facts">${facts}</ul>` : ''}
       ${window._cellarId ? '<div class="ev-chip-row" id="wineEventChips"></div>' : ''}
-      <div class="detail-grid">
+      ${fields.length ? `<div class="detail-grid">
         ${fields.map(([l,v])=>`<div class="detail-field"><label>${escHtml(l)}</label><p>${escHtml(String(v))}</p></div>`).join('')}
-      </div>
+      </div>` : ''}
       ${mapHtml}
-      ${w.notes?`<div class="detail-notes-label">Tasting Notes</div><div class="detail-notes">${escHtml(w.notes)}</div>`:''}
+      ${w.notes?`<div class="dh-label-sm">Tasting notes</div><div class="dh-notes">${escHtml(w.notes)}</div>`:''}
+      <button type="button" class="dh-row" onclick="toggleWineIntel('${wid}')">${wiIcon('book')}<span>Wine Intel<small>Producer, blend and food pairings</small></span>${wiIcon('back', 'dh-chev')}</button>
+      <div id="wineIntelPanel" style="display:none"></div>
       <div id="detailCommentsPlaceholder"></div>
       <div class="detail-footer">
-        ${(w.addedBy === _currentUser?.id || w.userId === _currentUser?.id) ? `<button class="btn-danger" onclick="deleteWine('${escJs(w.id)}',event)">Delete</button>` : ''}
+        ${(w.addedBy === _currentUser?.id || w.userId === _currentUser?.id) ? `<button class="btn-danger" onclick="deleteWine('${wid}',event)">Delete</button>` : ''}
         <div style="display:flex;gap:8px;margin-left:auto">
           <button class="btn-secondary" onclick="closeDetail()">Close</button>
-          <button class="btn-primary" onclick="editWine('${escJs(w.id)}',event)">Edit</button>
+          <button class="btn-primary" onclick="editWine('${wid}',event)">Edit</button>
         </div>
       </div>
     </div>`;
+
+  // Start at the top; the sheet needs extra head-room when there is no photo
+  const _dm = detailOverlay.querySelector('.detail-modal');
+  if (_dm) { _dm.classList.toggle('no-hero', !front); _dm.scrollTop = 0; }
+
+  // Front / back label switch
+  const _sides = document.getElementById('dhSides');
+  if (_sides) _sides.addEventListener('click', ev => {
+    const b = ev.target.closest('button');
+    if (!b) return;
+    const src = b.dataset.side === 'back' ? back : front;
+    _sides.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
+    const lab = document.getElementById('dhLabel'), bg = document.getElementById('dhBg');
+    if (lab) lab.src = src;
+    if (bg)  bg.src  = src;
+  });
 
   detailOverlay.classList.add('open');
   document.body.style.overflow='hidden';
@@ -8109,6 +8329,7 @@ function updateKeyBadge() {
       <button onclick="document.getElementById('openAddModal').click();closeMobileMenu()" style="background:none;border:1px solid var(--light-gray);border-radius:var(--r);padding:12px 16px;font-family:var(--font-b);font-size:.95rem;color:var(--charcoal);cursor:pointer;text-align:left;margin-top:4px">➕ Add Wine</button>
       <button onclick="document.getElementById('openQuickAdd').click();closeMobileMenu()" style="background:none;border:1px solid var(--light-gray);border-radius:var(--r);padding:12px 16px;font-family:var(--font-b);font-size:.95rem;color:var(--charcoal);cursor:pointer;text-align:left">⚡ Quick Add</button>
       <button id="mobileMenuCellarBtn" onclick="openCellarSettings();closeMobileMenu()" style="background:none;border:1px solid var(--light-gray);border-radius:var(--r);padding:12px 16px;font-family:var(--font-b);font-size:.95rem;color:var(--charcoal);cursor:pointer;text-align:left">🍾 Cellar &amp; Members</button>
+      <button onclick="document.getElementById('exportBtn').click();closeMobileMenu()" style="background:none;border:1px solid var(--light-gray);border-radius:var(--r);padding:12px 16px;font-family:var(--font-b);font-size:.95rem;color:var(--charcoal);cursor:pointer;text-align:left">⬇ Export data</button>
       <button id="mobileMenuAdminBtn" onclick="openAdminPanel();closeMobileMenu()" style="background:none;border:1px solid var(--light-gray);border-radius:var(--r);padding:12px 16px;font-family:var(--font-b);font-size:.95rem;color:var(--charcoal);cursor:pointer;text-align:left;display:none">👤 User Management</button>
       <button id="pushNotifBtn" onclick="registerPush();closeMobileMenu()" style="background:none;border:1px solid var(--light-gray);border-radius:var(--r);padding:12px 16px;font-family:var(--font-b);font-size:.95rem;color:var(--charcoal);cursor:pointer;text-align:left;display:none">🔔 Enable notifications</button>
       <button onclick="showFooterModal('about');closeMobileMenu()" style="background:none;border:none;padding:12px 16px;font-family:var(--font-b);font-size:.95rem;color:var(--warm-gray);cursor:pointer;text-align:left">ℹ️ About</button>
@@ -9266,7 +9487,7 @@ function renderCommentsSection(wineId, comments) {
   return `
     <div class="comments-section" id="commentsSection_${escHtml(wineId)}">
       <div class="comments-title">
-        💬 Comments
+        ${wiIcon('message')}Comments
         <span class="comments-count">${comments.length ? `(${comments.length})` : ''}</span>
       </div>
       <div class="comments-list" id="commentsList_${escHtml(wineId)}">${commentsHtml}</div>
