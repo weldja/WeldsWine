@@ -7176,19 +7176,27 @@ function importToForm() {
     },260);
   };
 
-  showWineSplash(scanResult.grape, scanResult.style, proceed);
+  // Labels often don't print the grape, so match on name/region/appellation too
+  const splashText = [scanResult.grape, scanResult.name, scanResult.region, scanResult.appellation]
+    .filter(Boolean).join(' ');
+  showWineSplash(splashText, scanResult.style, proceed);
 }
 
 function showWineSplash(grape, style, cb) {
   // Determine which splash to show
-  const g = (grape  || '').toLowerCase();
+  // g = grape + name + region + appellation, lower-cased with accents stripped
+  const g = String(grape || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
   const s = (style  || '').toLowerCase();
+  // Appellations that imply the grape - only trusted when the wine isn't red/rose/sparkling
+  const whiteish = !s || s === 'white';
+  const chardAoc = /chablis|meursault|montrachet|pouilly[\s-]*fuisse|\bmacon\b|(saint|st)[\s.-]*veran|vire[\s-]*clesse|corton[\s-]*charlemagne|montagny|bourgogne\s+blanc/;
+  const sauvAoc  = /sancerre|pouilly[\s-]*fume|menetou[\s-]*salon|\bquincy\b|\breuilly\b|fume\s+blanc/;
+  const fizz     = /champagne|prosecco|\bcava\b|cremant|franciacorta|spumante|\bsekt\b|\bbrut\b|sparkling|mousseux/;
   let id;
-  if      (g.includes('chardonnay'))                          id = 'splashChard';
-  else if (/sauvignon\s*blanc/i.test(g))                      id = 'splashSauv';
-  else if (s === 'sparkling' || g.includes('champagne') ||
-           g.includes('prosecco') || g.includes('cava'))      id = 'splashFizz';
-  else                                                         id = 'splashOther';
+  if      (g.includes('chardonnay') || (whiteish && chardAoc.test(g)))       id = 'splashChard';
+  else if (/sauvignon\s*blanc/.test(g) || (whiteish && sauvAoc.test(g)))     id = 'splashSauv';
+  else if (s === 'sparkling' || fizz.test(g))                                id = 'splashFizz';
+  else                                                                       id = 'splashOther';
 
   // Seed bubbles for chard + fizz
   function makeBubbles(elId, colour) {
