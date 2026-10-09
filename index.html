@@ -862,6 +862,42 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(70px);background:var(--charcoal);color:var(--parchment);padding:10px 22px;border-radius:30px;font-family:var(--font-b);font-size:.88rem;z-index:999;transition:transform .28s ease;white-space:nowrap;pointer-events:none;box-shadow:0 4px 18px rgba(0,0,0,.28)}
 .toast.show{transform:translateX(-50%) translateY(0)}
 
+/* ── Home highlights reel ("From the cellar") ─────────────── */
+.hlr-wrap{--hlr-pad:14px;margin:0 calc(-1 * var(--hlr-pad)) 18px}
+.hlr-head{display:flex;align-items:baseline;justify-content:space-between;padding:0 calc(var(--hlr-pad) + 2px) 8px}
+.hlr-title{font-family:var(--font-b);font-size:.67rem;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--gold)}
+.hlr-title::before{content:'';display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--burgundy);margin-right:7px;vertical-align:middle;-webkit-animation:hlrPulse 2s ease-in-out infinite;animation:hlrPulse 2s ease-in-out infinite}
+.hlr-paused .hlr-title::before{-webkit-animation:none;animation:none;opacity:.35}
+.hlr-count{font-family:var(--font-b);font-size:.66rem;color:var(--warm-gray);opacity:.7;font-variant-numeric:tabular-nums}
+.hlr-prog{display:flex;gap:4px;padding:0 calc(var(--hlr-pad) + 2px) 10px}
+.hlr-prog i{flex:1;max-width:72px;height:2px;border-radius:2px;background:var(--light-gray);overflow:hidden;position:relative}
+.hlr-prog i::after{content:'';position:absolute;top:0;right:0;bottom:0;left:0;background:var(--gold);-webkit-transform-origin:left center;transform-origin:left center;-webkit-transform:scaleX(0);transform:scaleX(0)}
+.hlr-prog i.done::after{-webkit-transform:scaleX(1);transform:scaleX(1)}
+.hlr-prog i.on::after{-webkit-animation:hlrFill 5s linear forwards;animation:hlrFill 5s linear forwards}
+.hlr-paused .hlr-prog i.on::after{-webkit-animation-play-state:paused;animation-play-state:paused}
+.hlr-still .hlr-prog i.on::after{-webkit-animation:none;animation:none;-webkit-transform:scaleX(1);transform:scaleX(1)}
+.hlr-track{position:relative;display:flex;gap:10px;overflow-x:auto;overflow-y:hidden;padding:2px var(--hlr-pad) 8px;-webkit-overflow-scrolling:touch;scrollbar-width:none;touch-action:pan-x pan-y;-webkit-scroll-snap-type:x mandatory;scroll-snap-type:x mandatory;scroll-padding-left:var(--hlr-pad)}
+.hlr-track::-webkit-scrollbar{display:none}
+.hlr-card{position:relative;flex:0 0 88%;max-width:420px;scroll-snap-align:start;display:flex;align-items:stretch;gap:12px;padding:12px;min-height:138px;background:#faf9f7;border:1px solid rgba(180,140,100,.14);border-radius:18px;overflow:hidden;cursor:pointer;box-shadow:0 1px 3px rgba(60,30,10,.06),0 4px 16px rgba(60,30,10,.07);transition:transform .18s ease,border-color .3s ease;-webkit-tap-highlight-color:transparent}
+.hlr-card.on{border-color:rgba(201,163,74,.5)}
+.hlr-card:active{-webkit-transform:scale(.975);transform:scale(.975)}
+.hlr-card:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.hlr-card::before{content:'';position:absolute;top:0;right:0;bottom:0;left:0;background:linear-gradient(105deg,var(--card-accent) 0%,transparent 46%);opacity:.13;pointer-events:none}
+.hlr-photo{position:relative;flex-shrink:0;width:86px;border-radius:12px;overflow:hidden;background:linear-gradient(160deg,var(--card-accent),#2D2420 130%);display:flex;align-items:center;justify-content:center;font-size:1.8rem}
+.hlr-photo img{position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover}
+.hlr-body{position:relative;flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center}
+.hlr-kicker{font-family:var(--font-b);font-size:.6rem;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--card-accent);line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hlr-name{font-family:var(--font-d);font-size:1.08rem;font-weight:600;color:var(--charcoal);line-height:1.18;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hlr-meta{font-family:var(--font-b);font-size:.71rem;color:var(--warm-gray);line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hlr-why{font-family:var(--font-d);font-style:italic;font-size:.82rem;color:var(--burgundy-deep);line-height:1.3;margin-top:7px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.hlr-score{position:relative;flex-shrink:0;align-self:flex-start;width:42px;height:42px;border-radius:50%;background:var(--ivory);border:1.5px solid var(--gold);display:flex;align-items:center;justify-content:center;font-family:var(--font-d);font-size:.92rem;font-weight:600;color:var(--charcoal);font-variant-numeric:tabular-nums}
+.hlr-bio .hlr-score{border-color:#6B8B3A;color:#3d5a1c}
+@-webkit-keyframes hlrPulse{0%,100%{opacity:1;-webkit-transform:scale(1)}50%{opacity:.35;-webkit-transform:scale(.7)}}
+@keyframes hlrPulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.35;transform:scale(.7)}}
+@-webkit-keyframes hlrFill{from{-webkit-transform:scaleX(0)}to{-webkit-transform:scaleX(1)}}
+@keyframes hlrFill{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@media(max-width:768px){.hlr-wrap{--hlr-pad:8px}}
+@media(prefers-reduced-motion:reduce){.hlr-title::before{-webkit-animation:none;animation:none}}
 /* ── Wine splash screens ─────────────────────────────────── */
 .wine-splash{position:fixed;inset:0;z-index:9998;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:48px 32px;opacity:0;pointer-events:none;transition:opacity .35s ease;overflow:hidden}
 .wine-splash.show{opacity:1;pointer-events:auto}
@@ -2443,6 +2479,16 @@ body{
 <!-- MAIN -->
 <main class="main-content" role="main" aria-label="Wine collection">
 
+  <!-- HOME HIGHLIGHTS REEL — filled by renderHighlightsReel() -->
+  <section class="hlr-wrap" id="hlrWrap" aria-label="Cellar highlights" style="display:none">
+    <div class="hlr-head">
+      <span class="hlr-title">From the cellar</span>
+      <span class="hlr-count" id="hlrCount"></span>
+    </div>
+    <div class="hlr-prog" id="hlrProg"></div>
+    <div class="hlr-track" id="hlrTrack"></div>
+  </section>
+
   <!-- CELLAR ANALYTICS PANEL -->
   <div class="cellar-overview" id="cellarOverview">
     <!-- Header / minimise toggle -->
@@ -3758,9 +3804,298 @@ function getTasteDescriptor(w) {
 }
 
 /* ── Curated sections ─────────────────────────────────────── */
+/* ══ Home highlights reel ("From the cellar") ══════════════════
+   One spotlight card at a time above the cellar panel, moving on
+   every few seconds while the home page is idle. It stops while any
+   overlay is open (scan / add / detail all lock body scroll), while
+   it is being touched, when scrolled out of view, or the tab is hidden.
+   Hidden whenever a search or filter is active.
+────────────────────────────────────────────────────────────── */
+const HLR_DWELL  = 5000;   // ms per card — keep in step with the hlrFill animation
+const HLR_RESUME = 3500;   // ms after a touch before it moves again
+const _hlrReduced = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+let _hlrItems = [], _hlrSig = '', _hlrCur = 0, _hlrElapsed = 0, _hlrHoldUntil = 0;
+let _hlrTimer = null, _hlrLastTick = 0, _hlrBound = false;
+let _hlrComments = null, _hlrCommentsFor = null, _hlrCommentsBusy = false;
+
+function _hlrWho(userId) {
+  if (!userId) return '';
+  if (_currentUser && userId === _currentUser.id) return 'you';
+  const m = (window._cellarMembers || []).find(x => x.user_id === userId);
+  return (m && m.display_name && m.display_name !== 'Member') ? m.display_name : '';
+}
+
+function _hlrAgo(ms) {
+  const mins = Math.floor((Date.now() - ms) / 60000);
+  if (mins < 1)  return 'just now';
+  if (mins < 60) return mins + (mins === 1 ? ' minute ago' : ' minutes ago');
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24)  return hrs + (hrs === 1 ? ' hour ago' : ' hours ago');
+  const days = Math.floor(hrs / 24);
+  if (days === 1) return 'yesterday';
+  if (days < 14)  return days + ' days ago';
+  if (days < 60)  return Math.floor(days / 7) + ' weeks ago';
+  return 'on ' + new Date(ms).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+/* One query for the whole cellar: comment count + latest author per wine. */
+async function _hlrLoadComments() {
+  const cellar = window._cellarId;
+  if (_hlrCommentsBusy || !_sb || !cellar || _hlrCommentsFor === cellar) return;
+  _hlrCommentsBusy = true;
+  try {
+    const { data, error } = await _sb.from('wine_comments')
+      .select('wine_id, author_name, created_at')
+      .eq('cellar_id', cellar)
+      .order('created_at', { ascending: false })
+      .limit(1000);
+    if (error) throw error;
+    const map = {};
+    (data || []).forEach(r => {
+      const m = map[r.wine_id] || (map[r.wine_id] = { n: 0, last: r.author_name || '' });
+      m.n++;
+    });
+    _hlrComments = map;
+  } catch (e) {
+    console.warn('[highlights] comment counts unavailable:', e && e.message ? e.message : e);
+    _hlrComments = null;
+  }
+  _hlrCommentsFor = cellar;   // set on failure too, so a broken query is not retried on every render
+  _hlrCommentsBusy = false;
+  renderHighlightsReel();
+}
+
+/* Pick the highlights. Each wine appears once; a highlight whose true
+   winner is already on the reel is skipped rather than given to a runner-up. */
+function _hlrCompute() {
+  const out = [], used = new Set();
+  const add = (type, w, kicker, why, bio) => {
+    if (!w || used.has(w.id)) return;
+    used.add(w.id);
+    out.push({ type, w, kicker, why, bio: !!bio });
+  };
+  const now = Date.now(), DAY = 86400000;
+  const rated = wines.filter(w => w.rating > 0);
+  const newest = (a, b) => (b.createdAt || 0) - (a.createdAt || 0);
+
+  // 1. Latest addition
+  const latest = [...wines].filter(w => w.createdAt).sort(newest)[0];
+  if (latest) {
+    const who = _hlrWho(latest.addedBy);
+    add('new', latest, now - latest.createdAt < 7 * DAY ? 'Just in' : 'Latest addition',
+        'Added ' + (who ? 'by ' + who + ' ' : '') + _hlrAgo(latest.createdAt));
+  }
+
+  // 2. Best score of the last 30 days, or of the whole cellar if nothing is that recent
+  const byScore = (a, b) => b.rating - a.rating || newest(a, b);
+  const recent = rated.filter(w => w.createdAt && now - w.createdAt < 30 * DAY).sort(byScore);
+  if (recent.length)     add('top', recent[0], 'Top of the month', 'Highest score in the last 30 days');
+  else if (rated.length) add('top', [...rated].sort(byScore)[0], 'Top of the cellar', 'Highest score in the cellar');
+
+  // 3. Most talked about
+  if (_hlrComments && _hlrCommentsFor === window._cellarId) {
+    let best = null;
+    Object.keys(_hlrComments).forEach(id => {
+      const w = getWineById(id), c = _hlrComments[id];
+      if (w && (!best || c.n > best.c.n)) best = { w, c };
+    });
+    if (best && best.c.n >= 2) {
+      add('talk', best.w, 'Most talked about',
+          best.c.n + ' comments' + (best.c.last ? ' — the latest from ' + best.c.last : ''));
+    }
+  }
+
+  // 4. Back for more
+  const multi = wines.filter(w => (w.bottleCount || 1) > 1)
+    .sort((a, b) => b.bottleCount - a.bottleCount || newest(a, b))[0];
+  if (multi) add('again', multi, 'Back for more', '🍾 ' + multi.bottleCount + ' bottles and counting');
+
+  // 5. This week in an earlier year
+  let anniv = null;
+  wines.forEach(w => {
+    const t = w.dateTasted ? new Date(w.dateTasted).getTime() : w.createdAt;
+    if (!t || isNaN(t)) return;
+    const years = Math.round((now - t) / (365.25 * DAY));
+    if (years < 1) return;
+    const target = new Date(now); target.setFullYear(target.getFullYear() - years);
+    if (Math.abs(target.getTime() - t) > 3.5 * DAY) return;
+    if (!anniv || (w.rating || 0) > (anniv.w.rating || 0)) anniv = { w, years, tasted: !!w.dateTasted };
+  });
+  if (anniv) {
+    add('anniv', anniv.w, anniv.years === 1 ? 'A year ago' : anniv.years + ' years ago',
+        (anniv.tasted ? 'Tasted' : 'Added') + ' this week ' + (anniv.years === 1 ? 'last year' : anniv.years + ' years ago'));
+  }
+
+  // 6. Lowest score — only worth a card when it really is poor
+  if (rated.length >= 5) {
+    const low = [...rated].sort((a, b) => a.rating - b.rating || newest(a, b))[0];
+    if (low && low.rating <= 5) {
+      const isSB = /sauvignon\s*blanc/i.test([low.grape, low.name].filter(Boolean).join(' '));
+      add('low', low, isSB ? '☣ Incident on file' : 'Bottom of the cellar',
+          'Lowest score in the cellar. Proceed with caution.', isSB);
+    }
+  }
+  return out;
+}
+
+function _hlrCardHtml(it) {
+  const w = it.w;
+  const src   = safePhotoSrc(w.photoFront || w.photo);
+  const meta  = [w.vintage, [w.region, w.country].filter(Boolean).join(', ')].filter(Boolean).join(' · ');
+  const score = w.rating ? String(Math.round(w.rating * 10) / 10) : '';
+  return '<div class="hlr-card' + (it.bio ? ' hlr-bio' : '') + '" data-id="' + escHtml(w.id) + '" role="button" tabindex="0">'
+    + '<div class="hlr-photo">' + (src ? '<img src="' + src + '" alt="" decoding="async">' : '🍷') + '</div>'
+    + '<div class="hlr-body">'
+    +   '<div class="hlr-kicker">' + escHtml(it.kicker) + '</div>'
+    +   '<div class="hlr-name">' + escHtml(w.name || 'Unnamed wine') + '</div>'
+    +   (meta ? '<div class="hlr-meta">' + escHtml(meta) + '</div>' : '')
+    +   '<div class="hlr-why">' + escHtml(it.why) + '</div>'
+    + '</div>'
+    + (score ? '<div class="hlr-score">' + escHtml(score) + '</div>' : '')
+    + '</div>';
+}
+
+function _hlrPaint() {
+  const prog = document.getElementById('hlrProg'), track = document.getElementById('hlrTrack'), count = document.getElementById('hlrCount');
+  if (!prog || !track) return;
+  for (let i = 0; i < prog.children.length; i++) {
+    prog.children[i].classList.toggle('done', i < _hlrCur);
+    prog.children[i].classList.toggle('on', i === _hlrCur);
+  }
+  for (let i = 0; i < track.children.length; i++) track.children[i].classList.toggle('on', i === _hlrCur);
+  if (count) count.textContent = _hlrItems.length > 1 ? (_hlrCur + 1) + ' / ' + _hlrItems.length : '';
+}
+
+function _hlrGoTo(i, instant) {
+  const track = document.getElementById('hlrTrack');
+  if (!track || !track.children.length) return;
+  _hlrCur = Math.max(0, Math.min(i, track.children.length - 1));
+  _hlrElapsed = 0;
+  const left = track.children[_hlrCur].offsetLeft - track.children[0].offsetLeft;
+  if (instant || _hlrReduced) track.scrollLeft = left;
+  else { try { track.scrollTo({ left: left, behavior: 'smooth' }); } catch (_) { track.scrollLeft = left; } }
+  _hlrPaint();
+}
+
+function _hlrPaused(wrap) {
+  if (wrap.style.display === 'none' || _hlrItems.length < 2) return true;
+  if (_hlrReduced || document.hidden) return true;
+  if (document.body.style.overflow === 'hidden') return true;       // scan, add, detail or any other sheet is open
+  if (document.querySelector('.wine-splash.show')) return true;
+  if (performance.now() < _hlrHoldUntil) return true;
+  const r = wrap.getBoundingClientRect();
+  return r.bottom < 60 || r.top > (window.innerHeight || 0);        // scrolled out of view
+}
+
+function _hlrTick() {
+  const wrap = document.getElementById('hlrWrap');
+  if (!wrap) return;
+  const now = performance.now();
+  const dt = _hlrLastTick ? Math.min(1000, now - _hlrLastTick) : 0;
+  _hlrLastTick = now;
+  const paused = _hlrPaused(wrap);
+  wrap.classList.toggle('hlr-paused', paused);
+  if (paused) return;
+  _hlrElapsed += dt;
+  if (_hlrElapsed >= HLR_DWELL) _hlrGoTo((_hlrCur + 1) % _hlrItems.length);
+}
+
+function _hlrBind(track) {
+  if (_hlrBound) return;
+  _hlrBound = true;
+  const hold = () => { _hlrHoldUntil = performance.now() + HLR_RESUME; };
+  ['touchstart', 'touchmove', 'wheel'].forEach(ev => track.addEventListener(ev, hold, { passive: true }));
+  track.addEventListener('pointerdown', hold);
+  // Laptop: stay put while the mouse is over the reel
+  track.addEventListener('pointerenter', e => { if (e.pointerType === 'mouse') _hlrHoldUntil = Infinity; });
+  track.addEventListener('pointerleave', e => { if (e.pointerType === 'mouse') _hlrHoldUntil = performance.now() + 800; });
+  // Keep the progress bar in step when the user swipes
+  track.addEventListener('scroll', () => {
+    if (performance.now() >= _hlrHoldUntil || !track.children.length) return;
+    const base = track.children[0].offsetLeft;
+    let best = 0, bd = Infinity;
+    for (let i = 0; i < track.children.length; i++) {
+      const d = Math.abs(track.children[i].offsetLeft - base - track.scrollLeft);
+      if (d < bd) { bd = d; best = i; }
+    }
+    if (best !== _hlrCur) { _hlrCur = best; _hlrElapsed = 0; _hlrPaint(); }
+  }, { passive: true });
+  const open = el => {
+    const card = el && el.closest ? el.closest('.hlr-card') : null;
+    if (!card) return;
+    const w = getWineById(card.dataset.id);
+    if (w) openDetail(w, null);
+  };
+  track.addEventListener('click', e => open(e.target));
+  track.addEventListener('keydown', e => {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(e.target); }
+  });
+}
+
+function renderHighlightsReel() {
+  const wrap = document.getElementById('hlrWrap'), track = document.getElementById('hlrTrack'), prog = document.getElementById('hlrProg');
+  if (!wrap || !track || !prog) return;
+  try {
+    const show = _winesLoaded && wines.length > 0 && !(searchQuery || activeFilter !== 'all');
+    if (show) _hlrLoadComments();             // one-off per cellar; re-renders the reel when it lands
+    const items = show ? _hlrCompute() : [];
+    if (!items.length) { wrap.style.display = 'none'; return; }
+
+    const wasHidden = wrap.style.display === 'none';
+    wrap.style.display = '';
+    wrap.classList.toggle('hlr-still', _hlrReduced);
+
+    const sig = items.map(it => [it.type, it.w.id, it.w.rating, it.w.name, it.kicker, (it.w.photoFront || it.w.photo) ? 1 : 0].join('|')).join('~');
+    if (sig !== _hlrSig) {
+      const keepId = _hlrItems[_hlrCur] ? _hlrItems[_hlrCur].w.id : null;
+      _hlrItems = items; _hlrSig = sig;
+      track.innerHTML = items.map(_hlrCardHtml).join('');
+      prog.innerHTML  = items.length > 1 ? items.map(() => '<i></i>').join('') : '';
+      for (let i = 0; i < track.children.length; i++) {
+        tintCardFromLabel(track.children[i], track.children[i].querySelector('img'), items[i].w.id);
+      }
+      const at = wasHidden ? -1 : items.findIndex(it => it.w.id === keepId);
+      _hlrGoTo(at >= 0 ? at : 0, true);
+    } else {
+      // Same cards — just refresh the wording ("2 hours ago" moves on)
+      _hlrItems = items;
+      for (let i = 0; i < track.children.length; i++) {
+        const el = track.children[i].querySelector('.hlr-why');
+        if (el && items[i] && el.textContent !== items[i].why) el.textContent = items[i].why;
+      }
+      if (wasHidden) _hlrGoTo(0, true);       // scroll position is lost while hidden
+    }
+    _hlrBind(track);
+    if (!_hlrTimer) _hlrTimer = setInterval(_hlrTick, 250);
+  } catch (e) {
+    console.warn('[highlights] render failed:', e);
+    wrap.style.display = 'none';
+  }
+}
+
+/* Our Cellar headline numbers count up once per page load. */
+let _coCountT0 = 0;
+function _coCountUp() {
+  if (_hlrReduced || _coCountT0) return;
+  _coCountT0 = performance.now();
+  const D = 900;
+  const frame = now => {
+    const p = Math.max(0, Math.min(1, (now - _coCountT0) / D)), e = 1 - Math.pow(1 - p, 3);
+    document.querySelectorAll('#coBody .co-stat-value').forEach(el => {
+      if (el.dataset.end === undefined) el.dataset.end = el.textContent.trim();
+      const end = el.dataset.end;
+      if (!/^\d+(\.\d+)?$/.test(end)) return;
+      el.textContent = p < 1 ? (parseFloat(end) * e).toFixed((end.split('.')[1] || '').length) : end;
+    });
+    if (p < 1) requestAnimationFrame(frame);
+  };
+  requestAnimationFrame(frame);
+}
+
 function renderCuratedSections() {
   const overview  = document.getElementById('cellarOverview');
   const isFiltered = searchQuery || activeFilter !== 'all';
+  renderHighlightsReel();
 
   if (!_winesLoaded || wines.length === 0 || isFiltered) {
     if (overview) overview.style.display = 'none';
@@ -3948,6 +4283,7 @@ function _renderCellarAnalytics() {
       <span class="co-world-map-count">${wines.filter(w=>w.region||w.country).length} mappable</span>
     </button>` : ''}
   `;
+  _coCountUp();
 }
 
 // Minimise / expand toggle — persisted in localStorage
@@ -6682,6 +7018,7 @@ function updateStats() {
   document.getElementById('statAvg').textContent=avg==='—'?'—':`${avg}/10`;
   document.getElementById('statCountries').textContent=countries;
   document.getElementById('statTop').textContent=top.length>12?top.slice(0,12)+'…':top;
+  renderHighlightsReel();   // quick add / extra bottle update stats without a full re-render
 }
 
 /* ── Insights ──────────────────────────────────────────────
