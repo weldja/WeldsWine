@@ -436,7 +436,7 @@ function render_wine_page(w, enrich) {
 <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>${title} — Welds Wine Wisdoms</title>
 <meta name="description" content="${desc}"/>
-<meta name="robots" content="index, follow"/>
+<meta name="robots" content="${w.rating != null ? "index, follow" : "noindex, follow"}"/>
 <link rel="canonical" href="${esc(pageUrl)}"/>
 <meta property="og:type" content="article"/><meta property="og:site_name" content="Welds Wine Wisdoms"/>
 <meta property="og:title" content="${title}"/><meta property="og:description" content="${desc}"/>
@@ -703,7 +703,7 @@ var worker_default = {
     if (url.pathname === "/wines" && request.method === "GET") {
       try {
         const wines = await sb_fetch(env,
-          "/wines?cellar_id=eq." + CELLAR_ID + "&select=" + LIST_WINE_FIELDS + "&order=created_at.desc",
+          "/wines?cellar_id=eq." + CELLAR_ID + "&rating=not.is.null&select=" + LIST_WINE_FIELDS + "&order=created_at.desc",
           { prefer: "return=representation" });
         return new Response(render_wine_list(wines || []), { status: 200, headers: htmlHeaders });
       } catch (e) {
@@ -716,7 +716,7 @@ var worker_default = {
     if (url.pathname === "/sitemap.xml" && request.method === "GET") {
       try {
         const wines = await sb_fetch(env,
-          "/wines?cellar_id=eq." + CELLAR_ID + "&select=id,created_at&order=created_at.desc",
+          "/wines?cellar_id=eq." + CELLAR_ID + "&rating=not.is.null&select=id,created_at&order=created_at.desc",
           { prefer: "return=representation" });
         return new Response(render_sitemap(wines || []), { status: 200, headers: { "Content-Type": "application/xml;charset=UTF-8", "Cache-Control": "public, max-age=3600, s-maxage=86400" } });
       } catch (e) {

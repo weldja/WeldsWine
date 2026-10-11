@@ -472,6 +472,27 @@ body{font-family:var(--font-b);background:var(--cream);color:var(--charcoal);min
 .card-rating-badge-icon{font-size:9px;color:#b83232;line-height:1}
 .card-rating-badge-num{font-size:10.5px;font-weight:600;color:var(--charcoal);line-height:1;font-family:var(--font-b)}
 
+/* ── To taste — saved without a score ──────────────────── */
+.card-rating-badge.card-totaste{padding:3px 6px;background:rgba(255,253,250,.95);border:1.5px dashed #9A7A2E}
+.card-totaste span{position:relative;z-index:1;font-family:var(--font-b);font-size:9px;font-weight:600;letter-spacing:0;line-height:1.1;color:#6E5518}
+.filter-tab .tt-count{display:-webkit-inline-flex;display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:#6E5518;color:#fff;font-size:.68rem;font-weight:600;line-height:1}
+.filter-tab.active .tt-count{background:rgba(255,255,255,.28)}
+.filter-tab .tt-count:empty{display:none}
+.btn-totaste{display:-webkit-flex;display:flex;align-items:center;justify-content:center;gap:7px;width:100%;min-height:44px;margin-top:8px;padding:9px 12px;background:transparent;color:var(--burgundy);border:1.5px solid var(--burgundy);border-radius:var(--r);font-family:var(--font-d);font-size:.85rem;font-weight:600;letter-spacing:.03em;cursor:pointer;transition:var(--tr);-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+.btn-totaste:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.btn-totaste:disabled{opacity:.4;cursor:not-allowed}
+.btn-totaste .wi{width:16px;height:16px}
+.totaste-hint{margin-top:6px;font-family:var(--font-b);font-size:.72rem;line-height:1.4;color:var(--warm-gray);text-align:center}
+.dh-totaste{margin:16px 0 0;padding:14px;background:var(--ivory);border:1px solid var(--light-gray);border-radius:14px}
+.dh-tt-head{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.dh-tt-pill{display:inline-flex;align-items:center;height:26px;padding:0 11px;border:1.5px dashed #9A7A2E;border-radius:13px;font-family:var(--font-b);font-size:.72rem;font-weight:600;color:#6E5518;white-space:nowrap}
+.dh-tt-note{font-family:var(--font-b);font-size:.84rem;color:var(--warm-gray)}
+.dh-totaste .btn-primary{width:100%;min-height:46px;touch-action:manipulation}
+.dh-tt-form .rating-tap-grid{max-width:320px;margin:0 auto 12px}
+.dh-tt-label{display:block;margin-bottom:8px;font-family:var(--font-b);font-size:.74rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--warm-gray)}
+.dh-tt-label span{margin-left:4px;font-size:.8rem;letter-spacing:0;text-transform:none;color:var(--burgundy)}
+.dup-totaste-pill{font-size:11px;font-weight:600;color:#6E5518;border:1.5px dashed #9A7A2E;border-radius:10px;padding:1px 8px}
+
 /* ── Location pill ─────────────────────────────────────── */
 .card-location-row{display:none} /* hidden on new horizontal layout */
 .card-origin-btn{
@@ -2220,6 +2241,7 @@ body{
   <symbol id="wi-edit" viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16zM13.5 6.5l4 4"/></symbol>
   <symbol id="wi-share" viewBox="0 0 24 24"><path d="M10 5H6a1.5 1.5 0 0 0-1.5 1.5v11A1.5 1.5 0 0 0 6 19h11a1.5 1.5 0 0 0 1.5-1.5V14M14 4.5h5.5V10M19.5 4.5L11 13"/></symbol>
   <symbol id="wi-trash" viewBox="0 0 24 24"><path d="M4.5 7h15M9.5 7V4.5h5V7M6.5 7l1 12.5h9l1-12.5"/></symbol>
+  <symbol id="wi-bookmark" viewBox="0 0 24 24"><path d="M7 4h10v16l-5-4-5 4z"/></symbol>
 </svg>
 
 <noscript>
@@ -2551,6 +2573,7 @@ body{
     <div class="tbar-filters">
       <div class="filter-tabs">
         <button class="filter-tab active" data-filter="all">All</button>
+        <button class="filter-tab" data-filter="totaste">To taste<span class="tt-count" id="toTasteCount"></span></button>
         <button class="filter-tab" data-filter="fav"><svg class="wi" aria-hidden="true" focusable="false"><use href="#wi-heart"/></svg>Favs</button>
         <button class="filter-tab" data-filter="shared"><svg class="wi" aria-hidden="true" focusable="false"><use href="#wi-users"/></svg>Shared</button>
         <button class="filter-tab" data-filter="9">9–10</button>
@@ -2745,6 +2768,10 @@ body{
             <div class="rating-tap-grid" id="starInput"></div>
             <input type="hidden" id="rating" value="0"/>
             <button type="button" class="btn-primary" id="saveWineBtn" style="margin-top:8px;width:100%">Save Wine</button>
+            <div id="saveToTasteWrap">
+              <button type="button" class="btn-totaste" id="saveToTasteBtn"><svg class="wi" aria-hidden="true" focusable="false"><use href="#wi-bookmark"/></svg><span>Save without rating</span></button>
+              <div class="totaste-hint">Goes into the cellar as To taste. Score it later.</div>
+            </div>
           </div>
           <div class="form-group">
             <label for="dateTasted">Date Tasted</label>
@@ -3830,6 +3857,7 @@ function setupEvents() {
   document.getElementById('closeDetail').addEventListener('click', closeDetail);
   detailOverlay.addEventListener('click', e=>{ if(e.target===detailOverlay) closeDetail(); });
   document.getElementById('saveWineBtn').addEventListener('click', handleSave);
+  document.getElementById('saveToTasteBtn').addEventListener('click', () => { _saveAsToTaste = true; handleSave(); });
   let _searchTimer = null;
   searchInput.addEventListener('input', e=>{
     clearTimeout(_searchTimer);
@@ -3859,21 +3887,31 @@ function setView(v) {
   renderGrid();
 }
 
+/* To taste = saved without a score (scanned in a shop, not opened yet) */
+function isToTaste(w) { return !(Number(w && w.rating) > 0); }
+let _saveAsToTaste = false;   // set by the "Save without rating" button
+
 function getList() {
   let list = [...wines];
   if (searchQuery) list=list.filter(w=>
     [w.name,w.winery,w.region,w.country,w.grape,w.purchasedFrom].some(v=>(v||'').toLowerCase().includes(searchQuery))
   );
   if (activeFilter==='fav')    list=list.filter(w=>w.isFavourite);
+  else if (activeFilter==='totaste') list=list.filter(isToTaste);
   else if (activeFilter==='shared') list=list.filter(w=>w.sharedBy);
   else if (activeFilter==='9') list=list.filter(w=>w.rating>=9);
   else if (activeFilter==='7') list=list.filter(w=>w.rating>=7);
   else if (activeFilter==='recent') { const c=Date.now()-30*86400000; list=list.filter(w=>new Date(w.dateTasted||w.createdAt)>c); }
   list.sort((a,b)=>{
-    if(activeSort==='date-desc')   return new Date(b.dateTasted||0)-new Date(a.dateTasted||0);
-    if(activeSort==='date-asc')    return new Date(a.dateTasted||0)-new Date(b.dateTasted||0);
-    if(activeSort==='rating-desc') return (b.rating||0)-(a.rating||0);
-    if(activeSort==='rating-asc')  return (a.rating||0)-(b.rating||0);
+    // Untasted wines have no tasted date — fall back to when they were added
+    if(activeSort==='date-desc')   return new Date(b.dateTasted||b.createdAt||0)-new Date(a.dateTasted||a.createdAt||0);
+    if(activeSort==='date-asc')    return new Date(a.dateTasted||a.createdAt||0)-new Date(b.dateTasted||b.createdAt||0);
+    // Unscored wines always sit after the scored ones
+    if(activeSort==='rating-desc' || activeSort==='rating-asc') {
+      const ta=isToTaste(a), tb=isToTaste(b);
+      if (ta !== tb) return ta ? 1 : -1;
+      return activeSort==='rating-desc' ? (b.rating||0)-(a.rating||0) : (a.rating||0)-(b.rating||0);
+    }
     if(activeSort==='name-asc')    return (a.name||'').localeCompare(b.name||'');
     return 0;
   });
@@ -4901,6 +4939,11 @@ function createCard(w) {
     imgWrap.appendChild(rb);
     fillRatingBadge(rb.querySelector('.card-rating-badge-fill'), w.rating);
     countUpRating(rb.querySelector('.card-rating-badge-num'), w.rating, w.id);
+  } else {
+    const tb = document.createElement('div');
+    tb.className = 'card-rating-badge card-totaste';
+    tb.innerHTML = '<span>To taste</span>';
+    imgWrap.appendChild(tb);
   }
 
   // Bottle count badge — top right of image
@@ -5212,6 +5255,16 @@ async function openDetail(w, e) {
         <div class="dh-name" role="heading" aria-level="2">${escHtml(w.name)}</div>
         ${subline ? `<p class="dh-sub">${escHtml(subline)}</p>` : ''}
       </div>
+      ${(!scoreTxt && _currentUser) ? `<div class="dh-totaste" id="dhToTaste">
+        <div class="dh-tt-head"><span class="dh-tt-pill">To taste</span><span class="dh-tt-note">No scores yet</span></div>
+        <button type="button" class="btn-primary" id="ttOpenBtn" onclick="openTasteScore()">Add your score</button>
+        <div class="dh-tt-form" id="dhTtForm" style="display:none">
+          <span class="dh-tt-label">Your score<span id="ttRatingDisplay"></span></span>
+          <div class="rating-tap-grid" id="ttStarInput"></div>
+          <input type="hidden" id="ttRating" value="0"/>
+          <button type="button" class="btn-primary" id="ttSaveBtn" onclick="saveTasteScore('${wid}')">Save score</button>
+        </div>
+      </div>` : ''}
       ${facts ? `<ul class="dh-facts">${facts}</ul>` : ''}
       ${window._cellarId ? '<div class="ev-chip-row" id="wineEventChips"></div>' : ''}
       ${fields.length ? `<div class="detail-grid">
@@ -5303,6 +5356,86 @@ async function openDetail(w, e) {
     } else {
       setTimeout(initMini, 80);
     }
+  }
+}
+
+/* ── To taste: add the first score from the detail view ──── */
+function openTasteScore() {
+  const form = document.getElementById('dhTtForm');
+  const grid = document.getElementById('ttStarInput');
+  if (!form || !grid) return;
+  document.getElementById('ttRating').value = '0';
+  _buildTapGrid(grid, document.getElementById('ttRating'), document.getElementById('ttRatingDisplay'));
+  form.style.display = '';
+  const openBtn = document.getElementById('ttOpenBtn');
+  if (openBtn) openBtn.style.display = 'none';
+}
+
+async function saveTasteScore(id) {
+  const w = getWineById(id);
+  if (!w || !_sb || !_currentUser) return;
+  const score = parseFloat(document.getElementById('ttRating').value) || null;
+  if (!score) { showToast('Tap a score first'); return; }
+  const btn = document.getElementById('ttSaveBtn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Saving…'; }
+  try {
+    const today   = new Date().toISOString().slice(0, 10);
+    const ratings = Array.isArray(w.ratings) ? [...w.ratings] : [];
+    ratings.push({ score, date: today });
+    const avg    = parseFloat((ratings.reduce((s, r) => s + r.score, 0) / ratings.length).toFixed(1));
+    const tasted = w.dateTasted || today;
+
+    // .select() so a write blocked by row-level security shows up as zero rows
+    const { data, error } = await _sb.from('wines')
+      .update({ ratings, rating: avg, date_tasted: tasted })
+      .eq('id', w.id)
+      .select('id');
+    if (error) throw error;
+    if (!data || !data.length) {
+      showToast('Could not save — only the person who added this wine can score it');
+      if (btn) { btn.disabled = false; btn.textContent = 'Save score'; }
+      return;
+    }
+
+    w.ratings = ratings; w.rating = avg; w.dateTasted = tasted;
+
+    // Swap the To taste block for the normal score badge, in place
+    const blk = document.getElementById('dhToTaste');
+    if (blk && blk.parentNode) {
+      const sheet = blk.parentNode;
+      const txt   = String(Math.round(avg * 10) / 10);
+      const badge = document.createElement('div');
+      badge.className = 'dh-score';
+      badge.setAttribute('aria-label', 'Rated ' + txt + ' out of 10');
+      badge.innerHTML = escHtml(txt) + '<small>/10</small>';
+      sheet.insertBefore(badge, sheet.firstChild);
+      const head = sheet.querySelector('.dh-head');
+      if (head) {
+        head.classList.add('has-score');
+        const d = getTasteDescriptor(w);
+        if (d && !head.querySelector('.dh-desc')) {
+          const p = document.createElement('p');
+          p.className = 'dh-desc';
+          p.textContent = d;
+          head.insertBefore(p, head.firstChild);
+        }
+      }
+      blk.remove();
+    }
+
+    // Refresh the grid: the wine leaves the To taste list, or its card gets the score
+    if (activeFilter === 'totaste') {
+      renderGrid();
+    } else {
+      const card = wineGrid.querySelector(`[data-id="${w.id}"]`);
+      if (card) wineGrid.replaceChild(createCard(w), card);
+    }
+    updateStats();
+    showToast('Scored ' + avg + '/10 ✓');
+  } catch (err) {
+    console.error('saveTasteScore error:', err);
+    showToast('Failed to save — check your connection');
+    if (btn) { btn.disabled = false; btn.textContent = 'Save score'; }
   }
 }
 
@@ -5863,6 +5996,8 @@ function openModal(wine=null, injectFront=null, injectBack=null) {
   document.getElementById('locationText').classList.remove('set');
   setPhotoPreview('Front', currentPhotoFront);
   setPhotoPreview('Back',  currentPhotoBack);
+  // "Save without rating" is for new wines only
+  document.getElementById('saveToTasteWrap').style.display = wine ? 'none' : '';
 
   if (wine) {
     document.getElementById('modalTitle').textContent='Edit Wine';
@@ -6072,6 +6207,9 @@ async function compressForStorage(dataUrl) {
 
 async function handleSave(e) {
   if (e) e.preventDefault();
+  // "Save without rating" — no score and no tasted date
+  const toTaste = _saveAsToTaste;
+  _saveAsToTaste = false;
   // Guest user — stash form data then redirect to sign-in
   if (!_currentUser) {
     // Capture everything currently in the form so it survives the auth flow
@@ -6086,10 +6224,10 @@ async function handleSave(e) {
         style:        document.getElementById('style').value||null,
         price:        document.getElementById('price').value.trim()||null,
         notes:        document.getElementById('notes').value.trim()||null,
-        rating:       parseInt(document.getElementById('rating').value,10)||null,
+        rating:       toTaste ? null : (parseInt(document.getElementById('rating').value,10)||null),
         photoFront:   currentPhotoFront||null,
         photoBack:    currentPhotoBack||null,
-        dateTasted:   document.getElementById('dateTasted').value||null,
+        dateTasted:   toTaste ? null : (document.getElementById('dateTasted').value||null),
       };
       sessionStorage.setItem('wwwImportWine', JSON.stringify(guestEntry));
     } catch(_) {}
@@ -6108,8 +6246,10 @@ async function handleSave(e) {
   if (!name) { showToast('Please enter a wine name'); document.getElementById('wineName').focus(); return; }
 
   const saveBtn = document.getElementById('saveWineBtn');
+  const tasteBtn = document.getElementById('saveToTasteBtn');
   saveBtn.disabled = true;
-  saveBtn.textContent = 'Saving…';
+  if (tasteBtn) tasteBtn.disabled = true;
+  if (!toTaste) saveBtn.textContent = 'Saving…';
   try {
   const id=document.getElementById('wineId').value||generateId();
 
@@ -6127,9 +6267,9 @@ async function handleSave(e) {
     style:        document.getElementById('style').value||null,
     price:        document.getElementById('price').value.trim()||null,
     purchasedFrom:document.getElementById('purchasedFrom').value.trim()||null,
-    dateTasted:   document.getElementById('dateTasted').value||null,
+    dateTasted:   toTaste ? null : (document.getElementById('dateTasted').value||null),
     notes:        document.getElementById('notes').value.trim()||null,
-    rating:       parseFloat(ratingInput.value)||null,
+    rating:       toTaste ? null : (parseFloat(ratingInput.value)||null),
     sharedBy:     window._importSharedBy || null,
     isFavourite:  document.getElementById('isFavourite').checked,
     buyAgain:     document.getElementById('buyAgain').checked,
@@ -6148,16 +6288,14 @@ async function handleSave(e) {
   const ok = await saveWineToDB(entry);
   if (!ok) {
     showToast('Failed to save — check your connection');
-    saveBtn.disabled = false;
-    saveBtn.textContent = 'Save Wine';
-    return;
+    return;   // the finally block below re-enables both buttons
   }
 
   // DB confirmed — now update local array
   if (idx >= 0) { entry.createdAt = wines[idx].createdAt; wines[idx] = entry; }
   else { wines.unshift(entry); }
 
-  showToast(idx >= 0 ? 'Wine updated ✓' : 'Wine saved ✓');
+  showToast(idx >= 0 ? 'Wine updated ✓' : (toTaste ? 'Saved to taste later ✓' : 'Wine saved ✓'));
   if (idx < 0) notifyWineAdded(entry); // fire & forget
   window._importSharedBy = null;
   if (idx < 0) _pendingBioEntry = entry; // easter egg
@@ -6198,6 +6336,7 @@ async function handleSave(e) {
   } finally {
     saveBtn.disabled = false;
     saveBtn.textContent = 'Save Wine';
+    if (tasteBtn) tasteBtn.disabled = false;
   }
   // Easter egg fires outside try/catch so it never breaks save flow
   if (typeof _pendingBioEntry !== 'undefined' && _pendingBioEntry) {
@@ -7238,6 +7377,8 @@ function updateStats() {
   document.getElementById('statAvg').textContent=avg==='—'?'—':`${avg}/10`;
   document.getElementById('statCountries').textContent=countries;
   document.getElementById('statTop').textContent=top.length>12?top.slice(0,12)+'…':top;
+  const _ttCount = document.getElementById('toTasteCount');
+  if (_ttCount) { const n = wines.filter(isToTaste).length; _ttCount.textContent = n ? String(n) : ''; }
   renderHighlightsReel();   // quick add / extra bottle update stats without a full re-render
 }
 
@@ -7724,7 +7865,7 @@ function importToForm() {
       });
       if(region){ const e=document.getElementById('region'); e.value=region; flashAutofill(e); }
       if(scanResult.style){ const s=document.getElementById('style'); [...s.options].forEach(o=>{ if(o.value===scanResult.style) s.value=scanResult.style; }); }
-      showToast('Label imported — add your rating and save ✓');
+      showToast('Label imported — rate it, or save without rating ✓');
       const saveBtn = document.getElementById('saveWineBtn');
       if (saveBtn) {
         saveBtn.focus();
@@ -7844,7 +7985,7 @@ function showDuplicateOverlay(existingWine, scanData, frontPhoto, backPhoto) {
       <div>
         <div class="dup-existing-name">${escHtml(existingWine.name || '')}</div>
         <div class="dup-existing-meta">${[existingWine.vintage, existingWine.region || existingWine.country].filter(Boolean).join(' · ')}</div>
-        ${lastRating ? `<div class="dup-existing-rating"><span class="dup-rating-pill">${lastRating}</span><span class="dup-rating-label">last rating</span></div>` : ''}
+        ${lastRating ? `<div class="dup-existing-rating"><span class="dup-rating-pill">${lastRating}</span><span class="dup-rating-label">last rating</span></div>` : `<div class="dup-existing-rating"><span class="dup-totaste-pill">To taste</span><span class="dup-rating-label">not scored yet</span></div>`}
       </div>
     </div>`;
 
