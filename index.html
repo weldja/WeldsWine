@@ -3066,6 +3066,7 @@ body{
     <input type="hidden" id="dupRating" value="">
     <div class="dup-actions">
       <button class="dup-add-btn" id="dupAddBtn">Add Bottle to Existing</button>
+      <button class="dup-cancel-btn" id="dupAddNewBtn">No, it's a different wine — add as new</button>
       <button class="dup-cancel-btn" id="dupCancelBtn">Cancel</button>
     </div>
   </div>
@@ -3831,6 +3832,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Duplicate detection overlay
   document.getElementById('dupAddBtn').addEventListener('click', handleAddToExisting);
+  document.getElementById('dupAddNewBtn').addEventListener('click', handleAddAsNewWine);
   document.getElementById('dupCancelBtn').addEventListener('click', closeDuplicateOverlay);
   document.getElementById('dupOverlay').addEventListener('click', e => { if (e.target === document.getElementById('dupOverlay')) closeDuplicateOverlay(); });
 
@@ -7834,6 +7836,9 @@ function showScanErrorUI(err) {
   ]);
 }
 
+// Set to true when the user says "it's a different wine" on the duplicate screen
+let _skipDuplicateCheckOnce = false;
+
 function importToForm() {
   if (!scanResult) return;
   let region=scanResult.region||'';
@@ -7845,7 +7850,9 @@ function importToForm() {
   const back  = scanBackUrl;
 
   // ── Duplicate check ──────────────────────────────────────
-  const duplicate = _currentUser ? findDuplicateWine(scanResult) : null;
+  const skipCheck = _skipDuplicateCheckOnce;
+  _skipDuplicateCheckOnce = false;
+  const duplicate = (_currentUser && !skipCheck) ? findDuplicateWine(scanResult) : null;
   if (duplicate) {
     closeScanModal();
     showDuplicateOverlay(duplicate, scanResult, front, back);
@@ -7925,37 +7932,151 @@ let _dupScanFront   = null;
 let _dupScanBack    = null;
 let _dupRatingVal   = 0;
 
-function findDuplicateWine(scanData) {
-  const sName    = (scanData.name    || '').toLowerCase().replace(/[''`]/g, '').trim();
-  const sWinery  = (scanData.winery  || '').toLowerCase().replace(/[''`]/g, '').trim();
-  const sVintage = (scanData.vintage || '').toString().trim();
-  if (!sName) return null;
+/*
+  How duplicate detection works
+  ─────────────────────────────
+  A scanned wine only counts as "already in the cellar" when BOTH are true:
 
-  let best = null;
+  1. NOTHING CONTRADICTS IT. If both wines have a value for one of these
+     and the values clearly differ, they are different wines:
+       • vintage   (2019 vs 2021)
+       • grape     (Merlot vs Chardonnay — blends just need one grape in common)
+       • style     (Red vs White)
+       • producer  (no words in common at all)
+       • name      (less than half the words in common)
+
+  2. ENOUGH DETAILS AGREE. Each matching detail earns points:
+       name exactly the same ......... 3    name mostly the same ..... 2
+       producer the same ............. 2    vintage the same ......... 2
+       grape the same ................ 1    style the same ........... 1
+       country the same .............. 1
+     A wine needs DUP_MIN_SCORE points (5) to be flagged.
+     If the label has no readable name, producer + vintage + grape must
+     all match instead, because "same producer, same year" alone is not
+     enough to say it is the same bottle.
+
+  Text is compared loosely: capitals, accents (é = e), punctuation and
+  filler words like "Château", "Domaine" or "the" are ignored.
+*/
+const DUP_MIN_SCORE = 5;
+
+const _DUP_FILLER_WORDS = new Set([
+  'the', 'and', 'de', 'du', 'des', 'la', 'le', 'les', 'di', 'del', 'della',
+  'da', 'do', 'dos', 'das', 'der', 'von', 'et', 'y', 'e',
+  'chateau', 'domaine', 'domaines', 'bodega', 'bodegas', 'cantina', 'cantine',
+  'tenuta', 'weingut', 'quinta', 'maison', 'clos', 'estate', 'estates',
+  'winery', 'wines', 'wine', 'vineyard', 'vineyards', 'cellars', 'cellar'
+]);
+
+// Lower-case, remove accents and punctuation: "Château d'Yquem" -> "chateau d yquem"
+function _dupClean(value) {
+  return String(value || '')
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/&/g, ' and ')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
+}
+
+// The meaningful words in a piece of text, without filler words
+function _dupWords(value) {
+  return _dupClean(value).split(' ').filter(w => w.length > 1 && !_DUP_FILLER_WORDS.has(w));
+}
+
+// How alike two texts are: 0 = no words in common, 1 = the same words.
+// "Merlot Reserve" vs "Reserve" = 0.5 (only half the words are shared).
+function _dupTextSimilarity(a, b) {
+  const wordsA = new Set(_dupWords(a));
+  const wordsB = new Set(_dupWords(b));
+  if (wordsA.size === 0 || wordsB.size === 0) return null; // can't compare
+  let shared = 0;
+  wordsA.forEach(w => { if (wordsB.has(w)) shared++; });
+  return shared / Math.max(wordsA.size, wordsB.size);
+}
+
+// A 4-digit year, or null: "2019" -> "2019", "NV" -> null
+function _dupVintage(value) {
+  const m = String(value || '').match(/\b(19|20)\d{2}\b/);
+  return m ? m[0] : null;
+}
+
+// A list of grapes: "Cabernet Sauvignon / Merlot" -> ["cabernet sauvignon", "merlot"]
+function _dupGrapes(value) {
+  return String(value || '')
+    .split(/[,/;+&]|\band\b/i)
+    .map(_dupClean)
+    .filter(Boolean);
+}
+
+function findDuplicateWine(scanData) {
+  const scan = {
+    name:    scanData.name,
+    winery:  scanData.winery,
+    vintage: _dupVintage(scanData.vintage),
+    grapes:  _dupGrapes(scanData.grape),
+    style:   _dupClean(scanData.style),
+    country: _dupClean(scanData.country)
+  };
+
+  let bestWine  = null;
   let bestScore = 0;
 
   for (const w of wines) {
-    const wName    = (w.name    || '').toLowerCase().replace(/[''`]/g, '').trim();
-    const wWinery  = (w.winery  || '').toLowerCase().replace(/[''`]/g, '').trim();
-    const wVintage = (w.vintage || '').toString().trim();
     let score = 0;
 
-    // Name match
-    if (wName === sName) score += 3;
-    else if (wName.includes(sName) || sName.includes(wName)) score += 2;
-    else continue; // no name overlap → skip
+    // ── Name ──
+    const nameSim = _dupTextSimilarity(scan.name, w.name);
+    let nameMatches = false;
+    if (nameSim !== null) {
+      if (nameSim < 0.5) continue;                 // names clearly differ
+      if (nameSim === 1) score += 3;               // same name
+      else if (nameSim >= 0.6) score += 2;         // mostly the same name
+      nameMatches = nameSim >= 0.6;
+    }
 
-    // Vintage match
-    if (sVintage && wVintage && sVintage === wVintage) score += 2;
-    else if (sVintage && wVintage && sVintage !== wVintage) score -= 1;
+    // ── Producer ──
+    const winerySim = _dupTextSimilarity(scan.winery, w.winery);
+    let wineryMatches = false;
+    if (winerySim !== null) {
+      if (winerySim === 0) continue;               // different producer
+      if (winerySim >= 0.6) { score += 2; wineryMatches = true; }
+    }
 
-    // Winery match
-    if (sWinery && wWinery && (sWinery === wWinery || wWinery.includes(sWinery) || sWinery.includes(wWinery))) score += 1;
+    // ── Vintage ──
+    const wVintage = _dupVintage(w.vintage);
+    let vintageMatches = false;
+    if (scan.vintage && wVintage) {
+      if (scan.vintage !== wVintage) continue;     // different year = different wine
+      score += 2; vintageMatches = true;
+    }
 
-    if (score > bestScore) { bestScore = score; best = w; }
+    // ── Grape ──
+    const wGrapes = _dupGrapes(w.grape);
+    let grapeMatches = false;
+    if (scan.grapes.length && wGrapes.length) {
+      grapeMatches = scan.grapes.some(g => wGrapes.includes(g));
+      if (!grapeMatches) continue;                 // no grape in common
+      score += 1;
+    }
+
+    // ── Style ──
+    const wStyle = _dupClean(w.style);
+    if (scan.style && wStyle) {
+      if (scan.style !== wStyle) continue;         // e.g. red vs white
+      score += 1;
+    }
+
+    // ── Country (bonus only — spellings vary, e.g. "USA" vs "United States") ──
+    const wCountry = _dupClean(w.country);
+    if (scan.country && wCountry && scan.country === wCountry) score += 1;
+
+    // No usable name? Then producer, vintage AND grape must all agree.
+    if (!nameMatches && !(wineryMatches && vintageMatches && grapeMatches)) continue;
+
+    if (score > bestScore) { bestScore = score; bestWine = w; }
   }
 
-  return bestScore >= 4 ? best : null;
+  return bestScore >= DUP_MIN_SCORE ? bestWine : null;
 }
 
 function showDuplicateOverlay(existingWine, scanData, frontPhoto, backPhoto) {
@@ -8026,6 +8147,15 @@ function closeDuplicateOverlay() {
   overlay.classList.remove('open');
   document.body.style.overflow = '';
   _dupMatchedWine = null;
+}
+
+// The match was wrong — carry on and add the scanned wine as a brand new entry
+function handleAddAsNewWine() {
+  scanFrontUrl = _dupScanFront;
+  scanBackUrl  = _dupScanBack;
+  closeDuplicateOverlay();
+  _skipDuplicateCheckOnce = true;
+  importToForm();
 }
 
 async function handleAddToExisting() {
