@@ -3531,6 +3531,17 @@ async function handleRequestAccess() {
       const err = await res.json().catch(() => ({}));
       throw new Error(err.error || 'Request failed');
     }
+    // Find out whether the confirmation email actually went out
+    const result = await res.json().catch(() => ({}));
+    const successMsg = document.querySelector('#authRequestSuccess .auth-request-success-msg');
+    if (result.confirmation_sent === false) {
+      console.warn('[request access] Request saved, but confirmation email failed:', result.confirmation_error);
+      if (successMsg) successMsg.textContent = 'Your request has been saved and we\u2019ll be in touch, but we couldn\u2019t send a confirmation email just now.';
+    } else if (result.confirmation_sent === undefined) {
+      console.warn('[request access] Request saved, but the worker did not report on the email \u2014 the updated worker.js may not be deployed yet.');
+    } else {
+      console.log('[request access] Request saved and confirmation email handed to Resend.');
+    }
     document.getElementById('authRequestForm').style.display = 'none';
     document.getElementById('authRequestSuccess').style.display = 'block';
   } catch (e) {

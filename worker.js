@@ -801,14 +801,16 @@ var worker_default = {
         } catch (e) { console.error("access-request email notify failed:", e.message); }
         // Confirmation email to the person who asked for access
         let confirmationSent = true;
+        let confirmationError = null;
         try {
           const { subject, html } = templates.access_request_received(name);
           await sendEmail(env, { to: email, subject, html });
         } catch (e) {
           confirmationSent = false;
+          confirmationError = e.message === "RESEND_KEY_NOT_SET" ? "RESEND_API_KEY secret is not set in Cloudflare" : e.message;
           console.error("access-request: confirmation email to " + email + " failed:", e.message);
         }
-        return new Response(JSON.stringify({ ok: true, confirmation_sent: confirmationSent }), { status: 200, headers: cors });
+        return new Response(JSON.stringify({ ok: true, confirmation_sent: confirmationSent, confirmation_error: confirmationError }), { status: 200, headers: cors });
       } catch (e) {
         console.error("access-request error:", e.message);
         return new Response(JSON.stringify({ error: e.message }), { status: 500, headers: cors });
