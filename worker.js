@@ -262,6 +262,10 @@ function btn(url, label) {
 }
 __name(btn, "btn");
 __name2(btn, "btn");
+// Make user-typed text safe to put inside an email (e.g. "<" becomes "&lt;")
+function escEmail(value) {
+  return String(value ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+}
 var templates = {
   magic_link: /* @__PURE__ */ __name2((url) => ({
     subject: `Sign in to ${APP_NAME}`,
@@ -289,14 +293,24 @@ var templates = {
       <p style="font-family:Georgia,serif;font-size:.92rem;color:#6B5D58;line-height:1.7;margin:0 0 24px">Click below to set your password and start tracking wines with friends.</p>
       ${btn(url, "Set Up My Account")}`)
   }), "invite"),
-  access_request_notify: /* @__PURE__ */ __name2((name, email, message) => ({
-    subject: `\u{1F514} New access request: ${name}`,
+  access_request_notify: /* @__PURE__ */ __name2((rawName, rawEmail, rawMessage) => {
+    const name = escEmail(rawName), email = escEmail(rawEmail), message = rawMessage ? escEmail(rawMessage) : "";
+    return {
+    subject: `\u{1F514} New access request: ${rawName}`,
     html: baseEmail(`
       <p style="font-family:Georgia,serif;font-size:1rem;color:#2C2420;line-height:1.6;margin:0 0 12px"><strong>${name}</strong> has requested access to ${APP_NAME}.</p>
       <p style="font-family:Georgia,serif;font-size:.92rem;color:#6B5D58;line-height:1.7;margin:0 0 8px"><strong>Email:</strong> ${email}</p>
       ${message ? `<p style="font-family:Georgia,serif;font-size:.92rem;color:#6B5D58;line-height:1.7;margin:0 0 24px;padding:12px;background:#F5EFE6;border-radius:6px;font-style:italic">\u201C${message}\u201D</p>` : ""}
       ${btn(APP_URL, "Open Admin Panel")}`)
-  }), "access_request_notify")
+    };
+  }, "access_request_notify"),
+  // Sent to the person who asked for access, so they know it arrived
+  access_request_received: /* @__PURE__ */ __name2((rawName) => ({
+    subject: `We've received your request \u{1F377}`,
+    html: baseEmail(`
+      <p style="font-family:Georgia,serif;font-size:1rem;color:#2C2420;line-height:1.6;margin:0 0 12px">Hi ${escEmail(rawName)}, thanks for your interest in ${APP_NAME}.</p>
+      <p style="font-family:Georgia,serif;font-size:.92rem;color:#6B5D58;line-height:1.7;margin:0 0 24px">Your request for access has arrived safely. We'll email you again with a link to set up your account once it's ready.</p>`)
+  }), "access_request_received")
 };
 async function sendEmail(env, { to, subject, html }) {
   const key = env?.RESEND_API_KEY || RESEND_API_KEY;
@@ -775,13 +789,26 @@ var worker_default = {
               });
               if (uRes.ok) { const u = await uRes.json(); if (u.email) adminUsers.push(u.email); }
             }
+            if (!adminUsers.length) console.error("access-request: no admin email found — check profiles.is_admin is true for your account");
             for (const adminEmail of adminUsers) {
               const { subject, html } = templates.access_request_notify(name, email, message);
-              await sendEmail(env, { to: adminEmail, subject, html }).catch(() => {});
+              await sendEmail(env, { to: adminEmail, subject, html })
+                .catch((err) => console.error("access-request: admin email to " + adminEmail + " failed:", err.message));
             }
+          } else {
+            console.error("access-request: no admin found — set profiles.is_admin = true for your account");
           }
-        } catch (e) { console.warn("access-request email notify failed:", e.message); }
-        return new Response(JSON.stringify({ ok: true }), { status: 200, headers: cors });
+        } catch (e) { console.error("access-request email notify failed:", e.message); }
+        // Confirmation email to the person who asked for access
+        let confirmationSent = true;
+        try {
+          const { subject, html } = templates.access_request_received(name);
+          await sendEmail(env, { to: email, subject, html });
+        } catch (e) {
+          confirmationSent = false;
+          console.error("access-request: confirmation email to " + email + " failed:", e.message);
+        }
+        return new Response(JSON.stringify({ ok: true, confirmation_sent: confirmationSent }), { status: 200, headers: cors });
       } catch (e) {
         console.error("access-request error:", e.message);
         return new Response(JSON.stringify({ error: e.message }), { status: 500, headers: cors });
