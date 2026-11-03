@@ -1120,6 +1120,78 @@ var worker_default = {
        END ADMIN API
        ═══════════════════════════════════════════════════════════ */
 
+    /* ── DELETE /api/admin/users/:id — delete an account but KEEP their wines ──
+       Steps (in this order, so nothing is lost if a step fails):
+       1. Look up the person's name (to label their wines).
+       2. Keep their wines: hand ownership to the cellar owner (or to you, the
+          admin, if there is no other owner) and write their name into
+          wines.former_member_name so the app shows "Added by Sam (former member)".
+       3. Remove their cellar memberships and push-notification subscriptions.
+       4. Delete their login (Supabase Auth) and their profile row.
+       Admin accounts, and your own account, can't be deleted this way. */
+    if (url.pathname.match(/\/api\/admin\/users\/[^/]+$/) && request.method === "DELETE") {
+      const { user: admin, reason: _authReason } = await verifyAdmin(env, request);
+      if (!admin) return new Response(JSON.stringify({ error: "Unauthorized", reason: _authReason }), { status: 401, headers: cors });
+      const userId = decodeURIComponent(url.pathname.split("/").pop());
+      const enc = encodeURIComponent(userId);
+      if (userId === admin.id) return new Response(JSON.stringify({ error: "You can't delete your own account" }), { status: 400, headers: cors });
+      const authHeaders = { apikey: env.SUPABASE_SERVICE_KEY, Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}` };
+      try {
+        // 1. Who is it?
+        const profRows = await sb_fetch(env, "/profiles?id=eq." + enc + "&select=display_name,is_admin", { prefer: "return=representation" }) || [];
+        const prof = profRows[0] || null;
+        if (prof && prof.is_admin) return new Response(JSON.stringify({ error: "Admin accounts can't be deleted here" }), { status: 400, headers: cors });
+        let email = "";
+        const uRes = await fetch(`${SUPABASE_URL}/auth/v1/admin/users/${enc}`, { headers: authHeaders });
+        if (uRes.ok) { const u = await uRes.json(); email = u.email || ""; }
+        const displayName = (prof && prof.display_name && prof.display_name !== "Member" ? prof.display_name : "") || (email ? email.split("@")[0] : "") || "Former member";
+
+        // 2. Keep their wines — move them to the cellar owner and label them
+        const theirWines = await sb_fetch(env, "/wines?user_id=eq." + enc + "&select=id,cellar_id", { prefer: "return=representation" }) || [];
+        const cellarIds = [...new Set(theirWines.map((w) => w.cellar_id).filter(Boolean))];
+        for (const cid of cellarIds) {
+          const c = await sb_fetch(env, "/cellars?id=eq." + encodeURIComponent(cid) + "&select=owner_id", { prefer: "return=representation" }) || [];
+          const owner = c[0] && c[0].owner_id;
+          const newOwner = owner && owner !== userId ? owner : admin.id;
+          await sb_fetch(env, "/wines?user_id=eq." + enc + "&cellar_id=eq." + encodeURIComponent(cid), {
+            method: "PATCH",
+            body: { user_id: newOwner, added_by: newOwner, former_member_name: displayName }
+          });
+        }
+        // Wines not in any cellar go to you, the admin
+        if (theirWines.some((w) => !w.cellar_id)) {
+          await sb_fetch(env, "/wines?user_id=eq." + enc + "&cellar_id=is.null", {
+            method: "PATCH",
+            body: { user_id: admin.id, added_by: admin.id, former_member_name: displayName }
+          });
+        }
+        // Any other wines they added to someone else's list keep their name too
+        await sb_fetch(env, "/wines?added_by=eq." + enc, {
+          method: "PATCH",
+          body: { added_by: admin.id, former_member_name: displayName }
+        });
+
+        // 3. Remove memberships and notification subscriptions
+        await sb_fetch(env, "/cellar_members?user_id=eq." + enc, { method: "DELETE" }).catch((e) => console.warn("delete-user: memberships:", e.message));
+        await sb_fetch(env, "/push_subscriptions?user_id=eq." + enc, { method: "DELETE" }).catch((e) => console.warn("delete-user: push subs:", e.message));
+
+        // 4. Delete their login, then their profile
+        const delRes = await fetch(`${SUPABASE_URL}/auth/v1/admin/users/${enc}`, { method: "DELETE", headers: authHeaders });
+        if (!delRes.ok && delRes.status !== 404) {
+          const err = await delRes.json().catch(() => ({}));
+          throw new Error("Wines were kept, but the login could not be deleted: " + (err.msg || err.message || err.error_description || "Supabase " + delRes.status));
+        }
+        await sb_fetch(env, "/profiles?id=eq." + enc, { method: "DELETE" }).catch((e) => console.warn("delete-user: profile:", e.message));
+
+        console.log("delete-user: deleted " + userId + " (" + displayName + "), kept " + theirWines.length + " wines");
+        return new Response(JSON.stringify({ ok: true, name: displayName, wines_kept: theirWines.length }), { status: 200, headers: cors });
+      } catch (e) {
+        let msg = e.message || "Delete failed";
+        if (/former_member_name/.test(msg)) msg = "The wines table needs the former_member_name column first \u2014 run the SQL in Supabase, then try again. Nothing was deleted.";
+        console.error("delete-user error:", e.message);
+        return new Response(JSON.stringify({ error: msg }), { status: 500, headers: cors });
+      }
+    }
     if (url.pathname.endsWith("/geocode")) {
       const lat = url.searchParams.get("lat"), lon = url.searchParams.get("lon");
       if (!lat || !lon) return new Response(JSON.stringify({ error: "lat and lon required" }), { status: 400, headers: cors });

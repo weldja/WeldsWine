@@ -4119,7 +4119,7 @@ function _hlrCompute() {
   // 1. Latest addition
   const latest = [...wines].filter(w => w.createdAt).sort(newest)[0];
   if (latest) {
-    const who = _hlrWho(latest.addedBy);
+    const who = latest.formerMember ? latest.formerMember + ' (former member)' : _hlrWho(latest.addedBy);
     add('new', latest, now - latest.createdAt < 7 * DAY ? 'Just in' : 'Latest addition',
         'Added ' + (who ? 'by ' + who + ' ' : '') + _hlrAgo(latest.createdAt));
   }
@@ -4412,7 +4412,7 @@ function _renderCellarAnalytics() {
   const memberCounts  = {};
   const memberRatings = {};
   wines.forEach(w => {
-    if (!w.addedBy) return;
+    if (!w.addedBy || w.formerMember) return; // don't credit current members with a former member's wines
     memberCounts[w.addedBy]  = (memberCounts[w.addedBy]||0)+1;
     if (w.rating) {
       if (!memberRatings[w.addedBy]) memberRatings[w.addedBy] = [];
@@ -5045,8 +5045,15 @@ function createCard(w) {
     body.appendChild(tagsWrap);
   }
 
-  // Added-by badge (shared cellars only)
-  if (window._cellarId && window._cellarMembers.length && w.addedBy && w.addedBy !== _currentUser?.id) {
+  // Added-by badge (shared cellars only, or always for wines from a deleted member)
+  if (w.formerMember) {
+    const name     = w.formerMember;
+    const initials = name.slice(0,2).toUpperCase();
+    const ab = document.createElement('div');
+    ab.className = 'card-added-by';
+    ab.innerHTML = `<span class="card-added-by-dot" style="opacity:.6">${escHtml(initials)}</span>${escHtml(name)} <span style="opacity:.6;font-style:italic">(former member)</span>`;
+    body.appendChild(ab);
+  } else if (window._cellarId && window._cellarMembers.length && w.addedBy && w.addedBy !== _currentUser?.id) {
     const member   = window._cellarMembers.find(m => m.user_id === w.addedBy);
     const name     = member?.display_name || 'Member';
     const initials = name.slice(0,2).toUpperCase();
@@ -5238,6 +5245,7 @@ async function openDetail(w, e) {
 
   // Added-by line for shared cellars
   const addedBy = (() => {
+    if (w.formerMember) return 'Added by ' + w.formerMember + ' (former member)';
     if (!window._cellarId || !w.addedBy) return '';
     if (w.addedBy === _currentUser?.id) return 'Added by you';
     const m = (window._cellarMembers || []).find(x => x.user_id === w.addedBy);
@@ -7539,30 +7547,33 @@ async function loadWinesFromDB(cacheKey) {
   if (!user) { console.warn('loadWinesFromDB: no current user'); hideLoadBar(); return; }
 
   try {
-    let metaQuery, photoQuery;
+    let photoQuery;
 
     // Skip re-fetching members if bootstrap fetched them a moment ago
     if (window._cellarId && !_cellarMembersAreFresh()) await _refreshCellarMembers();
     const memberIds = (window._cellarMembers || []).map(m => m.user_id);
 
-    if (window._cellarId && memberIds.length > 0) {
-      const idFilter = memberIds.map(id => `user_id.eq.${id}`).join(',');
-      metaQuery = _sb.from('wines')
-        .select('id,name,winery,vintage,country,region,grape,style,price,purchased_from,date_tasted,notes,rating,is_favourite,buy_again,loc_lat,loc_lng,loc_label,created_at,shared_by,added_by,cellar_id,user_id,bottle_count,ratings')
-        .or(idFilter)
-        .order('created_at', { ascending: false });
-      photoQuery = _sb.from('wines').select('id,photo_front,photo_back').or(idFilter);
-    } else {
-      metaQuery = _sb.from('wines')
-        .select('id,name,winery,vintage,country,region,grape,style,price,purchased_from,date_tasted,notes,rating,is_favourite,buy_again,loc_lat,loc_lng,loc_label,created_at,shared_by,added_by,cellar_id,user_id,bottle_count,ratings')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
-      photoQuery = _sb.from('wines').select('id,photo_front,photo_back').eq('user_id', user.id);
-    }
+    const WINE_COLUMNS = 'id,name,winery,vintage,country,region,grape,style,price,purchased_from,date_tasted,notes,rating,is_favourite,buy_again,loc_lat,loc_lng,loc_label,created_at,shared_by,added_by,cellar_id,user_id,bottle_count,ratings';
+    const inCellar = window._cellarId && memberIds.length > 0;
+    const idFilter = inCellar ? memberIds.map(id => `user_id.eq.${id}`).join(',') : '';
+    // Builds the wine-details query for the chosen columns
+    const makeMetaQuery = (cols) => {
+      const q = _sb.from('wines').select(cols);
+      return (inCellar ? q.or(idFilter) : q.eq('user_id', user.id)).order('created_at', { ascending: false });
+    };
+    photoQuery = inCellar
+      ? _sb.from('wines').select('id,photo_front,photo_back').or(idFilter)
+      : _sb.from('wines').select('id,photo_front,photo_back').eq('user_id', user.id);
 
     // SPEED: fetch the wine details first and show the cards straight away.
     // Photos are much bigger, so they load afterwards (see _loadWinePhotos).
-    const metaResult = await metaQuery;
+    // former_member_name = name of a deleted user who added the wine.
+    // If that column hasn't been added to the database yet, load without it.
+    let metaResult = await makeMetaQuery(WINE_COLUMNS + ',former_member_name');
+    if (metaResult.error && /former_member_name/.test(metaResult.error.message || '')) {
+      console.warn('wines.former_member_name column not found — run the SQL to add it. Loading without it.');
+      metaResult = await makeMetaQuery(WINE_COLUMNS);
+    }
 
     if (metaResult.error) throw metaResult.error;
 
@@ -7586,6 +7597,7 @@ async function loadWinesFromDB(cacheKey) {
       rating:       row.rating,
       sharedBy:     row.shared_by || null,
       addedBy:      row.added_by  || row.user_id || null,
+      formerMember: row.former_member_name || null, // set when the person who added it was deleted
       userId:       row.user_id   || null,
       isFavourite:  row.is_favourite || false,
       buyAgain:     row.buy_again    || false,
@@ -8613,6 +8625,8 @@ function updateKeyBadge() {
             <button class="admin-btn-sm admin-btn-create" style="flex:1" onclick="handleAdminCreateCellar()">Create</button>
           </div>
         </div>
+        <!-- Every user account, with a Delete button (filled in by renderAdminUsers) -->
+        <div id="adminUsersList" style="margin-top:22px"></div>
       </div>
     </div>
   </div>
@@ -9554,6 +9568,7 @@ async function loadAdminCellars() {
     // Also load all users for the add-member dropdown
     const uRes = await _adminFetch('/api/admin/users');
     if (uRes.ok) _adminUsers = await uRes.json();
+    renderAdminUsers();
 
     if (!_adminCellars.length) {
       container.innerHTML = '<div class="admin-empty">No cellars yet</div>';
@@ -9600,6 +9615,72 @@ async function loadAdminCellars() {
     console.error('Admin cellars load error:', e);
     container.innerHTML = '<div class="admin-empty">' + escHtml(e.message || 'Could not load cellars') + '</div>';
   }
+}
+
+/* ── User accounts list (admin) ─────────────────────────── */
+function renderAdminUsers() {
+  const box = document.getElementById('adminUsersList');
+  if (!box) return;
+  const users = (_adminUsers || []).slice().sort((a, b) => (a.display_name || a.email || '').localeCompare(b.display_name || b.email || ''));
+  if (!users.length) { box.innerHTML = ''; return; }
+  const rows = users.map(u => {
+    const name = u.display_name || (u.email ? u.email.split('@')[0] : 'Member');
+    const initials = name.slice(0, 2).toUpperCase();
+    const isMe = u.id === _currentUser?.id;
+    // Admins (including you) can't be deleted here
+    const delBtn = (u.is_admin || isMe) ? '' :
+      `<button class="admin-remove-member" onclick="confirmDeleteUser('${escJs(u.id)}','${escJs(name)}','${escJs(u.email || '')}')" title="Delete account">🗑</button>`;
+    return `<div class="admin-member-row">
+      <div class="admin-member-avatar" style="background:${u.is_admin ? 'var(--burgundy)' : 'var(--warm-gray)'}">${escHtml(initials)}</div>
+      <div class="admin-member-details">
+        <div class="admin-member-name">${escHtml(name)}${u.is_admin ? '<span class="admin-member-role">Admin</span>' : ''}</div>
+        <div class="admin-member-email">${escHtml(u.email || '')}</div>
+      </div>
+      ${delBtn}
+    </div>`;
+  }).join('');
+  box.innerHTML = `<div class="admin-cellar-card">
+    <div class="admin-cellar-header">
+      <div>
+        <div class="admin-cellar-title">User accounts</div>
+        <div class="admin-cellar-meta">${users.length} account${users.length !== 1 ? 's' : ''} · deleting an account keeps the wines they added</div>
+      </div>
+    </div>
+    <div class="admin-member-list">${rows}</div>
+  </div>`;
+}
+
+function confirmDeleteUser(userId, userName, userEmail) {
+  const overlay = document.getElementById('adminConfirmOverlay');
+  document.getElementById('adminConfirmIcon').textContent = '🗑';
+  document.getElementById('adminConfirmTitle').textContent = 'Delete ' + userName + '\u2019s account?';
+  document.getElementById('adminConfirmMsg').textContent =
+    (userEmail ? userEmail + ' will' : 'They will') + ' no longer be able to sign in, and this can\u2019t be undone. ' +
+    'Their wines stay in the cellar, marked \u201CAdded by ' + userName + ' (former member)\u201D.';
+  const actionBtn = document.getElementById('adminConfirmAction');
+  actionBtn.textContent = 'Delete account';
+  actionBtn.className = 'admin-btn-sm admin-btn-danger';
+  actionBtn.disabled = false;
+  actionBtn.onclick = async function() {
+    actionBtn.disabled = true;
+    actionBtn.textContent = 'Deleting…';
+    try {
+      const res = await _adminFetch('/api/admin/users/' + encodeURIComponent(userId), { method: 'DELETE' });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Failed');
+      const kept = data.wines_kept || 0;
+      showToast(userName + '\u2019s account deleted' + (kept ? ' \u00B7 ' + kept + ' wine' + (kept !== 1 ? 's' : '') + ' kept' : ''));
+      closeAdminConfirm();
+      loadAdminCellars();
+      // Refresh the journal so kept wines show their new label
+      if (_currentUser) loadWinesFromDB();
+    } catch (e) {
+      showToast('Could not delete account: ' + (e.message || 'unknown error'));
+      actionBtn.disabled = false;
+      actionBtn.textContent = 'Delete account';
+    }
+  };
+  overlay.classList.add('open');
 }
 
 function hashStr(s) {
