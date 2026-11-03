@@ -8686,9 +8686,9 @@ const _cellarMsgs = [
   'We only fly Malaysian',
   'We like things to be exactly the same as last time'
 ];
-/* Hold the loader (and the grid reveal) for at least this long,
-   so the phrase can actually be read. */
-const _CELLAR_LOADER_MIN_MS = 5000;
+/* Minimum time to hold the loader on screen. Set to 0 so the cellar
+   appears as soon as the data arrives (was 5000 = a forced 5s wait). */
+const _CELLAR_LOADER_MIN_MS = 0;
 let _cellarLoaderShownAt = 0;
 let _cellarLoaderHold = false;
 
