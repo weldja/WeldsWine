@@ -1,3 +1,9 @@
 name = "aged-wave-00c3"
 main = "worker.js"
 compatibility_date = "2024-01-01"
+
+# Keep the https://aged-wave-00c3.james-weld.workers.dev address working
+workers_dev = true
+
+# Don't delete any variables set in the Cloudflare dashboard when deploying
+keep_vars = true
