@@ -7541,7 +7541,8 @@ async function loadWinesFromDB(cacheKey) {
   try {
     let metaQuery, photoQuery;
 
-    if (window._cellarId) await _refreshCellarMembers();
+    // Skip re-fetching members if bootstrap fetched them a moment ago
+    if (window._cellarId && !_cellarMembersAreFresh()) await _refreshCellarMembers();
     const memberIds = (window._cellarMembers || []).map(m => m.user_id);
 
     if (window._cellarId && memberIds.length > 0) {
@@ -7559,12 +7560,15 @@ async function loadWinesFromDB(cacheKey) {
       photoQuery = _sb.from('wines').select('id,photo_front,photo_back').eq('user_id', user.id);
     }
 
-    const [metaResult, photoResult] = await Promise.all([metaQuery, photoQuery]);
+    // SPEED: fetch the wine details first and show the cards straight away.
+    // Photos are much bigger, so they load afterwards (see _loadWinePhotos).
+    const metaResult = await metaQuery;
 
     if (metaResult.error) throw metaResult.error;
 
+    // Keep any photos already in memory (e.g. on a refresh) so cards don't flash blank
     const photoMap = {};
-    (photoResult.data || []).forEach(r => { photoMap[r.id] = r; });
+    wines.forEach(w => { photoMap[w.id] = { photo_front: w.photoFront || w.photo || null, photo_back: w.photoBack || null }; });
 
     wines = (metaResult.data || []).map(row => ({
       id:           row.id,
@@ -7601,6 +7605,7 @@ async function loadWinesFromDB(cacheKey) {
     renderGrid();
     updateStats();
     hideLoadBar();
+    _loadWinePhotos(photoQuery); // runs in the background, fills in photos when ready
     _checkPendingImport();
     _checkNotifDeepLink();
     _eventsLoaded = false; // refresh events lazily against the new wine set
@@ -7629,6 +7634,35 @@ async function loadWinesFromDB(cacheKey) {
     showToast('Could not load wines: ' + (e?.message || e));
   }
 }
+/* SPEED: load the bottle photos after the cards are already on screen.
+   Opening a wine, its photo or the edit form already fetches that wine's
+   photos on demand, so nothing breaks if someone taps a card before this finishes. */
+let _photoLoadToken = 0;
+async function _loadWinePhotos(photoQuery) {
+  const token = ++_photoLoadToken;
+  try {
+    const { data, error } = await photoQuery;
+    if (error) throw error;
+    if (token !== _photoLoadToken) return; // a newer wine load has started — let that one win
+
+    const byId = new Map(wines.map(w => [w.id, w]));
+    let changed = false;
+    (data || []).forEach(row => {
+      const w = byId.get(row.id);
+      if (!w) return;
+      const front = row.photo_front || null;
+      const back  = row.photo_back  || null;
+      if (w.photoFront !== front || w.photoBack !== back) {
+        w.photoFront = front; w.photoBack = back; w.photo = front;
+        changed = true;
+      }
+    });
+    if (changed) renderGrid();
+  } catch (e) {
+    console.warn('Could not load wine photos:', e);
+  }
+}
+
 async function saveWineToDB(entry) {
   if (!_sb || !_currentUser) return false;
   // Ensure session is still valid (can lapse when app is backgrounded on mobile)
@@ -8680,11 +8714,17 @@ async function bootstrapCellar() {
   try { await _bootstrapInner(); } finally { _bootstrapRunning = false; }
 }
 async function _bootstrapInner() {
-  // Upsert profile (display name from email prefix)
-  try {
-    const name = (_currentUser.user_metadata?.full_name || _currentUser.email || '').split('@')[0] || 'Member';
-    await _sb.from('profiles').upsert({ id: _currentUser.id, display_name: name }, { onConflict: 'id', ignoreDuplicates: true });
-  } catch(e) { console.warn('profile upsert:', e); }
+  // Make sure a profile row exists (display name from email prefix).
+  // SPEED: this runs in the background instead of holding up startup.
+  // Existing users already have a profile, so normally nothing needs it.
+  // The rare paths below that add a cellar membership wait for it first.
+  const name = (_currentUser.user_metadata?.full_name || _currentUser.email || '').split('@')[0] || 'Member';
+  const profileReady = Promise.resolve(
+    _sb.from('profiles').upsert({ id: _currentUser.id, display_name: name }, { onConflict: 'id', ignoreDuplicates: true })
+  ).then(
+    (res) => { if (res && res.error) console.warn('profile upsert:', res.error); },
+    (e)   => { console.warn('profile upsert:', e); }
+  );
 
   // Invite token join flow.
   // Use URL param if present; always fall back to localStorage when no ?invite= in URL.
@@ -8713,6 +8753,7 @@ async function _bootstrapInner() {
   }
   if (inviteToken) {
     try { localStorage.removeItem('wwwPendingInvite'); localStorage.removeItem('wwwPendingInviteTs'); } catch(_) {}
+    await profileReady; // joining a cellar needs the profile to exist
     await joinCellarViaToken(inviteToken, !!urlInviteToken);
     window.history.replaceState({}, '', window.location.pathname);
     return;
@@ -8749,6 +8790,7 @@ async function _bootstrapInner() {
     .eq('owner_id', _currentUser.id).limit(1).maybeSingle();
 
   if (ownedCellar) {
+    await profileReady; // re-attaching membership needs the profile to exist
     // Re-attach missing membership row for existing owner
     await _sb.from('cellar_members').upsert(
       { cellar_id: ownedCellar.id, user_id: _currentUser.id, role: 'owner' },
@@ -8776,6 +8818,15 @@ async function _backfillExistingWines() {
 }
 
 // Fetch member list with display names from profiles
+// SPEED: when the member list was last fetched, and for which cellar.
+// Startup fetches members during bootstrap and then again when loading
+// wines; this lets the second fetch be skipped if it's only seconds old.
+let _membersFetchedAt  = 0;
+let _membersFetchedFor = null;
+function _cellarMembersAreFresh() {
+  return _membersFetchedFor === window._cellarId && (Date.now() - _membersFetchedAt) < 10000;
+}
+
 async function _refreshCellarMembers() {
   if (!_sb || !window._cellarId) return;
   try {
@@ -8800,6 +8851,8 @@ async function _refreshCellarMembers() {
       ...m,
       display_name: profileMap[m.user_id] || 'Member'
     }));
+    _membersFetchedAt  = Date.now();
+    _membersFetchedFor = window._cellarId;
   } catch(e) {
     console.warn('_refreshCellarMembers:', e);
   }
