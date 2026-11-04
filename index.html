@@ -1969,6 +1969,18 @@ body{
 
 /* ── Added-by badge on cards ─────────────────────────────── */
 .card-added-by{display:inline-flex;align-items:center;gap:4px;font-family:var(--font-b);font-size:.65rem;color:var(--warm-gray);margin-top:4px;opacity:.75}
+.grid-event-heading{grid-column:1/-1;display:flex;align-items:baseline;flex-wrap:wrap;gap:4px 8px;padding:14px 4px 4px;border-bottom:1px solid rgba(201,163,74,.35);cursor:pointer;-webkit-tap-highlight-color:transparent}
+
+.grid-event-heading:first-child{padding-top:2px}
+
+.grid-event-heading.none{cursor:default}
+
+.grid-event-heading-emoji{font-size:1.05rem}
+
+.grid-event-heading-name{font-family:var(--font-d,Georgia,serif);font-size:1.02rem;font-weight:600;color:var(--charcoal)}
+
+.grid-event-heading-meta{font-family:var(--font-b);font-size:.72rem;color:var(--warm-gray)}
+
 .card-event-label{display:inline-flex;align-items:center;gap:4px;max-width:100%;margin-top:5px;padding:2px 8px;border-radius:999px;background:rgba(201,163,74,.16);border:1px solid rgba(201,163,74,.45);color:var(--charcoal);font-family:var(--font-b);font-size:.66rem;font-weight:500;line-height:1.5;cursor:pointer;-webkit-tap-highlight-color:transparent}
 
 .card-event-label-text{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
@@ -2604,6 +2616,7 @@ body{
           <option value="rating-desc">Top rated</option>
           <option value="rating-asc">Lowest rated</option>
           <option value="name-asc">A–Z</option>
+          <option value="event">By event</option>
         </select>
       </label>
       <button class="tb-tool tb-export" id="exportBtn" title="Export your wines as a CSV file"><svg class="wi" aria-hidden="true" focusable="false"><use href="#wi-download"/></svg><span>Export</span></button>
@@ -3882,7 +3895,12 @@ function setupEvents() {
     clearTimeout(_searchTimer);
     _searchTimer = setTimeout(()=>{ searchQuery=e.target.value.toLowerCase().trim(); renderGrid(); }, 180);
   });
-  sortSelect.addEventListener('change', e=>{ activeSort=e.target.value; renderGrid(); });
+  sortSelect.addEventListener('change', e=>{
+    activeSort=e.target.value;
+    // "By event" needs the events list; load it if it isn't here yet (it redraws when ready)
+    if (activeSort==='event' && typeof _ensureEventsLoaded==='function') _ensureEventsLoaded();
+    renderGrid();
+  });
   document.querySelectorAll('.filter-tab').forEach(tab=>{
     tab.addEventListener('click', ()=>{
       document.querySelectorAll('.filter-tab').forEach(t=>t.classList.remove('active'));
@@ -3921,7 +3939,17 @@ function getList() {
   else if (activeFilter==='9') list=list.filter(w=>w.rating>=9);
   else if (activeFilter==='7') list=list.filter(w=>w.rating>=7);
   else if (activeFilter==='recent') { const c=Date.now()-30*86400000; list=list.filter(w=>new Date(w.dateTasted||w.createdAt)>c); }
+  // "By event": each wine's most recent event (null for the other sorts)
+  const evGroups = (activeSort==='event' && typeof _wineEventGroups==='function') ? _wineEventGroups() : null;
   list.sort((a,b)=>{
+    // By event: most recent event first, wines not in any event at the end,
+    // newest first within each event
+    if(activeSort==='event') {
+      const ra = evGroups && evGroups.has(a.id) ? evGroups.get(a.id).rank : Infinity;
+      const rb = evGroups && evGroups.has(b.id) ? evGroups.get(b.id).rank : Infinity;
+      if (ra !== rb) return ra < rb ? -1 : 1;
+      return new Date(b.dateTasted||b.createdAt||0)-new Date(a.dateTasted||a.createdAt||0);
+    }
     // Untasted wines have no tasted date — fall back to when they were added
     if(activeSort==='date-desc')   return new Date(b.dateTasted||b.createdAt||0)-new Date(a.dateTasted||a.createdAt||0);
     if(activeSort==='date-asc')    return new Date(a.dateTasted||a.createdAt||0)-new Date(b.dateTasted||b.createdAt||0);
@@ -4630,7 +4658,24 @@ function renderGrid() {
   // Apply featured badge to top-pick in the full grid
   const topPickWine = [...wines].sort((a,b) => (b.rating||0) - (a.rating||0))[0];
   const _isRerender = _flipFrom.size > 0;
+
+  // "By event": put a heading above each event's group of wines
+  const evGroups = (activeSort==='event' && typeof _wineEventGroups==='function') ? _wineEventGroups() : null;
+  const showEventHeadings = !!(evGroups && evGroups.size);
+  const groupKey = w => { const g = evGroups.get(w.id); return g ? g.ev.id : '__none'; };
+  const groupCounts = {};
+  if (showEventHeadings) list.forEach(w => { const k = groupKey(w); groupCounts[k] = (groupCounts[k] || 0) + 1; });
+  let lastGroup = null;
+
   list.forEach((w, i) => {
+    if (showEventHeadings) {
+      const k = groupKey(w);
+      if (k !== lastGroup) {
+        lastGroup = k;
+        const g = evGroups.get(w.id);
+        wineGrid.appendChild(_eventGroupHeading(g ? g.ev : null, groupCounts[k]));
+      }
+    }
     const c = createCard(w);
     // Stagger only on a genuine first paint, never on a filter tap
     if (_isRerender) c.classList.add('no-enter');
@@ -4666,6 +4711,27 @@ function renderGrid() {
                 { duration: 340, easing: 'cubic-bezier(.22,1,.36,1)' });
     });
   }
+}
+
+// Heading shown above each group when sorting "By event"
+function _eventGroupHeading(ev, count) {
+  const h = document.createElement('div');
+  h.className = 'grid-event-heading' + (ev ? '' : ' none');
+  const countTxt = count + ' wine' + (count !== 1 ? 's' : '');
+  if (ev) {
+    const date = typeof _evDateLabel === 'function' ? _evDateLabel(ev) : '';
+    h.innerHTML =
+      `<span class="grid-event-heading-emoji">${escHtml(ev.emoji || '🥂')}</span>` +
+      `<span class="grid-event-heading-name">${escHtml(ev.name)}</span>` +
+      `<span class="grid-event-heading-meta">${escHtml([date, countTxt].filter(Boolean).join(' · '))}</span>`;
+    h.title = 'Open ' + ev.name;
+    h.addEventListener('click', () => openEventsView(ev.id));
+  } else {
+    h.innerHTML =
+      `<span class="grid-event-heading-name">Not in an event</span>` +
+      `<span class="grid-event-heading-meta">${escHtml(countTxt)}</span>`;
+  }
+  return h;
 }
 
 function safePhotoSrc(url) {
@@ -10097,6 +10163,17 @@ async function _ensureEventsLoaded(force) {
 }
 
 function _getEventById(id) { return _events.find(e => e.id === id) || null; }
+
+// For "By event" sorting: wine id -> { rank, ev } for the wine's most recent event.
+// _events is sorted newest first, so the first event found for a wine is its latest.
+// A wine in several events is grouped under its most recent one only.
+function _wineEventGroups() {
+  const map = new Map();
+  _events.forEach((ev, i) => (ev.event_wines || []).forEach(x => {
+    if (!map.has(x.wine_id)) map.set(x.wine_id, { rank: i, ev });
+  }));
+  return map;
+}
 
 // The events a wine belongs to, most recent first (_events is already sorted that way)
 function _eventsForWine(wineId) {
