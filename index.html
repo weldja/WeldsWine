@@ -8000,7 +8000,8 @@ let _dupRatingVal   = 0;
        • grape     (Merlot vs Chardonnay — blends just need one grape in common)
        • style     (Red vs White)
        • producer  (no words in common at all)
-       • name      (less than half the words in common)
+       • name      (fewer than 60% of the words in common, or different
+                    numbers, e.g. "Bin 28" vs "Bin 128")
 
   2. ENOUGH DETAILS AGREE. Each matching detail earns points:
        name exactly the same ......... 3    name mostly the same ..... 2
@@ -8008,8 +8009,8 @@ let _dupRatingVal   = 0;
        grape the same ................ 1    style the same ........... 1
        country the same .............. 1
      A wine needs DUP_MIN_SCORE points (5) to be flagged.
-     If the label has no readable name, producer + vintage + grape must
-     all match instead, because "same producer, same year" alone is not
+     If one of the wines has no name at all, producer + vintage + grape
+     must all match instead, because "same producer, same year" alone is not
      enough to say it is the same bottle.
 
   Text is compared loosely: capitals, accents (é = e), punctuation and
@@ -8051,6 +8052,11 @@ function _dupTextSimilarity(a, b) {
   return shared / Math.max(wordsA.size, wordsB.size);
 }
 
+// The numbers in a wine name, ignoring years: "Bin 28 Kalimna 2019" -> ["28"]
+function _dupNumbers(value) {
+  return (_dupClean(value).match(/\d+/g) || []).filter(n => !/^(19|20)\d{2}$/.test(n));
+}
+
 // A 4-digit year, or null: "2019" -> "2019", "NV" -> null
 function _dupVintage(value) {
   const m = String(value || '').match(/\b(19|20)\d{2}\b/);
@@ -8082,13 +8088,19 @@ function findDuplicateWine(scanData) {
     let score = 0;
 
     // ── Name ──
+    // Numbers in a name identify the wine ("Bin 28" vs "Bin 128", "No. 5" vs "No. 7"),
+    // so if both names have numbers and they differ, it's a different wine.
+    const scanNums = _dupNumbers(scan.name), wNums = _dupNumbers(w.name);
+    if (scanNums.length && wNums.length && scanNums.join(' ') !== wNums.join(' ')) continue;
+
     const nameSim = _dupTextSimilarity(scan.name, w.name);
+    const bothHaveNames = nameSim !== null;
     let nameMatches = false;
-    if (nameSim !== null) {
-      if (nameSim < 0.5) continue;                 // names clearly differ
+    if (bothHaveNames) {
+      if (nameSim < 0.6) continue;                 // names differ (e.g. only "Bin" in common)
       if (nameSim === 1) score += 3;               // same name
-      else if (nameSim >= 0.6) score += 2;         // mostly the same name
-      nameMatches = nameSim >= 0.6;
+      else score += 2;                             // mostly the same name
+      nameMatches = true;
     }
 
     // ── Producer ──
@@ -8127,8 +8139,8 @@ function findDuplicateWine(scanData) {
     const wCountry = _dupClean(w.country);
     if (scan.country && wCountry && scan.country === wCountry) score += 1;
 
-    // No usable name? Then producer, vintage AND grape must all agree.
-    if (!nameMatches && !(wineryMatches && vintageMatches && grapeMatches)) continue;
+    // Only when one of the wines has NO name can producer + vintage + grape stand in for it.
+    if (!nameMatches && (bothHaveNames || !(wineryMatches && vintageMatches && grapeMatches))) continue;
 
     if (score > bestScore) { bestScore = score; bestWine = w; }
   }
