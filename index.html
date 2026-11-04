@@ -1969,6 +1969,12 @@ body{
 
 /* ── Added-by badge on cards ─────────────────────────────── */
 .card-added-by{display:inline-flex;align-items:center;gap:4px;font-family:var(--font-b);font-size:.65rem;color:var(--warm-gray);margin-top:4px;opacity:.75}
+.card-event-label{display:inline-flex;align-items:center;gap:4px;max-width:100%;margin-top:5px;padding:2px 8px;border-radius:999px;background:rgba(201,163,74,.16);border:1px solid rgba(201,163,74,.45);color:var(--charcoal);font-family:var(--font-b);font-size:.66rem;font-weight:500;line-height:1.5;cursor:pointer;-webkit-tap-highlight-color:transparent}
+
+.card-event-label-text{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+
+.card-event-label-more{opacity:.65;flex-shrink:0}
+
 .card-added-by-dot{width:14px;height:14px;border-radius:50%;background:var(--burgundy);color:#fff;font-size:.55rem;font-weight:700;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0}
 
 /* ── Comments panel (inside detail modal) ────────────────── */
@@ -5045,6 +5051,22 @@ function createCard(w) {
     body.appendChild(tagsWrap);
   }
 
+  // Event label — shows which event(s) this wine belongs to. Tap it to open the event.
+  // (typeof check: the events code lives in a later <script> block that may not have run yet)
+  const wineEvents = (typeof _eventsForWine === 'function') ? _eventsForWine(w.id) : [];
+  if (wineEvents.length) {
+    const first = wineEvents[0];
+    const label = document.createElement('div');
+    label.className = 'card-event-label';
+    label.title = wineEvents.map(e => (e.emoji || '🥂') + ' ' + e.name).join('\n');
+    label.innerHTML =
+      `<span>${escHtml(first.emoji || '🥂')}</span>` +
+      `<span class="card-event-label-text">${escHtml(first.name)}</span>` +
+      (wineEvents.length > 1 ? `<span class="card-event-label-more">+${wineEvents.length - 1}</span>` : '');
+    label.addEventListener('click', (e) => { e.stopPropagation(); openEventsView(first.id); });
+    body.appendChild(label);
+  }
+
   // Added-by badge (shared cellars only, or always for wines from a deleted member)
   if (w.formerMember) {
     const name     = w.formerMember;
@@ -7618,6 +7640,7 @@ async function loadWinesFromDB(cacheKey) {
     updateStats();
     hideLoadBar();
     _loadWinePhotos(photoQuery); // runs in the background, fills in photos when ready
+    _ensureEventsLoaded(true);   // background too — adds event labels to the cards when ready
     _checkPendingImport();
     _checkNotifDeepLink();
     _eventsLoaded = false; // refresh events lazily against the new wine set
@@ -10070,9 +10093,25 @@ async function _ensureEventsLoaded(force) {
   if (error) { console.error('loadEvents:', error); return; }
   _events = data || [];
   _eventsLoaded = true;
+  _eventsChanged();
 }
 
 function _getEventById(id) { return _events.find(e => e.id === id) || null; }
+
+// The events a wine belongs to, most recent first (_events is already sorted that way)
+function _eventsForWine(wineId) {
+  if (!_events.length) return [];
+  return _events.filter(ev => (ev.event_wines || []).some(x => x.wine_id === wineId));
+}
+
+// Redraw the cellar cards so their event labels stay up to date.
+// Several changes in a row only cause one redraw.
+let _evGridRefreshQueued = false;
+function _eventsChanged() {
+  if (_evGridRefreshQueued || !_winesLoaded) return;
+  _evGridRefreshQueued = true;
+  requestAnimationFrame(() => { _evGridRefreshQueued = false; renderGrid(); });
+}
 function _eventWineIds(ev) { return (ev.event_wines || []).map(x => x.wine_id); }
 function _eventWinesOf(ev) { return _eventWineIds(ev).map(id => getWineById(id)).filter(Boolean); }
 function _eventStats(ev) {
@@ -10372,6 +10411,7 @@ async function confirmEventPicks() {
   if (error) { console.error('addEventWines:', error); showToast('Could not add wines'); _evUpdatePickCta(); return; }
   const have = new Set(_eventWineIds(ev));
   rows.forEach(r => { if (!have.has(r.wine_id)) ev.event_wines.push({ wine_id: r.wine_id }); });
+  _eventsChanged();
   const n = _evPickSel.size;
   _evPickSel = new Set();
   closeEventSheets();
@@ -10386,6 +10426,7 @@ async function removeWineFromEvent(eventId, wineId) {
   const { error } = await _sb.from('event_wines').delete().eq('event_id', eventId).eq('wine_id', wineId);
   if (error) { console.error('removeEventWine:', error); showToast('Could not remove wine'); return; }
   ev.event_wines = (ev.event_wines || []).filter(x => x.wine_id !== wineId);
+  _eventsChanged();
   _renderEventDetail(ev);
   showToast('Removed from ' + ev.name);
 }
@@ -10396,6 +10437,7 @@ async function deleteEvent(eventId) {
   const { error } = await _sb.from('events').delete().eq('id', eventId);
   if (error) { console.error('deleteEvent:', error); showToast('Could not delete event'); return; }
   _events = _events.filter(e => e.id !== eventId);
+  _eventsChanged();
   _evShowList();
   showToast('Event deleted');
 }
@@ -10458,6 +10500,7 @@ async function _evSetMembership(eventId, wineId, adding, silent) {
     if (error) { console.error('eventDetach:', error); if (!silent) showToast('Could not update event'); return false; }
     ev.event_wines = (ev.event_wines || []).filter(x => x.wine_id !== wineId);
   }
+  _eventsChanged();
   return true;
 }
 
