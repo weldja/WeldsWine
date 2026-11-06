@@ -871,7 +871,9 @@ var worker_default = {
           },
           body: JSON.stringify({
             email,
-            email_confirm: false,
+            // Admin has approved this person; ownership of the address is proven
+            // when they click the set-password link, so mark it confirmed now.
+            email_confirm: true,
             user_metadata: { full_name: display_name || email.split("@")[0] }
           })
         });
@@ -904,38 +906,56 @@ var worker_default = {
           }).catch(e => console.warn("cellar assign:", e.message));
         }
 
-        // Generate password reset link (acts as invite)
-        const resetRes = await fetch(`${SUPABASE_URL}/auth/v1/admin/users/${userId}/factors`, {
-          headers: { apikey: env.SUPABASE_SERVICE_KEY, Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}` }
-        }).catch(() => null);
-        // Use generate_link to create an invite/magic link
-        const linkRes = await fetch(`${SUPABASE_URL}/auth/v1/admin/generate_link`, {
-          method: "POST",
-          headers: {
-            apikey: env.SUPABASE_SERVICE_KEY,
-            Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}`,
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            type: "invite",
-            email,
-            options: { redirectTo: APP_URL + "/?type=recovery" }
-          })
-        });
-        let inviteUrl = APP_URL;
-        if (linkRes.ok) {
-          const linkData = await linkRes.json();
-          // The action_link is the full invite URL
-          if (linkData.action_link) inviteUrl = linkData.action_link;
-        } else {
-          console.warn("generate_link failed:", await linkRes.text().catch(() => ""));
-        }
-
-        // Send invite email
+        // Generate a set-password link. The user already exists at this point,
+        // so type must be "recovery": Supabase refuses "invite" links for
+        // registered emails. A recovery link also fires PASSWORD_RECOVERY in
+        // index.html, which shows the set-password form.
+        let inviteUrl = null;
+        let linkError = null;
         try {
-          const { subject, html } = templates.invite(inviteUrl, display_name);
-          await sendEmail(env, { to: email, subject, html });
-        } catch (e) { console.warn("invite email failed:", e.message); }
+          const linkRes = await fetch(`${SUPABASE_URL}/auth/v1/admin/generate_link`, {
+            method: "POST",
+            headers: {
+              apikey: env.SUPABASE_SERVICE_KEY,
+              Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}`,
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+              type: "recovery",
+              email,
+              options: { redirectTo: APP_URL + "/?type=recovery" }
+            })
+          });
+          if (linkRes.ok) {
+            const linkData = await linkRes.json();
+            // Depending on Supabase version, action_link is top-level or under properties
+            inviteUrl = linkData.action_link || linkData.properties?.action_link || null;
+            if (!inviteUrl) linkError = "generate_link returned no action_link";
+          } else {
+            const t = await linkRes.text().catch(() => "");
+            linkError = `generate_link ${linkRes.status}: ${t.slice(0, 300)}`;
+          }
+        } catch (e) {
+          linkError = "generate_link failed: " + e.message;
+        }
+        if (linkError) console.error("create-user: " + linkError);
+
+        // Send invite email — only if we have a real set-password link,
+        // never a fallback to the homepage
+        let inviteSent = false;
+        let emailError = null;
+        if (inviteUrl) {
+          try {
+            const { subject, html } = templates.invite(inviteUrl, escEmail(display_name || ""));
+            await sendEmail(env, { to: email, subject, html });
+            inviteSent = true;
+          } catch (e) {
+            emailError = e.message === "RESEND_KEY_NOT_SET" ? "RESEND_API_KEY secret is not set in Cloudflare" : e.message;
+            console.error("create-user: invite email to " + email + " failed:", e.message);
+          }
+        } else {
+          emailError = "No set-password link could be generated";
+        }
 
         // Dismiss the access request if linked
         if (dismiss_request_id) {
@@ -947,7 +967,12 @@ var worker_default = {
           }).catch(() => {});
         }
 
-        return new Response(JSON.stringify({ ok: true, user_id: userId }), { status: 200, headers: cors });
+        return new Response(JSON.stringify({
+          ok: true,
+          user_id: userId,
+          invite_sent: inviteSent,
+          invite_error: inviteSent ? null : (linkError || emailError)
+        }), { status: 200, headers: cors });
       } catch (e) {
         console.error("create-user error:", e.message);
         return new Response(JSON.stringify({ error: e.message }), { status: 500, headers: cors });
