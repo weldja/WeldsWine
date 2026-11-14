@@ -2527,8 +2527,8 @@ body{
       <div id="authStateUpdatePassword" style="display:none">
         <div style="text-align:center;margin-bottom:20px">
           <div style="font-size:2rem;margin-bottom:10px">🔑</div>
-          <div style="font-family:var(--font-d);font-size:1rem;color:var(--charcoal);margin-bottom:6px">Set a new password</div>
-          <div style="font-family:var(--font-b);font-size:.85rem;color:var(--warm-gray);line-height:1.6">Choose a new password for your account. It must be different from your current password.</div>
+          <div id="updatePwTitle" style="font-family:var(--font-d);font-size:1rem;color:var(--charcoal);margin-bottom:6px">Set a new password</div>
+          <div id="updatePwSub" style="font-family:var(--font-b);font-size:.85rem;color:var(--warm-gray);line-height:1.6">Choose a new password for your account. It must be different from your current password.</div>
         </div>
         <div class="auth-form-group">
           <label for="newPassword">New Password</label>
@@ -2547,6 +2547,12 @@ body{
           <span id="updatePasswordSpinner" style="display:none">Updating…</span>
         </button>
         <div class="auth-msg" id="updatePasswordMsg"></div>
+        <div style="text-align:center;margin-top:14px">
+          <button type="button" onclick="skipSetPassword()"
+            style="background:none;border:none;color:var(--warm-gray);font-family:var(--font-b);font-size:.78rem;cursor:pointer;text-decoration:underline;text-underline-offset:2px;font-style:italic;padding:0">
+            Not now
+          </button>
+        </div>
       </div>
 
       <!-- State: link sent confirmation -->
@@ -3191,11 +3197,22 @@ var _sb = null;
 var _currentUser = null;
 var _sbInitError = false;
 var _isRecoveryFlow = false;
+// Set when someone arrives from an email link that has expired or was already used
+var _authLinkError = '';
+var _LINK_EXPIRED_MSG = 'That link has expired or has already been used. Enter your email below and we\u2019ll send you a fresh one.';
 
 // Detect password recovery flow from URL before anything else runs
 (function() {
-  var hash = window.location.hash;
-  var search = window.location.search;
+  var hash = window.location.hash || '';
+  var search = window.location.search || '';
+  // Supabase reports a dead link as error_code=… / error_description=… in the address
+  var linkFailed = /[#&?]error_(code|description)=/.test(hash) || /[?&]error_(code|description)=/.test(search);
+  if (linkFailed) {
+    _authLinkError = _LINK_EXPIRED_MSG;
+    // Tidy the address so refreshing the page doesn't show the error again
+    try { window.history.replaceState(null, '', window.location.pathname); } catch(_) {}
+    return;
+  }
   if (hash.includes('type=recovery') || search.includes('type=recovery') ||
       (hash.includes('access_token') && hash.includes('recovery'))) {
     _isRecoveryFlow = true;
@@ -3204,6 +3221,52 @@ var _isRecoveryFlow = false;
     document.getElementById('authScreen').classList.remove('hidden');
   }
 })();
+
+// Is there an invite link waiting to be used? (saved for up to 7 days)
+var _INVITE_FRESH_MS = 30 * 60 * 1000;            // used straight away, no questions asked
+var _INVITE_KEEP_MS  = 7 * 24 * 60 * 60 * 1000;   // kept this long while an account is set up
+function _hasPendingInvite() {
+  try {
+    if (new URLSearchParams(window.location.search).get('invite')) return true;
+    var stored = localStorage.getItem('wwwPendingInvite');
+    var ts = parseInt(localStorage.getItem('wwwPendingInviteTs') || '0', 10);
+    return !!stored && (Date.now() - ts) < _INVITE_KEEP_MS;
+  } catch(_) { return false; }
+}
+
+// Does this account still need to choose its first password?
+function _needsFirstPassword(user) {
+  return !!(user && user.user_metadata && user.user_metadata.needs_password === true);
+}
+
+// Show the "choose a password" screen, worded for a new member or a reset
+function _showSetPassword() {
+  var isNew = _needsFirstPassword(_currentUser);
+  var title = document.getElementById('updatePwTitle');
+  var sub   = document.getElementById('updatePwSub');
+  var label = document.getElementById('updatePasswordLabel');
+  if (title) title.textContent = isNew ? 'Welcome \u2014 choose a password' : 'Set a new password';
+  if (sub)   sub.textContent   = isNew
+    ? 'Choose a password for your new account. You\u2019ll use it with your email address to sign in.'
+    : 'Choose a new password for your account. It must be different from your current password.';
+  if (label) label.textContent = isNew ? 'Save password & open my journal' : 'Update Password';
+  var screen = document.getElementById('authScreen');
+  var form   = document.getElementById('authStateUpdatePassword');
+  // Already showing? Leave it alone so anything typed so far isn't disturbed.
+  if (!screen.classList.contains('hidden') && form.style.display !== 'none') return;
+  screen.classList.remove('hidden');
+  showAuthState('updatePassword');
+}
+
+// "Not now" on the set-password screen: carry on into the journal
+function skipSetPassword() {
+  _isRecoveryFlow = false;
+  _skippedSetPassword = true;
+  try { window.history.replaceState(null, '', window.location.pathname); } catch(_) {}
+  showAuthState('main');
+  if (_currentUser) showApp();
+}
+var _skippedSetPassword = false;
 
 function _ensureSb() {
   if (_sb) return true;
@@ -3271,6 +3334,24 @@ document.addEventListener('DOMContentLoaded', function() {
     } catch(_) {}
   }
 
+  // Arrived from an invite link? Say so on the sign-in screen, so it's clear what to do next.
+  try {
+    if (_hasPendingInvite() && !document.getElementById('authInviteNote')) {
+      const note = document.createElement('div');
+      note.id = 'authInviteNote';
+      note.style.cssText = 'font-family:var(--font-b);font-size:.85rem;line-height:1.6;color:var(--charcoal);background:var(--cream);border:1px solid var(--light-gray);border-radius:var(--r);padding:10px 12px;margin-bottom:16px;text-align:center';
+      note.textContent = '\uD83C\uDF77 You\u2019ve been invited to a shared cellar. Sign in to join it \u2014 or, if you don\u2019t have an account yet, request access below.';
+      const main = document.getElementById('authStateMain');
+      if (main) main.insertBefore(note, main.firstChild);
+    }
+  } catch(_) {}
+
+  // Arrived from an email link that no longer works? Offer a fresh one straight away.
+  if (_authLinkError) {
+    showAuthState('reset');
+    showResetMsg('err', _authLinkError);
+  }
+
   if (!_sb) {
     const msg = document.getElementById('authMsg');
     if (msg) { msg.className = 'auth-msg err'; msg.textContent = 'Configuration error: Supabase credentials are not set.'; }
@@ -3297,22 +3378,50 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // PASSWORD_RECOVERY is the definitive recovery event
     if (event === 'PASSWORD_RECOVERY') {
+      _isRecoveryFlow = true;
       _currentUser = session ? session.user : null;
-      document.getElementById('authScreen').classList.remove('hidden');
-      showAuthState('updatePassword');
+      _showSetPassword();
       return;
     }
 
-    // While recovery mode is active, suppress all other events
-    // that would log the user in or show the app
+    // While recovery mode is active, don't open the journal: the person came
+    // here to choose a password.
     if (_isRecoveryFlow) {
-      if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN' || event === 'SIGNED_OUT') {
-        console.log('Suppressed during recovery:', event);
+      if (session && session.user) {
+        // The email link worked and they are signed in — keep them on the
+        // set-password screen. (USER_UPDATED / TOKEN_REFRESHED arrive while
+        // the password is being saved, so those must not redraw the screen.)
+        _currentUser = session.user;
+        if (event !== 'USER_UPDATED' && event !== 'TOKEN_REFRESHED') _showSetPassword();
+        return;
+      }
+      // No session: the link did not sign them in (expired / already used),
+      // or they have signed out. Leave recovery mode so that signing in
+      // normally works again, and offer a fresh link.
+      _isRecoveryFlow = false;
+      if (event === 'INITIAL_SESSION') {
+        try { window.history.replaceState(null, '', window.location.pathname); } catch(_) {}
+        _currentUser = null;
+        hideApp();
+        showAuthState('reset');
+        showResetMsg('err', _LINK_EXPIRED_MSG);
         return;
       }
     }
 
     _currentUser = session ? session.user : null;
+
+    // A new member who is signed in but hasn't chosen a password yet (for
+    // example they closed the page half-way through) is asked to choose one
+    // before going any further — otherwise they could never sign in again.
+    if (_currentUser && _needsFirstPassword(_currentUser) && !_skippedSetPassword && !_showAppRunning &&
+        (event === 'INITIAL_SESSION' || event === 'SIGNED_IN') &&
+        !new URLSearchParams(window.location.search).get('wine')) {
+      _isRecoveryFlow = true;
+      _showSetPassword();
+      return;
+    }
+
     if (_currentUser) {
       // If we're showing a public wine view (?wine= param), don't auto-show the
       // journal on INITIAL_SESSION — let the user read the wine first.
@@ -3324,7 +3433,9 @@ document.addEventListener('DOMContentLoaded', function() {
         // but wire up the import button to use importSharedWine directly (not auth flow)
         // checkPublicWineView already handles this correctly for logged-in users.
       } else {
-        showApp();
+        // Run just after this event has finished (Supabase's advice): starting
+        // database work from inside the auth event itself can make it hang.
+        setTimeout(showApp, 0);
       }
     } else {
       hideApp();
@@ -3337,6 +3448,11 @@ document.addEventListener('DOMContentLoaded', function() {
     if (el) el.addEventListener('keydown', function(e) {
       if (e.key === 'Enter') handleAuthSubmit();
     });
+  });
+
+  ['reqName','reqEmail'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.addEventListener('keydown', function(e) { if (e.key === 'Enter') handleRequestAccess(); });
   });
 
   var resetEmailEl = document.getElementById('resetEmail');
@@ -3421,7 +3537,8 @@ async function showApp() {
   showCellarLoader();
 
   // Await bootstrap fully before loading wines -- guarantees _cellarId is set
-  await bootstrapCellar();
+  try { await bootstrapCellar(); }
+  catch(e) { console.error('[showApp] bootstrap failed:', e); }
   console.log('[showApp] bootstrap done cellarId=' + (window._cellarId || 'null') + ' role=' + window._cellarRole);
 
   // Check admin status (non-blocking)
@@ -3429,7 +3546,8 @@ async function showApp() {
 
   // Include cellarId in cache key so stale solo cache never renders for cellar members
   const cacheKey = 'wwwCache_' + userId + '_' + (window._cellarId || 'solo');
-  await loadWinesFromDB(cacheKey);
+  try { await loadWinesFromDB(cacheKey); }
+  catch(e) { console.error('[showApp] wine load failed:', e); if (typeof hideLoadBar === 'function') hideLoadBar(); }
 
   // Now safe to show cached wines for subsequent fast renders
   setTimeout(startLocationTracking, 100);
@@ -3470,6 +3588,18 @@ function hideApp() {
   if (pill) pill.style.display = 'none';
   const hint = document.getElementById('onboardingHint');
   if (hint) hint.style.display = 'none';
+  // Forget who was signed in, so the next person to sign in on this device
+  // never inherits the previous person's cellar or admin button.
+  window._cellarId = null; window._cellarRole = null; window._cellarMembers = [];
+  window._isAdmin = false;
+  _skippedSetPassword = false;
+  const adminBtn = document.getElementById('mobileMenuAdminBtn');
+  if (adminBtn) adminBtn.style.display = 'none';
+  if (typeof _unsubscribeRealtime === 'function') _unsubscribeRealtime();
+  // If the loading bar/screen is still up (e.g. the saved login turned out to have expired), take it down
+  const loadBarEl = document.getElementById('loadBar');
+  if (loadBarEl && loadBarEl.classList.contains('active') && typeof hideLoadBar === 'function') hideLoadBar();
+  else if (typeof hideCellarLoader === 'function') hideCellarLoader();
   if (!_appReady) return;
   wines = [];
   _winesLoaded = false;
@@ -3528,7 +3658,11 @@ async function handleAuthSubmit() {
     if (error) throw error;
   } catch(e) {
     const msg = e.message || '';
-    if (msg.includes('Invalid login')) showAuthMsg('err', 'Incorrect email or password');
+    const low = msg.toLowerCase();
+    if (low.includes('invalid login')) showAuthMsg('err', 'Incorrect email or password. New here, or not set a password yet? Use \u201CForgot password?\u201D below to get a set-password link.');
+    else if (low.includes('not confirmed')) showAuthMsg('err', 'This email address hasn\u2019t been confirmed yet. Use \u201CForgot password?\u201D below to get a new link.');
+    else if (low.includes('rate limit') || low.includes('too many')) showAuthMsg('err', 'Too many attempts \u2014 please wait a minute and try again.');
+    else if (low.includes('failed to fetch') || low.includes('network') || low.includes('load failed')) showAuthMsg('err', 'Can\u2019t reach the server \u2014 check your internet connection and try again.');
     else showAuthMsg('err', msg || 'Something went wrong, please try again');
   } finally {
     setAuthLoading(false);
@@ -3552,15 +3686,19 @@ async function handleRequestAccess() {
   btn.disabled = true;
   label.style.display = 'none';
   spinner.style.display = 'inline';
-  msg.style.display = 'none';
+  // Clear any earlier message (don't hide the box itself, or later errors never show)
+  msg.className = 'auth-msg'; msg.textContent = ''; msg.style.display = '';
 
   try {
     const proxyUrl = typeof Scanner !== 'undefined' && Scanner.getProxyUrl ? Scanner.getProxyUrl() : '';
     if (!proxyUrl) throw new Error('App not configured');
+    // If they arrived from a cellar invite link, tell the admin, so they can be put in the right cellar
+    const note = _hasPendingInvite() ? '[Arrived from a cellar invite link]' : '';
+    const fullMessage = [message, note].filter(Boolean).join(' ');
     const res = await fetch(proxyUrl.replace(/\/$/, '') + '/api/access-request', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, email, message: message || null })
+      body: JSON.stringify({ name, email, message: fullMessage || null })
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
@@ -3581,7 +3719,10 @@ async function handleRequestAccess() {
     document.getElementById('authRequestSuccess').style.display = 'block';
   } catch (e) {
     msg.className = 'auth-msg err';
-    msg.textContent = e.message || 'Something went wrong — try again';
+    msg.style.display = '';
+    msg.textContent = /failed to fetch|network|load failed/i.test(e.message || '')
+      ? 'Can\u2019t reach the server \u2014 check your internet connection and try again.'
+      : (e.message || 'Something went wrong — try again');
   } finally {
     btn.disabled = false;
     label.style.display = '';
@@ -3594,6 +3735,8 @@ async function handleSendLink() {
   if (!_ensureSb()) { showResetMsg('err', _sbInitError ? 'Configuration error — Supabase credentials are not set.' : 'Still loading — please wait a moment and try again'); return; }
   const email = document.getElementById('resetEmail').value.trim();
   if (!email) { showResetMsg('err', 'Please enter your email address'); return; }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showResetMsg('err', 'Please enter a valid email address'); return; }
+  clearResetMsg();
 
   const submitBtn     = document.getElementById('resetSubmitBtn');
   const submitLabel   = document.getElementById('resetSubmitLabel');
@@ -3603,17 +3746,33 @@ async function handleSendLink() {
   submitSpinner.style.display = 'inline';
 
   try {
-    const redirectTo = window.location.origin + window.location.pathname + '?type=recovery';
+    // First choice: ask the worker to email the link. It uses the same email
+    // service (Resend) as the invite emails, so if invites arrive, so do these.
+    let sent = false;
+    try {
+      const proxyUrl = typeof Scanner !== 'undefined' && Scanner.getProxyUrl ? Scanner.getProxyUrl() : '';
+      if (proxyUrl) {
+        const res = await fetch(proxyUrl.replace(/\/$/, '') + '/api/password-reset', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email })
+        });
+        const result = await res.json().catch(() => ({}));
+        sent = res.ok && result.ok === true;
+        if (!sent) console.warn('[reset] worker could not send the link, falling back to Supabase:', res.status, result.error || '');
+      }
+    } catch(e) {
+      console.warn('[reset] worker not reachable, falling back to Supabase:', e);
+    }
 
-    // resetPasswordForEmail is the correct client-side method —
-    // it sends a password reset link via Supabase SMTP (or custom SMTP if configured)
-    const { error } = await _sb.auth.resetPasswordForEmail(email, {
-      redirectTo
-    });
-
-    // Don't expose whether the account exists — always show success
-    if (error && !error.message?.toLowerCase().includes('not found')) {
-      throw error;
+    // Fallback: Supabase's own reset email
+    if (!sent) {
+      const redirectTo = window.location.origin + window.location.pathname + '?type=recovery';
+      const { error } = await _sb.auth.resetPasswordForEmail(email, { redirectTo });
+      // Don't expose whether the account exists — always show success
+      if (error && !error.message?.toLowerCase().includes('not found')) {
+        throw error;
+      }
     }
 
     const sentMsg = document.getElementById('sentEmailMsg');
@@ -3626,7 +3785,12 @@ async function handleSendLink() {
 
   } catch(e) {
     console.error('handleSendLink:', e);
-    showResetMsg('err', 'Could not send reset link — please try again');
+    const low = (e && e.message || '').toLowerCase();
+    if (low.includes('rate limit') || low.includes('security purposes') || low.includes('too many')) {
+      showResetMsg('err', 'A link was sent very recently \u2014 please check your inbox, or wait a minute and try again.');
+    } else {
+      showResetMsg('err', 'Could not send reset link — please try again');
+    }
   } finally {
     submitBtn.disabled          = false;
     submitLabel.style.display   = 'inline';
@@ -3658,21 +3822,47 @@ async function handleUpdatePassword() {
   btn.disabled = true; lbl.style.display = 'none'; spn.style.display = 'inline';
 
   try {
-    const { error } = await _sb.auth.updateUser({ password: newPwd });
+    // The email link signs the person in; without that there is nothing to update.
+    const { data: sess } = await _sb.auth.getSession();
+    if (!sess || !sess.session) {
+      _isRecoveryFlow = false;
+      btn.disabled = false; lbl.style.display = 'inline'; spn.style.display = 'none';
+      showAuthState('reset');
+      showResetMsg('err', _LINK_EXPIRED_MSG);
+      return;
+    }
+    const wasNew = _needsFirstPassword(sess.session.user);
+    // A new member's "still needs a password" marker is cleared in the same step
+    const changes = wasNew ? { password: newPwd, data: { needs_password: false } } : { password: newPwd };
+    const { data: updated, error } = await _sb.auth.updateUser(changes);
     if (error) throw error;
-    showUpdatePasswordMsg('ok', 'Password updated! Taking you to your journal…');
+    if (updated && updated.user) _currentUser = updated.user;
+    showUpdatePasswordMsg('ok', (wasNew ? 'Password saved!' : 'Password updated!') + ' Taking you to your journal…');
     document.getElementById('newPassword').value = '';
     document.getElementById('confirmPassword').value = '';
     // Clear the recovery token from URL so refreshing doesn't re-trigger the flow
     if (window.history && window.history.replaceState) {
       window.history.replaceState(null, '', window.location.pathname);
     }
-    setTimeout(() => { if (_currentUser) showApp(); }, 1800);
+    setTimeout(() => {
+      // Recovery is finished: from here on, signing in and out behave normally
+      _isRecoveryFlow = false;
+      btn.disabled = false; lbl.style.display = 'inline'; spn.style.display = 'none';
+      showAuthState('main');
+      showApp();
+    }, 1500);
   } catch(e) {
     console.error('handleUpdatePassword:', e);
     const msg = e.message || '';
-    if (msg.toLowerCase().includes('different') || msg.toLowerCase().includes('previous') || msg.toLowerCase().includes('same')) {
+    const low = msg.toLowerCase();
+    if (low.includes('session missing') || low.includes('not authenticated') || low.includes('jwt')) {
+      _isRecoveryFlow = false;
+      showAuthState('reset');
+      showResetMsg('err', _LINK_EXPIRED_MSG);
+    } else if (low.includes('different') || low.includes('previous') || low.includes('same')) {
       showUpdatePasswordMsg('err', 'Please choose a different password from your current one');
+    } else if (low.includes('failed to fetch') || low.includes('network') || low.includes('load failed')) {
+      showUpdatePasswordMsg('err', 'Can\u2019t reach the server \u2014 check your internet connection and try again.');
     } else {
       showUpdatePasswordMsg('err', msg || 'Could not update password — please try again');
     }
@@ -3694,10 +3884,23 @@ function showResetMsg(type, msg) {
 
 /* ── Sign out ────────────────────────────────────────────── */
 async function handleSignOut() {
-  if (_sb) await _sb.auth.signOut();
+  const uid = _currentUser?.id || '';
+  const cellar = window._cellarId || 'solo';
+  _isRecoveryFlow = false; // so the sign-out is never ignored
+  let failed = false;
+  if (_sb) {
+    try {
+      const { error } = await _sb.auth.signOut();
+      if (error) { failed = true; console.error('signOut:', error); }
+    } catch(e) { failed = true; console.error('signOut:', e); }
+  }
+  if (failed) {
+    if (typeof showToast === 'function') showToast('Could not sign out \u2014 check your connection and try again');
+    return;
+  }
   try {
-    const cacheKey = 'wwwCache_' + (_currentUser?.id || '');
-    sessionStorage.removeItem(cacheKey);
+    sessionStorage.removeItem('wwwCache_' + uid + '_' + cellar);
+    sessionStorage.removeItem('wwwCache_' + uid);
   } catch(_) {}
   // hideApp() via onAuthStateChange handles wines/renderGrid/updateStats
 }
@@ -8863,18 +9066,27 @@ async function _bootstrapInner() {
   const params = new URLSearchParams(window.location.search);
   const urlInviteToken = params.get('invite');
   let inviteToken = null;
+  let inviteIsOld = false; // true = saved more than 30 minutes ago, so ask before switching cellar
   if (urlInviteToken) {
     inviteToken = urlInviteToken;
   } else {
-    // No ?invite= in URL — check localStorage (covers post-redirect cases where URL was wiped).
-    // Only honour the token if it was saved recently (within 30 minutes); otherwise it is a
-    // stale token from a previous invite session and must be discarded silently to prevent
-    // the "Invite link not found" toast appearing on normal logins.
+    // No ?invite= in URL — check localStorage (covers post-redirect cases where URL was wiped,
+    // and new members: asking for access and setting a password can take days, and the
+    // invite must still be there when they finally sign in).
+    //  - saved in the last 30 minutes: used straight away
+    //  - saved in the last 7 days: still used, but if the person is already in a
+    //    different cellar they are asked first
+    //  - older than that: discarded silently
+    // Errors from a saved invite are never shown, so a normal login never sees
+    // an "Invite link not found" message.
     try {
       const stored = localStorage.getItem('wwwPendingInvite');
       const ts     = parseInt(localStorage.getItem('wwwPendingInviteTs') || '0', 10);
-      if (stored && (Date.now() - ts) < 30 * 60 * 1000) {
+      const age    = Date.now() - ts;
+      if (stored && age < _INVITE_FRESH_MS) {
         inviteToken = stored;
+      } else if (stored && age < _INVITE_KEEP_MS) {
+        inviteToken = stored; inviteIsOld = true;
       } else if (stored) {
         // Stale — clean up silently
         localStorage.removeItem('wwwPendingInvite');
@@ -8883,11 +9095,20 @@ async function _bootstrapInner() {
     } catch(_) {}
   }
   if (inviteToken) {
-    try { localStorage.removeItem('wwwPendingInvite'); localStorage.removeItem('wwwPendingInviteTs'); } catch(_) {}
     await profileReady; // joining a cellar needs the profile to exist
-    await joinCellarViaToken(inviteToken, !!urlInviteToken);
-    window.history.replaceState({}, '', window.location.pathname);
-    return;
+    let outcome = 'error';
+    try { outcome = await joinCellarViaToken(inviteToken, !!urlInviteToken, inviteIsOld); }
+    catch(e) { console.error('[bootstrap] invite join failed:', e); }
+    // Forget the saved invite once it has been dealt with. If it failed for a
+    // passing reason (e.g. no signal) keep it, so it is tried again next time.
+    if (outcome !== 'error') {
+      try { localStorage.removeItem('wwwPendingInvite'); localStorage.removeItem('wwwPendingInviteTs'); } catch(_) {}
+    }
+    if (urlInviteToken) window.history.replaceState({}, '', window.location.pathname);
+    const invNote = document.getElementById('authInviteNote');
+    if (invNote) invNote.remove();
+    if (window._cellarId) { setTimeout(_subscribeRealtime, 500); return; }
+    // No cellar came out of the invite — carry on and look for one the normal way
   }
 
   // Fetch memberships with retry -- DB is ground truth, never fall through on transient error.
@@ -9099,8 +9320,8 @@ function _subscribeRealtime() {
         const prev = window._cellarMembers.length;
         await _refreshCellarMembers(); _updateCellarPill();
         if (window._cellarMembers.length !== prev) {
-          try { sessionStorage.removeItem('wwwCache_' + _currentUser.id); } catch(_) {}
-          await loadWinesFromDB('wwwCache_' + _currentUser.id);
+          try { sessionStorage.removeItem(_wineCacheKey()); } catch(_) {}
+          await loadWinesFromDB(_wineCacheKey());
         }
       })
     .subscribe();
@@ -9109,67 +9330,121 @@ function _unsubscribeRealtime() {
   if (_realtimeChannel && _sb) { try { _sb.removeChannel(_realtimeChannel); } catch(_) {} _realtimeChannel = null; }
 }
 
-// Join a cellar via invite token
-async function joinCellarViaToken(token, showErrors = true) {
-  if (!_sb || !_currentUser) return;
+// The name the wine list is saved under on this device (per person, per cellar)
+function _wineCacheKey() {
+  return 'wwwCache_' + (_currentUser?.id || '') + '_' + (window._cellarId || 'solo');
+}
+
+// Join a cellar via invite token.
+// Returns what happened:
+//   'joined'   — now a member of the invited cellar
+//   'already'  — was already a member of it
+//   'invalid'  — the invite link doesn't match any cellar (expired / replaced)
+//   'declined' — the person chose to stay in their current cellar
+//   'error'    — something went wrong (e.g. no signal); nothing was changed
+// showErrors:    show a message if the link doesn't work
+// confirmSwitch: ask first if joining means leaving a different cellar
+async function joinCellarViaToken(token, showErrors = true, confirmSwitch = false) {
+  if (!_sb || !_currentUser) return 'error';
+  token = String(token || '').trim();
+  if (!token) return 'invalid';
+  const uid = _currentUser.id;
+
+  // Which cellar(s) is this person in right now? Needed so we can put things
+  // back exactly as they were if joining the new one fails.
+  const { data: currentRows, error: oe } = await _sb.from('cellar_members')
+    .select('cellar_id,role').eq('user_id', uid);
+  const current = currentRows || [];
+  const useCurrent = async () => {
+    if (!current.length) return;
+    window._cellarId = current[0].cellar_id; window._cellarRole = current[0].role;
+    await _refreshCellarMembers(); _updateCellarPill();
+  };
+  if (oe) {
+    console.error('joinCellarViaToken: could not read current membership:', oe);
+    if (showErrors) showToast('Could not check the invite link — please try it again');
+    return 'error';
+  }
 
   const { data: cellar, error: ce } = await _sb
     .from('cellars').select('id').eq('invite_token', token).maybeSingle();
 
-  if (ce || !cellar) {
+  if (ce) {
+    console.error('joinCellarViaToken: invite lookup failed:', ce);
+    if (showErrors) showToast('Could not check the invite link — please try it again');
+    await useCurrent();
+    return 'error';
+  }
+  if (!cellar) {
     if (showErrors) showToast('Invite link not found or has expired');
     // Fall back to existing membership
-    const { data: m } = await _sb.from('cellar_members').select('cellar_id,role')
-      .eq('user_id', _currentUser.id).limit(1).maybeSingle();
-    if (m) { window._cellarId = m.cellar_id; window._cellarRole = m.role; await _refreshCellarMembers(); _updateCellarPill(); }
-    return;
+    await useCurrent();
+    return 'invalid';
   }
 
   // Check if already a member of this cellar
-  const { data: existing } = await _sb.from('cellar_members').select('cellar_id,role')
-    .eq('cellar_id', cellar.id).eq('user_id', _currentUser.id).maybeSingle();
-
+  const existing = current.find(r => r.cellar_id === cellar.id);
   if (existing) {
     // Already in this cellar — just activate it
     window._cellarId   = cellar.id;
     window._cellarRole = existing.role;
     await _refreshCellarMembers(); _updateCellarPill();
-    return;
+    return 'already';
+  }
+
+  // An older saved invite, and they're in a different cellar: ask before moving them
+  if (confirmSwitch && current.length &&
+      !confirm('You have an invite to join a shared cellar.\n\nJoin it now? You will leave your current cellar.')) {
+    await useCurrent();
+    return 'declined';
   }
 
   // Leave any existing cellar first (single-cellar rule)
-  await _sb.from('cellar_members').delete().eq('user_id', _currentUser.id);
-
-  // Join the new cellar
-  const { error: ie } = await _sb.from('cellar_members').insert({
-    cellar_id: cellar.id, user_id: _currentUser.id, role: 'member'
-  });
-  if (ie && ie.code !== '23505') {
-    console.error('joinCellarViaToken:', ie);
-    if (showErrors) showToast('Could not join cellar — please try the link again');
-    return;
+  if (current.length) {
+    const { error: de } = await _sb.from('cellar_members').delete().eq('user_id', uid);
+    if (de) {
+      console.error('joinCellarViaToken: could not leave current cellar:', de);
+      if (showErrors) showToast('Could not join cellar — please try the link again');
+      await useCurrent();
+      return 'error';
+    }
   }
 
-  // Confirm insert by re-querying
-  const { data: confirmed } = await _sb.from('cellar_members').select('cellar_id,role')
-    .eq('cellar_id', cellar.id).eq('user_id', _currentUser.id).maybeSingle();
+  // Join the new cellar, then confirm by re-querying
+  const { error: ie } = await _sb.from('cellar_members').insert({
+    cellar_id: cellar.id, user_id: uid, role: 'member'
+  });
+  let confirmed = null;
+  if (!ie || ie.code === '23505') {
+    const { data } = await _sb.from('cellar_members').select('cellar_id,role')
+      .eq('cellar_id', cellar.id).eq('user_id', uid).maybeSingle();
+    confirmed = data;
+  }
   if (!confirmed) {
-    console.error('joinCellarViaToken: insert not confirmed in DB');
+    console.error('joinCellarViaToken: join failed or not confirmed in DB', ie || '');
+    // Put the person back in the cellar they were in, so they are never left with none
+    if (current.length) {
+      const { error: re } = await _sb.from('cellar_members')
+        .insert(current.map(r => ({ cellar_id: r.cellar_id, user_id: uid, role: r.role })));
+      if (re) console.error('joinCellarViaToken: could not restore previous membership:', re);
+      else await useCurrent();
+    }
     if (showErrors) showToast('Could not join cellar — please try the link again');
-    return;
+    return 'error';
   }
 
   console.log('[join] membership confirmed in DB for cellar=' + cellar.id.slice(0,8));
   showToast('\u2713 You\u2019ve joined the shared cellar!');
-  window.history.replaceState({}, '', window.location.pathname);
-  try { localStorage.removeItem('wwwPendingInvite'); localStorage.removeItem('wwwPendingInviteTs'); } catch(_) {}
 
+  // Clear the wine list saved for the cellar they just left
+  try { sessionStorage.removeItem(_wineCacheKey()); sessionStorage.removeItem('wwwCache_' + uid); } catch(_) {}
   window._cellarId   = cellar.id;
-  window._cellarRole = 'member';
-  console.log('[join] cellarId set to=' + cellar.id.slice(0,8) + ' role=member');
+  window._cellarRole = confirmed.role || 'member';
+  console.log('[join] cellarId set to=' + cellar.id.slice(0,8) + ' role=' + window._cellarRole);
   await _refreshCellarMembers();
   _updateCellarPill();
-  try { sessionStorage.removeItem('wwwCache_' + _currentUser.id); } catch(_) {}
+  try { sessionStorage.removeItem(_wineCacheKey()); } catch(_) {}
+  return 'joined';
 }
 
 /* ══════════════════════════════════════════════════════════════
@@ -9224,16 +9499,23 @@ async function _loadInviteLink() {
   const input = document.getElementById('inviteLinkInput');
   if (!input || !_sb) return;
   try {
-    const { data } = await _sb
+    const { data, error } = await _sb
       .from('cellars')
       .select('invite_token')
       .eq('id', window._cellarId)
       .single();
-    if (data) {
-      input.value = `${window.location.origin}${window.location.pathname}?invite=${data.invite_token}`;
+    if (error) throw error;
+    if (data && data.invite_token) {
+      input.value = `${window.location.origin}${window.location.pathname}?invite=${encodeURIComponent(data.invite_token)}`;
+      input.dataset.ready = '1';
+    } else {
+      input.value = 'No invite link yet — tap “Generate new link”';
+      input.dataset.ready = '';
     }
   } catch(e) {
+    console.warn('_loadInviteLink:', e);
     input.value = 'Could not load link';
+    input.dataset.ready = '';
   }
 }
 
@@ -9291,13 +9573,17 @@ async function _removeMember(userId) {
   // Rotate invite token so the removed member's old link no longer works
   const newToken = Array.from(crypto.getRandomValues(new Uint8Array(16)))
     .map(b => b.toString(16).padStart(2,'0')).join('');
-  await _sb.from('cellars').update({ invite_token: newToken }).eq('id', window._cellarId);
+  const { error: rotateErr } = await _sb.from('cellars').update({ invite_token: newToken }).eq('id', window._cellarId);
+  if (rotateErr) {
+    console.error('_removeMember: could not replace invite link:', rotateErr);
+    showToast('Member removed — but tap “Generate new link” so their old invite stops working');
+  }
   await _loadInviteLink();
 
   await _refreshCellarMembers();
   _updateCellarPill();
-  try { sessionStorage.removeItem('wwwCache_' + _currentUser.id); } catch(_) {}
-  await loadWinesFromDB('wwwCache_' + _currentUser.id);
+  try { sessionStorage.removeItem(_wineCacheKey()); } catch(_) {}
+  await loadWinesFromDB(_wineCacheKey());
   showToast('Member removed');
   await _renderMembersList();
 }
@@ -9306,14 +9592,18 @@ function copyInviteLink() {
   const input = document.getElementById('inviteLinkInput');
   const btn   = document.getElementById('inviteCopyBtn');
   if (!input || !btn) return;
+  // Never copy a "Could not load link" message as if it were the link
+  if (!/^https?:\/\//.test(input.value)) { showToast('The invite link isn\u2019t ready — close this panel and open it again'); return; }
+  const oldWay = () => {
+    try { input.select(); document.execCommand('copy'); showToast('Link copied'); }
+    catch(_) { showToast('Press and hold the link to copy it'); }
+  };
+  if (!navigator.clipboard || !navigator.clipboard.writeText) { oldWay(); return; }
   navigator.clipboard.writeText(input.value).then(() => {
     btn.textContent = 'Copied ✓';
     btn.classList.add('copied');
     setTimeout(() => { btn.textContent = 'Copy Link'; btn.classList.remove('copied'); }, 2500);
-  }).catch(() => {
-    input.select(); document.execCommand('copy');
-    showToast('Link copied');
-  });
+  }).catch(oldWay);
 }
 
 async function regenerateInviteToken() {
@@ -9568,8 +9858,13 @@ function createFromRequest(requestId, email, name) {
   switchAdminTab('create');
   document.getElementById('adminCreateEmail').value = email;
   document.getElementById('adminCreateName').value = name;
-  // Store request ID for auto-dismiss on create
-  document.getElementById('adminCreateBtn').dataset.dismissId = requestId;
+  // Store request ID for auto-dismiss on create — together with the email it
+  // belongs to, so a different email typed in later can't dismiss this request
+  const createBtn = document.getElementById('adminCreateBtn');
+  createBtn.dataset.dismissId = requestId;
+  createBtn.dataset.dismissEmail = (email || '').trim().toLowerCase();
+  const msg = document.getElementById('adminCreateMsg');
+  if (msg) { msg.className = 'auth-msg'; msg.textContent = ''; msg.style.display = ''; }
 }
 
 /* ── Create User tab ───────────────────────────────────────── */
@@ -9627,7 +9922,9 @@ async function handleAdminCreateUser() {
   const label = document.getElementById('adminCreateLabel');
   const spin  = document.getElementById('adminCreateSpinner');
   const msg   = document.getElementById('adminCreateMsg');
-  const dismissId = btn.dataset.dismissId || null;
+  // Only dismiss the access request if this is still the email it was for
+  const dismissId = (btn.dataset.dismissId && btn.dataset.dismissEmail === email.toLowerCase()) ? btn.dataset.dismissId : null;
+  msg.style.display = '';
 
   if (!email) { msg.className = 'auth-msg err'; msg.textContent = 'Email is required'; return; }
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { msg.className = 'auth-msg err'; msg.textContent = 'Invalid email'; return; }
@@ -9638,7 +9935,8 @@ async function handleAdminCreateUser() {
   btn.disabled = true;
   label.style.display = 'none';
   spin.style.display = 'inline';
-  msg.style.display = 'none';
+  // Clear any earlier message (don't hide the box itself, or the result never shows)
+  msg.className = 'auth-msg'; msg.textContent = '';
 
   try {
     const res = await _adminFetch('/api/admin/create-user', {
@@ -9650,14 +9948,31 @@ async function handleAdminCreateUser() {
         dismiss_request_id: dismissId || null
       }
     });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Failed to create user');
-    msg.className = 'auth-msg ok';
-    msg.textContent = 'Account created — invite email sent to ' + email;
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || data.reason || 'Failed to create user');
+    // Say what really happened: the account can be created while the email fails
+    const cellarNote = (cellarId && data.cellar_assigned === false)
+      ? ' They could NOT be added to the cellar — add them from the Cellars tab.' : '';
+    if (data.invite_sent !== false) {
+      msg.className = cellarNote ? 'auth-msg err' : 'auth-msg ok';
+      msg.textContent = 'Account created — invite email sent to ' + email + '.' + cellarNote;
+    } else {
+      msg.className = 'auth-msg err';
+      msg.textContent = 'Account created, but the invite email was NOT sent (' + (data.invite_error || 'unknown reason') + ').' + cellarNote +
+        (data.invite_url ? ' Copy this set-password link and send it to them yourself:' : ' Use the \u2709 button next to their name in the Cellars tab to try again.');
+      if (data.invite_url) {
+        const linkBox = document.createElement('input');
+        linkBox.type = 'text'; linkBox.readOnly = true; linkBox.value = data.invite_url;
+        linkBox.style.cssText = 'display:block;width:100%;margin-top:8px;padding:8px;font-size:.78rem;border:1px solid var(--light-gray);border-radius:var(--r);background:#fff;color:var(--charcoal)';
+        linkBox.onclick = function() { this.select(); };
+        msg.appendChild(linkBox);
+      }
+    }
     // Clear form
     document.getElementById('adminCreateEmail').value = '';
     document.getElementById('adminCreateName').value = '';
     btn.dataset.dismissId = '';
+    btn.dataset.dismissEmail = '';
     // Refresh requests badge
     loadAdminRequests();
   } catch (e) {
@@ -9746,6 +10061,7 @@ function renderAdminUsers() {
     const isMe = u.id === _currentUser?.id;
     // Admins (including you) can't be deleted here
     const delBtn = (u.is_admin || isMe) ? '' :
+      `<button class="admin-remove-member" onclick="resendInvite('${escJs(u.id)}','${escJs(name)}','${escJs(u.email || '')}',this)" title="Email a new set-password link">✉</button>` +
       `<button class="admin-remove-member" onclick="confirmDeleteUser('${escJs(u.id)}','${escJs(name)}','${escJs(u.email || '')}')" title="Delete account">🗑</button>`;
     return `<div class="admin-member-row">
       <div class="admin-member-avatar" style="background:${u.is_admin ? 'var(--burgundy)' : 'var(--warm-gray)'}">${escHtml(initials)}</div>
@@ -9765,6 +10081,29 @@ function renderAdminUsers() {
     </div>
     <div class="admin-member-list">${rows}</div>
   </div>`;
+}
+
+// Email someone a fresh set-password link (their first one expired, got lost, etc.)
+async function resendInvite(userId, userName, userEmail, btn) {
+  if (!confirm('Email ' + userName + ' a new set-password link' + (userEmail ? ' at ' + userEmail : '') + '?')) return;
+  if (btn) btn.disabled = true;
+  try {
+    const res = await _adminFetch('/api/admin/resend-invite', { method: 'POST', body: { user_id: userId } });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || data.reason || 'Failed');
+    if (data.invite_sent) {
+      showToast('New link sent to ' + (data.email || userEmail || userName));
+    } else if (data.invite_url) {
+      // The email could not be sent — hand over the link so it can be passed on by hand
+      window.prompt('The email could not be sent (' + (data.invite_error || 'unknown reason') + ').\n\nCopy this link and send it to ' + userName + ' yourself:', data.invite_url);
+    } else {
+      throw new Error(data.invite_error || 'No link could be made');
+    }
+  } catch (e) {
+    showToast('Could not send link: ' + (e.message || 'unknown error'));
+  } finally {
+    if (btn) btn.disabled = false;
+  }
 }
 
 function confirmDeleteUser(userId, userName, userEmail) {
