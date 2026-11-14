@@ -360,6 +360,13 @@ body{font-family:var(--font-b);background:var(--cream);color:var(--charcoal);min
 /* ── Grid ──────────────────────────────────────────────── */
 .wine-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:10px}
 .main-content{max-width:1200px;margin:0 auto;padding:20px 14px 88px}
+/* Cellar banner photo at the top of the cellar page */
+.cellar-banner{position:relative;height:230px;border-radius:var(--rl);overflow:hidden;margin-bottom:14px;background:var(--light-gray)}
+.cellar-banner img{width:100%;height:100%;object-fit:cover;object-position:center 45%;display:block}
+.cellar-banner-caption{position:absolute;left:0;right:0;bottom:0;padding:14px 18px;background:rgba(44,36,32,.55)}
+.cellar-banner-title{font-family:var(--font-d);font-size:1.35rem;font-weight:600;color:#fff;line-height:1.2}
+.cellar-banner-sub{font-family:var(--font-b);font-size:.82rem;color:rgba(255,255,255,.85);margin-top:2px}
+@media (max-width:600px){.cellar-banner{height:170px;border-radius:var(--r);margin-bottom:10px}.cellar-banner-title{font-size:1.1rem}.cellar-banner-caption{padding:10px 14px}}
 
 /* ── Card shell — horizontal ──────────────────────────── */
 .wine-card{
@@ -2651,6 +2658,15 @@ body{
 
 <!-- MAIN -->
 <main class="main-content" role="main" aria-label="Wine collection">
+
+  <!-- CELLAR BANNER PHOTO -->
+  <div class="cellar-banner">
+    <img src="/cellar-banner.jpg" alt="Two friends tasting red wine in a kitchen" loading="eager" decoding="async"/>
+    <div class="cellar-banner-caption">
+      <div class="cellar-banner-title">Welcome to the cellar</div>
+      <div class="cellar-banner-sub">Serious tasting, kitchen edition</div>
+    </div>
+  </div>
 
   <!-- HOME HIGHLIGHTS REEL — filled by renderHighlightsReel() -->
   <section class="hlr-wrap" id="hlrWrap" aria-label="Cellar highlights" style="display:none">
