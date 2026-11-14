@@ -4088,6 +4088,8 @@ document.addEventListener('DOMContentLoaded', () => {
   // Signal MAIN APP is ready; if auth already completed, run showApp now
   _appReady = true;
   if (_pendingShowApp) showApp();
+  // If the phone reloaded the page in the middle of a scan, put the scan panel back
+  setTimeout(_restoreScanDraft, 1200);
 });
 
 function setupEvents() {
@@ -6540,7 +6542,19 @@ async function handleSave(e) {
   _saveAsToTaste = false;
   // Guest user — stash form data then redirect to sign-in
   if (!_currentUser) {
-    // Capture everything currently in the form so it survives the auth flow
+    // Capture everything currently in the form so it survives the auth flow.
+    // Photos straight from a phone camera are far too big for the browser's
+    // storage (saving them used to fail silently and the wine was lost), so
+    // they are shrunk first — to the same size the journal stores anyway.
+    let guestFront = null, guestBack = null;
+    // (give up on a photo after 4 seconds rather than leave the Save button doing nothing)
+    const shrinkOrSkip = (photo) => Promise.race([
+      compressForStorage(photo).catch(() => null),
+      new Promise(res => setTimeout(() => res(null), 4000))
+    ]);
+    try { guestFront = await shrinkOrSkip(currentPhotoFront); } catch(_) {}
+    try { guestBack  = await shrinkOrSkip(currentPhotoBack);  } catch(_) {}
+    let guestStashed = false;
     try {
       const guestEntry = {
         name:         document.getElementById('wineName').value.trim()||null,
@@ -6553,12 +6567,25 @@ async function handleSave(e) {
         price:        document.getElementById('price').value.trim()||null,
         notes:        document.getElementById('notes').value.trim()||null,
         rating:       toTaste ? null : (parseInt(document.getElementById('rating').value,10)||null),
-        photoFront:   currentPhotoFront||null,
-        photoBack:    currentPhotoBack||null,
+        photoFront:   guestFront,
+        photoBack:    guestBack,
         dateTasted:   toTaste ? null : (document.getElementById('dateTasted').value||null),
+        fromOwnScan:  true,
       };
-      sessionStorage.setItem('wwwImportWine', JSON.stringify(guestEntry));
-    } catch(_) {}
+      // Keep it in two places: this tab (sessionStorage) and this device
+      // (localStorage) — the second copy is still there if they sign in from
+      // a new tab, e.g. after following the link in their invite email.
+      const tryStash = (entry) => {
+        let ok = false;
+        const text = JSON.stringify(entry);
+        try { sessionStorage.setItem('wwwImportWine', text); ok = true; } catch(_) {}
+        try { localStorage.setItem('wwwPendingImport', text); ok = true; } catch(_) {}
+        return ok;
+      };
+      guestStashed = tryStash(guestEntry);
+      // Still no room? Keep the details and drop the photos rather than lose the wine.
+      if (!guestStashed) guestStashed = tryStash({ ...guestEntry, photoFront: null, photoBack: null });
+    } catch(e) { console.warn('guest save: could not keep the wine for later:', e); }
     closeModal();
     closeScanModal();
     document.getElementById('authScreen').classList.remove('hidden');
@@ -6567,7 +6594,14 @@ async function handleSave(e) {
       if (panel) panel.scrollIntoView({behavior:'smooth'});
       switchAuthTab('signin');
     }, 100);
-    showToast('Sign in to save your wine — it will be waiting for you');
+    showToast(guestStashed
+      ? 'Sign in to save your wine — it will be waiting for you'
+      : 'Please sign in first, then scan the wine again');
+    // Say the same thing on the sign-in screen itself (the pop-up message can be hidden behind it)
+    // (shown a moment later, after the sign-in screen has finished resetting itself)
+    if (guestStashed) setTimeout(function() {
+      try { showAuthMsg('ok', '\uD83C\uDF77 Your scanned wine is ready to save \u2014 sign in and it will be waiting for you. No account yet? Request access below.'); } catch(_) {}
+    }, 250);
     return;
   }
   const name = document.getElementById('wineName').value.trim();
@@ -7252,7 +7286,7 @@ function processPendingImport(data) {
   }
   // Open the Add Wine form with photo injected directly
   // Do NOT pass a wine object — it would overwrite currentPhotoFront with null (line ~3039)
-  openModal(null, data.photoFront || null, null);
+  openModal(null, data.photoFront || null, data.photoBack || null);
   setTimeout(() => {
     // Set rating here — after wineForm.reset() has completed
     if (data.rating) setStars(data.rating);
@@ -7278,7 +7312,7 @@ function processPendingImport(data) {
     document.getElementById('modalTitle').textContent = 'Add Wine';
     document.getElementById('wineId').value = '';
     document.getElementById('dateTasted').valueAsDate = new Date();
-    showToast('Shared wine imported — review and save');
+    showToast(data.fromOwnScan ? 'Here\u2019s the wine you scanned — review and save' : 'Shared wine imported — review and save');
   }, 300);
 }
 
@@ -7933,8 +7967,12 @@ async function loadWinesFromDB(cacheKey) {
     try {
       if (window._triggerFirstRunScan && wines.length === 0) {
         window._triggerFirstRunScan = false;
-        const scanAlreadyOpen = document.getElementById('scanOverlay')?.classList.contains('open');
-        if (!scanAlreadyOpen && typeof openScanModal === 'function') openScanModal();
+        // Never open it on top of something else (the add-wine form, a scan
+        // already under way, the "already in your cellar" sheet…): doing so
+        // would wipe the photos and details of the wine being added.
+        const somethingOpen = (typeof _anyPanelOpen === 'function' && _anyPanelOpen()) ||
+          !!document.querySelector('.wine-splash.show') || !!window._pendingImport;
+        if (!somethingOpen && typeof openScanModal === 'function') openScanModal();
       }
       window._triggerFirstRunScan = false;
     } catch(_) {}
@@ -8078,9 +8116,97 @@ function initScanner() {
   document.getElementById('backRetake').addEventListener('click',  ()=>resetSide('back'));
 }
 
+/* ── Scan in progress: survive the phone reloading the page ──────
+   Phones often throw the page away while the camera is open and load
+   it again afterwards. Without this, the scan panel would be gone and
+   the person would be back on the main page with nothing saved.
+   So while a scan is under way we keep a note of it (and a smaller
+   copy of each photo taken so far) in this tab's storage, and put
+   the scan panel back after a reload. The note is removed as soon as
+   the scan finishes or is cancelled, and ignored after 15 minutes.   */
+const _SCAN_DRAFT_KEY = 'wwwScanDraft';
+const _SCAN_DRAFT_MAX_AGE_MS = 15 * 60 * 1000;
+let _scanDraft = null; // { open, front, back, ts }
+
+function _scanDraftWrite() {
+  if (!_scanDraft) return;
+  _scanDraft.ts = Date.now();
+  try { sessionStorage.setItem(_SCAN_DRAFT_KEY, JSON.stringify(_scanDraft)); }
+  catch(_) {
+    // No room for the photos — at least remember that a scan was under way
+    try { sessionStorage.setItem(_SCAN_DRAFT_KEY, JSON.stringify({ open: true, front: null, back: null, ts: Date.now() })); } catch(__) {}
+  }
+}
+function _scanDraftClear() {
+  _scanDraft = null;
+  try { sessionStorage.removeItem(_SCAN_DRAFT_KEY); } catch(_) {}
+}
+// Make a smaller copy of a photo (longest side 1024px) so it fits in storage
+function _scanShrink(dataUrl, maxPx = 1024) {
+  return new Promise(res => {
+    try {
+      const img = new Image();
+      img.onload = () => {
+        try {
+          const r = Math.min(maxPx / img.width, maxPx / img.height, 1);
+          const c = document.createElement('canvas');
+          c.width = Math.round(img.width * r); c.height = Math.round(img.height * r);
+          c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+          res(c.toDataURL('image/jpeg', 0.8));
+        } catch(_) { res(null); }
+      };
+      img.onerror = () => res(null);
+      img.src = dataUrl;
+    } catch(_) { res(null); }
+  });
+}
+// Remember a photo that has just been taken
+function _scanDraftKeepPhoto(side, url) {
+  _scanShrink(url).then(small => {
+    // Only keep it if the scan is still open and this is still the current photo
+    const current = side === 'front' ? scanFrontUrl : scanBackUrl;
+    if (!_scanDraft || !small || current !== url) return;
+    _scanDraft[side] = small;
+    _scanDraftWrite();
+  });
+}
+// Show a photo in the scan panel (used for a new photo and for one put back after a reload)
+function _showScanPhoto(side, url) {
+  if (side === 'front') scanFrontUrl = url; else scanBackUrl = url;
+  const thumb = document.getElementById(side + 'Thumb');
+  thumb.src = url; thumb.classList.add('visible');
+  document.getElementById(side + 'Inner').style.display = 'none';
+  document.getElementById(side + 'UploadArea').style.display = 'none';
+  document.getElementById(side + 'Retake').style.display = 'block';
+  updateGoBtn();
+}
+// After a reload: if a scan was under way, put the scan panel (and photos) back
+let _scanDraftRestoreTried = false;
+function _restoreScanDraft() {
+  if (_scanDraftRestoreTried) return;
+  _scanDraftRestoreTried = true;
+  let d = null;
+  try { d = JSON.parse(sessionStorage.getItem(_SCAN_DRAFT_KEY) || 'null'); } catch(_) {}
+  if (!d || !d.open || (Date.now() - (d.ts || 0)) > _SCAN_DRAFT_MAX_AGE_MS) { _scanDraftClear(); return; }
+  try {
+    if (typeof _isRecoveryFlow !== 'undefined' && _isRecoveryFlow) return;   // choosing a password comes first
+    if (new URLSearchParams(window.location.search).get('wine')) return;       // looking at a shared wine
+    if (_anyPanelOpen()) return;                                               // something else is already open
+    if (_currentUser) openScanModal(); else openGuestScan();
+    if (!document.getElementById('scanOverlay').classList.contains('open')) return;
+    if (d.front) { _showScanPhoto('front', d.front); _scanDraft.front = d.front; }
+    if (d.back)  { _showScanPhoto('back',  d.back);  _scanDraft.back  = d.back; }
+    _scanDraftWrite();
+    showToast(d.front || d.back ? 'Picked up your scan where you left off' : 'Your phone reloaded the page \u2014 please take the photo again');
+  } catch(e) { console.warn('_restoreScanDraft:', e); }
+}
+
 function openScanModal() {
   _keyCallback = null;  // always clear — prevents key modal re-triggering on second scan
   scanFrontUrl=null; scanBackUrl=null; scanResult=null;
+  // Note that a scan is under way, in case the phone reloads the page while the camera is open
+  _scanDraft = { open: true, front: null, back: null, ts: Date.now() };
+  _scanDraftWrite();
   ['scanStep1','scanAnalysing','scanResults','scanError'].forEach(id=>{
     document.getElementById(id).style.display = id==='scanStep1'?'':'none';
   });
@@ -8094,13 +8220,14 @@ function openScanModal() {
   _pushNavState();
 }
 
-function closeScanModal() { var o=document.getElementById('scanOverlay'); o.classList.remove('open'); o.style.zIndex=''; document.body.style.overflow=''; }
+function closeScanModal() { var o=document.getElementById('scanOverlay'); o.classList.remove('open'); o.style.zIndex=''; document.body.style.overflow=''; _scanDraftClear(); }
 
 function resetSide(side) {
   // Clear file input value so iOS always fires change event on retake
   const inp = document.getElementById(side+'FileInput');
   if (inp) { inp.value = ''; }
   if(side==='front') scanFrontUrl=null; else scanBackUrl=null;
+  if (_scanDraft && _scanDraft[side]) { _scanDraft[side] = null; _scanDraftWrite(); }
   document.getElementById(side+'Thumb').classList.remove('visible');
   document.getElementById(side+'Retake').style.display='none';
   document.getElementById(side+'Inner').style.display='flex';
@@ -8114,14 +8241,10 @@ function loadScanFile(file, side) {
   const r=new FileReader();
   r.onload=ev=>{
     const url=ev.target.result;
-    if(side==='front') scanFrontUrl=url; else scanBackUrl=url;
-    const thumb=document.getElementById(side+'Thumb');
-    thumb.src=url; thumb.classList.add('visible');
-    document.getElementById(side+'Inner').style.display='none';
-    document.getElementById(side+'UploadArea').style.display='none';
-    document.getElementById(side+'Retake').style.display='block';
-    updateGoBtn();
+    _showScanPhoto(side, url);
+    _scanDraftKeepPhoto(side, url);
   };
+  r.onerror=()=>{ showToast('Could not read that photo \u2014 please try again'); };
   r.readAsDataURL(file);
 }
 
