@@ -2670,15 +2670,16 @@ body{
 
   <!-- CELLAR BANNER PHOTO -->
   <div class="cellar-banner">
-    <!-- Slideshow photos, shown in this order. To add another, copy a line and change the file name. -->
+    <!-- Slideshow photos, shown in this order. data-caption is the wording shown under "Welcome to the cellar" for that photo.
+         To add another photo, copy a line and change the file name and the caption. -->
     <div class="cellar-banner-track" id="cellarBannerTrack">
-      <img src="/cellar-banner.jpg" alt="Two friends tasting red wine in a kitchen" loading="eager" decoding="async"/>
-      <img src="/cotesnuits1.jpg" alt="C&ocirc;te de Nuits, Burgundy" decoding="async"/>
-      <img src="/cotesnuits2.jpg" alt="C&ocirc;te de Nuits, Burgundy" decoding="async"/>
+      <img src="/cellar-banner.jpg" alt="Two friends tasting red wine in a kitchen" loading="eager" decoding="async" data-caption="Serious tasting, kitchen edition"/>
+      <img src="/cotesnuits1.jpg" alt="C&ocirc;te de Nuits, Burgundy" decoding="async" data-caption="Burgundy Terroir"/>
+      <img src="/cotesnuits2.jpg" alt="C&ocirc;te de Nuits, Burgundy" decoding="async" data-caption="Cotes de Nuits"/>
     </div>
     <div class="cellar-banner-caption">
       <div class="cellar-banner-title">Welcome to the cellar</div>
-      <div class="cellar-banner-sub">Serious tasting, kitchen edition</div>
+      <div class="cellar-banner-sub" id="cellarBannerSub">Serious tasting, kitchen edition</div>
     </div>
   </div>
   <script>
@@ -2690,12 +2691,19 @@ body{
     var SECONDS_PER_PHOTO = 6;
     var track = document.getElementById('cellarBannerTrack');
     if(!track) return;
+    var sub = document.getElementById('cellarBannerSub');
     var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
     // If a photo file is missing from the server, quietly drop it from the show
     Array.prototype.forEach.call(track.querySelectorAll('img'), function(img){
       img.addEventListener('error', function(){ if(img.parentNode) img.parentNode.removeChild(img); });
     });
+
+    // Change the wording in the caption to match a given photo
+    function showCaption(img){
+      var text = img && img.getAttribute('data-caption');
+      if(sub && text) sub.textContent = text;
+    }
 
     // Put the photo that has just slid out of view at the back of the queue
     function recycle(){
@@ -2704,6 +2712,7 @@ body{
       track.style.transform = 'translateX(0)';
       void track.offsetWidth;            // make the browser apply the reset straight away
       track.style.transition = '';
+      showCaption(track.firstElementChild);   // keep the wording in step with the photo now on show
     }
 
     track.addEventListener('transitionend', function(e){
@@ -2715,6 +2724,7 @@ body{
       if(track.children.length < 2) return;          // nothing to slide to
       if(track.style.transform === 'translateX(-100%)'){ recycle(); return; } // safety net if a slide never finished
       if(reduceMotion){ recycle(); return; }         // swap photos without the sliding animation
+      showCaption(track.children[1]);                // change the wording as the next photo starts to slide in
       track.style.transform = 'translateX(-100%)';
     }, SECONDS_PER_PHOTO * 1000);
   })();
