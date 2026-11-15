@@ -363,6 +363,9 @@ body{font-family:var(--font-b);background:var(--cream);color:var(--charcoal);min
 /* Cellar banner photo at the top of the cellar page */
 .cellar-banner{position:relative;height:230px;border-radius:var(--rl);overflow:hidden;margin-bottom:14px;background:var(--light-gray)}
 .cellar-banner img{width:100%;height:100%;object-fit:cover;object-position:center 45%;display:block}
+/* Banner slideshow: photos sit side by side in a row and the row slides left */
+.cellar-banner-track{display:flex;height:100%;transition:transform 1s ease}
+.cellar-banner-track img{flex:0 0 100%;min-width:0}
 .cellar-banner-caption{position:absolute;left:0;right:0;bottom:0;padding:14px 18px;background:rgba(44,36,32,.55)}
 .cellar-banner-title{font-family:var(--font-d);font-size:1.35rem;font-weight:600;color:#fff;line-height:1.2}
 .cellar-banner-sub{font-family:var(--font-b);font-size:.82rem;color:rgba(255,255,255,.85);margin-top:2px}
@@ -2667,12 +2670,55 @@ body{
 
   <!-- CELLAR BANNER PHOTO -->
   <div class="cellar-banner">
-    <img src="/cellar-banner.jpg" alt="Two friends tasting red wine in a kitchen" loading="eager" decoding="async"/>
+    <!-- Slideshow photos, shown in this order. To add another, copy a line and change the file name. -->
+    <div class="cellar-banner-track" id="cellarBannerTrack">
+      <img src="/cellar-banner.jpg" alt="Two friends tasting red wine in a kitchen" loading="eager" decoding="async"/>
+      <img src="/cotesnuits1.jpg" alt="C&ocirc;te de Nuits, Burgundy" decoding="async"/>
+      <img src="/cotesnuits2.jpg" alt="C&ocirc;te de Nuits, Burgundy" decoding="async"/>
+    </div>
     <div class="cellar-banner-caption">
       <div class="cellar-banner-title">Welcome to the cellar</div>
       <div class="cellar-banner-sub">Serious tasting, kitchen edition</div>
     </div>
   </div>
+  <script>
+  /* Cellar banner slideshow.
+     Every few seconds the row of photos slides one photo to the left.
+     When the slide finishes, the photo that just left is moved to the back
+     of the queue, so the show loops round forever without ever rewinding. */
+  (function(){
+    var SECONDS_PER_PHOTO = 6;
+    var track = document.getElementById('cellarBannerTrack');
+    if(!track) return;
+    var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    // If a photo file is missing from the server, quietly drop it from the show
+    Array.prototype.forEach.call(track.querySelectorAll('img'), function(img){
+      img.addEventListener('error', function(){ if(img.parentNode) img.parentNode.removeChild(img); });
+    });
+
+    // Put the photo that has just slid out of view at the back of the queue
+    function recycle(){
+      track.style.transition = 'none';
+      track.appendChild(track.firstElementChild);
+      track.style.transform = 'translateX(0)';
+      void track.offsetWidth;            // make the browser apply the reset straight away
+      track.style.transition = '';
+    }
+
+    track.addEventListener('transitionend', function(e){
+      if(e.target === track) recycle();
+    });
+
+    setInterval(function(){
+      if(document.hidden) return;                    // don't run while the tab is in the background
+      if(track.children.length < 2) return;          // nothing to slide to
+      if(track.style.transform === 'translateX(-100%)'){ recycle(); return; } // safety net if a slide never finished
+      if(reduceMotion){ recycle(); return; }         // swap photos without the sliding animation
+      track.style.transform = 'translateX(-100%)';
+    }, SECONDS_PER_PHOTO * 1000);
+  })();
+  </script>
 
   <!-- HOME HIGHLIGHTS REEL — filled by renderHighlightsReel() -->
   <section class="hlr-wrap" id="hlrWrap" aria-label="Cellar highlights" style="display:none">
