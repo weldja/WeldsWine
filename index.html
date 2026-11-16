@@ -2629,9 +2629,12 @@ body{
         <select id="sortSelect" aria-label="Sort wines">
           <option value="date-desc">Newest</option>
           <option value="date-asc">Oldest</option>
+          <option value="added-desc">Recently added</option>
+          <option value="added-asc">First added</option>
           <option value="rating-desc">Top rated</option>
           <option value="rating-asc">Lowest rated</option>
           <option value="name-asc">A–Z</option>
+          <option value="grape-asc">By grape</option>
           <option value="event">By event</option>
         </select>
       </label>
@@ -4237,6 +4240,15 @@ function getList() {
       return activeSort==='rating-desc' ? (b.rating||0)-(a.rating||0) : (a.rating||0)-(b.rating||0);
     }
     if(activeSort==='name-asc')    return (a.name||'').localeCompare(b.name||'');
+    // Date added to the cellar (not the date tasted)
+    if(activeSort==='added-desc')  return (b.createdAt||0)-(a.createdAt||0);
+    if(activeSort==='added-asc')   return (a.createdAt||0)-(b.createdAt||0);
+    // Grape variety A-Z; wines with no grape recorded go last, then by name within a grape
+    if(activeSort==='grape-asc') {
+      const ga=(a.grape||'').trim(), gb=(b.grape||'').trim();
+      if (!ga !== !gb) return ga ? -1 : 1;
+      return ga.localeCompare(gb, undefined, {sensitivity:'base'}) || (a.name||'').localeCompare(b.name||'');
+    }
     return 0;
   });
   return list;
