@@ -3635,16 +3635,16 @@ async function showApp() {
   // Now safe to show cached wines for subsequent fast renders
   setTimeout(startLocationTracking, 100);
   if (window._memberPollInterval) clearInterval(window._memberPollInterval);
-  window._memberPollInterval = setInterval(async () => {
-    if (!window._cellarId || !_currentUser) return;
-    const prev = window._cellarMembers.length;
-    await _refreshCellarMembers(); _updateCellarPill();
-    if (window._cellarMembers.length !== prev) {
-      const ck = 'wwwCache_' + _currentUser.id + '_' + (window._cellarId || 'solo');
-      try { sessionStorage.removeItem(ck); } catch(_) {}
-      await loadWinesFromDB(ck);
-    }
-  }, 10000);
+  window._memberPollInterval = setInterval(_checkCellarMembers, 60000);
+  if (!window._memberVisHooked) {
+    window._memberVisHooked = true;
+    // When someone comes back to the app, check straight away (at most once every 30 seconds)
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden && window._memberPollInterval && Date.now() - (window._memberLastCheck || 0) > 30000) {
+        _checkCellarMembers();
+      }
+    });
+  }
 
   try {
     if (!localStorage.getItem('wwwOnboardingDone')) {
@@ -3654,6 +3654,19 @@ async function showApp() {
       window._triggerFirstRunScan = false;
     }
   } catch(_) { window._triggerFirstRunScan = false; }
+}
+
+// Has anyone joined or left the cellar? Skipped while the app is in the background.
+async function _checkCellarMembers() {
+  if (document.hidden || !window._cellarId || !_currentUser) return;
+  window._memberLastCheck = Date.now();
+  const prev = window._cellarMembers.length;
+  await _refreshCellarMembers(); _updateCellarPill();
+  if (window._cellarMembers.length !== prev) {
+    const ck = 'wwwCache_' + _currentUser.id + '_' + (window._cellarId || 'solo');
+    try { sessionStorage.removeItem(ck); } catch(_) {}
+    await loadWinesFromDB(ck);
+  }
 }
 
 function hideApp() {
@@ -5750,9 +5763,11 @@ async function openDetail(w, e) {
     }
   }
 
-  // Auto-show Wine Intel if enrichment already exists
-  loadEnrichmentFromDB(w.id).then(data => {
-    if (!data || !detailOverlay.classList.contains('open')) return;
+  // Auto-show Wine Intel if enrichment already exists,
+  // or as soon as research that is already under way finishes
+  _intelDetailWineId = w.id;
+  loadEnrichmentFromDB(w.id).then(saved => saved || _enrichInFlight[w.id] || null).then(data => {
+    if (!data || !detailOverlay.classList.contains('open') || _intelDetailWineId !== w.id) return;
     _intelCache[w.id] = data;
     const panel = document.getElementById('wineIntelPanel');
     if (panel) {
@@ -6474,11 +6489,24 @@ function closeModal() { modalOverlay.classList.remove('open'); modalOverlay.styl
 ──────────────────────────────────────────────────────────── */
 let _locDenied = false;
 
+let _lastGeocode = null; // { lat, lng, promise } of the most recent place-name lookup
 function startLocationTracking() {
   if (!navigator.geolocation) { _locDenied = true; return; }
   if (_locWatcher) navigator.geolocation.clearWatch(_locWatcher);
 
   async function geocode(lat, lng) {
+    // Reuse the last answer if we've moved less than roughly 200 metres,
+    // or join a lookup for (nearly) the same spot that is still running
+    const last = _lastGeocode;
+    if (last && Math.abs(last.lat - lat) < 0.002 && Math.abs(last.lng - lng) < 0.002) return last.promise;
+    const promise = _geocodeNow(lat, lng);
+    _lastGeocode = { lat, lng, promise };
+    const label = await promise;
+    if (!label && _lastGeocode && _lastGeocode.promise === promise) _lastGeocode = null; // failed: allow a retry
+    return label;
+  }
+
+  async function _geocodeNow(lat, lng) {
     try {
       const r = await fetch(
         `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=en`
@@ -6947,6 +6975,7 @@ async function notifyWineAdded(entry, bottleCount) {
 
 /* ── Wine Intel: enrichment via AI + web search ──────────── */
 let _intelCache = {};
+let _intelDetailWineId = null; // the wine whose page is open, so late results go to the right page
 
 async function toggleWineIntel(wineId) {
   const panel = document.getElementById('wineIntelPanel');
@@ -6972,8 +7001,9 @@ async function toggleWineIntel(wineId) {
       <div class="intel-shimmer-status"><span class="intel-spinner"></span>Researching this wine…</div>
     </div>
   </div>`;
-  // Try loading from DB first
+  // Try loading from DB first (or wait for research that is already under way)
   let data = await loadEnrichmentFromDB(wineId);
+  if (!data && _enrichInFlight[wineId]) data = await _enrichInFlight[wineId];
   if (data) {
     _intelCache[wineId] = data;
     panel.innerHTML = renderIntelPanelHTML(data);
@@ -7011,7 +7041,21 @@ async function loadEnrichmentFromDB(wineId) {
   } catch { return null; }
 }
 
-async function fetchEnrichment(wineId, forceRefresh) {
+/* Research already under way, by wine id. If someone opens Wine Intel while the
+   research started after saving is still running, they wait for that one instead
+   of starting a second (paid) research. */
+const _enrichInFlight = {};
+
+function fetchEnrichment(wineId, forceRefresh) {
+  if (!forceRefresh && _enrichInFlight[wineId]) return _enrichInFlight[wineId];
+  const p = _fetchEnrichmentNow(wineId, forceRefresh)
+    .then(data => { if (data) _intelCache[wineId] = data; return data; })
+    .finally(() => { if (_enrichInFlight[wineId] === p) delete _enrichInFlight[wineId]; });
+  _enrichInFlight[wineId] = p;
+  return p;
+}
+
+async function _fetchEnrichmentNow(wineId, forceRefresh) {
   if (!Scanner.hasUrl()) return null;
   const w = getWineById(wineId);
   if (!w) return null;
@@ -8090,7 +8134,6 @@ async function loadWinesFromDB(cacheKey) {
   if (!user) { console.warn('loadWinesFromDB: no current user'); hideLoadBar(); return; }
 
   try {
-    let photoQuery;
 
     // Skip re-fetching members if bootstrap fetched them a moment ago
     if (window._cellarId && !_cellarMembersAreFresh()) await _refreshCellarMembers();
@@ -8104,9 +8147,6 @@ async function loadWinesFromDB(cacheKey) {
       const q = _sb.from('wines').select(cols);
       return (inCellar ? q.or(idFilter) : q.eq('user_id', user.id)).order('created_at', { ascending: false });
     };
-    photoQuery = inCellar
-      ? _sb.from('wines').select('id,photo_front,photo_back').or(idFilter)
-      : _sb.from('wines').select('id,photo_front,photo_back').eq('user_id', user.id);
 
     // SPEED: fetch the wine details first and show the cards straight away.
     // Photos are much bigger, so they load afterwards (see _loadWinePhotos).
@@ -8160,7 +8200,7 @@ async function loadWinesFromDB(cacheKey) {
     renderGrid();
     updateStats();
     hideLoadBar();
-    _loadWinePhotos(photoQuery); // runs in the background, fills in photos when ready
+    _loadWinePhotos(); // runs in the background, fills in photos a few wines at a time
     _ensureEventsLoaded(true);   // background too — adds event labels to the cards when ready
     _checkPendingImport();
     _checkNotifDeepLink();
@@ -8197,29 +8237,38 @@ async function loadWinesFromDB(cacheKey) {
 /* SPEED: load the bottle photos after the cards are already on screen.
    Opening a wine, its photo or the edit form already fetches that wine's
    photos on demand, so nothing breaks if someone taps a card before this finishes. */
+/* Photos are loaded in small batches (newest wines first) rather than in one
+   huge request. Downloading every photo at once used so much memory on phones
+   that the page could crash and restart itself. Wines whose photos are already
+   in memory are skipped. */
+const PHOTO_BATCH_SIZE = 12;
 let _photoLoadToken = 0;
-async function _loadWinePhotos(photoQuery) {
+async function _loadWinePhotos() {
   const token = ++_photoLoadToken;
-  try {
-    const { data, error } = await photoQuery;
-    if (error) throw error;
+  const todo = wines.filter(w => !w.photoFront && !w.photoBack).map(w => w.id);
+  for (let i = 0; i < todo.length; i += PHOTO_BATCH_SIZE) {
     if (token !== _photoLoadToken) return; // a newer wine load has started — let that one win
-
-    const byId = new Map(wines.map(w => [w.id, w]));
-    let changed = false;
-    (data || []).forEach(row => {
-      const w = byId.get(row.id);
-      if (!w) return;
-      const front = row.photo_front || null;
-      const back  = row.photo_back  || null;
-      if (w.photoFront !== front || w.photoBack !== back) {
-        w.photoFront = front; w.photoBack = back; w.photo = front;
-        changed = true;
-      }
-    });
-    if (changed) renderGrid();
-  } catch (e) {
-    console.warn('Could not load wine photos:', e);
+    const batch = todo.slice(i, i + PHOTO_BATCH_SIZE);
+    try {
+      const { data, error } = await _sb.from('wines').select('id,photo_front,photo_back').in('id', batch);
+      if (error) throw error;
+      if (token !== _photoLoadToken) return;
+      const byId = new Map(wines.map(w => [w.id, w]));
+      let changed = false;
+      (data || []).forEach(row => {
+        const w = byId.get(row.id);
+        if (!w) return;
+        const front = row.photo_front || null;
+        const back  = row.photo_back  || null;
+        if (w.photoFront !== front || w.photoBack !== back) {
+          w.photoFront = front; w.photoBack = back; w.photo = front;
+          changed = true;
+        }
+      });
+      if (changed) renderGrid();
+    } catch (e) {
+      console.warn('Could not load a batch of wine photos:', e);
+    }
   }
 }
 
