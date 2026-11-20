@@ -338,7 +338,7 @@ async function wikipediaRegionPhoto(region) {
 // Producer photo: the file name must mention the producer AND look like an estate photo.
 // That stops, for example, a supermarket's own-label wine showing a photo of a supermarket.
 async function producerPhoto(winery) {
-  const generic = ["chateau", "domaine", "bodegas", "bodega", "estate", "estates", "wines", "wine", "winery", "vineyards", "vineyard", "cellars", "the", "and", "family", "weingut", "cantina", "tenuta", "quinta", "maison"];
+  const generic = ["chateau", "domaine", "bodegas", "bodega", "estate", "estates", "wines", "wine", "winery", "vineyards", "vineyard", "cellars", "the", "and", "family", "famille", "vignobles", "weingut", "cantina", "tenuta", "quinta", "maison", "clos", "castello"];
   const nameWords = simplify(winery).split(/[^a-z0-9]+/).filter((w) => w.length >= 3 && !generic.includes(w));
   if (!nameWords.length) return null;
   const rules = { mustInclude: nameWords, mustIncludeOneOf: ESTATE_WORDS };
@@ -389,33 +389,65 @@ async function cachedPhoto(env, key, finder) {
   return found;
 }
 
-async function getWinePhoto(env, winery, region, country) {
+// The estate named in a wine's name, e.g. "Château Ausone" from "Château Ausone 2005".
+// In Bordeaux and much of Europe the estate is in the wine's name, while the
+// producer field may hold the owners ("Famille Vauthier"), so we search for both.
+function estateFromName(name) {
+  const m = String(name || "").match(/\b(ch[aâ]teau|domaine|quinta|bodegas?|weingut|tenuta|castello|clos)\s+((?:(?:d['’]|de|du|des|do|da|dos|das|la|le|les|del|della|di|von)\s+|d['’]){0,2}[A-Za-zÀ-ÿ'’-]{2,})/i);
+  return m ? (m[1] + " " + m[2]).replace(/\s+/g, " ").trim() : null;
+}
+
+// Region names straight off a label can be long, e.g.
+// "Bordeaux – Saint-Emilion (1er Grand Cru Classé)". Turn that into place names
+// to try, most specific first: ["Saint-Emilion", "Bordeaux"].
+function regionCandidates(region) {
+  const cleaned = String(region || "").replace(/\([^)]*\)/g, " ").trim();
+  if (!cleaned) return [];
+  let parts = cleaned.split(/\s+[–—-]\s+|,|\//).map((p) => p.trim()).filter((p) => p.length > 1);
+  // "Bordeaux – Saint-Emilion" goes broad to specific; "Barossa Valley, South Australia" goes specific to broad
+  if (/\s[–—-]\s/.test(cleaned)) parts = parts.reverse();
+  const out = [];
+  for (const p of parts) if (!out.some((o) => o.toLowerCase() === p.toLowerCase())) out.push(p);
+  return out.slice(0, 3);
+}
+
+async function getWinePhoto(env, winery, region, country, wineName) {
   const keyOf = (prefix, v) => prefix + String(v).trim().toLowerCase().replace(/\s+/g, " ");
 
-  // 1. The producer's own vineyard or winery
-  if (winery && String(winery).trim()) {
-    const photo = await cachedPhoto(env, keyOf("producer:", winery), () => producerPhoto(String(winery).trim()));
-    if (photo) return { ...photo, kind: "producer", place: String(winery).trim() };
+  // 1. The producer's own vineyard or winery: try the producer field, then an estate in the wine's name
+  const producers = [];
+  if (winery && String(winery).trim()) producers.push(String(winery).trim());
+  const estate = estateFromName(wineName);
+  if (estate && !producers.some((p) => simplify(p) === simplify(estate))) producers.push(estate);
+  for (const prod of producers) {
+    const photo = await cachedPhoto(env, keyOf("producer:", prod), () => producerPhoto(prod));
+    if (photo) return { ...photo, kind: "producer", place: prod };
   }
 
-  // 2 and 3. The region: Wikipedia's main photo, then a Commons search
-  const place = String(region || country || "").trim();
-  if (!place) return null;
-  const photo = await cachedPhoto(env, keyOf("", place), async () => {
-    const fromWikipedia = await wikipediaRegionPhoto(place);
-    if (fromWikipedia) return fromWikipedia;
-    const vineRules = { mustIncludeOneOf: ["vineyard", "vines", "vine", "wine", "grape", "winery"] };
-    for (const q of [place + " vineyard", place + " vineyards"]) {
-      const found = await searchCommonsPhoto(q, vineRules);
-      if (found) return found;
-    }
-    // Last resort: any good landscape of the place, then the country's vineyards
-    const anyPlace = await searchCommonsPhoto(place);
-    if (anyPlace) return anyPlace;
-    if (country && region) return await searchCommonsPhoto(country + " vineyard", vineRules);
-    return null;
-  });
-  return photo ? { ...photo, kind: "region", place } : null;
+  // 2 and 3. The region: Wikipedia's main photo, then a Commons search (most specific place first)
+  const places = regionCandidates(region);
+  if (!places.length && country) places.push(String(country).trim());
+  const vineRules = { mustIncludeOneOf: ["vineyard", "vines", "vine", "wine", "grape", "winery"] };
+  for (let i = 0; i < places.length; i++) {
+    const place = places[i];
+    const isLast = i === places.length - 1;
+    const photo = await cachedPhoto(env, keyOf("", place), async () => {
+      const fromWikipedia = await wikipediaRegionPhoto(place);
+      if (fromWikipedia) return fromWikipedia;
+      for (const q of [place + " vineyard", place + " vineyards"]) {
+        const found = await searchCommonsPhoto(q, vineRules);
+        if (found) return found;
+      }
+      if (!isLast) return null; // a broader place name is still to come
+      // Last resort: any good landscape of the place, then the country's vineyards
+      const anyPlace = await searchCommonsPhoto(place);
+      if (anyPlace) return anyPlace;
+      if (country && simplify(country) !== simplify(place)) return await searchCommonsPhoto(country + " vineyard", vineRules);
+      return null;
+    });
+    if (photo) return { ...photo, kind: "region", place };
+  }
+  return null;
 }
 
 async function sb_fetch(env, path, opts = {}) {
@@ -1556,6 +1588,24 @@ var worker_default = {
         return new Response(JSON.stringify({ error: e.message }), { status: 500, headers: cors });
       }
     }
+    // ── POST /photo — a photo of the producer's estate or the region, for the
+    // Add Wine form straight after a scan (before the wine is saved). Free:
+    // uses Wikipedia/Wikimedia only, no Claude call. Results are saved and reused.
+    if (url.pathname.endsWith("/photo")) {
+      if (request.method !== "POST") return new Response(JSON.stringify({ error: "POST only" }), { status: 405, headers: cors });
+      if (!origin_ok(request)) return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403, headers: cors });
+      let pbody;
+      try { pbody = await request.json(); } catch { return new Response(JSON.stringify({ error: "Invalid JSON" }), { status: 400, headers: cors }); }
+      const { name: pName, winery: pWinery, region: pRegion, country: pCountry } = pbody || {};
+      try {
+        const photo = await getWinePhoto(env, pWinery, pRegion, pCountry, pName);
+        return new Response(JSON.stringify({ photo: photo || null }), { status: 200, headers: cors });
+      } catch (e) {
+        console.warn("photo: lookup failed:", e.message);
+        return new Response(JSON.stringify({ photo: null }), { status: 200, headers: cors });
+      }
+    }
+
     if (url.pathname.endsWith("/enrich")) {
       if (request.method !== "POST") return new Response(JSON.stringify({ error: "POST only" }), { status: 405, headers: cors });
       if (!origin_ok(request)) return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403, headers: cors });
@@ -1716,7 +1766,7 @@ Rules:
 
           // Find (or reuse) a photo of the producer's estate or the region
           try {
-            enrichParsed.region_photo = await getWinePhoto(env, winery || enrichParsed.producer_name, enrichParsed.photo_region || region, country);
+            enrichParsed.region_photo = await getWinePhoto(env, winery || enrichParsed.producer_name, enrichParsed.photo_region || region, country, name);
           } catch (e) {
             console.warn("enrich: region photo failed:", e.message);
             enrichParsed.region_photo = null;

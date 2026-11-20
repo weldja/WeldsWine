@@ -827,6 +827,8 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
 .intel-region-photo{position:relative;height:150px;background:var(--light-gray)}
 .intel-region-photo img{width:100%;height:100%;object-fit:cover;display:block}
 .intel-photo-credit{position:absolute;right:8px;bottom:6px;max-width:80%;background:rgba(45,36,32,.75);color:#fff;font-size:.6rem;padding:3px 7px;border-radius:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-decoration:none}
+.form-photo-banner{border-radius:var(--r);overflow:hidden;margin-bottom:14px;animation:formPhotoIn .35s ease both}
+@keyframes formPhotoIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
 .intel-photo-place{position:absolute;left:8px;top:8px;max-width:85%;background:rgba(45,36,32,.75);color:#fff;font-size:.68rem;font-weight:600;padding:4px 9px;border-radius:20px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .intel-flavours{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
 .intel-flavour{display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 4px;border-radius:var(--r);background:var(--ivory);border:1px solid var(--light-gray);text-align:center}
@@ -2869,6 +2871,8 @@ body{
     <div class="modal-body">
       <form id="wineForm" novalidate>
         <input type="hidden" id="wineId"/>
+
+        <div class="form-photo-banner" id="formPhotoBanner" style="display:none"></div>
 
         <div class="ai-banner" id="aiBanner" style="display:none">
           <span class="ai-banner-icon">✦</span>
@@ -6438,6 +6442,37 @@ async function _renderWorldMap() {
   setTimeout(() => leafletMap.invalidateSize(), 120);
 }
 
+/* After a scan: show a photo of the producer's estate or the region at the top
+   of the Add Wine form, before the wine is saved. Free (no Claude call). */
+let _formPhotoToken = 0;
+async function _loadFormPhoto(details) {
+  const token = ++_formPhotoToken;
+  if (!Scanner.hasUrl() || !details) return;
+  if (!details.winery && !details.region && !details.country && !details.name) return;
+  try {
+    const res = await fetch(Scanner.getProxyUrl() + '/photo', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name:    details.name    || '',
+        winery:  details.winery  || '',
+        region:  details.region  || '',
+        country: details.country || ''
+      })
+    });
+    if (!res.ok) return;
+    const data = await res.json();
+    if (token !== _formPhotoToken) return; // the form has been closed or reopened since
+    const html = renderIntelRegionPhoto(data && data.photo);
+    const banner = document.getElementById('formPhotoBanner');
+    if (!html || !banner || !document.getElementById('modalOverlay')?.classList.contains('open')) return;
+    banner.innerHTML = html;
+    banner.style.display = 'block';
+  } catch (e) {
+    console.warn('form photo: lookup failed', e.message);
+  }
+}
+
 function openModal(wine=null, injectFront=null, injectBack=null) {
   wineForm.reset();
   currentPhotoFront = injectFront;
@@ -6445,6 +6480,9 @@ function openModal(wine=null, injectFront=null, injectBack=null) {
   currentLocLat=null; currentLocLng=null; currentLocLabel='';
   setStars(0);
   document.getElementById('aiBanner').style.display='none';
+  _formPhotoToken++;
+  const _fpb = document.getElementById('formPhotoBanner');
+  if (_fpb) { _fpb.style.display = 'none'; _fpb.innerHTML = ''; }
   document.getElementById('locationText').textContent='No location captured';
   document.getElementById('locationText').classList.remove('set');
   setPhotoPreview('Front', currentPhotoFront);
@@ -8679,6 +8717,7 @@ function importToForm() {
         if(el&&v!==null&&v!==undefined&&v!=='') { el.value=String(v); flashAutofill(el); }
       });
       if(region){ const e=document.getElementById('region'); e.value=region; flashAutofill(e); }
+      _loadFormPhoto({ name: scanResult.name, winery: scanResult.winery, region: region || scanResult.region, country: scanResult.country });
       if(scanResult.style){ const s=document.getElementById('style'); [...s.options].forEach(o=>{ if(o.value===scanResult.style) s.value=scanResult.style; }); }
       showToast('Label imported — rate it, or save without rating ✓');
       const saveBtn = document.getElementById('saveWineBtn');
