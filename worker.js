@@ -208,6 +208,216 @@ function comment_notification({ wine_id, wine_name, winery, grape, style, rating
   return { title, body };
 }
 __name(comment_notification, "comment_notification");
+// ── Wine photos: real photos of the producer's estate or the wine region ──
+// Order of preference:
+//   1. A photo of the producer's own vineyard or winery (Wikimedia Commons)
+//   2. The main photo from the region's Wikipedia article
+//   3. A Wikimedia Commons search for "[region] vineyard"
+// Every result (including "nothing found") is saved in the region_photos table,
+// so each producer and each region is only looked up once.
+
+const WIKI_USER_AGENT = "WeldsWineWisdoms/1.0 (https://weldswine.co.uk)";
+
+// Words in a file name that mean the picture is not a landscape
+const NOT_A_LANDSCAPE = ["bottle", "label", "logo", "glass", "map", "cork", "barrel-head", "shop", "store", "menu"];
+
+// Words that show a producer photo is of the vineyard or winery itself
+const ESTATE_WORDS = ["vineyard", "vines", "winery", "estate", "cellar", "domaine", "chateau", "château", "bodega", "weingut", "cantina", "tenuta", "quinta"];
+
+function plainText(v) {
+  return String(v || "").replace(/<[^>]*>/g, "").replace(/\s+/g, " ").trim();
+}
+
+function simplify(v) {
+  // Lower case, accents removed, so "Château" matches "chateau"
+  return String(v || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+}
+
+// Turn one Commons image record into our photo object, or null if unsuitable
+function photoFromImageInfo(page, { mustInclude = [], mustIncludeOneOf = [] } = {}) {
+  const info = page && page.imageinfo && page.imageinfo[0];
+  if (!info || info.mime !== "image/jpeg") return null;
+  // Only big, landscape-shaped photos look good as a banner
+  if (info.width < 1000 || info.width < info.height * 1.2) return null;
+  const title = simplify(page.title);
+  if (NOT_A_LANDSCAPE.some((w) => title.includes(w))) return null;
+  if (mustInclude.some((w) => !title.includes(w))) return null;
+  if (mustIncludeOneOf.length && !mustIncludeOneOf.some((w) => title.includes(simplify(w)))) return null;
+  const meta = info.extmetadata || {};
+  return {
+    image_url: info.thumburl || info.url,
+    credit: plainText(meta.Artist && meta.Artist.value).slice(0, 120) || "Unknown",
+    licence: plainText(meta.LicenseShortName && meta.LicenseShortName.value) || null,
+    source_url: info.descriptionurl || null
+  };
+}
+
+const IMAGE_INFO_PARAMS = {
+  prop: "imageinfo",
+  iiprop: "url|size|mime|extmetadata",
+  iiurlwidth: "1200",
+  format: "json"
+};
+
+// Search Wikimedia Commons and return the first suitable photo
+async function searchCommonsPhoto(query, rules = {}) {
+  const api = "https://commons.wikimedia.org/w/api.php?" + new URLSearchParams({
+    action: "query",
+    generator: "search",
+    gsrsearch: query + " filetype:bitmap",
+    gsrnamespace: "6",
+    gsrlimit: "15",
+    ...IMAGE_INFO_PARAMS
+  });
+  try {
+    const res = await fetch(api, { headers: { "User-Agent": WIKI_USER_AGENT } });
+    if (!res.ok) return null;
+    const data = await res.json();
+    // Keep the search ranking order
+    const pages = Object.values(data?.query?.pages || {}).sort((a, b) => (a.index || 0) - (b.index || 0));
+    for (const page of pages) {
+      const photo = photoFromImageInfo(page, rules);
+      if (photo) return photo;
+    }
+  } catch (e) {
+    console.warn("wine photo: Commons search failed:", e.message);
+  }
+  return null;
+}
+
+// Find the main photo of a Wikipedia article about the region
+async function wikipediaRegionPhoto(region) {
+  // Try the wine-specific article first, then the place itself
+  const titles = [region + " (wine region)", region + " wine region", region + " wine", region];
+  try {
+    const api = "https://en.wikipedia.org/w/api.php?" + new URLSearchParams({
+      action: "query",
+      titles: titles.join("|"),
+      prop: "pageimages",
+      piprop: "name",
+      redirects: "1",
+      format: "json"
+    });
+    const res = await fetch(api, { headers: { "User-Agent": WIKI_USER_AGENT } });
+    if (!res.ok) return null;
+    const data = await res.json();
+    const q = data?.query || {};
+    // Work out which of our titles each article answers (after redirects)
+    const nameMap = {};
+    for (const n of q.normalized || []) nameMap[n.to] = n.from;
+    for (const r of q.redirects || []) nameMap[r.to] = nameMap[r.from] || r.from;
+    const imageByTitle = {};
+    for (const page of Object.values(q.pages || {})) {
+      if (!page.pageimage) continue;
+      const asked = nameMap[page.title] || page.title;
+      imageByTitle[asked] = page.pageimage;
+    }
+    for (const t of titles) {
+      const fileName = imageByTitle[t];
+      if (!fileName) continue;
+      // Look the file up on Commons. Files only on Wikipedia (non-free) are skipped,
+      // which means we only ever use freely licensed photos.
+      const infoApi = "https://commons.wikimedia.org/w/api.php?" + new URLSearchParams({
+        action: "query",
+        titles: "File:" + fileName,
+        ...IMAGE_INFO_PARAMS
+      });
+      const infoRes = await fetch(infoApi, { headers: { "User-Agent": WIKI_USER_AGENT } });
+      if (!infoRes.ok) continue;
+      const infoData = await infoRes.json();
+      const page = Object.values(infoData?.query?.pages || {})[0];
+      const photo = photoFromImageInfo(page);
+      if (photo) return photo;
+    }
+  } catch (e) {
+    console.warn("wine photo: Wikipedia lookup failed:", e.message);
+  }
+  return null;
+}
+
+// Producer photo: the file name must mention the producer AND look like an estate photo.
+// That stops, for example, a supermarket's own-label wine showing a photo of a supermarket.
+async function producerPhoto(winery) {
+  const generic = ["chateau", "domaine", "bodegas", "bodega", "estate", "estates", "wines", "wine", "winery", "vineyards", "vineyard", "cellars", "the", "and", "family", "weingut", "cantina", "tenuta", "quinta", "maison"];
+  const nameWords = simplify(winery).split(/[^a-z0-9]+/).filter((w) => w.length >= 3 && !generic.includes(w));
+  if (!nameWords.length) return null;
+  const rules = { mustInclude: nameWords, mustIncludeOneOf: ESTATE_WORDS };
+  for (const q of [winery + " vineyard", winery + " winery", winery + " estate"]) {
+    const photo = await searchCommonsPhoto(q, rules);
+    if (photo) return photo;
+  }
+  return null;
+}
+
+// Read and save looked-up photos. An empty image_url means "we looked, nothing suitable".
+async function loadSavedPhoto(env, key) {
+  try {
+    const saved = await sb_fetch(env, "/region_photos?region_key=eq." + encodeURIComponent(key) + "&select=image_url,credit,licence,source_url", { prefer: "return=representation" });
+    if (saved && saved.length > 0) return saved[0];
+  } catch (e) {
+    console.warn("wine photo: saved lookup failed:", e.message);
+  }
+  return undefined; // never looked up
+}
+
+async function savePhoto(env, key, photo) {
+  const sbKey = env.SUPABASE_SERVICE_KEY;
+  const row = photo ? { region_key: key, ...photo } : { region_key: key, image_url: "", credit: null, licence: null, source_url: null };
+  try {
+    const writeRes = await fetch(`${SUPABASE_URL}/rest/v1/region_photos?on_conflict=region_key`, {
+      method: "POST",
+      headers: {
+        apikey: sbKey,
+        Authorization: `Bearer ${sbKey}`,
+        "Content-Type": "application/json",
+        Prefer: "resolution=merge-duplicates"
+      },
+      body: JSON.stringify(row)
+    });
+    if (!writeRes.ok) console.warn("wine photo: save failed", writeRes.status);
+  } catch (e) {
+    console.warn("wine photo: save exception:", e.message);
+  }
+}
+
+// Look up (or reuse) one photo. finder() does the actual searching.
+async function cachedPhoto(env, key, finder) {
+  const saved = await loadSavedPhoto(env, key);
+  if (saved !== undefined) return saved.image_url ? saved : null;
+  const found = await finder();
+  await savePhoto(env, key, found);
+  return found;
+}
+
+async function getWinePhoto(env, winery, region, country) {
+  const keyOf = (prefix, v) => prefix + String(v).trim().toLowerCase().replace(/\s+/g, " ");
+
+  // 1. The producer's own vineyard or winery
+  if (winery && String(winery).trim()) {
+    const photo = await cachedPhoto(env, keyOf("producer:", winery), () => producerPhoto(String(winery).trim()));
+    if (photo) return { ...photo, kind: "producer", place: String(winery).trim() };
+  }
+
+  // 2 and 3. The region: Wikipedia's main photo, then a Commons search
+  const place = String(region || country || "").trim();
+  if (!place) return null;
+  const photo = await cachedPhoto(env, keyOf("", place), async () => {
+    const fromWikipedia = await wikipediaRegionPhoto(place);
+    if (fromWikipedia) return fromWikipedia;
+    const vineRules = { mustIncludeOneOf: ["vineyard", "vines", "vine", "wine", "grape", "winery"] };
+    for (const q of [place + " vineyard", place + " vineyards"]) {
+      const found = await searchCommonsPhoto(q, vineRules);
+      if (found) return found;
+    }
+    // Last resort: any good landscape of the place, then the country's vineyards
+    const anyPlace = await searchCommonsPhoto(place);
+    if (anyPlace) return anyPlace;
+    if (country && region) return await searchCommonsPhoto(country + " vineyard", vineRules);
+    return null;
+  });
+  return photo ? { ...photo, kind: "region", place } : null;
+}
+
 async function sb_fetch(env, path, opts = {}) {
   const key = env.SUPABASE_SERVICE_KEY;
   console.log("sb_fetch: key present=", !!key, "first10=", key ? key.slice(0, 10) : "null", "env keys=", Object.keys(env || {}).join(","));
@@ -1373,7 +1583,7 @@ var worker_default = {
       // Check if enrichment already exists (skip if refreshing)
       if (!refresh) {
         try {
-          const existing = await sb_fetch(env, "/wine_enrichments?wine_id=eq." + encodeURIComponent(wine_id) + "&select=wine_id,summary,producer_name,producer_desc,blend,tasting_notes,food_pairings,critic_scores,region_context,price_context", { prefer: "return=representation" });
+          const existing = await sb_fetch(env, "/wine_enrichments?wine_id=eq." + encodeURIComponent(wine_id) + "&select=wine_id,summary,producer_name,producer_desc,blend,tasting_notes,food_pairings,critic_scores,region_context,price_context,flavours,taste,drink_from,drink_to,region_photo", { prefer: "return=representation" });
           if (existing && existing.length > 0) {
             return new Response(JSON.stringify(existing[0]), { status: 200, headers: cors });
           }
@@ -1405,7 +1615,12 @@ Search for this wine. Return ONLY a valid JSON object with no markdown or explan
   "food_pairings": ["pairing1", "pairing2", "pairing3", "pairing4"],
   "critic_scores": [{"source": "critic name", "score": "score", "label": "medal or descriptor"}],
   "region_context": "1-2 sentences about this wine region",
-  "price_context": "Typical retail price if known, or null"
+  "price_context": "Typical retail price if known, or null",
+  "flavours": ["main flavour 1", "main flavour 2", "main flavour 3"],
+  "taste": {"acidity": 3, "body": 3, "sweetness": 3, "tannin": 3},
+  "drink_from": null,
+  "drink_to": null,
+  "photo_region": "wine region name"
 }
 
 Rules:
@@ -1413,7 +1628,11 @@ Rules:
 - Only include information you found via search — never fabricate scores or reviews
 - If you cannot find information for a field, set it to null (or empty array for arrays)
 - Food pairings: include 3-5 suggestions with an emoji prefix, e.g. "🥩 Steak"
-- Critic scores: only include real published scores you found`;
+- Critic scores: only include real published scores you found
+- Flavours: 3 to 6 lower-case words or short phrases (e.g. "oak", "blackberry", "black pepper"), most prominent first, taken from the tasting notes you found
+- Taste: whole numbers from 1 to 5, where 1 = soft / light / dry / smooth and 5 = acidic / bold / sweet / tannic. Base them on the tasting notes and this wine's typical style. Use null for tannin on white, rosé and sparkling wines, and null for anything you are unsure of
+- drink_from / drink_to: the drinking window as 4-digit years. Use a critic's or the producer's window if you found one, otherwise a sensible estimate for this style and vintage. Use null if there is no vintage
+- photo_region: the most specific well-known wine region for this wine, as a place name only, e.g. "Barossa Valley", "Rioja", "Marlborough". Use null if unknown`;
 
       // Build message content — include photo if available
       const enrichContent = [];
@@ -1432,7 +1651,7 @@ Rules:
           },
           body: JSON.stringify({
             model: "claude-sonnet-4-6",
-            max_tokens: 1500,
+            max_tokens: 2000,
             tools: [{ type: "web_search_20250305", name: "web_search", max_uses: 2 }],
             messages: [{ role: "user", content: enrichContent }]
           })
@@ -1471,6 +1690,35 @@ Rules:
           }
         }
 
+        // Tidy the flavour list
+        if (typeof enrichParsed.flavours === "string") try { enrichParsed.flavours = JSON.parse(enrichParsed.flavours); } catch { enrichParsed.flavours = []; }
+        if (!Array.isArray(enrichParsed.flavours)) enrichParsed.flavours = [];
+        enrichParsed.flavours = enrichParsed.flavours.map((f) => String(f).toLowerCase().trim()).filter(Boolean).slice(0, 6);
+
+        // Taste scores must be whole numbers 1-5, otherwise null
+        const tasteIn = enrichParsed.taste && typeof enrichParsed.taste === "object" ? enrichParsed.taste : {};
+        const oneToFive = (v) => { const n = Math.round(Number(v)); return n >= 1 && n <= 5 ? n : null; };
+        enrichParsed.taste = {
+          acidity: oneToFive(tasteIn.acidity),
+          body: oneToFive(tasteIn.body),
+          sweetness: oneToFive(tasteIn.sweetness),
+          tannin: oneToFive(tasteIn.tannin)
+        };
+
+        // Drinking window years must look like real years
+        const asYear = (v) => { const n = parseInt(v, 10); return n >= 1900 && n <= 2100 ? n : null; };
+        enrichParsed.drink_from = asYear(enrichParsed.drink_from);
+        enrichParsed.drink_to = asYear(enrichParsed.drink_to);
+
+        // Find (or reuse) a photo of the producer's estate or the region
+        try {
+          enrichParsed.region_photo = await getWinePhoto(env, winery || enrichParsed.producer_name, enrichParsed.photo_region || region, country);
+        } catch (e) {
+          console.warn("enrich: region photo failed:", e.message);
+          enrichParsed.region_photo = null;
+        }
+        delete enrichParsed.photo_region;
+
         // Write to Supabase
         const enrichRow = {
           wine_id: wine_id,
@@ -1483,6 +1731,11 @@ Rules:
           critic_scores: enrichParsed.critic_scores,
           region_context: enrichParsed.region_context || null,
           price_context: enrichParsed.price_context || null,
+          flavours: enrichParsed.flavours,
+          taste: enrichParsed.taste,
+          drink_from: enrichParsed.drink_from,
+          drink_to: enrichParsed.drink_to,
+          region_photo: enrichParsed.region_photo,
           model_used: "claude-sonnet-4-6"
         };
         // Await the write — Cloudflare Workers kill unawaited promises on Response return

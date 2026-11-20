@@ -824,6 +824,26 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
 .intel-footer .ai-dot{width:4px;height:4px;border-radius:50%;background:var(--gold);opacity:.6}
 .intel-refresh-btn{margin-left:auto;background:none;border:1px solid var(--light-gray);border-radius:6px;color:var(--warm-gray);font-size:.88rem;padding:4px 8px;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent;min-height:30px;min-width:30px;transition:var(--tr)}
 .intel-refresh-btn:active{transform:scale(.92);color:var(--burgundy)}
+.intel-region-photo{position:relative;height:150px;background:var(--light-gray)}
+.intel-region-photo img{width:100%;height:100%;object-fit:cover;display:block}
+.intel-photo-credit{position:absolute;right:8px;bottom:6px;max-width:80%;background:rgba(45,36,32,.75);color:#fff;font-size:.6rem;padding:3px 7px;border-radius:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-decoration:none}
+.intel-photo-place{position:absolute;left:8px;top:8px;max-width:85%;background:rgba(45,36,32,.75);color:#fff;font-size:.68rem;font-weight:600;padding:4px 9px;border-radius:20px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.intel-flavours{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.intel-flavour{display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 4px;border-radius:var(--r);background:var(--ivory);border:1px solid var(--light-gray);text-align:center}
+.intel-flavour-icon{font-size:1.6rem;line-height:1}
+.intel-flavour-name{font-size:.78rem;font-weight:600;color:var(--charcoal);text-transform:capitalize}
+.intel-flavours-more{margin-top:8px}
+.intel-taste-row{margin-bottom:12px}
+.intel-taste-row:last-child{margin-bottom:0}
+.intel-taste-labels{display:flex;justify-content:space-between;font-size:.74rem;color:var(--warm-gray);margin-bottom:5px}
+.intel-taste-labels .strong{color:var(--charcoal);font-weight:600}
+.intel-taste-track{position:relative;height:16px;margin:0 8px}
+.intel-taste-track::before{content:"";position:absolute;left:0;right:0;top:6px;height:4px;border-radius:2px;background:var(--light-gray)}
+.intel-taste-dot{position:absolute;top:0;width:16px;height:16px;border-radius:50%;background:var(--burgundy);transform:translateX(-50%);box-shadow:0 0 0 2px var(--ivory)}
+.intel-window-status{display:inline-block;margin-left:6px;padding:2px 8px;border-radius:20px;font-size:.68rem;font-weight:600}
+.intel-window-status.ready{background:rgba(201,163,74,.18);color:#7A5E1E}
+.intel-window-status.wait{background:var(--light-gray);color:var(--charcoal)}
+.intel-window-status.past{background:rgba(139,36,57,.1);color:var(--burgundy)}
 .intel-shimmer{padding:16px}
 .shimmer-line{height:11px;border-radius:6px;background:linear-gradient(90deg,rgba(0,0,0,.04) 25%,rgba(0,0,0,.08) 50%,rgba(0,0,0,.04) 75%);background-size:200% 100%;animation:intelShimmer 1.8s ease-in-out infinite;margin-bottom:10px}
 .shimmer-line:last-child{margin-bottom:0}
@@ -6980,6 +7000,9 @@ async function loadEnrichmentFromDB(wineId) {
     // Parse JSONB fields if needed
     if (typeof data.food_pairings === 'string') try { data.food_pairings = JSON.parse(data.food_pairings); } catch {}
     if (typeof data.critic_scores === 'string') try { data.critic_scores = JSON.parse(data.critic_scores); } catch {}
+    if (typeof data.flavours === 'string') try { data.flavours = JSON.parse(data.flavours); } catch {}
+    if (typeof data.taste === 'string') try { data.taste = JSON.parse(data.taste); } catch {}
+    if (typeof data.region_photo === 'string') try { data.region_photo = JSON.parse(data.region_photo); } catch {}
     return data;
   } catch { return null; }
 }
@@ -7053,6 +7076,108 @@ async function refreshWineIntel(wineId) {
   }
 }
 
+/* ── Wine Intel extras: region photo, flavours, taste, drinking window ── */
+const FLAVOUR_ICONS = [
+  ['oak','🪵'],['cedar','🪵'],['wood','🪵'],['vanilla','🍦'],['chocolate','🍫'],['cocoa','🍫'],['mocha','🍫'],
+  ['coffee','☕'],['espresso','☕'],['blackberr','🫐'],['blueberr','🫐'],['cassis','🫐'],['blackcurrant','🫐'],
+  ['cherr','🍒'],['strawberr','🍓'],['raspberr','🍓'],['redcurrant','🍓'],['red fruit','🍓'],
+  ['plum','🍇'],['grape','🍇'],['dark fruit','🍇'],['black fruit','🍇'],['fig','🍇'],['raisin','🍇'],
+  ['lemon','🍋'],['lime','🍋'],['citrus','🍋'],['grapefruit','🍊'],['orange','🍊'],['apple','🍏'],['pear','🍐'],
+  ['peach','🍑'],['apricot','🍑'],['pineapple','🍍'],['mango','🥭'],['tropical','🥭'],['melon','🍈'],['banana','🍌'],
+  ['honey','🍯'],['butter','🧈'],['brioche','🍞'],['bread','🍞'],['toast','🍞'],['yeast','🍞'],
+  ['almond','🌰'],['hazelnut','🌰'],['nut','🌰'],['pepper','🌶️'],['spice','🌶️'],['cinnamon','🌶️'],['clove','🌶️'],
+  ['liquorice','🖤'],['licorice','🖤'],['tobacco','🍂'],['leather','🍂'],['earth','🍂'],['mushroom','🍄'],
+  ['smoke','💨'],['mineral','🪨'],['flint','🪨'],['stone','🪨'],['slate','🪨'],
+  ['mint','🌿'],['eucalyptus','🌿'],['herb','🌿'],['grass','🌿'],['sage','🌿'],
+  ['violet','🌸'],['rose','🌸'],['floral','🌸'],['flower','🌸'],['blossom','🌸'],['tea','🍵']
+];
+
+function flavourIcon(name) {
+  const n = String(name || '').toLowerCase();
+  for (const [word, icon] of FLAVOUR_ICONS) {
+    if (n.includes(word)) return icon;
+  }
+  return '🍷';
+}
+
+function renderIntelRegionPhoto(photo) {
+  if (!photo || typeof photo !== 'object') return '';
+  const src = String(photo.image_url || '');
+  // Only show photos from Wikimedia's own image server
+  if (!src.startsWith('https://upload.wikimedia.org/')) return '';
+  const credit = 'Photo: ' + (photo.credit || 'Unknown') + ' / Wikimedia Commons' + (photo.licence ? ' (' + photo.licence + ')' : '');
+  const link = String(photo.source_url || '');
+  const creditHtml = link.startsWith('https://')
+    ? `<a class="intel-photo-credit" href="${escHtml(link)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">${escHtml(credit)}</a>`
+    : `<span class="intel-photo-credit">${escHtml(credit)}</span>`;
+  // Say what the photo shows: the producer's estate, or the wine region
+  const place = String(photo.place || '').trim();
+  const isProducer = photo.kind === 'producer';
+  const placeLabel = place ? (isProducer ? 'The producer · ' : 'The region · ') + place : '';
+  const alt = place
+    ? (isProducer ? 'Photo of ' + place + ', the producer of this wine' : 'Photo of the ' + place + ' wine region')
+    : 'Photo of this wine\'s region';
+  return `<div class="intel-region-photo">
+    <img src="${escHtml(src)}" alt="${escHtml(alt)}" loading="lazy" onerror="this.parentElement.style.display='none'">
+    ${placeLabel ? `<span class="intel-photo-place">${escHtml(placeLabel)}</span>` : ''}
+    ${creditHtml}
+  </div>`;
+}
+
+function renderIntelFlavours(flavours) {
+  const list = Array.isArray(flavours) ? flavours.filter(Boolean) : [];
+  if (!list.length) return '';
+  const top = list.slice(0, 3).map(f => `<div class="intel-flavour">
+      <span class="intel-flavour-icon" aria-hidden="true">${flavourIcon(f)}</span>
+      <span class="intel-flavour-name">${escHtml(f)}</span>
+    </div>`).join('');
+  const rest = list.slice(3).map(f => `<span class="intel-chip"><span aria-hidden="true">${flavourIcon(f)}</span>${escHtml(f)}</span>`).join('');
+  return `<div class="intel-section">
+    <div class="intel-section-label">Main Flavours</div>
+    <div class="intel-flavours">${top}</div>
+    ${rest ? `<div class="intel-chips intel-flavours-more">${rest}</div>` : ''}
+  </div>`;
+}
+
+function renderIntelTaste(taste) {
+  if (!taste || typeof taste !== 'object') return '';
+  const rows = [
+    ['acidity', 'Soft', 'Acidic'],
+    ['body', 'Light', 'Bold'],
+    ['sweetness', 'Dry', 'Sweet'],
+    ['tannin', 'Smooth', 'Tannic']
+  ];
+  const html = rows.map(([key, left, right]) => {
+    const v = Number(taste[key]);
+    if (!(v >= 1 && v <= 5)) return '';
+    const pct = ((v - 1) / 4) * 100;
+    return `<div class="intel-taste-row" aria-label="${left} to ${right}: ${v} out of 5">
+      <div class="intel-taste-labels"><span class="${v <= 2 ? 'strong' : ''}">${left}</span><span class="${v >= 4 ? 'strong' : ''}">${right}</span></div>
+      <div class="intel-taste-track"><span class="intel-taste-dot" style="left:${pct}%"></span></div>
+    </div>`;
+  }).join('');
+  if (!html) return '';
+  return `<div class="intel-section">
+    <div class="intel-section-label">Taste</div>
+    ${html}
+  </div>`;
+}
+
+function renderIntelDrinkingWindow(from, to) {
+  const f = parseInt(from, 10), t = parseInt(to, 10);
+  if (!f && !t) return '';
+  const year = new Date().getFullYear();
+  const range = (f && t) ? `${f} – ${t}` : (f ? `From ${f}` : `Until ${t}`);
+  let status = '';
+  if (f && year < f) status = `<span class="intel-window-status wait">Not ready yet</span>`;
+  else if (t && year > t) status = `<span class="intel-window-status past">Past its best?</span>`;
+  else status = `<span class="intel-window-status ready">Ready to drink</span>`;
+  return `<div class="intel-section">
+    <div class="intel-section-label">Drinking Window</div>
+    <div class="intel-section-text">${escHtml(range)}${status}</div>
+  </div>`;
+}
+
 function renderIntelPanelHTML(d) {
   // Strip any leftover web-search citation tags
   const _sc = s => typeof s === 'string' ? s.replace(/<\/?cite[^>]*>/gi,'').replace(/\s{2,}/g,' ').trim() : (s||'');
@@ -7064,6 +7189,7 @@ function renderIntelPanelHTML(d) {
     .join('');
   const wid = escJs(d.wine_id || '');
   return `<div class="intel-panel" style="display:block">
+    ${renderIntelRegionPhoto(d.region_photo)}
     <div class="intel-panel-header" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.intel-panel-chevron').style.transform=this.nextElementSibling.style.display==='none'?'rotate(-90deg)':''">
       <div class="intel-panel-header-left">
         <div class="intel-panel-icon">✦</div>
@@ -7073,6 +7199,8 @@ function renderIntelPanelHTML(d) {
     </div>
     <div class="intel-panel-body">
       ${d.summary?`<div class="intel-summary">${escHtml(_sc(d.summary))}</div>`:''}
+      ${renderIntelFlavours(d.flavours)}
+      ${renderIntelTaste(d.taste)}
       ${d.producer_name?`<div class="intel-section">
         <div class="intel-section-label">Producer</div>
         <div class="producer-block">
@@ -7088,6 +7216,7 @@ function renderIntelPanelHTML(d) {
         <div class="intel-section-label">Critics</div>
         <div class="intel-scores">${scores}</div>
       </div>`:''}
+      ${renderIntelDrinkingWindow(d.drink_from, d.drink_to)}
       ${d.price_context?`<div class="intel-section">
         <div class="intel-section-label">Price</div>
         <div class="intel-section-text">${escHtml(_sc(d.price_context))}</div>
