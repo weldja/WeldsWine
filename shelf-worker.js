@@ -146,7 +146,7 @@ YOUR TASKS
 
 5. Give every wine a value score.
    - "value_score" is a whole number from 1 to 10 for how good value the wine is at the price YOU would pay here: 10 = outstanding value, 7 = good value, 5 = fair, 3 = poor, 1 = very poor value.
-   - Your best-value picks should have the highest scores, and your poor-value wines low scores.
+   - Your best-value picks must have the highest scores on the shelf, in order: pick 1 the highest, then pick 2, then pick 3. Your poor-value wines must have the lowest scores.
    - If no price could be read for a wine, set "value_score" to null.
 
 6. Say where each wine is in the photos, so it can be marked on a picture of the shelf.

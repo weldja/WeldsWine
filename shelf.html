@@ -287,7 +287,7 @@ h1{font-family:var(--font-d);font-size:1.5rem;font-weight:600;line-height:1.2}
       </div>
       <div class="legend" aria-hidden="true">
         <div class="legend-bar"></div>
-        <div class="legend-labels"><span>Best value</span><span>Fair</span><span>Poor value</span></div>
+        <div class="legend-labels"><span>Best on this shelf</span><span>Fair</span><span>Poor value</span></div>
       </div>
       <p class="small">Numbers mark the top picks. A dashed outline means no price was seen. Tap any wine on the photo for details. Positions are the AI’s best estimate, so they can be slightly out.</p>
       <div class="heat-sel" id="heatSel" hidden></div>
@@ -735,23 +735,76 @@ function renderResults() {
   $('seeAllBtn').hidden = !wines.length;
 
   heatSelected = null;
+  computeHeatScores();
   try { renderHeat(); } catch (e) { console.warn('[shelf] heat map failed:', e); $('heatSection').hidden = true; }
 }
 
 // ── Heat map ─────────────────────────────────────────────────
 let heatPhoto = 1, heatSelected = null, heatOff = false, heatZoomed = false;
 
-// Value score (1–10) to colour: green = best value, red = poor value
-function scoreColour(score) {
-  if (!score) return null;
-  if (score >= 8) return [46, 158, 91];
-  if (score >= 6) return [155, 191, 58];
-  if (score === 5) return [226, 179, 60];
-  if (score >= 3) return [224, 122, 46];
-  return [200, 50, 58];
+/* How the colours are worked out
+   1. Every wine with a price gets a value score from the AI (1–10).
+   2. The scores are made to agree with the picks: pick 1 always scores
+      highest on the shelf, then pick 2, then pick 3, then everything
+      else, and the poor-value wines always score lowest. (The AI
+      sometimes gives pick 3 a higher score than pick 1; this fixes that.)
+   3. The colour slides smoothly from red to green. The greenest green is
+      kept for the best wine on this shelf (pick 1), so it always stands
+      out. If even the best wine is only fair value, nothing turns deep
+      green.                                                             */
+let heatScores = {};   // wine id -> score used for colours (and drawing order)
+let heatShown = {};    // wine id -> whole-number score shown as "x/10"
+
+function computeHeatScores() {
+  heatScores = {}; heatShown = {};
+  if (!result) return;
+  const priced = result.wines.filter(w => w.value_score);
+  const pickIds = (result.picks || []).map(p => p.wine_id).filter(id => priced.some(w => w.id === id));
+  const poorIds = (result.poor_value || []).map(p => p.wine_id).filter(id => priced.some(w => w.id === id));
+  const others = priced.filter(w => !pickIds.includes(w.id) && !poorIds.includes(w.id));
+  others.forEach(w => { heatScores[w.id] = w.value_score; heatShown[w.id] = w.value_score; });
+  const otherMax = others.length ? Math.max(...others.map(w => w.value_score)) : 1;
+  const otherMin = others.length ? Math.min(...others.map(w => w.value_score)) : 10;
+  // Picks: hand out the picks' own scores in rank order, then make sure
+  // each one beats the next and beats every other wine
+  const pickScores = pickIds.map(id => wineById(id).value_score).sort((a, b) => b - a);
+  let floor = otherMax;
+  for (let i = pickIds.length - 1; i >= 0; i--) {
+    const sc = Math.max(pickScores[i], floor + 0.25);
+    heatScores[pickIds[i]] = Math.min(sc, 10.75);
+    // The number shown stays honest: the AI's score, never more than 1 above it
+    heatShown[pickIds[i]] = Math.min(10, Math.max(pickScores[i], Math.min(otherMax, pickScores[i] + 1)));
+    floor = heatScores[pickIds[i]];
+  }
+  // Poor value: never above the ordinary wines
+  poorIds.forEach(id => {
+    heatScores[id] = Math.max(1, Math.min(wineById(id).value_score, otherMin - 0.25));
+    heatShown[id] = Math.max(1, Math.min(wineById(id).value_score, otherMin));
+  });
+}
+function heatScore(w) { return w && heatScores[w.id] !== undefined ? heatScores[w.id] : (w && w.value_score) || null; }
+function shownScore(w) { if (!w) return null; const s = heatShown[w.id] !== undefined ? heatShown[w.id] : w.value_score; return s ? Math.max(1, Math.min(10, Math.round(s))) : null; }
+
+const HEAT_STOPS = [[0, [200, 50, 58]], [0.3, [224, 122, 46]], [0.5, [226, 179, 60]], [0.72, [155, 191, 58]], [1, [46, 158, 91]]];
+function wineColour(w) {
+  const sc = heatScore(w);
+  if (!sc) return null;
+  const all = Object.values(heatScores);
+  // Best on this shelf = greenest, unless even the best is only fair value
+  const top = Math.max(8, all.length ? Math.max(...all) : 10);
+  const t = Math.min(Math.max((sc - 1) / (top - 1), 0), 1);
+  for (let i = 1; i < HEAT_STOPS.length; i++) {
+    const [t1, c1] = HEAT_STOPS[i], [t0, c0] = HEAT_STOPS[i - 1];
+    if (t <= t1) {
+      const f = (t - t0) / (t1 - t0);
+      return c0.map((v, k) => Math.round(v + (c1[k] - v) * f));
+    }
+  }
+  return HEAT_STOPS[HEAT_STOPS.length - 1][1];
 }
 function verdictText(score) {
   if (!score) return 'No price seen';
+  score = Math.round(score);
   if (score >= 8) return 'Great value';
   if (score >= 6) return 'Good value';
   if (score === 5) return 'Fair value';
@@ -802,7 +855,7 @@ function renderHeat() {
   layer.textContent = '';
   heatBadges = [];
   // Draw the poorest first so the best value sits on top where boxes overlap
-  onThis.slice().sort((a, b) => (a.value_score || 0) - (b.value_score || 0)).forEach(w => {
+  onThis.slice().sort((a, b) => (heatScore(a) || 0) - (heatScore(b) || 0)).forEach(w => {
     const L = w.location;
     const spot = el('button', 'spot');
     spot.type = 'button';
@@ -813,10 +866,12 @@ function renderHeat() {
     spot.style.top = (top * 100) + '%';
     spot.style.width = (Math.min(1 - left, L.w + padX * 2) * 100) + '%';
     spot.style.height = (Math.min(1 - top, L.h + padY * 2) * 100) + '%';
-    const c = scoreColour(w.value_score);
+    const c = wineColour(w);
     if (c) {
       const rgb = c.join(',');
-      spot.style.background = 'radial-gradient(ellipse at center, rgba(' + rgb + ',.62) 0%, rgba(' + rgb + ',.45) 45%, rgba(' + rgb + ',0) 75%)';
+      // The picks glow a little more strongly so they stand out
+      const strong = pickRank(w.id) ? [0.75, 0.55] : [0.55, 0.38];
+      spot.style.background = 'radial-gradient(ellipse at center, rgba(' + rgb + ',' + strong[0] + ') 0%, rgba(' + rgb + ',' + strong[1] + ') 45%, rgba(' + rgb + ',0) 75%)';
     } else {
       spot.classList.add('none');
     }
@@ -824,7 +879,7 @@ function renderHeat() {
     const rank = pickRank(w.id);
     if (rank || isPoor(w.id)) heatBadges.push({ w, rank, poor: !rank });
     const pp = payPrice(w);
-    spot.setAttribute('aria-label', w.name + (pp ? ', ' + money(pp) : ', no price seen') + ', ' + verdictText(w.value_score) + (rank ? ', best value pick ' + rank : ''));
+    spot.setAttribute('aria-label', w.name + (pp ? ', ' + money(pp) : ', no price seen') + ', ' + verdictText(heatScore(w)) + (rank ? ', best value pick ' + rank : ''));
     spot.addEventListener('click', () => { heatSelected = w.id; renderHeat(); });
     layer.appendChild(spot);
   });
@@ -923,10 +978,12 @@ function renderHeatSelection() {
   top.appendChild(el('span', 'row-price', pp ? money(pp) + (result.loyalty_card && w.loyalty_price ? ' ' + loyaltyName() : '') : '—'));
   box.appendChild(top);
   const tags = el('div', 'conf-row');
-  const c = scoreColour(w.value_score);
-  const v = el('span', 'verdict', verdictText(w.value_score) + (w.value_score ? ' · ' + w.value_score + '/10' : ''));
+  const c = wineColour(w);
+  const sc = shownScore(w);
+  const v = el('span', 'verdict', verdictText(sc) + (sc ? ' · ' + sc + '/10' : ''));
   v.style.background = c ? 'rgb(' + c.join(',') + ')' : '#8C817C';
-  if (w.value_score === 5 || (w.value_score >= 6 && w.value_score < 8)) v.style.color = '#2D2420';
+  // Dark text on the lighter yellows and limes, white on the rest
+  if (c && (0.299 * c[0] + 0.587 * c[1] + 0.114 * c[2]) > 150) v.style.color = '#2D2420';
   tags.appendChild(v);
   tags.appendChild(confChip(w));
   box.appendChild(tags);
@@ -961,11 +1018,11 @@ function renderAll() {
     const row = el('div', 'row');
     const top = el('div', 'row-top');
     const nm = el('span', 'row-name');
-    const dc = scoreColour(w.value_score);
+    const dc = wineColour(w);
     if (dc) {
       const dot = el('span', 'vdot');
       dot.style.background = 'rgb(' + dc.join(',') + ')';
-      dot.title = verdictText(w.value_score);
+      dot.title = verdictText(heatScore(w));
       nm.appendChild(dot);
     }
     nm.appendChild(document.createTextNode(w.name));
