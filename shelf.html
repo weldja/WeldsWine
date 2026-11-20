@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+<title>Shelf Scanner — Welds Wine Wisdoms</title>
+<meta name="robots" content="noindex"/>
+<meta name="theme-color" content="#5C1525"/>
+<link rel="icon" href="/favicon.ico" sizes="32x32"/>
+<link rel="apple-touch-icon" href="/icon-192.png"/>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,500;0,600;1,500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<!-- Same Supabase library as the journal, so you stay signed in -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+/* Colours and fonts copied from the journal (index.html) so this page looks like part of the same site */
+:root{
+  --burgundy:#8B2439; --burgundy-deep:#5C1525; --parchment:#F5EDE2; --cream:#F9F5F0; --ivory:#FFFFFF;
+  --charcoal:#2D2420; --text-2:#5F5450; --light-gray:#E8DDD4; --gold:#C9A34A; --gold-lt:#E2C070; --gold-text:#8A6A1F;
+  --font-d:'Lora',Georgia,serif; --font-b:'Inter',system-ui,-apple-system,sans-serif;
+  --r:10px; --rl:16px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{font-family:var(--font-b);background:var(--cream);color:var(--charcoal);line-height:1.55;-webkit-font-smoothing:antialiased;min-height:100vh;padding-bottom:env(safe-area-inset-bottom,0px)}
+button,input{font-family:inherit;font-size:inherit;color:inherit}
+button{cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+a{color:var(--burgundy)}
+:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+[hidden]{display:none!important}
+
+/* Header */
+.hdr{background:var(--burgundy-deep);color:var(--parchment);position:sticky;top:0;z-index:10;padding:calc(10px + env(safe-area-inset-top,0px)) 16px 12px;box-shadow:0 2px 16px rgba(44,20,36,.25)}
+.hdr-in{max-width:560px;margin:0 auto}
+.hdr-back{display:inline-flex;align-items:center;gap:4px;min-height:32px;color:var(--parchment);text-decoration:none;font-size:.82rem;background:none;border:none;padding:0}
+.hdr-row{display:flex;align-items:center;gap:10px;margin-top:4px}
+.hdr-title{font-family:var(--font-d);font-size:1.2rem;font-weight:600;line-height:1.1}
+.hdr-sub{font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;font-style:italic;color:#E8C6CE;margin-top:3px}
+.hdr-badge{margin-left:auto;font-size:.66rem;font-weight:600;background:rgba(201,163,74,.18);color:var(--gold-lt);border:1px solid rgba(201,163,74,.35);border-radius:20px;padding:2px 9px}
+
+main{max-width:560px;margin:0 auto;padding:20px 16px 40px}
+.view{display:flex;flex-direction:column;gap:18px}
+h1{font-family:var(--font-d);font-size:1.5rem;font-weight:600;line-height:1.2}
+.lead{font-size:.92rem;color:var(--text-2)}
+.sec-h{font-size:.7rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-text)}
+.card{background:var(--ivory);border:1px solid var(--light-gray);border-radius:var(--rl);padding:14px}
+.small{font-size:.78rem;color:var(--text-2)}
+.center{text-align:center}
+
+/* Buttons */
+.btn-main{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:50px;border:none;border-radius:var(--r);background:var(--gold);color:var(--burgundy-deep);font-size:.95rem;font-weight:600;text-decoration:none}
+.btn-main:disabled{background:#EFE8DF;color:#8C817C;cursor:default}
+.btn-line{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;min-height:46px;border:1px solid var(--burgundy);border-radius:var(--r);background:var(--ivory);color:var(--burgundy);font-size:.9rem;font-weight:600;text-decoration:none}
+.btn-add{display:flex;align-items:center;justify-content:center;gap:8px;min-height:48px;border:1.5px dashed var(--gold);border-radius:var(--r);background:rgba(201,163,74,.08);color:#6E5416;font-size:.9rem;font-weight:600;position:relative}
+.btn-add input{position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer}
+.add-row{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:8px}
+.btn-add.alt{border-style:solid;border-color:var(--light-gray);background:var(--ivory);color:var(--charcoal);font-weight:500}
+
+/* Photos */
+.photos{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.photo{margin:0;background:var(--ivory);border:1px solid var(--light-gray);border-radius:var(--r);overflow:hidden;position:relative}
+.photo img{display:block;width:100%;height:110px;object-fit:cover;background:#EFE8DF}
+.photo figcaption{padding:6px 9px;font-size:.76rem}
+.photo-x{position:absolute;top:6px;right:6px;width:34px;height:34px;border-radius:17px;border:none;background:rgba(45,36,32,.75);color:#fff;display:flex;align-items:center;justify-content:center}
+.photos-empty{grid-column:1/-1;border:1px dashed var(--light-gray);border-radius:var(--r);padding:22px 14px;text-align:center;font-size:.86rem;color:var(--text-2);background:var(--ivory)}
+.tips{font-size:.8rem;color:var(--text-2);line-height:1.5}
+.tips li{margin-left:18px;margin-bottom:3px}
+
+/* Form bits */
+.chk{display:flex;align-items:center;gap:10px;min-height:40px;font-size:.92rem;cursor:pointer}
+.chk input{width:22px;height:22px;accent-color:var(--burgundy);flex-shrink:0}
+.fld{display:flex;flex-direction:column;gap:5px;margin-top:6px}
+.fld label{font-size:.78rem;color:var(--text-2)}
+.fld input{height:44px;border:1px solid var(--light-gray);border-radius:var(--r);padding:0 12px;background:var(--cream);font-size:16px}
+.fld input:focus{outline:none;border-color:var(--burgundy);background:var(--ivory)}
+
+/* Working */
+.steps{list-style:none;display:flex;flex-direction:column;gap:16px}
+.step{display:flex;gap:12px;align-items:flex-start}
+.dot{flex-shrink:0;width:26px;height:26px;border-radius:13px;border:2px solid var(--light-gray);display:flex;align-items:center;justify-content:center}
+.step.done .dot{background:var(--gold);border-color:var(--gold);color:var(--burgundy-deep)}
+.step.now .dot{border:3px solid var(--light-gray);border-top-color:var(--burgundy);animation:spin .9s linear infinite}
+.step-t{font-size:.9rem;font-weight:600}
+.step-d{font-size:.78rem;color:var(--text-2)}
+.step.wait .step-t{color:#8C817C}
+@keyframes spin{to{transform:rotate(360deg)}}
+.thumbs{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px}
+.thumbs img{width:100%;height:52px;object-fit:cover;border-radius:6px;border:1px solid var(--light-gray)}
+.err{border-color:#E9B8C2;background:#FDF3F5}
+.err-t{font-family:var(--font-d);font-size:1.05rem;font-weight:600;color:var(--burgundy)}
+
+/* Results */
+.sum-h{font-family:var(--font-d);font-size:1.25rem;font-weight:600}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.chip{font-size:.74rem;padding:4px 10px;border-radius:20px;background:#ECE6E2;color:#4A403C}
+.chip.gold{background:#F1E7D2;color:#6E5416}
+.chip.red{background:#F6E1E5;color:#7A1F33}
+.pick{background:var(--ivory);border:1px solid var(--light-gray);border-radius:var(--rl);padding:16px;display:flex;flex-direction:column;gap:11px;box-shadow:0 2px 10px rgba(44,36,32,.06)}
+.pick-top{display:flex;gap:12px;align-items:flex-start}
+.rank{flex-shrink:0;width:34px;height:34px;border-radius:17px;background:var(--burgundy-deep);color:var(--gold-lt);font-family:var(--font-d);font-weight:600;font-size:1.05rem;display:flex;align-items:center;justify-content:center}
+.wname{font-family:var(--font-d);font-size:1.08rem;font-weight:600;line-height:1.25}
+.wsub{font-size:.78rem;color:var(--text-2)}
+.price-row{display:flex;align-items:baseline;flex-wrap:wrap;gap:8px}
+.price-big{font-family:var(--font-d);font-size:1.6rem;font-weight:600;color:var(--burgundy);line-height:1}
+.loy{font-size:.7rem;font-weight:600;padding:3px 8px;border-radius:4px;background:#F7D44C;color:var(--charcoal)}
+.was{font-size:.84rem;color:var(--text-2);text-decoration:line-through}
+.also{font-size:.8rem;color:var(--text-2)}
+.why{font-size:.9rem;line-height:1.55;color:#3D3330}
+.conf-row{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.conf{font-size:.72rem;font-weight:600;padding:3px 9px;border-radius:20px}
+.conf.high{background:#E1EEE8;color:#24493E}
+.conf.medium{background:#F6EBD3;color:#6B4A12}
+.conf.low{background:#F6E1E5;color:#7A1F33}
+.note{font-size:.78rem;color:#7A1F33}
+.poor{background:var(--ivory);border:1px solid var(--light-gray);border-radius:var(--rl);padding:2px 14px}
+.poor-row{padding:12px 0;border-bottom:1px solid #F0E8E0;display:flex;flex-direction:column;gap:3px}
+.poor-row:last-child{border-bottom:none}
+.poor-top{display:flex;justify-content:space-between;gap:10px;font-size:.9rem;font-weight:600}
+.poor-top span:last-child{color:var(--burgundy);white-space:nowrap}
+.poor-why{font-size:.82rem;color:var(--text-2)}
+
+/* Full list */
+.filters{display:flex;flex-wrap:wrap;gap:8px}
+.filter{min-height:38px;padding:0 14px;border-radius:19px;border:1px solid var(--light-gray);background:var(--ivory);font-size:.84rem}
+.filter[aria-pressed="true"]{background:var(--burgundy-deep);border-color:var(--burgundy-deep);color:var(--parchment);font-weight:600}
+.list{background:var(--ivory);border:1px solid var(--light-gray);border-radius:var(--rl);padding:0 14px}
+.row{padding:12px 0;border-bottom:1px solid #F0E8E0;display:flex;flex-direction:column;gap:5px}
+.row:last-child{border-bottom:none}
+.row-top{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.row-name{font-size:.9rem;font-weight:600;line-height:1.3}
+.row-price{font-size:.95rem;font-weight:600;color:var(--burgundy);white-space:nowrap;text-align:right}
+.row-mid{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:.76rem;color:var(--text-2)}
+.list-empty{padding:18px 0;text-align:center;font-size:.86rem;color:var(--text-2)}
+
+/* Toast */
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%) translateY(90px);background:var(--charcoal);color:var(--parchment);padding:10px 18px;border-radius:24px;font-size:.86rem;transition:transform .25s ease;z-index:50;max-width:calc(100% - 32px);text-align:center}
+.toast.show{transform:translateX(-50%) translateY(0)}
+@media (prefers-reduced-motion:reduce){.step.now .dot{animation:none;border-top-color:var(--burgundy)}.toast{transition:none}}
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <div class="hdr-in">
+    <a class="hdr-back" href="/" id="backLink">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
+      <span id="backLabel">Back to my journal</span>
+    </a>
+    <div class="hdr-row">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#E2C070" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="1.5"/><path d="M3 12h18M7 4v8M11 4v8M15 4v8M7 12v8M12 12v8M17 12v8"/></svg>
+      <div>
+        <div class="hdr-title">Shelf Scanner</div>
+        <div class="hdr-sub">Welds Wine Wisdoms</div>
+      </div>
+      <span class="hdr-badge" title="Only admins can see this while it is being tested">Testing</span>
+    </div>
+  </div>
+</header>
+
+<main>
+
+  <!-- Checking who you are / not allowed -->
+  <section class="view" id="viewGate">
+    <div class="card center" id="gateBox">
+      <p class="lead">Checking you’re signed in…</p>
+    </div>
+  </section>
+
+  <!-- 1. Take photos -->
+  <section class="view" id="viewCapture" hidden>
+    <div>
+      <h1>Find the best value on the shelf</h1>
+      <p class="lead" style="margin-top:6px">Take a few photos of the same shelf: one wide shot, then closer shots of each row. Overlapping photos are fine — they help double-check the prices.</p>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div style="display:flex;justify-content:space-between;align-items:baseline">
+        <h2 class="sec-h">Your photos</h2>
+        <span class="small" id="photoCount">0 of 6</span>
+      </div>
+      <div class="photos" id="photoGrid"></div>
+      <div class="add-row" id="addRow">
+        <label class="btn-add">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8a2 2 0 0 1 2-2h2l2-2h6l2 2h2a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><circle cx="12" cy="13" r="3.5"/></svg>
+          <span id="cameraLabel">Take a photo</span>
+          <input type="file" accept="image/*" capture="environment" id="cameraInput" aria-label="Take a photo of the shelf"/>
+        </label>
+        <label class="btn-add alt">
+          <span>Saved photos</span>
+          <input type="file" accept="image/*" multiple id="galleryInput" aria-label="Choose saved photos"/>
+        </label>
+      </div>
+      <ul class="tips" id="tips">
+        <li>Hold the phone level and fill the frame with the shelf.</li>
+        <li>Make sure the price tags are in shot, not just the bottles.</li>
+        <li>If a tag has glare on it, take another photo from a slight angle.</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h2 class="sec-h">Prices</h2>
+      <label class="chk" style="margin-top:6px">
+        <input type="checkbox" id="loyaltyInput"/>
+        <span>I have a loyalty card (Clubcard, Nectar…)</span>
+      </label>
+      <div class="fld">
+        <label for="shopInput">Shop (optional)</label>
+        <input type="text" id="shopInput" placeholder="e.g. Tesco" maxlength="60" autocomplete="off"/>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <button class="btn-main" id="scanBtn" disabled>Find the best value</button>
+      <p class="small center">Uses one AI request per scan.</p>
+    </div>
+  </section>
+
+  <!-- 2. Reading the shelf -->
+  <section class="view" id="viewWorking" hidden>
+    <div class="center">
+      <h1 style="color:var(--burgundy);font-style:italic">Reading your shelf…</h1>
+      <p class="lead" style="margin-top:6px" id="workingLead">All your photos are read together, so a wine seen in more than one photo is only listed once.</p>
+    </div>
+    <div class="thumbs" id="workingThumbs"></div>
+    <div class="card" id="stepsCard">
+      <ol class="steps" id="steps"></ol>
+    </div>
+    <div class="card err" id="errorCard" hidden>
+      <div class="err-t" id="errorTitle">That didn’t work</div>
+      <p class="small" style="margin-top:6px;color:var(--charcoal)" id="errorText"></p>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-top:14px">
+        <button class="btn-main" id="retryBtn">Try again</button>
+        <button class="btn-line" id="errorBackBtn">Back to my photos</button>
+      </div>
+    </div>
+    <p class="small center" id="workingNote">This can take up to a minute with several photos.</p>
+    <button class="btn-line" id="cancelBtn">Cancel</button>
+  </section>
+
+  <!-- 3. Best value -->
+  <section class="view" id="viewResults" hidden>
+    <div class="card" id="summaryCard"></div>
+    <h2 class="sec-h" id="picksHead">Best value on this shelf</h2>
+    <div style="display:flex;flex-direction:column;gap:14px" id="picks"></div>
+    <h2 class="sec-h" id="poorHead">Paying for the name</h2>
+    <div class="poor" id="poor"></div>
+    <button class="btn-main" id="seeAllBtn">See all wines found</button>
+    <button class="btn-line" id="newScanBtn">Start a new shelf scan</button>
+    <p class="small center">Prices are read from your photos and can be wrong. Always check the shelf tag before you buy.</p>
+  </section>
+
+  <!-- 4. Everything found -->
+  <section class="view" id="viewAll" hidden>
+    <div>
+      <h1>Everything found</h1>
+      <p class="lead" style="margin-top:6px">Cheapest first. Each wine shows which of your photos it was read from.</p>
+    </div>
+    <div class="filters" role="group" aria-label="Show">
+      <button class="filter" data-filter="all" aria-pressed="true">All</button>
+      <button class="filter" data-filter="check" aria-pressed="false">To check</button>
+      <button class="filter" data-filter="noprice" aria-pressed="false">No price</button>
+    </div>
+    <div class="list" id="allList"></div>
+    <button class="btn-line" id="allBackBtn">Back to best value</button>
+  </section>
+
+</main>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+/* ══════════════════════════════════════════════════════════════
+   Shelf Scanner page
+   This page is separate from the journal (index.html). It only
+   reads who you are from Supabase; it never changes your wines.
+══════════════════════════════════════════════════════════════ */
+
+// ── Settings ─────────────────────────────────────────────────
+// The address of the shelf scanner worker (the new, separate one).
+const SHELF_WORKER_URL = 'https://weldswine-shelf.james-weld.workers.dev';
+// Same Supabase project and public key as the journal
+const SUPABASE_URL = 'https://phcnswuwrqarikzjvfqd.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_6FvpnoWmZ8pSFy-GWZfFQw_ciawP5aA';
+// While testing, only admins can use the page (the worker checks this too)
+const ADMIN_ONLY = true;
+
+const MAX_PHOTOS = 6;
+const PHOTO_MAX_PX = 1568;          // long side sent to the AI; small price text needs the detail
+const PHOTO_QUALITY = 0.85;
+const SCAN_TIMEOUT_MS = 150000;     // give up after two and a half minutes
+const DRAFT_KEY = 'wwShelfDraft';   // photos in progress (this tab only)
+const RESULT_KEY = 'wwShelfResult'; // last result (this tab only)
+const PREFS_KEY = 'wwShelfPrefs';   // loyalty card + shop (remembered on this device)
+
+// ── State ────────────────────────────────────────────────────
+let sb = null;
+let photos = [];          // [{ id, url }]
+let result = null;
+let scanAbort = null;
+let stepTimers = [];
+let wakeLock = null;
+let listFilter = 'all';
+
+const $ = id => document.getElementById(id);
+
+// ── Small helpers ────────────────────────────────────────────
+function el(tag, cls, text) {
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (text !== undefined && text !== null) e.textContent = text;
+  return e;
+}
+function toast(msg) {
+  const t = $('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._t);
+  t._t = setTimeout(() => t.classList.remove('show'), 3200);
+}
+function showView(id) {
+  ['viewGate', 'viewCapture', 'viewWorking', 'viewResults', 'viewAll'].forEach(v => { $(v).hidden = v !== id; });
+  window.scrollTo(0, 0);
+}
+function money(n) {
+  if (n === null || n === undefined) return '';
+  return '£' + (Number.isInteger(n) ? String(n) : n.toFixed(2));
+}
+function listJoin(nums) {
+  if (nums.length <= 1) return String(nums[0] || '');
+  return nums.slice(0, -1).join(', ') + ' and ' + nums[nums.length - 1];
+}
+function newId() { return Math.random().toString(36).slice(2, 10); }
+
+// ── Remembered settings ─────────────────────────────────────
+function loadPrefs() {
+  try {
+    const p = JSON.parse(localStorage.getItem(PREFS_KEY) || '{}');
+    $('loyaltyInput').checked = p.loyalty !== false;   // ticked unless you've unticked it before
+    $('shopInput').value = p.shop || '';
+  } catch (_) { $('loyaltyInput').checked = true; }
+}
+function savePrefs() {
+  try { localStorage.setItem(PREFS_KEY, JSON.stringify({ loyalty: $('loyaltyInput').checked, shop: $('shopInput').value.trim() })); } catch (_) {}
+}
+
+// ── Keep photos safe if the phone reloads the page ───────────
+// Phones sometimes throw the page away while the camera is open.
+// Keeping the photos in this tab's storage means they come back.
+function saveDraft() {
+  let keep = photos.slice();
+  while (true) {
+    try {
+      if (!keep.length) { sessionStorage.removeItem(DRAFT_KEY); return; }
+      sessionStorage.setItem(DRAFT_KEY, JSON.stringify({ ts: Date.now(), photos: keep.map(p => p.url) }));
+      return;
+    } catch (_) {
+      keep = keep.slice(0, -1);   // too big for storage: keep fewer
+      if (!keep.length) { try { sessionStorage.removeItem(DRAFT_KEY); } catch (__) {} return; }
+    }
+  }
+}
+function loadDraft() {
+  try {
+    const d = JSON.parse(sessionStorage.getItem(DRAFT_KEY) || 'null');
+    if (!d || !Array.isArray(d.photos) || Date.now() - (d.ts || 0) > 3 * 60 * 60 * 1000) return;
+    photos = d.photos.filter(u => typeof u === 'string' && u.startsWith('data:image/')).slice(0, MAX_PHOTOS).map(url => ({ id: newId(), url }));
+  } catch (_) {}
+}
+function saveResult() {
+  try { result ? sessionStorage.setItem(RESULT_KEY, JSON.stringify(result)) : sessionStorage.removeItem(RESULT_KEY); } catch (_) {}
+}
+function loadResult() {
+  try {
+    const r = JSON.parse(sessionStorage.getItem(RESULT_KEY) || 'null');
+    if (r && Array.isArray(r.wines) && Date.now() - new Date(r.scanned_at).getTime() < 3 * 60 * 60 * 1000) result = r;
+  } catch (_) {}
+}
+
+// ── Photos ───────────────────────────────────────────────────
+function shrinkPhoto(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error('read'));
+    reader.onload = () => {
+      const img = new Image();
+      img.onerror = () => reject(new Error('decode'));
+      img.onload = () => {
+        try {
+          const r = Math.min(PHOTO_MAX_PX / img.width, PHOTO_MAX_PX / img.height, 1);
+          const c = document.createElement('canvas');
+          c.width = Math.round(img.width * r);
+          c.height = Math.round(img.height * r);
+          c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+          resolve(c.toDataURL('image/jpeg', PHOTO_QUALITY));
+        } catch (e) { reject(e); }
+      };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+async function addFiles(fileList) {
+  const files = Array.from(fileList || []).filter(f => f && (f.type || '').startsWith('image/') || /\.(jpe?g|png|heic|heif|webp)$/i.test(f && f.name || ''));
+  if (!files.length) return;
+  let skipped = 0, failed = 0;
+  for (const f of files) {
+    if (photos.length >= MAX_PHOTOS) { skipped++; continue; }
+    try { photos.push({ id: newId(), url: await shrinkPhoto(f) }); }
+    catch (_) { failed++; }
+  }
+  renderPhotos();
+  saveDraft();
+  if (failed) toast(failed === 1 ? 'One photo couldn’t be opened — try taking it again' : failed + ' photos couldn’t be opened');
+  else if (skipped) toast('You can use up to ' + MAX_PHOTOS + ' photos per scan');
+}
+
+function removePhoto(id) {
+  photos = photos.filter(p => p.id !== id);
+  renderPhotos();
+  saveDraft();
+}
+
+function renderPhotos() {
+  const grid = $('photoGrid');
+  grid.textContent = '';
+  if (!photos.length) {
+    grid.appendChild(el('div', 'photos-empty', 'No photos yet. Start with one wide shot of the whole shelf.'));
+  }
+  photos.forEach((p, i) => {
+    const fig = el('figure', 'photo');
+    const img = el('img');
+    img.src = p.url;
+    img.alt = 'Photo ' + (i + 1) + ' of the shelf';
+    const x = el('button', 'photo-x');
+    x.type = 'button';
+    x.setAttribute('aria-label', 'Remove photo ' + (i + 1));
+    x.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>';
+    x.addEventListener('click', () => removePhoto(p.id));
+    const cap = el('figcaption');
+    cap.appendChild(el('b', null, 'Photo ' + (i + 1)));
+    fig.append(img, x, cap);
+    grid.appendChild(fig);
+  });
+  $('photoCount').textContent = photos.length + ' of ' + MAX_PHOTOS;
+  $('addRow').hidden = photos.length >= MAX_PHOTOS;
+  $('cameraLabel').textContent = photos.length ? 'Take another photo' : 'Take a photo';
+  $('tips').hidden = photos.length >= 2;
+  const btn = $('scanBtn');
+  btn.disabled = !photos.length;
+  btn.textContent = photos.length ? 'Find the best value · ' + photos.length + (photos.length === 1 ? ' photo' : ' photos') : 'Find the best value';
+}
+
+// ── The "reading the shelf" progress steps ───────────────────
+const STEPS = [
+  ['Sending your photos', 'Uploading them securely'],
+  ['Reading the bottles', 'Spotting every wine across your photos'],
+  ['Combining overlapping photos', 'Merging wines seen more than once, using the clearest view'],
+  ['Reading price tags', 'Matching each tag to its bottles, including loyalty prices'],
+  ['Working out the best value', 'Comparing each price with how good the wine usually is']
+];
+function renderSteps(current) {
+  const ol = $('steps');
+  ol.textContent = '';
+  STEPS.forEach(([t, d], i) => {
+    const li = el('li', 'step ' + (i < current ? 'done' : i === current ? 'now' : 'wait'));
+    const dot = el('span', 'dot');
+    dot.setAttribute('aria-hidden', 'true');
+    if (i < current) dot.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L19 7"/></svg>';
+    const txt = el('div');
+    txt.append(el('div', 'step-t', t), el('div', 'step-d', d));
+    li.append(dot, txt);
+    ol.appendChild(li);
+  });
+}
+function startSteps() {
+  stepTimers.forEach(clearTimeout);
+  stepTimers = [];
+  renderSteps(0);
+  // The AI does all of this in one go, so these steps are paced to roughly match
+  [3000, 8000, 15000, 24000].forEach((ms, i) => stepTimers.push(setTimeout(() => renderSteps(i + 1), ms)));
+}
+function stopSteps() { stepTimers.forEach(clearTimeout); stepTimers = []; }
+
+async function keepScreenOn(on) {
+  try {
+    if (on && 'wakeLock' in navigator) wakeLock = await navigator.wakeLock.request('screen');
+    else if (!on && wakeLock) { await wakeLock.release(); wakeLock = null; }
+  } catch (_) {}
+}
+
+// ── Scan ─────────────────────────────────────────────────────
+const ERRORS = {
+  NOT_SIGNED_IN: ['You’re signed out', 'Go back to your journal, sign in, then open the Shelf Scanner again. Your photos will still be here.'],
+  ADMIN_ONLY: ['Not available yet', 'The Shelf Scanner is still being tested and is only open to admins.'],
+  NO_KEY_IN_WORKER: ['Scanner not set up', 'The shelf scanner worker has no Claude API key yet. Add ANTHROPIC_API_KEY as a secret in Cloudflare.'],
+  INVALID_KEY: ['Scanner not set up', 'The Claude API key in the shelf scanner worker was rejected. Check it in Cloudflare.'],
+  BUSY: ['The AI is busy', 'Too many requests right now. Wait a minute and try again.'],
+  PHOTO_TOO_BIG: ['A photo is too large', 'Remove the last photo and take it again.'],
+  UNREADABLE_ANSWER: ['Couldn’t read the shelf', 'The AI’s answer came back garbled. Trying again usually works.'],
+  TIMEOUT: ['That took too long', 'Try again, perhaps with fewer photos.'],
+  NETWORK: ['No connection', 'Couldn’t reach the scanner. Check your signal and try again — your photos are still here.']
+};
+
+async function runScan() {
+  if (!photos.length) return;
+  savePrefs();
+  showView('viewWorking');
+  $('errorCard').hidden = true;
+  $('stepsCard').hidden = false;
+  $('cancelBtn').hidden = false;
+  $('workingNote').hidden = false;
+  $('workingLead').hidden = false;
+  const thumbs = $('workingThumbs');
+  thumbs.textContent = '';
+  photos.forEach((p, i) => { const im = el('img'); im.src = p.url; im.alt = 'Photo ' + (i + 1); thumbs.appendChild(im); });
+  startSteps();
+  keepScreenOn(true);
+
+  scanAbort = new AbortController();
+  let timedOut = false;
+  const timeout = setTimeout(() => { timedOut = true; if (scanAbort) scanAbort.abort(); }, SCAN_TIMEOUT_MS);
+  let errorCode = null, errorDetail = '';
+  try {
+    const { data } = await sb.auth.getSession();
+    const token = data && data.session && data.session.access_token;
+    if (!token) throw Object.assign(new Error('NOT_SIGNED_IN'), { code: 'NOT_SIGNED_IN' });
+    const res = await fetch(SHELF_WORKER_URL.replace(/\/$/, '') + '/scan', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify({ photos: photos.map(p => p.url), loyaltyCard: $('loyaltyInput').checked, shop: $('shopInput').value.trim() || null }),
+      signal: scanAbort.signal
+    });
+    const body = await res.json().catch(() => ({}));
+    if (!res.ok || !Array.isArray(body.wines)) {
+      errorCode = body.error || 'HTTP_' + res.status;
+      errorDetail = body.detail || '';
+    } else {
+      result = body;
+      saveResult();
+    }
+  } catch (e) {
+    if (e && e.code) errorCode = e.code;
+    else if (timedOut) errorCode = 'TIMEOUT';
+    else if (scanAbort && scanAbort.signal.aborted) errorCode = 'CANCELLED';
+    else errorCode = 'NETWORK';
+  } finally {
+    clearTimeout(timeout);
+    scanAbort = null;
+    stopSteps();
+    keepScreenOn(false);
+  }
+
+  if (errorCode === 'CANCELLED') { showView('viewCapture'); return; }
+  if (errorCode) {
+    console.warn('[shelf] scan failed:', errorCode, errorDetail);
+    const [title, text] = ERRORS[errorCode] || ['That didn’t work', 'Something went wrong (' + errorCode + (errorDetail ? ': ' + errorDetail : '') + '). Try again.'];
+    $('errorTitle').textContent = title;
+    $('errorText').textContent = text;
+    $('stepsCard').hidden = true;
+    $('cancelBtn').hidden = true;
+    $('workingNote').hidden = true;
+    $('workingLead').hidden = true;
+    $('retryBtn').hidden = errorCode === 'ADMIN_ONLY' || errorCode === 'NOT_SIGNED_IN';
+    $('errorCard').hidden = false;
+    return;
+  }
+  renderResults();
+  showView('viewResults');
+}
+
+// ── Results ──────────────────────────────────────────────────
+function loyaltyName() {
+  const s = ((result && result.shop) || $('shopInput').value || '').toLowerCase();
+  if (s.includes('tesco')) return 'Clubcard';
+  if (s.includes('sainsbury')) return 'Nectar';
+  if (s.includes('boots')) return 'Advantage';
+  if (s.includes('co-op') || s.includes('coop')) return 'Member';
+  return 'Loyalty';
+}
+function payPrice(w) {
+  if (result && result.loyalty_card && w.loyalty_price) return w.loyalty_price;
+  return w.price;
+}
+function wineById(id) { return result.wines.find(w => w.id === id); }
+function wineSub(w) {
+  return [w.grape, [w.region, w.country].filter(Boolean).join(', '), w.vintage].filter(Boolean).join(' · ');
+}
+function seenText(w) {
+  if (!w.photos || !w.photos.length) return '';
+  return w.photos.length === 1 ? 'Seen in photo ' + w.photos[0] + ' only' : 'Seen in photos ' + listJoin(w.photos);
+}
+function confChip(w) {
+  const label = { high: 'High confidence', medium: 'Medium confidence', low: 'Check this' }[w.confidence] || 'Medium confidence';
+  return el('span', 'conf ' + (w.confidence || 'medium'), label);
+}
+
+function priceRow(w) {
+  const row = el('div', 'price-row');
+  if (!w.price) { row.appendChild(el('span', 'also', 'Price not visible')); return row; }
+  const card = result.loyalty_card;
+  if (w.loyalty_price && card) {
+    row.append(el('span', 'price-big', money(w.loyalty_price)), el('span', 'loy', loyaltyName()), el('span', 'was', money(w.price)));
+  } else {
+    row.appendChild(el('span', 'price-big', money(w.price)));
+    if (w.loyalty_price) row.appendChild(el('span', 'also', money(w.loyalty_price) + ' with ' + loyaltyName()));
+  }
+  return row;
+}
+
+function renderResults() {
+  const r = result;
+  const wines = r.wines;
+  const priced = wines.filter(w => w.price);
+  const noPrice = wines.length - priced.length;
+  const toCheck = wines.filter(w => w.confidence === 'low').length;
+
+  // Summary
+  const sum = $('summaryCard');
+  sum.textContent = '';
+  const h = el('div');
+  h.appendChild(el('span', 'sum-h', wines.length + (wines.length === 1 ? ' wine found' : ' wines found')));
+  const where = [r.photo_count ? 'in ' + r.photo_count + (r.photo_count === 1 ? ' photo' : ' photos') : '', r.shop || ''].filter(Boolean).join(' · ');
+  if (where) h.appendChild(el('span', 'small', '  ' + where));
+  sum.appendChild(h);
+  if (r.summary) { const p = el('p', 'small', r.summary); p.style.marginTop = '6px'; p.style.color = 'var(--charcoal)'; sum.appendChild(p); }
+  const chips = el('div', 'chips');
+  chips.appendChild(el('span', 'chip gold', r.loyalty_card ? loyaltyName() + ' prices used' : 'Normal prices used'));
+  if (toCheck) chips.appendChild(el('span', 'chip red', toCheck + (toCheck === 1 ? ' price to check' : ' prices to check')));
+  if (noPrice) chips.appendChild(el('span', 'chip', noPrice + ' with no price visible'));
+  sum.appendChild(chips);
+
+  // Picks
+  const picksBox = $('picks');
+  picksBox.textContent = '';
+  const picks = (r.picks || []).map(p => ({ p, w: wineById(p.wine_id) })).filter(x => x.w);
+  $('picksHead').hidden = false;
+  if (!picks.length) {
+    const c = el('div', 'card');
+    c.appendChild(el('p', 'small', wines.length
+      ? 'No clear best-value picks — probably because too few prices could be read. Try adding close-up photos of the price tags.'
+      : 'No wines could be read in these photos. Try a closer, brighter photo with the price tags in shot.'));
+    picksBox.appendChild(c);
+  }
+  picks.forEach(({ p, w }, i) => {
+    const card = el('article', 'pick');
+    const top = el('div', 'pick-top');
+    top.appendChild(el('span', 'rank', String(i + 1)));
+    const names = el('div');
+    names.style.minWidth = '0';
+    names.appendChild(el('h3', 'wname', w.name));
+    const sub = wineSub(w);
+    if (sub) names.appendChild(el('div', 'wsub', sub));
+    top.appendChild(names);
+    card.appendChild(top);
+    card.appendChild(priceRow(w));
+    if (p.reason) card.appendChild(el('p', 'why', p.reason));
+    const cr = el('div', 'conf-row');
+    cr.appendChild(confChip(w));
+    const seen = seenText(w);
+    if (seen) cr.appendChild(el('span', 'small', seen));
+    card.appendChild(cr);
+    if (w.note) card.appendChild(el('div', 'note', w.note));
+    picksBox.appendChild(card);
+  });
+
+  // Poor value
+  const poorBox = $('poor');
+  poorBox.textContent = '';
+  const poor = (r.poor_value || []).map(p => ({ p, w: wineById(p.wine_id) })).filter(x => x.w);
+  $('poorHead').hidden = poorBox.hidden = !poor.length;
+  poor.forEach(({ p, w }) => {
+    const row = el('div', 'poor-row');
+    const top = el('div', 'poor-top');
+    const pp = payPrice(w);
+    top.append(el('span', null, w.name), el('span', null, pp ? money(pp) + (r.loyalty_card && w.loyalty_price ? ' ' + loyaltyName() : '') : ''));
+    row.appendChild(top);
+    if (p.reason) row.appendChild(el('div', 'poor-why', p.reason));
+    poorBox.appendChild(row);
+  });
+
+  $('seeAllBtn').textContent = 'See all ' + wines.length + (wines.length === 1 ? ' wine' : ' wines') + ' found';
+  $('seeAllBtn').hidden = !wines.length;
+}
+
+function renderAll() {
+  const list = $('allList');
+  list.textContent = '';
+  document.querySelectorAll('.filter').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.filter === listFilter)));
+  const wines = result.wines.slice();
+  const counts = { all: wines.length, check: wines.filter(w => w.confidence === 'low').length, noprice: wines.filter(w => !w.price).length };
+  document.querySelectorAll('.filter').forEach(b => {
+    b.textContent = { all: 'All', check: 'To check', noprice: 'No price' }[b.dataset.filter] + ' ' + counts[b.dataset.filter];
+  });
+  let shown = wines;
+  if (listFilter === 'check') shown = wines.filter(w => w.confidence === 'low');
+  if (listFilter === 'noprice') shown = wines.filter(w => !w.price);
+  shown.sort((a, b) => {
+    const pa = payPrice(a), pb = payPrice(b);
+    if (!pa !== !pb) return pa ? -1 : 1;
+    return (pa || 0) - (pb || 0) || a.name.localeCompare(b.name);
+  });
+  if (!shown.length) { list.appendChild(el('div', 'list-empty', 'Nothing here.')); return; }
+  shown.forEach(w => {
+    const row = el('div', 'row');
+    const top = el('div', 'row-top');
+    top.appendChild(el('span', 'row-name', w.name));
+    const price = el('span', 'row-price');
+    if (!w.price) price.textContent = '—';
+    else if (result.loyalty_card && w.loyalty_price) { price.textContent = money(w.loyalty_price); }
+    else price.textContent = money(w.price);
+    top.appendChild(price);
+    row.appendChild(top);
+    const mid = el('div', 'row-mid');
+    mid.appendChild(el('span', null, [w.shelf ? 'Shelf ' + w.shelf : '', seenText(w)].filter(Boolean).join(' · ') || wineSub(w)));
+    if (w.price && w.loyalty_price) {
+      mid.appendChild(el('span', null, result.loyalty_card ? money(w.price) + ' without ' + loyaltyName() : money(w.loyalty_price) + ' with ' + loyaltyName()));
+    }
+    row.appendChild(mid);
+    const cr = el('div', 'conf-row');
+    cr.appendChild(confChip(w));
+    if (w.note) cr.appendChild(el('span', 'note', w.note));
+    row.appendChild(cr);
+    list.appendChild(row);
+  });
+}
+
+// ── Sign-in check ────────────────────────────────────────────
+function gate(title, text, linkText) {
+  const box = $('gateBox');
+  box.textContent = '';
+  box.appendChild(el('h1', null, title));
+  const p = el('p', 'lead', text);
+  p.style.marginTop = '8px';
+  box.appendChild(p);
+  const a = el('a', 'btn-main', linkText || 'Go to my journal');
+  a.href = '/';
+  a.style.marginTop = '16px';
+  box.appendChild(a);
+  showView('viewGate');
+}
+
+async function start() {
+  if (typeof supabase === 'undefined') { gate('Couldn’t load', 'The page didn’t load properly. Check your connection and refresh.', 'Back to my journal'); return; }
+  sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { flowType: 'implicit' } });
+  let session = null;
+  try { session = (await sb.auth.getSession()).data.session; } catch (_) {}
+  if (!session || !session.user) { gate('Please sign in first', 'Sign in on your journal, then open the Shelf Scanner from the menu.'); return; }
+  if (ADMIN_ONLY) {
+    let isAdmin = false;
+    try {
+      const { data } = await sb.from('profiles').select('is_admin').eq('id', session.user.id).maybeSingle();
+      isAdmin = !!(data && data.is_admin);
+    } catch (_) {}
+    if (!isAdmin) { gate('Not available yet', 'The Shelf Scanner is still being tested and isn’t open to everyone yet.'); return; }
+  }
+  loadPrefs();
+  loadDraft();
+  loadResult();
+  renderPhotos();
+  if (result) { renderResults(); showView('viewResults'); }
+  else showView('viewCapture');
+}
+
+// ── Wire up buttons ──────────────────────────────────────────
+$('cameraInput').addEventListener('change', e => { addFiles(e.target.files); e.target.value = ''; });
+$('galleryInput').addEventListener('change', e => { addFiles(e.target.files); e.target.value = ''; });
+$('scanBtn').addEventListener('click', runScan);
+$('retryBtn').addEventListener('click', runScan);
+$('errorBackBtn').addEventListener('click', () => showView('viewCapture'));
+$('cancelBtn').addEventListener('click', () => { if (scanAbort) scanAbort.abort(); });
+$('seeAllBtn').addEventListener('click', () => { listFilter = 'all'; renderAll(); showView('viewAll'); });
+$('allBackBtn').addEventListener('click', () => showView('viewResults'));
+$('newScanBtn').addEventListener('click', () => {
+  result = null; saveResult();
+  photos = []; saveDraft();
+  renderPhotos();
+  showView('viewCapture');
+});
+document.querySelectorAll('.filter').forEach(b => b.addEventListener('click', () => { listFilter = b.dataset.filter; renderAll(); }));
+$('loyaltyInput').addEventListener('change', savePrefs);
+$('shopInput').addEventListener('change', savePrefs);
+
+start();
+</script>
+</body>
+</html>
