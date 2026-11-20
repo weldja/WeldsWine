@@ -1951,8 +1951,8 @@ Rules:
     const PROMPT = `Return ONLY a valid JSON object \u2014 no markdown, no explanation, nothing else.
 Rules:
 - Only include information clearly visible on the label \u2014 never guess
-- "name" is the wine cuv\xE9e name (NOT the winery/producer)
-- "winery" is the producer, domaine, ch\xE2teau or bodega
+- "name" is the wine's name as you would ask for it in a shop. If the label shows a separate cuv\xE9e name (e.g. "Bin 28", "Les Jalets", "Reserva"), use that. If the wine is simply named after the estate, as with most Bordeaux (e.g. "Ch\xE2teau Ausone"), use the estate name. Never leave "name" null when an estate or producer name is visible
+- "winery" is the producer, domaine, ch\xE2teau or bodega (if both an estate and its owners are shown, e.g. "Ch\xE2teau Ausone" and "Famille Vauthier", use the estate)
 - "vintage" must be a 4-digit integer or null
 - "style" must be exactly: "Red","White","Ros\xE9","Sparkling","Dessert","Fortified" or null
 - "confidence" is your overall extraction confidence: "high","medium","low"
@@ -1984,6 +1984,11 @@ Return exactly:
       parsed = JSON.parse(match ? match[0] : cleaned);
     } catch {
       return new Response(JSON.stringify({ error: "PARSE_ERROR", raw: rawText }), { status: 422, headers: cors });
+    }
+    // Safety net: a wine named only after its estate sometimes comes back with no name.
+    // Use the producer/estate name so the Name field is never left empty.
+    if (parsed && !String(parsed.name || "").trim() && String(parsed.winery || "").trim()) {
+      parsed.name = parsed.winery;
     }
     return new Response(JSON.stringify(parsed), { status: 200, headers: cors });
   }
