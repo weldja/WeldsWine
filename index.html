@@ -7107,8 +7107,9 @@ function flavourIcon(name) {
 function renderIntelRegionPhoto(photo) {
   if (!photo || typeof photo !== 'object') return '';
   const src = String(photo.image_url || '');
-  // Only show photos from Wikimedia's own image server
-  if (!src.startsWith('https://upload.wikimedia.org/')) return '';
+  // Only show photos from Wikimedia's own image servers
+  // (full-size files come from upload.wikimedia.org, resized ones from thumb.wikimedia.org)
+  if (!src.startsWith('https://upload.wikimedia.org/') && !src.startsWith('https://thumb.wikimedia.org/')) return '';
   const credit = 'Photo: ' + (photo.credit || 'Unknown') + ' / Wikimedia Commons' + (photo.licence ? ' (' + photo.licence + ')' : '');
   const link = String(photo.source_url || '');
   const creditHtml = link.startsWith('https://')
