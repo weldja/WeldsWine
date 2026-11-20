@@ -5766,8 +5766,24 @@ async function openDetail(w, e) {
   // Auto-show Wine Intel if enrichment already exists,
   // or as soon as research that is already under way finishes
   _intelDetailWineId = w.id;
-  loadEnrichmentFromDB(w.id).then(saved => saved || _enrichInFlight[w.id] || null).then(data => {
-    if (!data || !detailOverlay.classList.contains('open') || _intelDetailWineId !== w.id) return;
+  loadEnrichmentFromDB(w.id).then(saved => {
+    if (saved) return saved;
+    // No research saved yet: show that it's being researched, then wait for it or start it
+    const panel = document.getElementById('wineIntelPanel');
+    if (panel && Scanner.hasUrl() && detailOverlay.classList.contains('open') && _intelDetailWineId === w.id) {
+      panel.dataset.wineId = w.id;
+      panel.style.display = 'block';
+      panel.innerHTML = _intelShimmerHTML('Researching this wine…');
+    }
+    return _enrichInFlight[w.id] || _autoResearch(w);
+  }).then(data => {
+    if (!detailOverlay.classList.contains('open') || _intelDetailWineId !== w.id) return;
+    if (!data) {
+      // Research couldn't be done: tidy away the "researching" message
+      const p = document.getElementById('wineIntelPanel');
+      if (p && p.dataset.wineId === w.id && p.querySelector('.intel-shimmer')) p.style.display = 'none';
+      return;
+    }
     _intelCache[w.id] = data;
     const panel = document.getElementById('wineIntelPanel');
     if (panel) {
@@ -7009,8 +7025,8 @@ async function toggleWineIntel(wineId) {
     panel.innerHTML = renderIntelPanelHTML(data);
     return;
   }
-  // Fetch from worker
-  data = await fetchEnrichment(wineId);
+  // Nothing saved: wait for research that may already be running, or start it
+  data = await _autoResearch(getWineById(wineId));
   if (data) {
     _intelCache[wineId] = data;
     panel.innerHTML = renderIntelPanelHTML(data);
@@ -7041,23 +7057,62 @@ async function loadEnrichmentFromDB(wineId) {
   } catch { return null; }
 }
 
+/* Start research for a wine that has none yet.
+   A wine saved in the last 90 seconds may already be being researched by the
+   worker (which carries on even if the page was closed or refreshed), so for those
+   we check the database every 10 seconds first, and only start a new research
+   if nothing has arrived by the time the wine is 90 seconds old. This avoids
+   paying for the same research twice. */
+const AUTO_RESEARCH_WAIT_MS = 90000;
+const _autoResearchWaiting = {};
+function _autoResearch(w) {
+  if (!w || !w.id || !Scanner.hasUrl()) return Promise.resolve(null);
+  if (_enrichInFlight[w.id]) return _enrichInFlight[w.id];
+  if (_autoResearchWaiting[w.id]) return _autoResearchWaiting[w.id];
+  const p = (async () => {
+    while (Date.now() - (w.createdAt || 0) < AUTO_RESEARCH_WAIT_MS) {
+      await new Promise(r => setTimeout(r, 10000));
+      const saved = await loadEnrichmentFromDB(w.id);
+      if (saved) { _intelCache[w.id] = saved; return saved; }
+      if (_enrichInFlight[w.id]) return _enrichInFlight[w.id];
+    }
+    return fetchEnrichment(w.id, false, w);
+  })().finally(() => { delete _autoResearchWaiting[w.id]; });
+  _autoResearchWaiting[w.id] = p;
+  return p;
+}
+
+function _intelShimmerHTML(message) {
+  return `<div class="intel-panel" style="display:block">
+    <div class="intel-shimmer">
+      <div class="shimmer-line shimmer-w80"></div>
+      <div class="shimmer-line shimmer-w60"></div>
+      <div class="shimmer-line shimmer-w45"></div>
+      <div class="shimmer-line shimmer-w80"></div>
+      <div class="intel-shimmer-status"><span class="intel-spinner"></span>${escHtml(message)}</div>
+    </div>
+  </div>`;
+}
+
 /* Research already under way, by wine id. If someone opens Wine Intel while the
    research started after saving is still running, they wait for that one instead
    of starting a second (paid) research. */
 const _enrichInFlight = {};
 
-function fetchEnrichment(wineId, forceRefresh) {
+// wineObj: optional — the wine itself, for a wine that has just been saved and
+// isn't in the wines list yet (otherwise it is looked up by its id)
+function fetchEnrichment(wineId, forceRefresh, wineObj) {
   if (!forceRefresh && _enrichInFlight[wineId]) return _enrichInFlight[wineId];
-  const p = _fetchEnrichmentNow(wineId, forceRefresh)
+  const p = _fetchEnrichmentNow(wineId, forceRefresh, wineObj)
     .then(data => { if (data) _intelCache[wineId] = data; return data; })
     .finally(() => { if (_enrichInFlight[wineId] === p) delete _enrichInFlight[wineId]; });
   _enrichInFlight[wineId] = p;
   return p;
 }
 
-async function _fetchEnrichmentNow(wineId, forceRefresh) {
+async function _fetchEnrichmentNow(wineId, forceRefresh, wineObj) {
   if (!Scanner.hasUrl()) return null;
-  const w = getWineById(wineId);
+  const w = wineObj || getWineById(wineId);
   if (!w) return null;
   // Get photo base64 if available (helps AI identify the wine from label)
   let photoBase64 = null;
@@ -7089,9 +7144,9 @@ async function _fetchEnrichmentNow(wineId, forceRefresh) {
   } catch (e) { console.warn('enrich: fetch failed', e.message); return null; }
 }
 
-function fireEnrichment(wineId) {
+function fireEnrichment(wineId, wineObj) {
   // Fire-and-forget: don't await, don't block
-  fetchEnrichment(wineId).catch(() => {});
+  fetchEnrichment(wineId, false, wineObj).catch(() => {});
 }
 
 async function refreshWineIntel(wineId) {
@@ -8323,8 +8378,11 @@ async function saveWineToDB(entry) {
     });
     return false;
   }
-  // Fire-and-forget: enrich wine in background (no delay)
-  if (Scanner.hasUrl()) fireEnrichment(row.id);
+  // Fire-and-forget: enrich wine in background (no delay).
+  // Pass the wine itself: a brand-new wine isn't in the wines list yet at this
+  // point, so looking it up by id would find nothing and the research would
+  // silently never start.
+  if (Scanner.hasUrl()) fireEnrichment(row.id, entry);
   return true;
 }
 

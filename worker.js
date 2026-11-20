@@ -845,7 +845,7 @@ __name(render_404, "render_404");
 /* ═══════════════════════════════════════════════════════════════ */
 
 var worker_default = {
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     const cors = {
       "Access-Control-Allow-Origin": "*",
       "Access-Control-Allow-Headers": "Content-Type, Authorization",
@@ -1641,130 +1641,137 @@ Rules:
       }
       enrichContent.push({ type: "text", text: enrichPromptText });
 
-      try {
-        const enrichResp = await fetch("https://api.anthropic.com/v1/messages", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "x-api-key": enrichKey,
-            "anthropic-version": "2023-06-01"
-          },
-          body: JSON.stringify({
-            model: "claude-sonnet-4-6",
-            max_tokens: 2000,
-            tools: [{ type: "web_search_20250305", name: "web_search", max_uses: 2 }],
-            messages: [{ role: "user", content: enrichContent }]
-          })
-        });
-        if (!enrichResp.ok) {
-          const errB = await enrichResp.json().catch(() => ({}));
-          console.error("enrich: Anthropic error", enrichResp.status, JSON.stringify(errB));
-          return new Response(JSON.stringify({ error: errB?.error?.message || `Anthropic ${enrichResp.status}` }), { status: enrichResp.status, headers: cors });
-        }
-        const enrichData = await enrichResp.json();
-        const rawText2 = (enrichData.content || []).filter(b => b.type === "text").map(b => b.text).join("");
-        const cleaned2 = rawText2.replace(/```json\s*/gi, "").replace(/```\s*/gi, "").trim();
-        const match2 = cleaned2.match(/\{[\s\S]*\}/);
-        let enrichParsed;
-        try { enrichParsed = JSON.parse(match2 ? match2[0] : cleaned2); }
-        catch { return new Response(JSON.stringify({ error: "PARSE_ERROR", raw: rawText2.slice(0, 500) }), { status: 422, headers: cors }); }
-
-        // Normalise arrays
-        if (typeof enrichParsed.food_pairings === "string") try { enrichParsed.food_pairings = JSON.parse(enrichParsed.food_pairings); } catch { enrichParsed.food_pairings = []; }
-        if (typeof enrichParsed.critic_scores === "string") try { enrichParsed.critic_scores = JSON.parse(enrichParsed.critic_scores); } catch { enrichParsed.critic_scores = []; }
-        if (!Array.isArray(enrichParsed.food_pairings)) enrichParsed.food_pairings = [];
-        if (!Array.isArray(enrichParsed.critic_scores)) enrichParsed.critic_scores = [];
-
-        // Strip web-search citation tags from all string fields
-        const stripCites = s => typeof s === "string" ? s.replace(/<\/?cite[^>]*>/gi, "").replace(/\s{2,}/g, " ").trim() : s;
-        for (const k of Object.keys(enrichParsed)) {
-          if (typeof enrichParsed[k] === "string") enrichParsed[k] = stripCites(enrichParsed[k]);
-          else if (Array.isArray(enrichParsed[k])) {
-            enrichParsed[k] = enrichParsed[k].map(item => {
-              if (typeof item === "string") return stripCites(item);
-              if (item && typeof item === "object") {
-                for (const ik of Object.keys(item)) { if (typeof item[ik] === "string") item[ik] = stripCites(item[ik]); }
-              }
-              return item;
-            });
-          }
-        }
-
-        // Tidy the flavour list
-        if (typeof enrichParsed.flavours === "string") try { enrichParsed.flavours = JSON.parse(enrichParsed.flavours); } catch { enrichParsed.flavours = []; }
-        if (!Array.isArray(enrichParsed.flavours)) enrichParsed.flavours = [];
-        enrichParsed.flavours = enrichParsed.flavours.map((f) => String(f).toLowerCase().trim()).filter(Boolean).slice(0, 6);
-
-        // Taste scores must be whole numbers 1-5, otherwise null
-        const tasteIn = enrichParsed.taste && typeof enrichParsed.taste === "object" ? enrichParsed.taste : {};
-        const oneToFive = (v) => { const n = Math.round(Number(v)); return n >= 1 && n <= 5 ? n : null; };
-        enrichParsed.taste = {
-          acidity: oneToFive(tasteIn.acidity),
-          body: oneToFive(tasteIn.body),
-          sweetness: oneToFive(tasteIn.sweetness),
-          tannin: oneToFive(tasteIn.tannin)
-        };
-
-        // Drinking window years must look like real years
-        const asYear = (v) => { const n = parseInt(v, 10); return n >= 1900 && n <= 2100 ? n : null; };
-        enrichParsed.drink_from = asYear(enrichParsed.drink_from);
-        enrichParsed.drink_to = asYear(enrichParsed.drink_to);
-
-        // Find (or reuse) a photo of the producer's estate or the region
+      // The research runs inside a promise that Cloudflare keeps going (waitUntil)
+      // even if the page that asked for it is closed or refreshed, so the result
+      // still gets saved and is there the next time someone opens the wine.
+      const enrichWork = (async () => {
         try {
-          enrichParsed.region_photo = await getWinePhoto(env, winery || enrichParsed.producer_name, enrichParsed.photo_region || region, country);
-        } catch (e) {
-          console.warn("enrich: region photo failed:", e.message);
-          enrichParsed.region_photo = null;
-        }
-        delete enrichParsed.photo_region;
-
-        // Write to Supabase
-        const enrichRow = {
-          wine_id: wine_id,
-          summary: enrichParsed.summary || null,
-          producer_name: enrichParsed.producer_name || null,
-          producer_desc: enrichParsed.producer_desc || null,
-          blend: enrichParsed.blend || null,
-          tasting_notes: enrichParsed.tasting_notes || null,
-          food_pairings: enrichParsed.food_pairings,
-          critic_scores: enrichParsed.critic_scores,
-          region_context: enrichParsed.region_context || null,
-          price_context: enrichParsed.price_context || null,
-          flavours: enrichParsed.flavours,
-          taste: enrichParsed.taste,
-          drink_from: enrichParsed.drink_from,
-          drink_to: enrichParsed.drink_to,
-          region_photo: enrichParsed.region_photo,
-          model_used: "claude-sonnet-4-6"
-        };
-        // Await the write — Cloudflare Workers kill unawaited promises on Response return
-        try {
-          const sbKey = env.SUPABASE_SERVICE_KEY;
-          const writeRes = await fetch(`${SUPABASE_URL}/rest/v1/wine_enrichments?on_conflict=wine_id`, {
+          const enrichResp = await fetch("https://api.anthropic.com/v1/messages", {
             method: "POST",
             headers: {
-              apikey: sbKey,
-              Authorization: `Bearer ${sbKey}`,
               "Content-Type": "application/json",
-              Prefer: "resolution=merge-duplicates"
+              "x-api-key": enrichKey,
+              "anthropic-version": "2023-06-01"
             },
-            body: JSON.stringify(enrichRow)
+            body: JSON.stringify({
+              model: "claude-sonnet-4-6",
+              max_tokens: 2000,
+              tools: [{ type: "web_search_20250305", name: "web_search", max_uses: 2 }],
+              messages: [{ role: "user", content: enrichContent }]
+            })
           });
-          if (!writeRes.ok) {
-            const wErr = await writeRes.json().catch(() => ({}));
-            console.error("enrich: DB write failed", writeRes.status, JSON.stringify(wErr));
-          } else {
-            console.log("enrich: DB write OK for wine_id", wine_id);
+          if (!enrichResp.ok) {
+            const errB = await enrichResp.json().catch(() => ({}));
+            console.error("enrich: Anthropic error", enrichResp.status, JSON.stringify(errB));
+            return new Response(JSON.stringify({ error: errB?.error?.message || `Anthropic ${enrichResp.status}` }), { status: enrichResp.status, headers: cors });
           }
-        } catch (wEx) { console.error("enrich: DB write exception", wEx.message); }
+          const enrichData = await enrichResp.json();
+          const rawText2 = (enrichData.content || []).filter(b => b.type === "text").map(b => b.text).join("");
+          const cleaned2 = rawText2.replace(/```json\s*/gi, "").replace(/```\s*/gi, "").trim();
+          const match2 = cleaned2.match(/\{[\s\S]*\}/);
+          let enrichParsed;
+          try { enrichParsed = JSON.parse(match2 ? match2[0] : cleaned2); }
+          catch { return new Response(JSON.stringify({ error: "PARSE_ERROR", raw: rawText2.slice(0, 500) }), { status: 422, headers: cors }); }
 
-        enrichParsed.wine_id = wine_id;
-        return new Response(JSON.stringify(enrichParsed), { status: 200, headers: cors });
-      } catch (e) {
-        console.error("enrich: exception", e.message);
-        return new Response(JSON.stringify({ error: e.message }), { status: 502, headers: cors });
-      }
+          // Normalise arrays
+          if (typeof enrichParsed.food_pairings === "string") try { enrichParsed.food_pairings = JSON.parse(enrichParsed.food_pairings); } catch { enrichParsed.food_pairings = []; }
+          if (typeof enrichParsed.critic_scores === "string") try { enrichParsed.critic_scores = JSON.parse(enrichParsed.critic_scores); } catch { enrichParsed.critic_scores = []; }
+          if (!Array.isArray(enrichParsed.food_pairings)) enrichParsed.food_pairings = [];
+          if (!Array.isArray(enrichParsed.critic_scores)) enrichParsed.critic_scores = [];
+
+          // Strip web-search citation tags from all string fields
+          const stripCites = s => typeof s === "string" ? s.replace(/<\/?cite[^>]*>/gi, "").replace(/\s{2,}/g, " ").trim() : s;
+          for (const k of Object.keys(enrichParsed)) {
+            if (typeof enrichParsed[k] === "string") enrichParsed[k] = stripCites(enrichParsed[k]);
+            else if (Array.isArray(enrichParsed[k])) {
+              enrichParsed[k] = enrichParsed[k].map(item => {
+                if (typeof item === "string") return stripCites(item);
+                if (item && typeof item === "object") {
+                  for (const ik of Object.keys(item)) { if (typeof item[ik] === "string") item[ik] = stripCites(item[ik]); }
+                }
+                return item;
+              });
+            }
+          }
+
+          // Tidy the flavour list
+          if (typeof enrichParsed.flavours === "string") try { enrichParsed.flavours = JSON.parse(enrichParsed.flavours); } catch { enrichParsed.flavours = []; }
+          if (!Array.isArray(enrichParsed.flavours)) enrichParsed.flavours = [];
+          enrichParsed.flavours = enrichParsed.flavours.map((f) => String(f).toLowerCase().trim()).filter(Boolean).slice(0, 6);
+
+          // Taste scores must be whole numbers 1-5, otherwise null
+          const tasteIn = enrichParsed.taste && typeof enrichParsed.taste === "object" ? enrichParsed.taste : {};
+          const oneToFive = (v) => { const n = Math.round(Number(v)); return n >= 1 && n <= 5 ? n : null; };
+          enrichParsed.taste = {
+            acidity: oneToFive(tasteIn.acidity),
+            body: oneToFive(tasteIn.body),
+            sweetness: oneToFive(tasteIn.sweetness),
+            tannin: oneToFive(tasteIn.tannin)
+          };
+
+          // Drinking window years must look like real years
+          const asYear = (v) => { const n = parseInt(v, 10); return n >= 1900 && n <= 2100 ? n : null; };
+          enrichParsed.drink_from = asYear(enrichParsed.drink_from);
+          enrichParsed.drink_to = asYear(enrichParsed.drink_to);
+
+          // Find (or reuse) a photo of the producer's estate or the region
+          try {
+            enrichParsed.region_photo = await getWinePhoto(env, winery || enrichParsed.producer_name, enrichParsed.photo_region || region, country);
+          } catch (e) {
+            console.warn("enrich: region photo failed:", e.message);
+            enrichParsed.region_photo = null;
+          }
+          delete enrichParsed.photo_region;
+
+          // Write to Supabase
+          const enrichRow = {
+            wine_id: wine_id,
+            summary: enrichParsed.summary || null,
+            producer_name: enrichParsed.producer_name || null,
+            producer_desc: enrichParsed.producer_desc || null,
+            blend: enrichParsed.blend || null,
+            tasting_notes: enrichParsed.tasting_notes || null,
+            food_pairings: enrichParsed.food_pairings,
+            critic_scores: enrichParsed.critic_scores,
+            region_context: enrichParsed.region_context || null,
+            price_context: enrichParsed.price_context || null,
+            flavours: enrichParsed.flavours,
+            taste: enrichParsed.taste,
+            drink_from: enrichParsed.drink_from,
+            drink_to: enrichParsed.drink_to,
+            region_photo: enrichParsed.region_photo,
+            model_used: "claude-sonnet-4-6"
+          };
+          // Await the write — Cloudflare Workers kill unawaited promises on Response return
+          try {
+            const sbKey = env.SUPABASE_SERVICE_KEY;
+            const writeRes = await fetch(`${SUPABASE_URL}/rest/v1/wine_enrichments?on_conflict=wine_id`, {
+              method: "POST",
+              headers: {
+                apikey: sbKey,
+                Authorization: `Bearer ${sbKey}`,
+                "Content-Type": "application/json",
+                Prefer: "resolution=merge-duplicates"
+              },
+              body: JSON.stringify(enrichRow)
+            });
+            if (!writeRes.ok) {
+              const wErr = await writeRes.json().catch(() => ({}));
+              console.error("enrich: DB write failed", writeRes.status, JSON.stringify(wErr));
+            } else {
+              console.log("enrich: DB write OK for wine_id", wine_id);
+            }
+          } catch (wEx) { console.error("enrich: DB write exception", wEx.message); }
+
+          enrichParsed.wine_id = wine_id;
+          return new Response(JSON.stringify(enrichParsed), { status: 200, headers: cors });
+        } catch (e) {
+          console.error("enrich: exception", e.message);
+          return new Response(JSON.stringify({ error: e.message }), { status: 502, headers: cors });
+        }
+      })();
+      if (ctx && typeof ctx.waitUntil === "function") ctx.waitUntil(enrichWork.catch(() => {}));
+      return await enrichWork;
     }
     // ── POST /deals — which UK supermarkets have "25% off 6" on today ──────
     // One shared result, saved in supermarket_deals and reused for 24 hours.
