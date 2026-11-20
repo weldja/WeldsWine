@@ -219,7 +219,29 @@ __name(comment_notification, "comment_notification");
 const WIKI_USER_AGENT = "WeldsWineWisdoms/1.0 (https://weldswine.co.uk)";
 
 // Words in a file name that mean the picture is not a landscape
-const NOT_A_LANDSCAPE = ["bottle", "label", "logo", "glass", "map", "cork", "barrel-head", "shop", "store", "menu"];
+const NOT_A_LANDSCAPE = ["bottle", "label", "logo", "glass", "map", "cork", "barrel-head", "shop", "store", "menu",
+  "supermarket", "hypermarket", "retail", "car park", "carpark", "car-park", "petrol", "filling station",
+  "industrial", "trading estate", "business park", "shopping centre", "high street", "checkout", "aisle"];
+
+// Supermarkets and wine shops. Their own-label wines are made by someone else,
+// so we never search for a "producer photo" under these names (it would find the shop).
+const RETAILERS = ["asda", "tesco", "sainsbury", "sainsburys", "morrisons", "waitrose", "marks and spencer",
+  "marks & spencer", "m&s", "m & s", "aldi", "lidl", "co-op", "coop", "co op", "iceland", "ocado",
+  "majestic", "laithwaites", "the wine society", "wine society", "naked wines", "virgin wines",
+  "costco", "booths", "spar", "nisa", "budgens", "londis", "amazon", "oddbins", "averys", "lea & sandeman",
+  "walmart", "kroger", "trader joe", "whole foods", "carrefour", "auchan", "leclerc", "intermarche",
+  "woolworths", "coles", "dan murphy", "bws", "liquorland", "first choice liquor"];
+
+// True if a name is (or starts with / contains) a supermarket or wine-shop name,
+// e.g. "Asda", "ASDA Extra Special", "Tesco Finest", "Sainsbury's Taste the Difference"
+function isRetailer(name) {
+  const n = " " + simplify(name).replace(/[’']/g, "").replace(/[^a-z0-9&]+/g, " ").trim() + " ";
+  if (!n.trim()) return false;
+  return RETAILERS.some((r) => {
+    const rr = " " + simplify(r).replace(/[’']/g, "").replace(/[^a-z0-9&]+/g, " ").trim() + " ";
+    return n.includes(rr);
+  });
+}
 
 // Words that show a producer photo is of the vineyard or winery itself
 const ESTATE_WORDS = ["vineyard", "vines", "winery", "estate", "cellar", "domaine", "chateau", "château", "bodega", "weingut", "cantina", "tenuta", "quinta"];
@@ -338,6 +360,7 @@ async function wikipediaRegionPhoto(region) {
 // Producer photo: the file name must mention the producer AND look like an estate photo.
 // That stops, for example, a supermarket's own-label wine showing a photo of a supermarket.
 async function producerPhoto(winery) {
+  if (isRetailer(winery)) return null;
   const generic = ["chateau", "domaine", "bodegas", "bodega", "estate", "estates", "wines", "wine", "winery", "vineyards", "vineyard", "cellars", "the", "and", "family", "famille", "vignobles", "weingut", "cantina", "tenuta", "quinta", "maison", "clos", "castello"];
   const nameWords = simplify(winery).split(/[^a-z0-9]+/).filter((w) => w.length >= 3 && !generic.includes(w));
   if (!nameWords.length) return null;
@@ -411,14 +434,22 @@ function regionCandidates(region) {
   return out.slice(0, 3);
 }
 
-async function getWinePhoto(env, winery, region, country, wineName) {
+async function getWinePhoto(env, winery, region, country, wineName, extraProducers = []) {
   const keyOf = (prefix, v) => prefix + String(v).trim().toLowerCase().replace(/\s+/g, " ");
 
-  // 1. The producer's own vineyard or winery: try the producer field, then an estate in the wine's name
+  // 1. The producer's own vineyard or winery: try the producer field, then an estate in the
+  // wine's name, then any extra names (e.g. the real winemaker behind a supermarket wine).
+  // Supermarket and shop names are skipped, so they go straight to the region photo.
   const producers = [];
-  if (winery && String(winery).trim()) producers.push(String(winery).trim());
-  const estate = estateFromName(wineName);
-  if (estate && !producers.some((p) => simplify(p) === simplify(estate))) producers.push(estate);
+  const addProducer = (v) => {
+    const p = String(v || "").trim();
+    if (!p || isRetailer(p)) return;
+    if (producers.some((x) => simplify(x) === simplify(p))) return;
+    producers.push(p);
+  };
+  addProducer(winery);
+  addProducer(estateFromName(wineName));
+  for (const extra of extraProducers || []) addProducer(extra);
   for (const prod of producers) {
     const photo = await cachedPhoto(env, keyOf("producer:", prod), () => producerPhoto(prod));
     if (photo) return { ...photo, kind: "producer", place: prod };
@@ -1670,7 +1701,8 @@ Search for this wine. Return ONLY a valid JSON object with no markdown or explan
   "taste": {"acidity": 3, "body": 3, "sweetness": 3, "tannin": 3},
   "drink_from": null,
   "drink_to": null,
-  "photo_region": "wine region name"
+  "photo_region": "wine region name",
+  "made_by": "the real winery that makes it, or null"
 }
 
 Rules:
@@ -1682,7 +1714,8 @@ Rules:
 - Flavours: 3 to 6 lower-case words or short phrases (e.g. "oak", "blackberry", "black pepper"), most prominent first, taken from the tasting notes you found
 - Taste: whole numbers from 1 to 5, where 1 = soft / light / dry / smooth and 5 = acidic / bold / sweet / tannic. Base them on the tasting notes and this wine's typical style. Use null for tannin on white, rosé and sparkling wines, and null for anything you are unsure of
 - drink_from / drink_to: the drinking window as 4-digit years. Use a critic's or the producer's window if you found one, otherwise a sensible estimate for this style and vintage. Use null if there is no vintage
-- photo_region: the most specific well-known wine region for this wine, as a place name only, e.g. "Barossa Valley", "Rioja", "Marlborough". Use null if unknown`;
+- photo_region: the most specific well-known wine region for this wine, as a place name only, e.g. "Barossa Valley", "Rioja", "Marlborough". Use null if unknown
+- made_by: if this is a supermarket or shop own-label wine (e.g. Asda, Tesco, Sainsbury's, M&S, Aldi), the name of the actual winery that makes it, e.g. from "Produced by ..." on the back label or a source you found. For a normal wine, the producer's name. Never a supermarket or shop name. Use null if you are not sure`;
 
       // Build message content — include photo if available
       const enrichContent = [];
@@ -1766,12 +1799,13 @@ Rules:
 
           // Find (or reuse) a photo of the producer's estate or the region
           try {
-            enrichParsed.region_photo = await getWinePhoto(env, winery || enrichParsed.producer_name, enrichParsed.photo_region || region, country, name);
+            enrichParsed.region_photo = await getWinePhoto(env, winery || enrichParsed.producer_name, enrichParsed.photo_region || region, country, name, [enrichParsed.made_by, enrichParsed.producer_name]);
           } catch (e) {
             console.warn("enrich: region photo failed:", e.message);
             enrichParsed.region_photo = null;
           }
           delete enrichParsed.photo_region;
+          delete enrichParsed.made_by;
 
           // Write to Supabase
           const enrichRow = {
