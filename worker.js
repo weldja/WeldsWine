@@ -721,7 +721,7 @@ function render_wine_page(w, enrich) {
 
   return `<!DOCTYPE html><html lang="en"><head>
 <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>${title} — Welds Wine Wisdoms</title>
+<title>${title}${w.rating != null ? " Review" : ""} — Welds Wine Wisdoms</title>
 <meta name="description" content="${desc}"/>
 <meta name="robots" content="${w.rating != null ? "index, follow" : "noindex, follow"}"/>
 <link rel="canonical" href="${esc(pageUrl)}"/>
@@ -748,6 +748,7 @@ body{background:#F9F5F0;color:#2C2420;font-family:Inter,system-ui,sans-serif;min
 .wine-header{margin-bottom:20px}
 .wine-winery{font-family:Inter,sans-serif;font-size:.78rem;letter-spacing:.1em;text-transform:uppercase;color:#C9A34A;margin-bottom:4px;font-weight:600}
 .wine-name{font-family:Lora,Georgia,serif;font-size:1.6rem;font-weight:600;color:#2C0A16;line-height:1.25}
+h1.wine-name{display:inline}
 .wine-vintage{font-family:Lora,Georgia,serif;font-size:1.1rem;color:#8B7355;margin-left:6px;font-weight:500}
 .rating{display:inline-flex;align-items:baseline;gap:2px;background:#2C0A16;color:#F5EDE2;padding:8px 16px;border-radius:8px;margin:12px 0 20px}
 .rating-num{font-family:Lora,Georgia,serif;font-size:1.6rem;font-weight:600}
@@ -786,7 +787,7 @@ body{background:#F9F5F0;color:#2C2420;font-family:Inter,system-ui,sans-serif;min
 <a class="back" href="${APP_URL}/wines">← All wines</a>
 <div class="wine-header">
 ${w.winery ? `<div class="wine-winery">${esc(w.winery)}</div>` : ""}
-<span class="wine-name">${esc(w.name || "Unnamed Wine")}</span>${w.vintage ? `<span class="wine-vintage">${esc(String(w.vintage))}</span>` : ""}
+<h1 class="wine-name">${esc(w.name || "Unnamed Wine")}</h1>${w.vintage ? `<span class="wine-vintage">${esc(String(w.vintage))}</span>` : ""}
 </div>
 ${ratingHtml}
 ${photoHtml}
@@ -794,7 +795,7 @@ ${photoHtml}
 ${notesHtml}
 ${intelHtml}
 <div class="cta-box">
-<p>Scan wine labels with AI and build your personal wine journal</p>
+<p>Free AI wine label scanner and personal wine journal</p>
 <a class="cta-btn" href="${APP_URL}">Visit Welds Wine Wisdoms</a>
 </div>
 <div class="footer"><a href="${APP_URL}">weldswine.co.uk</a> · An AI-powered wine journal</div>
@@ -819,12 +820,13 @@ ${rating}</div></a>`;
 
   return `<!DOCTYPE html><html lang="en"><head>
 <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Wine Collection — Welds Wine Wisdoms</title>
-<meta name="description" content="Browse ${wines.length} wines in our collection. Scan wine labels with AI, rate bottles, and build your personal wine journal."/>
+<title>Wine Reviews &amp; Ratings — Welds Wine Wisdoms</title>
+<meta name="description" content="Browse ${wines.length} wines we have tasted and rated out of 10, with tasting notes, grapes and regions. Made with Welds Wine Wisdoms, a free AI wine label scanner and journal."/>
 <meta name="robots" content="index, follow"/>
 <link rel="canonical" href="${APP_URL}/wines"/>
 <meta property="og:type" content="website"/><meta property="og:site_name" content="Welds Wine Wisdoms"/>
-<meta property="og:title" content="Wine Collection — Welds Wine Wisdoms"/>
+<meta property="og:title" content="Wine Reviews &amp; Ratings — Welds Wine Wisdoms"/>
+<meta property="og:description" content="Browse ${wines.length} wines we have tasted and rated out of 10, with tasting notes, grapes and regions."/>
 <meta property="og:url" content="${APP_URL}/wines"/>
 <meta property="og:image" content="${APP_URL}/og-image.png"/>
 <meta name="twitter:card" content="summary_large_image"/>
@@ -860,11 +862,11 @@ h1{font-family:Lora,Georgia,serif;font-size:1.6rem;font-weight:600;color:#2C0A16
 </style></head><body>
 <div class="topbar"><a href="${APP_URL}">🍷 Welds Wine Wisdoms</a><a class="topbar-cta" href="${APP_URL}">Open App</a></div>
 <div class="container">
-<h1>Wine Collection</h1>
+<h1>Wine Reviews &amp; Ratings</h1>
 <p class="count">${wines.length} wine${wines.length===1?"":"s"} in our cellar</p>
 <div class="grid">${cards}</div>
 <div class="cta-box">
-<p>Scan wine labels with AI and build your own wine journal</p>
+<p>Free AI wine label scanner and personal wine journal</p>
 <a class="cta-btn" href="${APP_URL}">Visit Welds Wine Wisdoms</a>
 </div>
 <div class="footer"><a href="${APP_URL}">weldswine.co.uk</a> · An AI-powered wine journal</div>
