@@ -869,6 +869,8 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
 .scan-thumb.visible{display:block}
 .scan-retake-link{background:none;border:none;color:var(--warm-gray);font-family:var(--font-b);font-size:.74rem;cursor:pointer;text-decoration:underline;padding:0;text-align:center;width:100%}
 .scan-retake-link:hover{color:var(--burgundy)}
+.scan-gallery-link{display:flex;align-items:center;justify-content:center;gap:4px;min-height:40px;margin-top:6px;color:var(--burgundy);font-family:var(--font-b);font-size:.78rem;font-weight:600;cursor:pointer;text-decoration:underline;-webkit-tap-highlight-color:transparent}
+.scan-gallery-link input[type="file"]{display:none}
 .scan-loader-wrap{display:flex;flex-direction:column;align-items:center;gap:12px;padding:28px 0 18px}
 .scan-spinner{width:40px;height:40px;border:3px solid var(--light-gray);border-top-color:var(--burgundy);border-radius:50%;animation:spin .85s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
@@ -3046,6 +3048,7 @@ body{
                 <div class="scan-upload-sub">front of bottle</div>
               </div>
             </div>
+            <label class="scan-gallery-link" id="frontGallery">🖼️ Or choose a saved photo<input type="file" id="frontGalleryInput" accept="image/*"/></label>
             <img class="scan-thumb" id="frontThumb" alt=""/>
             <button class="scan-retake-link" id="frontRetake" style="display:none">↩ Retake</button>
           </div>
@@ -3060,6 +3063,7 @@ body{
                 <div class="scan-upload-sub">back of bottle</div>
               </div>
             </div>
+            <label class="scan-gallery-link" id="backGallery">🖼️ Or choose a saved photo<input type="file" id="backGalleryInput" accept="image/*"/></label>
             <img class="scan-thumb" id="backThumb" alt=""/>
             <button class="scan-retake-link" id="backRetake" style="display:none">↩ Retake</button>
           </div>
@@ -8300,6 +8304,15 @@ function initScanner() {
   ['change','input'].forEach(evt => {
     document.getElementById('frontFileInput').addEventListener(evt, e=>{ if(e.target.files&&e.target.files[0]) loadScanFile(e.target.files[0],'front'); });
     document.getElementById('backFileInput').addEventListener(evt,  e=>{ if(e.target.files&&e.target.files[0]) loadScanFile(e.target.files[0],'back'); });
+    // "Or choose a saved photo": no capture attribute, so the phone offers its photo library
+    document.getElementById('frontGalleryInput').addEventListener(evt, e=>{ if(e.target.files&&e.target.files[0]) loadScanFile(e.target.files[0],'front'); });
+    document.getElementById('backGalleryInput').addEventListener(evt,  e=>{ if(e.target.files&&e.target.files[0]) loadScanFile(e.target.files[0],'back'); });
+  });
+  // Clear the saved-photo inputs before each use so picking the same photo again still works
+  ['front','back'].forEach(side => {
+    document.getElementById(side+'Gallery').addEventListener('click', ()=>{
+      const inp = document.getElementById(side+'GalleryInput'); if(inp) inp.value='';
+    });
   });
   // iOS fix: reset input value before each camera open so iOS always fires
   // the change event and opens the camera fresh (not photo library)
@@ -8375,6 +8388,7 @@ function _showScanPhoto(side, url) {
   document.getElementById(side + 'Inner').style.display = 'none';
   document.getElementById(side + 'UploadArea').style.display = 'none';
   document.getElementById(side + 'Retake').style.display = 'block';
+  const gallery = document.getElementById(side + 'Gallery'); if (gallery) gallery.style.display = 'none';
   updateGoBtn();
 }
 // After a reload: if a scan was under way, put the scan panel (and photos) back
@@ -8430,6 +8444,7 @@ function resetSide(side) {
   document.getElementById(side+'Inner').style.display='flex';
   document.getElementById(side+'UploadArea').style.display='';
   document.getElementById(side+'FileInput').value='';
+  const gallery = document.getElementById(side+'Gallery'); if (gallery) gallery.style.display='';
   updateGoBtn();
 }
 
