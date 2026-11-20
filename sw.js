@@ -2,7 +2,7 @@
    Welds Wine Wisdoms — Service Worker
    Strategy: network-first for API/auth, cache-first for assets
 ══════════════════════════════════════════════════════════ */
-const CACHE_NAME = 'www-v1';
+const CACHE_NAME = 'www-v2';
 // Static assets to cache on install
 const PRECACHE = [
   '/',
@@ -39,11 +39,12 @@ self.addEventListener('activate', event => {
 });
 self.addEventListener('fetch', event => {
   const url = event.request.url;
-  // Always network for auth/API calls
-  if (NETWORK_ONLY.some(d => url.includes(d))) {
-    event.respondWith(fetch(event.request));
-    return;
-  }
+  // Auth/API calls: don't touch them at all, let the browser send them directly.
+  // (Passing them through the service worker added nothing, and if the browser
+  // stopped the service worker mid-request, every request in progress failed at once.)
+  if (NETWORK_ONLY.some(d => url.includes(d))) return;
+  // Only GET requests can be cached; anything else goes straight to the network
+  if (event.request.method !== 'GET') return;
   // Network-first for navigation (always get fresh HTML)
   if (event.request.mode === 'navigate') {
     event.respondWith(

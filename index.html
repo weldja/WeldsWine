@@ -244,8 +244,8 @@
   --card-wash:   rgba(139,36,57,.07);
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-html{font-size:16px;scroll-behavior:smooth}
-body{font-family:var(--font-b);background:var(--cream);color:var(--charcoal);min-height:100vh;line-height:1.6;-webkit-font-smoothing:antialiased}
+html{font-size:16px;scroll-behavior:smooth;overscroll-behavior-y:contain}
+body{font-family:var(--font-b);background:var(--cream);color:var(--charcoal);min-height:100vh;line-height:1.6;-webkit-font-smoothing:antialiased;overscroll-behavior-y:contain}
 .load-bar{position:fixed;top:0;left:0;width:100%;height:3px;z-index:9999;pointer-events:none;opacity:0;transition:opacity .2s}
 .load-bar-inner{height:100%;width:0%;background:var(--gold);transition:width .4s ease;border-radius:0 2px 2px 0}
 .load-bar.active{opacity:1}
