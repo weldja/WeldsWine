@@ -6445,25 +6445,28 @@ async function _renderWorldMap() {
 /* After a scan: show a photo of the producer's estate or the region at the top
    of the Add Wine form, before the wine is saved. Free (no Claude call). */
 let _formPhotoToken = 0;
+let _scanPhotoPromise = null; // the photo lookup for the latest scan, shared by the splash and the form
+function _fetchScanPhoto(details) {
+  if (!Scanner.hasUrl() || !details) return Promise.resolve(null);
+  if (!details.winery && !details.region && !details.country && !details.name) return Promise.resolve(null);
+  return fetch(Scanner.getProxyUrl() + '/photo', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      name:    details.name    || '',
+      winery:  details.winery  || '',
+      region:  details.region  || '',
+      country: details.country || ''
+    })
+  }).then(r => r.ok ? r.json() : null).then(d => (d && d.photo) || null).catch(() => null);
+}
 async function _loadFormPhoto(details) {
   const token = ++_formPhotoToken;
-  if (!Scanner.hasUrl() || !details) return;
-  if (!details.winery && !details.region && !details.country && !details.name) return;
   try {
-    const res = await fetch(Scanner.getProxyUrl() + '/photo', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        name:    details.name    || '',
-        winery:  details.winery  || '',
-        region:  details.region  || '',
-        country: details.country || ''
-      })
-    });
-    if (!res.ok) return;
-    const data = await res.json();
+    const photo = await (_scanPhotoPromise || _fetchScanPhoto(details));
+    _scanPhotoPromise = null;
     if (token !== _formPhotoToken) return; // the form has been closed or reopened since
-    const html = renderIntelRegionPhoto(data && data.photo);
+    const html = renderIntelRegionPhoto(photo);
     const banner = document.getElementById('formPhotoBanner');
     if (!html || !banner || !document.getElementById('modalOverlay')?.classList.contains('open')) return;
     banner.innerHTML = html;
@@ -8731,10 +8734,11 @@ function importToForm() {
   // Labels often don't print the grape, so match on name/region/appellation too
   const splashText = [scanResult.grape, scanResult.name, scanResult.region, scanResult.appellation]
     .filter(Boolean).join(' ');
-  showWineSplash(splashText, scanResult.style, proceed);
+  _scanPhotoPromise = _fetchScanPhoto({ name: scanResult.name, winery: scanResult.winery, region: region || scanResult.region, country: scanResult.country });
+  showWineSplash(splashText, scanResult.style, proceed, _scanPhotoPromise);
 }
 
-function showWineSplash(grape, style, cb) {
+function showWineSplash(grape, style, cb, photoPromise) {
   // Determine which splash to show
   // g = grape + name + region + appellation, lower-cased with accents stripped
   const g = String(grape || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
@@ -8766,8 +8770,23 @@ function showWineSplash(grape, style, cb) {
 
   const el = document.getElementById(id);
   if (!el) return cb && cb();
+  // Swap the stock picture for a photo of this wine's estate or region as soon as it arrives
+  const img = el.querySelector('.splash-photo');
+  if (img && !img.dataset.stockSrc) img.dataset.stockSrc = img.src;
+  if (img) img.src = img.dataset.stockSrc;
+  let showing = true;
+  if (img && photoPromise) {
+    photoPromise.then(photo => {
+      const src = photo && String(photo.image_url || '');
+      if (!showing || !src || !(src.startsWith('https://upload.wikimedia.org/') || src.startsWith('https://thumb.wikimedia.org/'))) return;
+      const pre = new Image();
+      pre.onload = () => { if (showing) img.src = src; };
+      pre.src = src;
+    });
+  }
   el.classList.add('show');
   setTimeout(() => {
+    showing = false;
     el.classList.remove('show');
     setTimeout(() => cb && cb(), 350);
   }, 3000);
