@@ -154,6 +154,7 @@ YOUR TASKS
    - For each wine, give "location": a box around that wine's front-facing bottles (all of its bottles side by side, not the price tag) in ONE photo.
    - Use the overview photo whenever the wine can be seen in it, so the whole shelf can be shown on one picture. Otherwise use the photo where the wine is clearest.
    - Give the box as fractions of that photo's width and height, measured from its top-left corner: "x" and "y" are the top-left corner of the box, "w" and "h" its width and height. All four are between 0 and 1. For example, a wine in the top-left quarter of the photo might be {"photo": 1, "x": 0.05, "y": 0.02, "w": 0.2, "h": 0.22}.
+   - Boxes for different wines must not overlap: neighbouring wines on the same shelf should sit side by side, each box ending where the next wine's bottles begin.
    - Be as accurate as you can. If you cannot tell where a wine is, set "location" to null.
 
 7. Write a one-sentence summary of the shelf.

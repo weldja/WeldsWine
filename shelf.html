@@ -136,7 +136,8 @@ h1{font-family:var(--font-d);font-size:1.5rem;font-weight:600;line-height:1.2}
 .spot{position:absolute;border:none;padding:0;background:transparent;border-radius:40%;-webkit-tap-highlight-color:transparent}
 .spot.none{outline:2px dashed rgba(255,255,255,.75);outline-offset:-6px;border-radius:8px}
 .spot.sel{box-shadow:0 0 0 3px #fff,0 0 0 5px var(--burgundy-deep);border-radius:10px}
-.spot-badge{position:absolute;top:8%;left:50%;transform:translateX(-50%);min-width:30px;height:30px;padding:0 6px;border-radius:15px;background:var(--burgundy-deep);color:var(--gold-lt);border:2px solid #fff;font-family:var(--font-d);font-weight:600;font-size:.95rem;line-height:26px;text-align:center;box-shadow:0 2px 6px rgba(0,0,0,.35);pointer-events:none}
+.badges,.leaders{position:absolute;inset:0;pointer-events:none;overflow:visible}
+.spot-badge{position:absolute;transform:translate(-50%,-50%);min-width:30px;height:30px;padding:0 6px;border-radius:15px;background:var(--burgundy-deep);color:var(--gold-lt);border:2px solid #fff;font-family:var(--font-d);font-weight:600;font-size:.95rem;line-height:26px;text-align:center;box-shadow:0 2px 6px rgba(0,0,0,.35);pointer-events:auto;cursor:pointer}
 .spot-badge.poor{background:#fff;color:#9A2A33;border-color:#9A2A33;font-family:var(--font-b);font-size:.8rem}
 .legend{display:flex;flex-direction:column;gap:5px}
 .legend-bar{height:10px;border-radius:5px;background:linear-gradient(90deg,#2E9E5B,#9BBF3A,#E2B33C,#E07A2E,#C8323A)}
@@ -280,6 +281,8 @@ h1{font-family:var(--font-d);font-size:1.5rem;font-weight:600;line-height:1.2}
         <div class="heat-wrap">
           <img id="heatImg" alt="Your photo of the shelf"/>
           <div class="heat-layer" id="heatLayer"></div>
+          <svg class="leaders" id="heatLeaders" aria-hidden="true"></svg>
+          <div class="badges" id="heatBadges" aria-hidden="true"></div>
         </div>
       </div>
       <div class="legend" aria-hidden="true">
@@ -781,7 +784,9 @@ function renderHeat() {
     tabs.appendChild(b);
   });
 
-  $('heatImg').src = photos[heatPhoto - 1].url;
+  const img = $('heatImg');
+  img.onload = () => layoutBadges();   // sizes are only known once the photo has loaded
+  if (img.getAttribute('src') !== photos[heatPhoto - 1].url) img.src = photos[heatPhoto - 1].url;
   $('heatImg').alt = 'Photo ' + heatPhoto + ' of the shelf, with each wine coloured by how good value it is';
   $('heatScroll').classList.toggle('zoomed', heatZoomed);
   $('heatLayer').classList.toggle('off', heatOff);
@@ -795,6 +800,7 @@ function renderHeat() {
 
   const layer = $('heatLayer');
   layer.textContent = '';
+  heatBadges = [];
   // Draw the poorest first so the best value sits on top where boxes overlap
   onThis.slice().sort((a, b) => (a.value_score || 0) - (b.value_score || 0)).forEach(w => {
     const L = w.location;
@@ -816,15 +822,93 @@ function renderHeat() {
     }
     if (w.id === heatSelected) spot.classList.add('sel');
     const rank = pickRank(w.id);
-    if (rank) spot.appendChild(el('span', 'spot-badge', String(rank)));
-    else if (isPoor(w.id)) spot.appendChild(el('span', 'spot-badge poor', '✕'));
+    if (rank || isPoor(w.id)) heatBadges.push({ w, rank, poor: !rank });
     const pp = payPrice(w);
     spot.setAttribute('aria-label', w.name + (pp ? ', ' + money(pp) : ', no price seen') + ', ' + verdictText(w.value_score) + (rank ? ', best value pick ' + rank : ''));
     spot.addEventListener('click', () => { heatSelected = w.id; renderHeat(); });
     layer.appendChild(spot);
   });
 
+  layoutBadges();
   renderHeatSelection();
+}
+
+// ── Number badges: keep them from sitting on top of each other ──
+// Each badge starts at the top-centre of its wine. If that spot is
+// already taken by another badge, it is moved to the nearest free spot
+// and a thin line is drawn back to its wine. Best picks are placed
+// first, so they move the least.
+let heatBadges = [];
+const BADGE_GAP = 36;   // px between badge centres
+
+function layoutBadges() {
+  const box = $('heatBadges'), svg = $('heatLeaders');
+  box.textContent = '';
+  svg.textContent = '';
+  const W = box.clientWidth, H = box.clientHeight;
+  const order = heatBadges.slice().sort((a, b) => (a.rank || 99) - (b.rank || 99));
+  const placed = [];
+  order.forEach(item => {
+    const L = item.w.location;
+    let x, y, anchorX, anchorY;
+    if (W > 0 && H > 0) {
+      anchorX = (L.x + L.w / 2) * W;
+      anchorY = L.y * H + Math.min(L.h * H * 0.12, 20);
+      const want = { x: anchorX, y: anchorY + 15 };
+      const pos = freeSpot(want, placed, W, H);
+      x = pos.x; y = pos.y;
+      placed.push(pos);
+    }
+    const b = el('span', 'spot-badge' + (item.poor ? ' poor' : ''), item.poor ? '✕' : String(item.rank));
+    if (W > 0 && H > 0) { b.style.left = x + 'px'; b.style.top = y + 'px'; }
+    else {   // size not known yet (photo still loading): use the wine's position
+      b.style.left = ((L.x + L.w / 2) * 100) + '%';
+      b.style.top = 'calc(' + (L.y * 100) + '% + 18px)';
+    }
+    b.addEventListener('click', () => { heatSelected = item.w.id; renderHeat(); });
+    box.appendChild(b);
+    // Moved away from its wine? Draw a line back to it
+    if (W > 0 && Math.hypot(x - anchorX, y - (anchorY + 15)) > 12) {
+      const tx = anchorX, ty = (L.y + L.h / 2) * H;
+      const ns = 'http://www.w3.org/2000/svg';
+      [['rgba(45,36,32,.7)', 4], ['#fff', 2]].forEach(([col, wd]) => {
+        const ln = document.createElementNS(ns, 'line');
+        ln.setAttribute('x1', x); ln.setAttribute('y1', y);
+        ln.setAttribute('x2', tx); ln.setAttribute('y2', ty);
+        ln.setAttribute('stroke', col); ln.setAttribute('stroke-width', wd); ln.setAttribute('stroke-linecap', 'round');
+        svg.appendChild(ln);
+      });
+      const dot = document.createElementNS(ns, 'circle');
+      dot.setAttribute('cx', tx); dot.setAttribute('cy', ty); dot.setAttribute('r', 4);
+      dot.setAttribute('fill', '#fff'); dot.setAttribute('stroke', 'rgba(45,36,32,.7)'); dot.setAttribute('stroke-width', 1.5);
+      svg.appendChild(dot);
+    }
+  });
+}
+
+// The nearest position to "want" that doesn't overlap a placed badge and stays inside the photo
+function freeSpot(want, placed, W, H) {
+  const m = 17;
+  const clampX = v => Math.min(Math.max(v, m), W - m), clampY = v => Math.min(Math.max(v, m), H - m);
+  const ok = p => placed.every(q => Math.hypot(p.x - q.x, p.y - q.y) >= BADGE_GAP);
+  let best = null;
+  for (let ring = 0; ring <= 8 && !best; ring++) {
+    const cands = [];
+    if (ring === 0) cands.push([0, 0]);
+    for (let i = -ring; i <= ring; i++) {
+      for (let j = -ring; j <= ring; j++) {
+        if (Math.max(Math.abs(i), Math.abs(j)) !== ring) continue;
+        cands.push([i, j]);
+      }
+    }
+    // Prefer sideways moves, then the smallest distance
+    cands.sort((a, b) => (Math.hypot(a[0], a[1] * 1.3)) - (Math.hypot(b[0], b[1] * 1.3)));
+    for (const [i, j] of cands) {
+      const p = { x: clampX(want.x + i * BADGE_GAP * 0.6), y: clampY(want.y + j * BADGE_GAP * 0.6) };
+      if (ok(p)) { best = p; break; }
+    }
+  }
+  return best || { x: clampX(want.x), y: clampY(want.y) };
 }
 
 function renderHeatSelection() {
@@ -969,7 +1053,11 @@ $('heatZoom').addEventListener('click', () => {
   heatZoomed = !heatZoomed;
   $('heatZoom').setAttribute('aria-pressed', String(heatZoomed));
   $('heatScroll').classList.toggle('zoomed', heatZoomed);
+  layoutBadges();
 });
+// Re-place badges when the screen size changes (e.g. turning the phone)
+let resizeTimer = null;
+window.addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(() => { if (!$('heatSection').hidden) layoutBadges(); }, 150); });
 $('loyaltyInput').addEventListener('change', savePrefs);
 $('shopInput').addEventListener('change', savePrefs);
 
