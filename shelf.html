@@ -120,6 +120,32 @@ h1{font-family:var(--font-d);font-size:1.5rem;font-weight:600;line-height:1.2}
 .poor-top span:last-child{color:var(--burgundy);white-space:nowrap}
 .poor-why{font-size:.82rem;color:var(--text-2)}
 
+/* Shelf heat map */
+.heat{display:flex;flex-direction:column;gap:12px}
+.heat-head{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.heat-tools{display:flex;gap:6px}
+.tool{min-height:36px;padding:0 12px;border-radius:18px;border:1px solid var(--light-gray);background:var(--ivory);font-size:.8rem}
+.tool[aria-pressed="true"]{background:var(--burgundy-deep);border-color:var(--burgundy-deep);color:var(--parchment)}
+.heat-tabs{display:flex;flex-wrap:wrap;gap:6px}
+.heat-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:var(--r);background:#2D2420}
+.heat-wrap{position:relative;width:100%;line-height:0}
+.heat-scroll.zoomed .heat-wrap{width:220%}
+.heat-wrap img{display:block;width:100%;height:auto;user-select:none;-webkit-user-select:none}
+.heat-layer{position:absolute;inset:0}
+.heat-layer.off .spot{background:none!important}
+.spot{position:absolute;border:none;padding:0;background:transparent;border-radius:40%;-webkit-tap-highlight-color:transparent}
+.spot.none{outline:2px dashed rgba(255,255,255,.75);outline-offset:-6px;border-radius:8px}
+.spot.sel{box-shadow:0 0 0 3px #fff,0 0 0 5px var(--burgundy-deep);border-radius:10px}
+.spot-badge{position:absolute;top:8%;left:50%;transform:translateX(-50%);min-width:30px;height:30px;padding:0 6px;border-radius:15px;background:var(--burgundy-deep);color:var(--gold-lt);border:2px solid #fff;font-family:var(--font-d);font-weight:600;font-size:.95rem;line-height:26px;text-align:center;box-shadow:0 2px 6px rgba(0,0,0,.35);pointer-events:none}
+.spot-badge.poor{background:#fff;color:#9A2A33;border-color:#9A2A33;font-family:var(--font-b);font-size:.8rem}
+.legend{display:flex;flex-direction:column;gap:5px}
+.legend-bar{height:10px;border-radius:5px;background:linear-gradient(90deg,#2E9E5B,#9BBF3A,#E2B33C,#E07A2E,#C8323A)}
+.legend-labels{display:flex;justify-content:space-between;font-size:.74rem;color:var(--text-2)}
+.heat-sel{border-top:1px solid #F0E8E0;padding-top:12px;display:flex;flex-direction:column;gap:6px}
+.heat-sel-top{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.verdict{display:inline-block;font-size:.72rem;font-weight:600;padding:3px 9px;border-radius:20px;color:#fff}
+.vdot{display:inline-block;width:10px;height:10px;border-radius:5px;margin-right:7px;vertical-align:1px;flex-shrink:0}
+
 /* Full list */
 .filters{display:flex;flex-wrap:wrap;gap:8px}
 .filter{min-height:38px;padding:0 14px;border-radius:19px;border:1px solid var(--light-gray);background:var(--ivory);font-size:.84rem}
@@ -241,6 +267,28 @@ h1{font-family:var(--font-d);font-size:1.5rem;font-weight:600;line-height:1.2}
   <!-- 3. Best value -->
   <section class="view" id="viewResults" hidden>
     <div class="card" id="summaryCard"></div>
+    <section class="card heat" id="heatSection" hidden>
+      <div class="heat-head">
+        <h2 class="sec-h">Shelf heat map</h2>
+        <div class="heat-tools">
+          <button class="tool" id="heatToggle" aria-pressed="false" type="button">Hide colours</button>
+          <button class="tool" id="heatZoom" aria-pressed="false" type="button">Zoom</button>
+        </div>
+      </div>
+      <div class="heat-tabs" id="heatTabs" role="group" aria-label="Choose photo"></div>
+      <div class="heat-scroll" id="heatScroll">
+        <div class="heat-wrap">
+          <img id="heatImg" alt="Your photo of the shelf"/>
+          <div class="heat-layer" id="heatLayer"></div>
+        </div>
+      </div>
+      <div class="legend" aria-hidden="true">
+        <div class="legend-bar"></div>
+        <div class="legend-labels"><span>Best value</span><span>Fair</span><span>Poor value</span></div>
+      </div>
+      <p class="small">Numbers mark the top picks. A dashed outline means no price was seen. Tap any wine on the photo for details. Positions are the AI’s best estimate, so they can be slightly out.</p>
+      <div class="heat-sel" id="heatSel" hidden></div>
+    </section>
     <h2 class="sec-h" id="picksHead">Best value on this shelf</h2>
     <div style="display:flex;flex-direction:column;gap:14px" id="picks"></div>
     <h2 class="sec-h" id="poorHead">Paying for the name</h2>
@@ -682,6 +730,129 @@ function renderResults() {
 
   $('seeAllBtn').textContent = 'See all ' + wines.length + (wines.length === 1 ? ' wine' : ' wines') + ' found';
   $('seeAllBtn').hidden = !wines.length;
+
+  heatSelected = null;
+  try { renderHeat(); } catch (e) { console.warn('[shelf] heat map failed:', e); $('heatSection').hidden = true; }
+}
+
+// ── Heat map ─────────────────────────────────────────────────
+let heatPhoto = 1, heatSelected = null, heatOff = false, heatZoomed = false;
+
+// Value score (1–10) to colour: green = best value, red = poor value
+function scoreColour(score) {
+  if (!score) return null;
+  if (score >= 8) return [46, 158, 91];
+  if (score >= 6) return [155, 191, 58];
+  if (score === 5) return [226, 179, 60];
+  if (score >= 3) return [224, 122, 46];
+  return [200, 50, 58];
+}
+function verdictText(score) {
+  if (!score) return 'No price seen';
+  if (score >= 8) return 'Great value';
+  if (score >= 6) return 'Good value';
+  if (score === 5) return 'Fair value';
+  if (score >= 3) return 'Poor value';
+  return 'Very poor value';
+}
+function pickRank(id) { const i = (result.picks || []).findIndex(p => p.wine_id === id); return i >= 0 ? i + 1 : 0; }
+function isPoor(id) { return (result.poor_value || []).some(p => p.wine_id === id); }
+
+function renderHeat() {
+  const sec = $('heatSection');
+  const located = result.wines.filter(w => w.location && photos[w.location.photo - 1]);
+  if (!located.length) { sec.hidden = true; return; }
+  sec.hidden = false;
+
+  // Which photos have wines marked on them
+  const byPhoto = {};
+  located.forEach(w => { byPhoto[w.location.photo] = (byPhoto[w.location.photo] || 0) + 1; });
+  const photoNums = Object.keys(byPhoto).map(Number).sort((a, b) => a - b);
+  if (!byPhoto[heatPhoto]) heatPhoto = byPhoto[result.overview_photo] ? result.overview_photo : photoNums[0];
+
+  const tabs = $('heatTabs');
+  tabs.textContent = '';
+  tabs.hidden = photoNums.length < 2;
+  photoNums.forEach(n => {
+    const b = el('button', 'tool', 'Photo ' + n + ' · ' + byPhoto[n] + (byPhoto[n] === 1 ? ' wine' : ' wines'));
+    b.type = 'button';
+    b.setAttribute('aria-pressed', String(n === heatPhoto));
+    b.addEventListener('click', () => { heatPhoto = n; heatSelected = null; renderHeat(); });
+    tabs.appendChild(b);
+  });
+
+  $('heatImg').src = photos[heatPhoto - 1].url;
+  $('heatImg').alt = 'Photo ' + heatPhoto + ' of the shelf, with each wine coloured by how good value it is';
+  $('heatScroll').classList.toggle('zoomed', heatZoomed);
+  $('heatLayer').classList.toggle('off', heatOff);
+
+  const onThis = located.filter(w => w.location.photo === heatPhoto);
+  // Default selection: the best pick shown on this photo
+  if (!heatSelected || !onThis.some(w => w.id === heatSelected)) {
+    const best = onThis.filter(w => pickRank(w.id)).sort((a, b) => pickRank(a.id) - pickRank(b.id))[0];
+    heatSelected = best ? best.id : null;
+  }
+
+  const layer = $('heatLayer');
+  layer.textContent = '';
+  // Draw the poorest first so the best value sits on top where boxes overlap
+  onThis.slice().sort((a, b) => (a.value_score || 0) - (b.value_score || 0)).forEach(w => {
+    const L = w.location;
+    const spot = el('button', 'spot');
+    spot.type = 'button';
+    // Let the colour spread a little beyond the bottles, like a heat map
+    const padX = L.w * 0.12, padY = L.h * 0.08;
+    const left = Math.max(0, L.x - padX), top = Math.max(0, L.y - padY);
+    spot.style.left = (left * 100) + '%';
+    spot.style.top = (top * 100) + '%';
+    spot.style.width = (Math.min(1 - left, L.w + padX * 2) * 100) + '%';
+    spot.style.height = (Math.min(1 - top, L.h + padY * 2) * 100) + '%';
+    const c = scoreColour(w.value_score);
+    if (c) {
+      const rgb = c.join(',');
+      spot.style.background = 'radial-gradient(ellipse at center, rgba(' + rgb + ',.62) 0%, rgba(' + rgb + ',.45) 45%, rgba(' + rgb + ',0) 75%)';
+    } else {
+      spot.classList.add('none');
+    }
+    if (w.id === heatSelected) spot.classList.add('sel');
+    const rank = pickRank(w.id);
+    if (rank) spot.appendChild(el('span', 'spot-badge', String(rank)));
+    else if (isPoor(w.id)) spot.appendChild(el('span', 'spot-badge poor', '✕'));
+    const pp = payPrice(w);
+    spot.setAttribute('aria-label', w.name + (pp ? ', ' + money(pp) : ', no price seen') + ', ' + verdictText(w.value_score) + (rank ? ', best value pick ' + rank : ''));
+    spot.addEventListener('click', () => { heatSelected = w.id; renderHeat(); });
+    layer.appendChild(spot);
+  });
+
+  renderHeatSelection();
+}
+
+function renderHeatSelection() {
+  const box = $('heatSel');
+  const w = heatSelected && wineById(heatSelected);
+  if (!w) { box.hidden = true; return; }
+  box.hidden = false;
+  box.textContent = '';
+  const top = el('div', 'heat-sel-top');
+  top.appendChild(el('span', 'wname', w.name));
+  const pp = payPrice(w);
+  top.appendChild(el('span', 'row-price', pp ? money(pp) + (result.loyalty_card && w.loyalty_price ? ' ' + loyaltyName() : '') : '—'));
+  box.appendChild(top);
+  const tags = el('div', 'conf-row');
+  const c = scoreColour(w.value_score);
+  const v = el('span', 'verdict', verdictText(w.value_score) + (w.value_score ? ' · ' + w.value_score + '/10' : ''));
+  v.style.background = c ? 'rgb(' + c.join(',') + ')' : '#8C817C';
+  if (w.value_score === 5 || (w.value_score >= 6 && w.value_score < 8)) v.style.color = '#2D2420';
+  tags.appendChild(v);
+  tags.appendChild(confChip(w));
+  box.appendChild(tags);
+  const rank = pickRank(w.id);
+  const reason = rank ? result.picks[rank - 1].reason : (isPoor(w.id) ? (result.poor_value.find(p => p.wine_id === w.id) || {}).reason : '');
+  if (rank) box.appendChild(el('div', 'small', 'Best value pick ' + rank));
+  if (reason) box.appendChild(el('p', 'why', reason));
+  const sub = wineSub(w);
+  if (sub) box.appendChild(el('div', 'small', sub));
+  if (w.note) box.appendChild(el('div', 'note', w.note));
 }
 
 function renderAll() {
@@ -705,7 +876,16 @@ function renderAll() {
   shown.forEach(w => {
     const row = el('div', 'row');
     const top = el('div', 'row-top');
-    top.appendChild(el('span', 'row-name', w.name));
+    const nm = el('span', 'row-name');
+    const dc = scoreColour(w.value_score);
+    if (dc) {
+      const dot = el('span', 'vdot');
+      dot.style.background = 'rgb(' + dc.join(',') + ')';
+      dot.title = verdictText(w.value_score);
+      nm.appendChild(dot);
+    }
+    nm.appendChild(document.createTextNode(w.name));
+    top.appendChild(nm);
     const price = el('span', 'row-price');
     if (!w.price) price.textContent = '—';
     else if (result.loyalty_card && w.loyalty_price) { price.textContent = money(w.loyalty_price); }
@@ -779,6 +959,17 @@ $('newScanBtn').addEventListener('click', () => {
   showView('viewCapture');
 });
 document.querySelectorAll('.filter').forEach(b => b.addEventListener('click', () => { listFilter = b.dataset.filter; renderAll(); }));
+$('heatToggle').addEventListener('click', () => {
+  heatOff = !heatOff;
+  $('heatToggle').setAttribute('aria-pressed', String(heatOff));
+  $('heatToggle').textContent = heatOff ? 'Show colours' : 'Hide colours';
+  $('heatLayer').classList.toggle('off', heatOff);
+});
+$('heatZoom').addEventListener('click', () => {
+  heatZoomed = !heatZoomed;
+  $('heatZoom').setAttribute('aria-pressed', String(heatZoomed));
+  $('heatScroll').classList.toggle('zoomed', heatZoomed);
+});
 $('loyaltyInput').addEventListener('change', savePrefs);
 $('shopInput').addEventListener('change', savePrefs);
 

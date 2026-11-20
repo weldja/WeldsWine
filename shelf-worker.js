@@ -144,12 +144,25 @@ YOUR TASKS
    - Also list up to 3 wines that are poor value (for example, paying for a brand name), each with a short reason.
    - If you are not familiar with a wine, say so honestly in the reason rather than inventing facts about it.
 
-5. Write a one-sentence summary of the shelf.
+5. Give every wine a value score.
+   - "value_score" is a whole number from 1 to 10 for how good value the wine is at the price YOU would pay here: 10 = outstanding value, 7 = good value, 5 = fair, 3 = poor, 1 = very poor value.
+   - Your best-value picks should have the highest scores, and your poor-value wines low scores.
+   - If no price could be read for a wine, set "value_score" to null.
+
+6. Say where each wine is in the photos, so it can be marked on a picture of the shelf.
+   - Choose the "overview_photo": the photo that shows the most of the shelf (usually the wide shot).
+   - For each wine, give "location": a box around that wine's front-facing bottles (all of its bottles side by side, not the price tag) in ONE photo.
+   - Use the overview photo whenever the wine can be seen in it, so the whole shelf can be shown on one picture. Otherwise use the photo where the wine is clearest.
+   - Give the box as fractions of that photo's width and height, measured from its top-left corner: "x" and "y" are the top-left corner of the box, "w" and "h" its width and height. All four are between 0 and 1. For example, a wine in the top-left quarter of the photo might be {"photo": 1, "x": 0.05, "y": 0.02, "w": 0.2, "h": 0.22}.
+   - Be as accurate as you can. If you cannot tell where a wine is, set "location" to null.
+
+7. Write a one-sentence summary of the shelf.
 
 Return ONLY a valid JSON object — no markdown fences, no explanation — exactly in this shape:
 {
   "shop": "shop name or null",
   "summary": "one sentence",
+  "overview_photo": 1,
   "wines": [
     {
       "id": "w1",
@@ -165,6 +178,8 @@ Return ONLY a valid JSON object — no markdown fences, no explanation — exact
       "loyalty_price": 7.5 or null,
       "photos": [1, 3],
       "confidence": "high, medium or low",
+      "value_score": 7 or null,
+      "location": { "photo": 1, "x": 0.05, "y": 0.02, "w": 0.2, "h": 0.22 } or null,
       "note": "short note on anything to check, or null"
     }
   ],
@@ -188,8 +203,29 @@ function num(v) {
   return Number.isFinite(n) && n > 0 && n < 10000 ? Math.round(n * 100) / 100 : null;
 }
 
+// A box on a photo, as fractions (0–1) of the photo's width and height
+function cleanLocation(loc, photoCount) {
+  if (!loc || typeof loc !== "object") return null;
+  const photo = parseInt(loc.photo, 10);
+  if (!(photo >= 1 && photo <= photoCount)) return null;
+  const f = (v) => { const n = typeof v === "number" ? v : parseFloat(v); return Number.isFinite(n) ? n : null; };
+  let x = f(loc.x), y = f(loc.y), w = f(loc.w), h = f(loc.h);
+  if (x === null || y === null || w === null || h === null) return null;
+  // Some answers use percentages (0–100) instead of fractions
+  if (Math.max(x, y, w, h) > 1.5) { x /= 100; y /= 100; w /= 100; h /= 100; }
+  x = Math.min(Math.max(x, 0), 0.98); y = Math.min(Math.max(y, 0), 0.98);
+  w = Math.min(Math.max(w, 0.01), 1 - x); h = Math.min(Math.max(h, 0.01), 1 - y);
+  const r = (n) => Math.round(n * 1000) / 1000;
+  return { photo, x: r(x), y: r(y), w: r(w), h: r(h) };
+}
+
 function cleanResult(raw, photoCount) {
-  const out = { shop: str(raw.shop, 60), summary: str(raw.summary, 400), wines: [], picks: [], poor_value: [] };
+  const overview = parseInt(raw.overview_photo, 10);
+  const out = {
+    shop: str(raw.shop, 60), summary: str(raw.summary, 400),
+    overview_photo: overview >= 1 && overview <= photoCount ? overview : 1,
+    wines: [], picks: [], poor_value: []
+  };
   const ids = new Set();
   (Array.isArray(raw.wines) ? raw.wines : []).slice(0, 80).forEach((w, i) => {
     if (!w || typeof w !== "object") return;
@@ -206,6 +242,7 @@ function cleanResult(raw, photoCount) {
     let price = num(w.price), loyalty = num(w.loyalty_price);
     if (!price && loyalty) { price = loyalty; loyalty = null; }        // only one price seen
     if (loyalty && price && loyalty >= price) loyalty = null;            // not actually a discount
+    const score = parseInt(w.value_score, 10);
     out.wines.push({
       id,
       name: str(w.name, 120) || "Unnamed wine",
@@ -220,6 +257,8 @@ function cleanResult(raw, photoCount) {
       loyalty_price: loyalty,
       photos: [...new Set(photos)].sort((a, b) => a - b),
       confidence: conf,
+      value_score: price && score >= 1 && score <= 10 ? score : null,
+      location: cleanLocation(w.location, photoCount),
       note: str(w.note, 200)
     });
   });
@@ -278,7 +317,7 @@ async function handleScan(request, env) {
     res = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: { "Content-Type": "application/json", "x-api-key": apiKey, "anthropic-version": "2023-06-01" },
-      body: JSON.stringify({ model: MODEL, max_tokens: 6000, messages: [{ role: "user", content }] })
+      body: JSON.stringify({ model: MODEL, max_tokens: 8000, messages: [{ role: "user", content }] })
     });
   } catch (e) {
     return reply(request, 502, { error: "AI_UNREACHABLE" });
