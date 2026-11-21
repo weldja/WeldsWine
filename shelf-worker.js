@@ -8,7 +8,9 @@
    What it does:
      POST /scan    Takes 1–6 photos of the same shelf, sends them to
                    Claude together, and returns every wine found, its
-                   price, and the best-value picks.
+                   price, and the best-value picks. The page can
+                   ask for one colour only ("want": red, white or
+                   rose), and then the picks only come from that colour.
      GET  /health  Says "ok" — handy to check it is deployed.
 
    Setup (one secret only):
@@ -114,7 +116,14 @@ function base64Bytes(b64) {
 
 /* ── The instructions given to Claude ────────────────────────── */
 
-function buildPrompt(photoCount, hasLoyaltyCard, shop) {
+// The colours the page can ask for, and how to name them in the prompt
+const WANT_WORDS = { red: "red", white: "white", rose: "rosé" };
+
+function buildPrompt(photoCount, hasLoyaltyCard, shop, want) {
+  const w = WANT_WORDS[want];   // undefined means any colour
+  const colourRule = w ? `
+   - IMPORTANT: the person only wants a ${w} wine today. Your best-value picks and your poor-value wines must ALL be ${w} wines ("style": "${w === "rosé" ? "Rosé" : w[0].toUpperCase() + w.slice(1)}"). Do not pick any other style, and do not pick a wine if you cannot tell whether it is ${w}. If no ${w} wine has a readable price, leave "picks" empty.
+   - Still list EVERY wine on the shelf in "wines", whatever its colour, and still give every wine a value score.` : "";
   return `You are helping a wine lover in a UK shop find the best value wine on a shelf.
 
 You have been given ${photoCount} photo${photoCount === 1 ? "" : "s"} of the SAME shelf, labelled Photo 1 to Photo ${photoCount}. They may overlap: one may be a wide shot and others close-ups of particular rows. ${shop ? `The shop is: ${shop}.` : "The shop was not given; work it out from the tags if you can."}
@@ -125,6 +134,7 @@ YOUR TASKS
    - The same wine often appears in more than one photo, and there are often several bottles of the same wine side by side. List each different wine ONCE.
    - Where a wine or its price appears in more than one photo, use the clearest reading, and record every photo it appears in.
    - Number the shelves from the top: the top shelf is 1.
+   - Give each wine a "style". Use the colour of the wine and the glass, the grape, the label and what you know of the wine. Sparkling wines are "Sparkling" (not White or Rosé), sweet wines are "Dessert", and port, sherry and similar are "Fortified". If you cannot tell, use null.
 
 2. Match each wine to its price tag.
    - Price tags usually sit on the shelf edge directly below the bottles, but not always exactly under them. Use the wide photo to work out which tag belongs to which bottles, and the close-ups to read the numbers.
@@ -142,7 +152,7 @@ YOUR TASKS
    - Only pick wines with a price you could read. Prefer high or medium confidence wines.
    - Choose up to 3 best-value picks, best first, each with a short reason (1 or 2 plain sentences, British English, no hype). Mention it if the price is worth double-checking.
    - Also list up to 3 wines that are poor value (for example, paying for a brand name), each with a short reason.
-   - If you are not familiar with a wine, say so honestly in the reason rather than inventing facts about it.
+   - If you are not familiar with a wine, say so honestly in the reason rather than inventing facts about it.${colourRule}
 
 5. Give every wine a value score.
    - "value_score" is a whole number from 1 to 10 for how good value the wine is at the price YOU would pay here: 10 = outstanding value, 7 = good value, 5 = fair, 3 = poor, 1 = very poor value.
@@ -204,6 +214,23 @@ function num(v) {
   return Number.isFinite(n) && n > 0 && n < 10000 ? Math.round(n * 100) / 100 : null;
 }
 
+// Turn whatever the AI wrote for "style" into one of six labels (or null)
+function cleanStyle(v) {
+  const s = String(v || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  if (!s) return null;
+  if (s.includes("sparkl") || s.includes("champagne") || s.includes("prosecco") || s.includes("cava")) return "Sparkling";
+  if (s.includes("rose") || s.includes("blush")) return "Rosé";
+  if (s.includes("fortif") || s.includes("port") || s.includes("sherry")) return "Fortified";
+  if (s.includes("dessert") || s.includes("sweet")) return "Dessert";
+  if (s.includes("red")) return "Red";
+  if (s.includes("white")) return "White";
+  return null;
+}
+// The same, as the short key the page uses: red, white, rose …
+function styleKey(style) {
+  return { Red: "red", White: "white", "Rosé": "rose" }[style] || null;
+}
+
 // A box on a photo, as fractions (0–1) of the photo's width and height
 function cleanLocation(loc, photoCount) {
   if (!loc || typeof loc !== "object") return null;
@@ -220,7 +247,7 @@ function cleanLocation(loc, photoCount) {
   return { photo, x: r(x), y: r(y), w: r(w), h: r(h) };
 }
 
-function cleanResult(raw, photoCount) {
+function cleanResult(raw, photoCount, want) {
   const overview = parseInt(raw.overview_photo, 10);
   const out = {
     shop: str(raw.shop, 60), summary: str(raw.summary, 400),
@@ -251,7 +278,7 @@ function cleanResult(raw, photoCount) {
       grape: str(w.grape, 80),
       country: str(w.country, 40),
       region: str(w.region, 80),
-      style: str(w.style, 20),
+      style: cleanStyle(w.style),
       vintage: vintage >= 1900 && vintage <= 2100 ? vintage : null,
       shelf: shelf >= 1 && shelf <= 20 ? shelf : null,
       price,
@@ -266,12 +293,18 @@ function cleanResult(raw, photoCount) {
   const known = new Set(out.wines.map((w) => w.id));
   const used = new Set();
   // Keep only known wines, each wine once (and never both a pick and poor value)
+  // If only one colour was wanted, never let a wine of another colour
+  // through as a pick or poor-value wine (a safety net in case the AI
+  // forgets). Wines with no style are kept: the AI was told not to pick
+  // a wine unless it was sure of its colour.
+  const styleOf = new Map(out.wines.map((w) => [w.id, w.style]));
+  const wrongColour = (id) => want && styleOf.get(id) && styleKey(styleOf.get(id)) !== want;
   const cleanList = (list, max) => {
     const outList = [];
     for (const p of (Array.isArray(list) ? list : [])) {
       if (outList.length >= max) break;
       const id = p && String(p.wine_id);
-      if (!id || !known.has(id) || used.has(id)) continue;
+      if (!id || !known.has(id) || used.has(id) || wrongColour(id)) continue;
       used.add(id);
       outList.push({ wine_id: id, reason: str(p.reason, 400) || "" });
     }
@@ -311,7 +344,9 @@ async function handleScan(request, env) {
     content.push({ type: "image", source: { type: "base64", media_type: mediaType, data: b64 } });
   }
   const shop = str(body.shop, 60);
-  content.push({ type: "text", text: buildPrompt(photos.length, body.loyaltyCard === true, shop) });
+  // Which colour the person is after: "red", "white", "rose", or null for any
+  const want = WANT_WORDS[body.want] ? body.want : null;
+  content.push({ type: "text", text: buildPrompt(photos.length, body.loyaltyCard === true, shop, want) });
 
   let res;
   try {
@@ -342,9 +377,10 @@ async function handleScan(request, env) {
     return reply(request, 422, { error: "UNREADABLE_ANSWER" });
   }
 
-  const result = cleanResult(parsed, photos.length);
+  const result = cleanResult(parsed, photos.length, want);
   result.photo_count = photos.length;
   result.loyalty_card = body.loyaltyCard === true;
+  result.want = want;
   result.scanned_at = new Date().toISOString();
   return reply(request, 200, result);
 }
