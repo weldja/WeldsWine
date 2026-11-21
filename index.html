@@ -47,7 +47,7 @@
   {"@context":"https://schema.org","@type":"WebApplication","name":"Welds Wine Wisdoms","url":"https://weldswine.co.uk/","description":"A personal wine journal and label scanner. Photograph any wine bottle, get AI-powered label recognition, rate wines 1–10, record tasting notes, and share recommendations.","applicationCategory":"LifestyleApplication","operatingSystem":"Any","offers":{"@type":"Offer","price":"0","priceCurrency":"GBP"},"featureList":["AI wine label scanner","1–10 wine rating system","Tasting notes journal","Wine collection tracker","Interactive map of wine origins","Share wine recommendations"],"inLanguage":"en-GB"}
   </script>
   <script type="application/ld+json">
-  {"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Is Welds Wine Wisdoms free?","acceptedAnswer":{"@type":"Answer","text":"Yes, it is free to use. You can try the label scanner without an account. Saving wines to your own journal needs an account, which is currently by request."}},{"@type":"Question","name":"How does the wine label scanner work?","acceptedAnswer":{"@type":"Answer","text":"Point your phone or laptop camera at the front and back of any wine bottle. AI reads the label and automatically extracts the wine name, region, grape variety, vintage and tasting notes — no typing required."}},{"@type":"Question","name":"What devices does it work on?","acceptedAnswer":{"@type":"Answer","text":"It works on any device with a camera — iPhone, Android, iPad, laptop or desktop. Install it as an app from your browser for the best experience, or use it directly in any modern web browser."}},{"@type":"Question","name":"Can I share wines with friends?","acceptedAnswer":{"@type":"Answer","text":"Yes. You can share individual wine recommendations and join a shared cellar with friends to see each other's finds, ratings, comments and tasting events."}}]}
+  {"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Is Welds Wine Wisdoms free?","acceptedAnswer":{"@type":"Answer","text":"Yes, it is free to use. Anyone can look at the bottle and shelf scanners, but scanning and saving wines to your own journal need an account, which is currently by request."}},{"@type":"Question","name":"How does the wine label scanner work?","acceptedAnswer":{"@type":"Answer","text":"Point your phone or laptop camera at the front and back of any wine bottle. AI reads the label and automatically extracts the wine name, region, grape variety, vintage and tasting notes — no typing required."}},{"@type":"Question","name":"What devices does it work on?","acceptedAnswer":{"@type":"Answer","text":"It works on any device with a camera — iPhone, Android, iPad, laptop or desktop. Install it as an app from your browser for the best experience, or use it directly in any modern web browser."}},{"@type":"Question","name":"Can I share wines with friends?","acceptedAnswer":{"@type":"Answer","text":"Yes. You can share individual wine recommendations and join a shared cellar with friends to see each other's finds, ratings, comments and tasting events."}}]}
   </script>
   <!-- Preconnect to all external origins to cut DNS/TLS time -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -96,6 +96,23 @@
 .landing-scan-btn:hover{background:var(--gold-lt)}
 .landing-scan-btn:active{transform:scale(.98)}
 .landing-scan-note{text-align:center;font-family:var(--font-b);font-size:.72rem;color:rgba(245,237,226,.32);margin-top:10px}
+/* ── The two big choices: scan a bottle or scan a shelf ───── */
+.landing-fork{display:grid;grid-template-columns:1fr 1fr;gap:10px;max-width:420px;margin:0 auto 12px}
+.fork-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;min-height:118px;padding:16px 10px;border-radius:14px;text-decoration:none;cursor:pointer;font-family:var(--font-b);text-align:center;border:none;-webkit-tap-highlight-color:transparent;transition:transform .15s ease,background .15s ease}
+.fork-btn:active{transform:scale(.98)}
+.fork-ic{font-size:1.7rem;line-height:1}
+.fork-t{font-family:var(--font-d);font-size:1.08rem;font-weight:600;line-height:1.2}
+.fork-s{font-size:.76rem;line-height:1.35;opacity:.78}
+.fork-bottle{background:var(--gold);color:var(--burgundy-deep)}
+.fork-bottle:hover{background:var(--gold-lt)}
+.fork-shelf{background:#3D0F1E;color:var(--ivory);border:1.5px solid rgba(201,163,74,.6)}
+.fork-shelf:hover{border-color:var(--gold)}
+.landing-fork-note{text-align:center;font-family:var(--font-b);font-size:.78rem;line-height:1.5;color:rgba(245,237,226,.6);margin:0 auto 6px;max-width:380px}
+.landing-fork-note a{color:var(--gold-lt)}
+/* Header: "Scan a shelf" sits beside "Scan a bottle", in outline style */
+.btn-scan-primary.btn-scan-shelf{background:transparent;color:var(--gold-lt);border:1.5px solid var(--gold);box-shadow:none;text-decoration:none}
+.btn-scan-primary.btn-scan-shelf:hover{background:rgba(201,163,74,.15);color:var(--gold-lt);box-shadow:none}
+.btn-scan-shelf .shelf-ic{font-size:.95rem;line-height:1}
 /* Link to the Shelf Scanner page, under the "Try scanning a label" box */
 .landing-shelf-link{display:inline-block;max-width:360px;padding:12px 8px;line-height:1.45;font-family:var(--font-b);font-size:.86rem;color:var(--gold-lt);text-decoration:none;-webkit-tap-highlight-color:transparent}
 .landing-shelf-link:hover{text-decoration:underline}
@@ -1399,6 +1416,14 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
 }
 @media(max-width:520px){
   .header-inner{padding:0 10px;gap:8px}
+  /* Room for both scan buttons: tighter buttons, shorter site name */
+  .header-actions{gap:5px}
+  .btn-scan-primary{padding:7px 11px;gap:5px}
+  .btn-scan-primary .wi{width:15px;height:15px}
+}
+@media(max-width:430px){
+  /* Small phones: the glass logo stays, the site name makes way for the two scan buttons */
+  .logo-title{display:none}
   .logo-title{font-size:.92rem;max-width:120px}
   .logo-sub{display:none}
   .scan-hint{display:none}
@@ -2348,20 +2373,22 @@ body{
       <p class="landing-notice-kicker">We're watching the SSB too.</p>
       <p class="landing-sub">Scan any bottle and AI instantly reads the label — name, region, grape, vintage. No typing required.</p>
 
-      <div class="landing-scan-box">
-        <div class="landing-scan-box-top">
-          <div class="landing-scan-icon">📷</div>
-          <div>
-            <div class="landing-scan-title">Try scanning a label</div>
-            <div class="landing-scan-sub">No account needed to try it</div>
-          </div>
-        </div>
-        <button class="landing-scan-btn" id="guestScanBtn" onclick="openGuestScan()">
-          📷 Scan a wine label now
+      <!-- The two big choices. Anyone can open either one and see how it works;
+           actually scanning (which spends AI credit) is for members only. -->
+      <div class="landing-fork" role="group" aria-label="What would you like to scan?">
+        <button class="fork-btn fork-bottle" id="guestScanBtn" onclick="openGuestScan()">
+          <span class="fork-ic" aria-hidden="true">📷</span>
+          <span class="fork-t">Scan a bottle</span>
+          <span class="fork-s">Add a wine to your cellar</span>
         </button>
-        <div class="landing-scan-note">Works on any phone or laptop camera</div>
+        <a class="fork-btn fork-shelf" href="/shelf.html">
+          <span class="fork-ic" aria-hidden="true">🛒</span>
+          <span class="fork-t">Scan a shelf</span>
+          <span class="fork-s">Find the best-value wine</span>
+        </a>
       </div>
-      <a class="landing-shelf-link" href="/wine-shelf-scanner.html"><strong>New:</strong> find the best-value wine on a supermarket shelf with the Shelf Scanner →</a>
+      <p class="landing-fork-note">Free for members. Have a look at either one, then <a href="#" onclick="event.preventDefault();goRequestAccess()">request an account</a> to start scanning.</p>
+      <a class="landing-shelf-link" href="/wine-shelf-scanner.html">How does the Shelf Scanner work? →</a>
     </div>
 
     <!-- Proof strip -->
@@ -2470,7 +2497,7 @@ body{
         <div class="landing-faq">
           <div class="landing-step-body" style="margin-bottom:16px">
             <h3 class="landing-step-title">Is Welds Wine Wisdoms free?</h3>
-            <div class="landing-step-text">Yes, it is free to use. You can try the label scanner without an account. Saving wines to your own journal needs an account, which is currently by request.</div>
+            <div class="landing-step-text">Yes, it is free to use. Anyone can look at the bottle and shelf scanners, but scanning and saving wines to your own journal need an account, which is currently by request.</div>
           </div>
           <div class="landing-step-body" style="margin-bottom:16px">
             <h3 class="landing-step-title">How does the wine label scanner work?</h3>
@@ -2490,7 +2517,7 @@ body{
       <!-- Mobile bottom CTA -->
       <div class="landing-bottom-cta">
         <h2 class="landing-bottom-title">Start with your next bottle</h2>
-        <p class="landing-bottom-sub">Scan a label tonight — no account needed.<br>Request access to save your wines.</p>
+        <p class="landing-bottom-sub">Scan a bottle, or a whole shelf.<br>Request access to start scanning.</p>
         <button class="landing-bottom-btn" onclick="document.querySelector('.auth-panel').scrollIntoView({behavior:'smooth'})">Request access ↓</button>
         <div class="landing-bottom-note">Invite only · Access by request</div>
       </div>
@@ -2656,12 +2683,9 @@ body{
       </div>
     </div>
     <div class="header-actions">
-      <div class="scan-cta">
-        <button class="btn-scan-primary" id="openScanModal" aria-label="Scan wine label"><svg class="wi" aria-hidden="true" focusable="false"><use href="#wi-camera"/></svg><span class="scan-label-full">Scan Wine Label</span><span class="scan-label-short">Scan</span></button>
-        <span class="scan-hint">Fastest way to add a wine</span>
-      </div>
-      <button class="btn-add-subtle" id="openAddModal" aria-label="Add wine manually">+ Add Wine</button>
-      <button class="btn-quick-add" id="openQuickAdd" aria-label="Quick add wine" title="Log a wine in seconds"><svg class="wi" aria-hidden="true" focusable="false"><use href="#wi-bolt"/></svg>Quick Add</button>
+      <!-- The two scans: a bottle (add to the cellar) or a shelf (best value) -->
+      <button class="btn-scan-primary" id="openScanModal" aria-label="Scan a bottle"><svg class="wi" aria-hidden="true" focusable="false"><use href="#wi-camera"/></svg><span class="scan-label-full">Scan a bottle</span><span class="scan-label-short">Bottle</span></button>
+      <a class="btn-scan-primary btn-scan-shelf" href="/shelf.html" aria-label="Scan a shelf"><span class="shelf-ic" aria-hidden="true">🛒</span><span class="scan-label-full">Scan a shelf</span><span class="scan-label-short">Shelf</span></a>
       <button class="cellar-pill" id="cellarPill" onclick="openCellarSettings()" style="display:none" title="Cellar members">
         <span class="cellar-pill-dot"></span>
         <span id="cellarPillLabel">Cellar</span>
@@ -2849,7 +2873,7 @@ body{
     <p id="emptyMsg">Scan a label and it'll be in here in about ten seconds.</p>
     <div id="emptyScanBtn" style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
       <button class="btn-primary" onclick="document.getElementById('openScanModal').click()" style="display:flex;align-items:center;gap:7px">📷 Scan Wine Label</button>
-      <button class="btn-secondary" onclick="document.getElementById('openAddModal').click()" style="display:flex;align-items:center;gap:7px">+ Add Wine Manually</button>
+      <button class="btn-secondary" onclick="openModal()" style="display:flex;align-items:center;gap:7px">+ Add Wine Manually</button>
     </div>
     <div id="emptyFilterBtn" style="display:none;justify-content:center">
       <button class="btn-secondary" onclick="clearCellarFilters()">Show all wines</button>
@@ -4135,6 +4159,9 @@ const Scanner = (() => {
   async function analyzeLabel(frontUrl, backUrl=null) {
     const proxyUrl = getProxyUrl();
     if (!proxyUrl || proxyUrl === 'PASTE_WORKER_URL_HERE') throw new Error('NO_KEY');
+    // Scanning is for members: send the sign-in with the photos
+    const auth = await _authHeaders();
+    if (!auth.Authorization) throw new Error('MEMBERS_ONLY');
 
     const fB64 = strip(await resize(frontUrl));
     const bB64 = backUrl ? strip(await resize(backUrl)) : null;
@@ -4143,7 +4170,7 @@ const Scanner = (() => {
     try {
       resp = await fetch(proxyUrl, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: auth,
         body: JSON.stringify({ imageBase64: fB64, backImageBase64: bB64, mimeType: 'image/jpeg' })
       });
     } catch(e) {
@@ -4155,6 +4182,7 @@ const Scanner = (() => {
 
     if (!resp.ok) {
       const c = body?.error || '';
+      if (c === 'MEMBERS_ONLY')                        throw new Error('MEMBERS_ONLY');
       if (c === 'INVALID_KEY' || resp.status === 401)  throw new Error('BAD_KEY');
       if (c === 'RATE_LIMIT'  || resp.status === 429)  throw new Error('RATE_LIMIT');
       if (c === 'PARSE_ERROR' || resp.status === 422)  throw new Error('PARSE_ERROR');
@@ -4252,7 +4280,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function setupEvents() {
-  document.getElementById('openAddModal').addEventListener('click', ()=>openModal());
+  document.getElementById('openAddModal')?.addEventListener('click', ()=>openModal());
   document.getElementById('closeModal').addEventListener('click', closeModal);
   document.getElementById('cancelBtn').addEventListener('click', closeModal);
 
@@ -4288,7 +4316,7 @@ function setupEvents() {
     });
   });
 
-  document.getElementById('openQuickAdd').addEventListener('click', openQuickAdd);
+  document.getElementById('openQuickAdd')?.addEventListener('click', openQuickAdd);
   document.getElementById('locateBtn').addEventListener('click', captureLocation);
   document.getElementById('closeShareModal').addEventListener('click', closeShareModal);
   document.getElementById('shareOverlay').addEventListener('click', e=>{ if(e.target===document.getElementById('shareOverlay')) closeShareModal(); });
@@ -7246,7 +7274,7 @@ async function _fetchEnrichmentNow(wineId, forceRefresh, wineObj) {
   try {
     const res = await fetch(Scanner.getProxyUrl() + '/enrich' + (forceRefresh ? '?refresh=1' : ''), {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: await _authHeaders(),
       body: JSON.stringify({
         wine_id:  w.id,
         name:     w.name || '',
@@ -7804,7 +7832,7 @@ async function runDealsCheck() {
   try {
     const res = await fetch(Scanner.getProxyUrl() + '/deals', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: await _authHeaders(),
       body: '{}'
     });
     const data = await res.json().catch(function () { return {}; });
@@ -8692,6 +8720,8 @@ function updateGoBtn() {
 }
 
 async function doScan() {
+  // Scanning is for members. Visitors can take the photos, then are asked to sign in or request an account.
+  if (!_currentUser) { showScanMembersOnly(); return; }
   // Must have an API key
   if (!Scanner.hasKey()) {
     closeScanModal();
@@ -8743,8 +8773,10 @@ function showScanResultsUI(res) {
 }
 
 function showScanErrorUI(err) {
-  showScanScreen('scanError');
   const m=err.message||'';
+  if (m === 'MEMBERS_ONLY') { showScanMembersOnly(); return; }
+  showScanScreen('scanError');
+  const ic=document.querySelector('#scanError .scan-error-icon'); if (ic) ic.textContent='⚠';
   const msgs={
     NO_KEY:           ['Scan not configured',   'Click ⚙ Scan Setup in the toolbar and follow the 2-step instructions.'],
     NO_KEY_IN_WORKER: ['Key missing in Worker', 'You forgot to replace PASTE_YOUR_KEY_HERE in cloudflare-worker.js before deploying. Edit the file, add your key, and redeploy.'],
@@ -10337,6 +10369,43 @@ async function _checkAdminStatus() {
       window.history.replaceState({}, '', window.location.pathname);
       setTimeout(() => openAdminPanel(p.get('admin')), 500);
     }
+  }
+}
+
+// Headers for calls that spend AI credit: they carry the member's sign-in.
+// Visitors have no sign-in, so these calls are refused by the worker.
+async function _authHeaders() {
+  const h = { 'Content-Type': 'application/json' };
+  try {
+    if (typeof _sb !== 'undefined' && _sb) {
+      const { data } = await _sb.auth.getSession();
+      const token = data?.session?.access_token;
+      if (token) h.Authorization = 'Bearer ' + token;
+    }
+  } catch (_) {}
+  return h;
+}
+
+// Shown in the scan window when a visitor (not signed in) tries to scan
+function showScanMembersOnly() {
+  showScanScreen('scanError');
+  const ic = document.querySelector('#scanError .scan-error-icon'); if (ic) ic.textContent = '🔒';
+  document.getElementById('scanErrorMsg').textContent = 'Scanning is for members';
+  document.getElementById('scanErrorDetail').textContent = 'Welds Wine Wisdoms is free, but you need an account to scan. Request one, and once it\u2019s set up you can sign in and scan. Already a member? Sign in, then scan again.';
+  setScanFooter([
+    {label:'Close', cls:'btn-secondary', action:closeScanModal},
+    {label:'Sign in or request an account', cls:'btn-primary', action:goRequestAccess}
+  ]);
+}
+
+// Take a visitor to the sign-in and request-an-account panel
+function goRequestAccess() {
+  const o = document.getElementById('scanOverlay');
+  if (o && o.classList.contains('open')) { o.classList.remove('open'); o.style.zIndex = ''; document.body.style.overflow = ''; }
+  const target = document.getElementById('reqName') || document.querySelector('.auth-panel');
+  if (target) {
+    target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    if (target.focus) setTimeout(() => target.focus({ preventScroll: true }), 600);
   }
 }
 

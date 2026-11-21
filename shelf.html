@@ -213,6 +213,11 @@ h1{font-family:var(--font-d);font-size:1.5rem;font-weight:600;line-height:1.2}
       <p class="lead" style="margin-top:6px">Take a few photos of the same shelf: one wide shot, then closer shots of each row. Overlapping photos are fine — they help double-check the prices.</p>
     </div>
 
+    <!-- Shown to visitors who aren't signed in: they can look round, but scanning is for members -->
+    <div class="card" id="visitorNote" hidden>
+      <p class="small" style="color:var(--charcoal)">You’re welcome to try this out. Scanning is for members of Welds Wine Wisdoms, which is free: <a href="/">sign in or request an account</a>. <a href="/wine-shelf-scanner.html">How does it work?</a></p>
+    </div>
+
     <div style="display:flex;flex-direction:column;gap:10px">
       <div style="display:flex;justify-content:space-between;align-items:baseline">
         <h2 class="sec-h">Your photos</h2>
@@ -269,7 +274,7 @@ h1{font-family:var(--font-d);font-size:1.5rem;font-weight:600;line-height:1.2}
   <!-- 2. Reading the shelf -->
   <section class="view" id="viewWorking" hidden>
     <div class="center">
-      <h1 style="color:var(--burgundy);font-style:italic">Reading your shelf…</h1>
+      <h1 style="color:var(--burgundy);font-style:italic" id="workingTitle">Reading your shelf…</h1>
       <p class="lead" style="margin-top:6px" id="workingLead">All your photos are read together, so a wine seen in more than one photo is only listed once.</p>
     </div>
     <div class="thumbs" id="workingThumbs"></div>
@@ -281,6 +286,7 @@ h1{font-family:var(--font-d);font-size:1.5rem;font-weight:600;line-height:1.2}
       <p class="small" style="margin-top:6px;color:var(--charcoal)" id="errorText"></p>
       <div style="display:flex;flex-direction:column;gap:8px;margin-top:14px">
         <button class="btn-main" id="retryBtn">Try again</button>
+        <a class="btn-main" id="joinBtn" href="/" hidden>Sign in or request an account</a>
         <button class="btn-line" id="errorBackBtn">Back to my photos</button>
       </div>
     </div>
@@ -355,6 +361,7 @@ const SUPABASE_URL = 'https://phcnswuwrqarikzjvfqd.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_6FvpnoWmZ8pSFy-GWZfFQw_ciawP5aA';
 // While testing, only admins can use the page (the worker checks this too)
 const ADMIN_ONLY = false;
+let isMember = false;   // signed in? Visitors can use the page but not scan
 
 const MAX_PHOTOS = 6;
 const PHOTO_MAX_PX = 1568;          // long side sent to the AI; small price text needs the detail
@@ -595,7 +602,8 @@ async function keepScreenOn(on) {
 
 // ── Scan ─────────────────────────────────────────────────────
 const ERRORS = {
-  NOT_SIGNED_IN: ['You’re signed out', 'Go back to your journal, sign in, then open the Shelf Scanner again. Your photos will still be here.'],
+  NOT_SIGNED_IN: ['You’re signed out', 'Sign in, then come back to the Shelf Scanner. Your photos will still be here for a few hours.'],
+  MEMBERS_ONLY: ['Scanning is for members', 'Welds Wine Wisdoms is free, but you need an account to scan. Already a member? Sign in, then come back: your photos will still be here for a few hours.'],
   ADMIN_ONLY: ['Not available yet', 'The Shelf Scanner is still being tested and is only open to admins.'],
   NO_KEY_IN_WORKER: ['Scanner not set up', 'The shelf scanner worker has no Claude API key yet. Add ANTHROPIC_API_KEY as a secret in Cloudflare.'],
   INVALID_KEY: ['Scanner not set up', 'The Claude API key in the shelf scanner worker was rejected. Check it in Cloudflare.'],
@@ -609,8 +617,14 @@ const ERRORS = {
 async function runScan() {
   if (!photos.length) return;
   savePrefs();
+  // Visitors can take photos and choose options, but scanning is for members
+  if (!isMember) {
+    try { isMember = !!(await sb.auth.getSession()).data.session; } catch (_) {}
+    if (!isMember) { showScanProblem('MEMBERS_ONLY'); return; }
+  }
   showView('viewWorking');
   $('errorCard').hidden = true;
+  $('workingTitle').hidden = false;
   $('stepsCard').hidden = false;
   $('cancelBtn').hidden = false;
   $('workingNote').hidden = false;
@@ -658,19 +672,33 @@ async function runScan() {
   if (errorCode === 'CANCELLED') { showView('viewCapture'); return; }
   if (errorCode) {
     console.warn('[shelf] scan failed:', errorCode, errorDetail);
-    const [title, text] = ERRORS[errorCode] || ['That didn’t work', 'Something went wrong (' + errorCode + (errorDetail ? ': ' + errorDetail : '') + '). Try again.'];
-    $('errorTitle').textContent = title;
-    $('errorText').textContent = text;
-    $('stepsCard').hidden = true;
-    $('cancelBtn').hidden = true;
-    $('workingNote').hidden = true;
-    $('workingLead').hidden = true;
-    $('retryBtn').hidden = errorCode === 'ADMIN_ONLY' || errorCode === 'NOT_SIGNED_IN';
-    $('errorCard').hidden = false;
+    showScanProblem(errorCode, errorDetail);
     return;
   }
   renderResults();
   showView('viewResults');
+}
+
+// The "that didn't work" card, also used for "scanning is for members"
+function showScanProblem(code, detail) {
+  const [title, text] = ERRORS[code] || ['That didn’t work', 'Something went wrong (' + code + (detail ? ': ' + detail : '') + '). Try again.'];
+  const needsSignIn = code === 'NOT_SIGNED_IN' || code === 'MEMBERS_ONLY';
+  if ($('viewWorking').hidden) {   // not started yet: show the photos being kept
+    const thumbs = $('workingThumbs');
+    thumbs.textContent = '';
+    photos.forEach((p, i) => { const im = el('img'); im.src = p.url; im.alt = 'Photo ' + (i + 1); thumbs.appendChild(im); });
+    showView('viewWorking');
+  }
+  $('errorTitle').textContent = title;
+  $('errorText').textContent = text;
+  $('workingTitle').hidden = true;
+  $('stepsCard').hidden = true;
+  $('cancelBtn').hidden = true;
+  $('workingNote').hidden = true;
+  $('workingLead').hidden = true;
+  $('retryBtn').hidden = needsSignIn || code === 'ADMIN_ONLY';
+  $('joinBtn').hidden = !needsSignIn;
+  $('errorCard').hidden = false;
 }
 
 // ── Results ──────────────────────────────────────────────────
@@ -1170,7 +1198,13 @@ async function start() {
   sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { flowType: 'implicit' } });
   let session = null;
   try { session = (await sb.auth.getSession()).data.session; } catch (_) {}
-  if (!session || !session.user) { gate('Please sign in first', 'Sign in on your journal, then open the Shelf Scanner from the menu.'); return; }
+  isMember = !!(session && session.user);
+  if (!isMember) {
+    // A visitor: they can look round and set up a scan, but not run one
+    $('visitorNote').hidden = false;
+    $('backLabel').textContent = 'Back to Welds Wine Wisdoms';
+  }
+  if (ADMIN_ONLY && !isMember) { gate('Please sign in first', 'Sign in on your journal, then open the Shelf Scanner from the menu.'); return; }
   if (ADMIN_ONLY) {
     let isAdmin = false;
     try {

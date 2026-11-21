@@ -698,6 +698,29 @@ async function verifyAdmin(env, request) {
   }
 }
 __name(verifyAdmin, "verifyAdmin");
+// ── Members only ─────────────────────────────────────────────
+// Anything that spends Anthropic credit must come from a signed-in member.
+// New sign-ups are switched off in Supabase, so a valid sign-in means an
+// account the admin created or invited. The Origin check alone is not
+// enough: any program can pretend to be the website.
+async function verifyMember(env, request) {
+  const token = (request.headers.get("Authorization") || "").replace(/^Bearer\s+/i, "").trim();
+  if (!token) return null;
+  const key = env.SUPABASE_SERVICE_KEY;
+  if (!key) return null;
+  try {
+    const res = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
+      headers: { apikey: key, Authorization: `Bearer ${token}` }
+    });
+    if (!res.ok) return null;
+    const user = await res.json();
+    return user && user.id ? user : null;
+  } catch (e) {
+    console.warn("verifyMember: check failed:", e.message);
+    return null;
+  }
+}
+__name(verifyMember, "verifyMember");
 
 /* ═══════════════════════════════════════════════════════════════
    PUBLIC WINE PAGE RENDERERS
@@ -1735,7 +1758,8 @@ var worker_default = {
       const refresh = url.searchParams.get("refresh") === "1";
       console.log("enrich: wine_id=", wine_id, "refresh=", refresh);
 
-      // If refresh requested, delete existing row first
+      // If refresh requested, delete existing row first (members only)
+      if (refresh && !(await verifyMember(env, request))) return new Response(JSON.stringify({ error: "MEMBERS_ONLY" }), { status: 401, headers: cors });
       if (refresh) {
         try {
           const sbKey = env.SUPABASE_SERVICE_KEY;
@@ -1756,6 +1780,9 @@ var worker_default = {
           }
         } catch (e) { console.warn("enrich: existing check failed:", e.message); }
       }
+
+      // Saved results above are free to read; asking Claude is members only
+      if (!(await verifyMember(env, request))) return new Response(JSON.stringify({ error: "MEMBERS_ONLY" }), { status: 401, headers: cors });
 
       const wineParts = [name, winery, grape, region, country, vintage, style].filter(Boolean);
       if (wineParts.length < 2) return new Response(JSON.stringify({ error: "Not enough wine info to research" }), { status: 400, headers: cors });
@@ -1959,6 +1986,8 @@ Rules:
         }
       } catch (e) { console.warn("deals: saved result check failed:", e.message); }
 
+      // The saved result above is free to read; a fresh search is members only
+      if (!(await verifyMember(env, request))) return new Response(JSON.stringify({ error: "MEMBERS_ONLY" }), { status: 401, headers: cors });
       const dealsKey = env?.ANTHROPIC_API_KEY || ANTHROPIC_API_KEY;
       if (!dealsKey) return new Response(JSON.stringify({ error: "NO_KEY" }), { status: 500, headers: cors });
       const todayUK = new Date().toLocaleDateString("en-CA", { timeZone: "Europe/London" }); // YYYY-MM-DD
@@ -2058,6 +2087,8 @@ Rules:
     if (request.method !== "POST") return fetch(request);
     // Label scanning spends your Anthropic credit, so only our own pages may use it
     if (!origin_ok(request)) return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403, headers: cors });
+    // ...and only for signed-in members
+    if (!(await verifyMember(env, request))) return new Response(JSON.stringify({ error: "MEMBERS_ONLY" }), { status: 401, headers: cors });
     const anthropicKey = env?.ANTHROPIC_API_KEY || ANTHROPIC_API_KEY;
     if (!anthropicKey || anthropicKey === "PASTE_YOUR_ANTHROPIC_KEY_HERE") return new Response(JSON.stringify({ error: "NO_KEY_IN_WORKER" }), { status: 500, headers: cors });
     let body;
