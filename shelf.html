@@ -131,13 +131,15 @@ h1{font-family:var(--font-d);font-size:1.5rem;font-weight:600;line-height:1.2}
 .heat-tools{display:flex;gap:6px}
 .tool{min-height:36px;padding:0 12px;border-radius:18px;border:1px solid var(--light-gray);background:var(--ivory);font-size:.8rem}
 .tool[aria-pressed="true"]{background:var(--burgundy-deep);border-color:var(--burgundy-deep);color:var(--parchment)}
-.heat-tabs{display:flex;flex-wrap:wrap;gap:6px}
+.heat-photos{display:flex;flex-direction:column;gap:14px}
+.heat-photo{margin:0}
+.heat-cap{font-size:.76rem;font-weight:600;color:var(--text-2);margin-bottom:5px}
 .heat-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:var(--r);background:#2D2420}
 .heat-wrap{position:relative;width:100%;line-height:0}
-.heat-scroll.zoomed .heat-wrap{width:220%}
+.heat.zoomed .heat-wrap{width:220%}
 .heat-wrap img{display:block;width:100%;height:auto;user-select:none;-webkit-user-select:none}
 .heat-layer{position:absolute;inset:0}
-.heat-layer.off .spot{background:none!important}
+.heat.off .spot{background:none!important}
 .spot{position:absolute;border:none;padding:0;background:transparent;border-radius:40%;-webkit-tap-highlight-color:transparent}
 .spot.none{outline:2px dashed rgba(255,255,255,.75);outline-offset:-6px;border-radius:8px}
 /* A wine of a colour you didn't ask for: dimmed, not coloured */
@@ -191,7 +193,6 @@ h1{font-family:var(--font-d);font-size:1.5rem;font-weight:600;line-height:1.2}
         <div class="hdr-title">Shelf Scanner</div>
         <div class="hdr-sub">Welds Wine Wisdoms</div>
       </div>
-      <span class="hdr-badge" title="Only admins can see this while it is being tested">Testing</span>
     </div>
   </div>
 </header>
@@ -298,15 +299,8 @@ h1{font-family:var(--font-d);font-size:1.5rem;font-weight:600;line-height:1.2}
           <button class="tool" id="heatZoom" aria-pressed="false" type="button">Zoom</button>
         </div>
       </div>
-      <div class="heat-tabs" id="heatTabs" role="group" aria-label="Choose photo"></div>
-      <div class="heat-scroll" id="heatScroll">
-        <div class="heat-wrap">
-          <img id="heatImg" alt="Your photo of the shelf"/>
-          <div class="heat-layer" id="heatLayer"></div>
-          <svg class="leaders" id="heatLeaders" aria-hidden="true"></svg>
-          <div class="badges" id="heatBadges" aria-hidden="true"></div>
-        </div>
-      </div>
+      <!-- Every photo is shown here, one under another -->
+      <div class="heat-photos" id="heatPhotos"></div>
       <div class="legend" aria-hidden="true">
         <div class="legend-bar"></div>
         <div class="legend-labels"><span>Best on this shelf</span><span>Fair</span><span>Poor value</span></div>
@@ -360,7 +354,7 @@ const SHELF_WORKER_URL = 'https://weldswine-shelf.james-weld.workers.dev';
 const SUPABASE_URL = 'https://phcnswuwrqarikzjvfqd.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_6FvpnoWmZ8pSFy-GWZfFQw_ciawP5aA';
 // While testing, only admins can use the page (the worker checks this too)
-const ADMIN_ONLY = true;
+const ADMIN_ONLY = false;
 
 const MAX_PHOTOS = 6;
 const PHOTO_MAX_PX = 1568;          // long side sent to the AI; small price text needs the detail
@@ -804,7 +798,7 @@ function renderResults() {
 }
 
 // ── Heat map ─────────────────────────────────────────────────
-let heatPhoto = 1, heatSelected = null, heatOff = false, heatZoomed = false;
+let heatSelected = null, heatOff = false, heatZoomed = false;
 
 /* How the colours are worked out
    1. Every wine with a price gets a value score from the AI (1–10).
@@ -879,101 +873,126 @@ function verdictText(score) {
 function pickRank(id) { const i = (result.picks || []).findIndex(p => p.wine_id === id); return i >= 0 ? i + 1 : 0; }
 function isPoor(id) { return (result.poor_value || []).some(p => p.wine_id === id); }
 
+// Where a wine is: one box per photo it appears in. (Results saved by
+// the older worker only have a single "location", so that still works.)
+function wineLocs(w) {
+  const list = Array.isArray(w.locations) && w.locations.length ? w.locations : (w.location ? [w.location] : []);
+  return list.filter(L => L && photos[L.photo - 1]);
+}
+
+// One panel per photo: { n, wrap, layer, svg, badgeBox, badges: [] }
+let heatPanels = [];
+
 function renderHeat() {
   const sec = $('heatSection');
-  const located = result.wines.filter(w => w.location && photos[w.location.photo - 1]);
+  const located = result.wines.filter(w => wineLocs(w).length);
   if (!located.length) { sec.hidden = true; return; }
   sec.hidden = false;
+  sec.classList.toggle('off', heatOff);
+  sec.classList.toggle('zoomed', heatZoomed);
 
-  // Which photos have wines marked on them
-  const byPhoto = {};
-  located.forEach(w => { byPhoto[w.location.photo] = (byPhoto[w.location.photo] || 0) + 1; });
-  const photoNums = Object.keys(byPhoto).map(Number).sort((a, b) => a - b);
-  if (!byPhoto[heatPhoto]) heatPhoto = byPhoto[result.overview_photo] ? result.overview_photo : photoNums[0];
+  // Every photo that has at least one wine marked on it, in photo order
+  const photoNums = [...new Set(located.flatMap(w => wineLocs(w).map(L => L.photo)))].sort((a, b) => a - b);
 
-  const tabs = $('heatTabs');
-  tabs.textContent = '';
-  tabs.hidden = photoNums.length < 2;
-  photoNums.forEach(n => {
-    const b = el('button', 'tool', 'Photo ' + n + ' · ' + byPhoto[n] + (byPhoto[n] === 1 ? ' wine' : ' wines'));
-    b.type = 'button';
-    b.setAttribute('aria-pressed', String(n === heatPhoto));
-    b.addEventListener('click', () => { heatPhoto = n; heatSelected = null; renderHeat(); });
-    tabs.appendChild(b);
-  });
-
-  const img = $('heatImg');
-  img.onload = () => layoutBadges();   // sizes are only known once the photo has loaded
-  if (img.getAttribute('src') !== photos[heatPhoto - 1].url) img.src = photos[heatPhoto - 1].url;
-  $('heatImg').alt = 'Photo ' + heatPhoto + ' of the shelf, with each wine coloured by how good value it is';
-  $('heatScroll').classList.toggle('zoomed', heatZoomed);
-  $('heatLayer').classList.toggle('off', heatOff);
-
-  const onThis = located.filter(w => w.location.photo === heatPhoto);
-  // Default selection: the best pick shown on this photo
-  if (!heatSelected || !onThis.some(w => w.id === heatSelected)) {
-    const best = onThis.filter(w => pickRank(w.id)).sort((a, b) => pickRank(a.id) - pickRank(b.id))[0];
+  // Default selection: the best pick on the shelf
+  if (!heatSelected || !located.some(w => w.id === heatSelected)) {
+    const best = located.filter(w => pickRank(w.id)).sort((a, b) => pickRank(a.id) - pickRank(b.id))[0];
     heatSelected = best ? best.id : null;
   }
 
-  const layer = $('heatLayer');
-  layer.textContent = '';
-  heatBadges = [];
-  // Draw the poorest first so the best value sits on top where boxes overlap
-  onThis.slice().sort((a, b) => (heatScore(a) || 0) - (heatScore(b) || 0)).forEach(w => {
-    const L = w.location;
-    const spot = el('button', 'spot');
-    spot.type = 'button';
-    // Let the colour spread a little beyond the bottles, like a heat map
-    const padX = L.w * 0.12, padY = L.h * 0.08;
-    const left = Math.max(0, L.x - padX), top = Math.max(0, L.y - padY);
-    spot.style.left = (left * 100) + '%';
-    spot.style.top = (top * 100) + '%';
-    spot.style.width = (Math.min(1 - left, L.w + padX * 2) * 100) + '%';
-    spot.style.height = (Math.min(1 - top, L.h + padY * 2) * 100) + '%';
-    const c = wineColour(w);
-    if (c) {
-      const rgb = c.join(',');
-      // The picks glow a little more strongly so they stand out
-      const strong = pickRank(w.id) ? [0.75, 0.55] : [0.55, 0.38];
-      spot.style.background = 'radial-gradient(ellipse at center, rgba(' + rgb + ',' + strong[0] + ') 0%, rgba(' + rgb + ',' + strong[1] + ') 45%, rgba(' + rgb + ',0) 75%)';
-    } else {
-      spot.classList.add(inRunning(w) ? 'none' : 'other');
-    }
-    if (w.id === heatSelected) spot.classList.add('sel');
-    const rank = pickRank(w.id);
-    if (rank || isPoor(w.id)) heatBadges.push({ w, rank, poor: !rank });
-    const pp = payPrice(w);
-    spot.setAttribute('aria-label', w.name + (pp ? ', ' + money(pp) : ', no price seen') + ', ' + (inRunning(w) ? verdictText(heatScore(w)) : notWantText()) + (rank ? ', best value pick ' + rank : ''));
-    spot.addEventListener('click', () => { heatSelected = w.id; renderHeat(); });
-    layer.appendChild(spot);
+  const box = $('heatPhotos');
+  box.textContent = '';
+  heatPanels = [];
+  photoNums.forEach(n => {
+    const fig = el('figure', 'heat-photo');
+    if (photoNums.length > 1) fig.appendChild(el('figcaption', 'heat-cap', 'Photo ' + n + ' of ' + photos.length));
+    const scroll = el('div', 'heat-scroll');
+    const wrap = el('div', 'heat-wrap');
+    const img = el('img');
+    img.alt = 'Photo ' + n + ' of the shelf, with each wine coloured by how good value it is';
+    const layer = el('div', 'heat-layer');
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('class', 'leaders'); svg.setAttribute('aria-hidden', 'true');
+    const badgeBox = el('div', 'badges');
+    badgeBox.setAttribute('aria-hidden', 'true');
+    wrap.append(img, layer, svg, badgeBox);
+    scroll.appendChild(wrap);
+    fig.appendChild(scroll);
+    box.appendChild(fig);
+    const panel = { n, layer, svg, badgeBox, badges: [] };
+    heatPanels.push(panel);
+    img.onload = () => layoutBadges(panel);   // sizes are only known once the photo has loaded
+    img.src = photos[n - 1].url;
+
+    // The wines in this photo. Draw the poorest first so the best value
+    // sits on top where boxes overlap.
+    const onThis = located.map(w => ({ w, L: wineLocs(w).find(L => L.photo === n) })).filter(x => x.L);
+    onThis.sort((a, b) => (heatScore(a.w) || 0) - (heatScore(b.w) || 0)).forEach(({ w, L }) => {
+      const spot = el('button', 'spot');
+      spot.type = 'button';
+      spot.dataset.id = w.id;
+      // Let the colour spread a little beyond the bottles, like a heat map
+      const padX = L.w * 0.12, padY = L.h * 0.08;
+      const left = Math.max(0, L.x - padX), top = Math.max(0, L.y - padY);
+      spot.style.left = (left * 100) + '%';
+      spot.style.top = (top * 100) + '%';
+      spot.style.width = (Math.min(1 - left, L.w + padX * 2) * 100) + '%';
+      spot.style.height = (Math.min(1 - top, L.h + padY * 2) * 100) + '%';
+      const c = wineColour(w);
+      if (c) {
+        const rgb = c.join(',');
+        // The picks glow a little more strongly so they stand out
+        const strong = pickRank(w.id) ? [0.75, 0.55] : [0.55, 0.38];
+        spot.style.background = 'radial-gradient(ellipse at center, rgba(' + rgb + ',' + strong[0] + ') 0%, rgba(' + rgb + ',' + strong[1] + ') 45%, rgba(' + rgb + ',0) 75%)';
+      } else {
+        spot.classList.add(inRunning(w) ? 'none' : 'other');
+      }
+      if (w.id === heatSelected) spot.classList.add('sel');
+      const rank = pickRank(w.id);
+      if (rank || isPoor(w.id)) panel.badges.push({ w, L, rank, poor: !rank });
+      const pp = payPrice(w);
+      spot.setAttribute('aria-label', w.name + (pp ? ', ' + money(pp) : ', no price seen') + ', ' + (inRunning(w) ? verdictText(heatScore(w)) : notWantText()) + (rank ? ', best value pick ' + rank : '') + ', photo ' + n);
+      spot.addEventListener('click', () => selectHeatWine(w.id));
+      layer.appendChild(spot);
+    });
   });
 
   const want = scanWant();
   $('heatWantNote').hidden = !want;
   if (want) $('heatWantNote').textContent = 'Only ' + COLOUR_WORDS[want][1] + ' are coloured. Darkened wines are other colours.';
 
-  layoutBadges();
+  layoutAllBadges();
   renderHeatSelection();
+}
+
+// Tapping a wine: outline it in every photo and show its details,
+// without rebuilding the photos
+function selectHeatWine(id) {
+  heatSelected = id;
+  document.querySelectorAll('#heatPhotos .spot').forEach(s => s.classList.toggle('sel', s.dataset.id === id));
+  renderHeatSelection();
+  const sel = $('heatSel');
+  if (!sel.hidden && sel.getBoundingClientRect().top > window.innerHeight) sel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
 // ── Number badges: keep them from sitting on top of each other ──
 // Each badge starts at the top-centre of its wine. If that spot is
 // already taken by another badge, it is moved to the nearest free spot
 // and a thin line is drawn back to its wine. Best picks are placed
-// first, so they move the least.
-let heatBadges = [];
+// first, so they move the least. Each photo is laid out separately.
 const BADGE_GAP = 36;   // px between badge centres
 
-function layoutBadges() {
-  const box = $('heatBadges'), svg = $('heatLeaders');
+function layoutAllBadges() { heatPanels.forEach(layoutBadges); }
+
+function layoutBadges(panel) {
+  const box = panel.badgeBox, svg = panel.svg;
   box.textContent = '';
   svg.textContent = '';
   const W = box.clientWidth, H = box.clientHeight;
-  const order = heatBadges.slice().sort((a, b) => (a.rank || 99) - (b.rank || 99));
+  const order = panel.badges.slice().sort((a, b) => (a.rank || 99) - (b.rank || 99));
   const placed = [];
   order.forEach(item => {
-    const L = item.w.location;
+    const L = item.L;
     let x, y, anchorX, anchorY;
     if (W > 0 && H > 0) {
       anchorX = (L.x + L.w / 2) * W;
@@ -989,7 +1008,7 @@ function layoutBadges() {
       b.style.left = ((L.x + L.w / 2) * 100) + '%';
       b.style.top = 'calc(' + (L.y * 100) + '% + 18px)';
     }
-    b.addEventListener('click', () => { heatSelected = item.w.id; renderHeat(); });
+    b.addEventListener('click', () => selectHeatWine(item.w.id));
     box.appendChild(b);
     // Moved away from its wine? Draw a line back to it
     if (W > 0 && Math.hypot(x - anchorX, y - (anchorY + 15)) > 12) {
@@ -1189,17 +1208,17 @@ $('heatToggle').addEventListener('click', () => {
   heatOff = !heatOff;
   $('heatToggle').setAttribute('aria-pressed', String(heatOff));
   $('heatToggle').textContent = heatOff ? 'Show colours' : 'Hide colours';
-  $('heatLayer').classList.toggle('off', heatOff);
+  $('heatSection').classList.toggle('off', heatOff);
 });
 $('heatZoom').addEventListener('click', () => {
   heatZoomed = !heatZoomed;
   $('heatZoom').setAttribute('aria-pressed', String(heatZoomed));
-  $('heatScroll').classList.toggle('zoomed', heatZoomed);
-  layoutBadges();
+  $('heatSection').classList.toggle('zoomed', heatZoomed);
+  layoutAllBadges();
 });
 // Re-place badges when the screen size changes (e.g. turning the phone)
 let resizeTimer = null;
-window.addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(() => { if (!$('heatSection').hidden) layoutBadges(); }, 150); });
+window.addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(() => { if (!$('heatSection').hidden) layoutAllBadges(); }, 150); });
 $('loyaltyInput').addEventListener('change', savePrefs);
 $('shopInput').addEventListener('change', savePrefs);
 

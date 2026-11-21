@@ -24,7 +24,7 @@
      member later, change ADMIN_ONLY to false and redeploy.
    ══════════════════════════════════════════════════════════════ */
 
-const ADMIN_ONLY = true;
+const ADMIN_ONLY = false;
 
 // The model that reads the shelf. Sonnet reads small price tags far
 // more reliably than Haiku, which matters here.
@@ -161,11 +161,11 @@ YOUR TASKS
 
 6. Say where each wine is in the photos, so it can be marked on a picture of the shelf.
    - Choose the "overview_photo": the photo that shows the most of the shelf (usually the wide shot).
-   - For each wine, give "location": a box around that wine's front-facing bottles (all of its bottles side by side, not the price tag) in ONE photo.
-   - Use the overview photo whenever the wine can be seen in it, so the whole shelf can be shown on one picture. Otherwise use the photo where the wine is clearest.
+   - For each wine, give "locations": a list of boxes, ONE box for EACH photo the wine can be seen in. Each box goes around that wine's front-facing bottles in that photo (all of its bottles side by side, not the price tag).
+   - Every photo is shown to the person, one under another, so mark each wine in every photo where it appears, not just one. Never give two boxes for the same photo.
    - Give the box as fractions of that photo's width and height, measured from its top-left corner: "x" and "y" are the top-left corner of the box, "w" and "h" its width and height. All four are between 0 and 1. For example, a wine in the top-left quarter of the photo might be {"photo": 1, "x": 0.05, "y": 0.02, "w": 0.2, "h": 0.22}.
    - Boxes for different wines must not overlap: neighbouring wines on the same shelf should sit side by side, each box ending where the next wine's bottles begin.
-   - Be as accurate as you can. If you cannot tell where a wine is, set "location" to null.
+   - Be as accurate as you can. Leave out any photo where you cannot tell where the wine is. If you cannot place it in any photo, give an empty list.
 
 7. Write a one-sentence summary of the shelf.
 
@@ -190,7 +190,7 @@ Return ONLY a valid JSON object — no markdown fences, no explanation — exact
       "photos": [1, 3],
       "confidence": "high, medium or low",
       "value_score": 7 or null,
-      "location": { "photo": 1, "x": 0.05, "y": 0.02, "w": 0.2, "h": 0.22 } or null,
+      "locations": [ { "photo": 1, "x": 0.05, "y": 0.02, "w": 0.2, "h": 0.22 }, { "photo": 3, "x": 0.4, "y": 0.1, "w": 0.3, "h": 0.5 } ],
       "note": "short note on anything to check, or null"
     }
   ],
@@ -271,6 +271,15 @@ function cleanResult(raw, photoCount, want) {
     if (!price && loyalty) { price = loyalty; loyalty = null; }        // only one price seen
     if (loyalty && price && loyalty >= price) loyalty = null;            // not actually a discount
     const score = parseInt(w.value_score, 10);
+    // Where the wine is: one box per photo it appears in. (Older answers
+    // gave a single "location", so that is accepted too.)
+    const rawLocs = Array.isArray(w.locations) ? w.locations : (w.location ? [w.location] : []);
+    const locations = [];
+    rawLocs.forEach((l) => {
+      const c = cleanLocation(l, photoCount);
+      if (c && !locations.some((x) => x.photo === c.photo)) locations.push(c);
+    });
+    locations.sort((a, b) => a.photo - b.photo);
     out.wines.push({
       id,
       name: str(w.name, 120) || "Unnamed wine",
@@ -286,7 +295,9 @@ function cleanResult(raw, photoCount, want) {
       photos: [...new Set(photos)].sort((a, b) => a - b),
       confidence: conf,
       value_score: price && score >= 1 && score <= 10 ? score : null,
-      location: cleanLocation(w.location, photoCount),
+      locations,
+      // Kept for older pages: the box on the overview photo, or the first one
+      location: locations.find((l) => l.photo === out.overview_photo) || locations[0] || null,
       note: str(w.note, 200)
     });
   });
@@ -353,7 +364,7 @@ async function handleScan(request, env) {
     res = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: { "Content-Type": "application/json", "x-api-key": apiKey, "anthropic-version": "2023-06-01" },
-      body: JSON.stringify({ model: MODEL, max_tokens: 8000, messages: [{ role: "user", content }] })
+      body: JSON.stringify({ model: MODEL, max_tokens: 12000, messages: [{ role: "user", content }] })
     });
   } catch (e) {
     return reply(request, 502, { error: "AI_UNREACHABLE" });
