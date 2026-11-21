@@ -1,408 +1,1209 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+<title>Shelf Scanner — Welds Wine Wisdoms</title>
+<meta name="robots" content="noindex"/>
+<meta name="theme-color" content="#5C1525"/>
+<link rel="icon" href="/favicon.ico" sizes="32x32"/>
+<link rel="apple-touch-icon" href="/icon-192.png"/>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,500;0,600;1,500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<!-- Same Supabase library as the journal, so you stay signed in -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+/* Colours and fonts copied from the journal (index.html) so this page looks like part of the same site */
+:root{
+  --burgundy:#8B2439; --burgundy-deep:#5C1525; --parchment:#F5EDE2; --cream:#F9F5F0; --ivory:#FFFFFF;
+  --charcoal:#2D2420; --text-2:#5F5450; --light-gray:#E8DDD4; --gold:#C9A34A; --gold-lt:#E2C070; --gold-text:#8A6A1F;
+  --font-d:'Lora',Georgia,serif; --font-b:'Inter',system-ui,-apple-system,sans-serif;
+  --r:10px; --rl:16px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{font-family:var(--font-b);background:var(--cream);color:var(--charcoal);line-height:1.55;-webkit-font-smoothing:antialiased;min-height:100vh;padding-bottom:env(safe-area-inset-bottom,0px)}
+button,input{font-family:inherit;font-size:inherit;color:inherit}
+button{cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+a{color:var(--burgundy)}
+:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+[hidden]{display:none!important}
+
+/* Header */
+.hdr{background:var(--burgundy-deep);color:var(--parchment);position:sticky;top:0;z-index:10;padding:calc(10px + env(safe-area-inset-top,0px)) 16px 12px;box-shadow:0 2px 16px rgba(44,20,36,.25)}
+.hdr-in{max-width:560px;margin:0 auto}
+.hdr-back{display:inline-flex;align-items:center;gap:4px;min-height:32px;color:var(--parchment);text-decoration:none;font-size:.82rem;background:none;border:none;padding:0}
+.hdr-row{display:flex;align-items:center;gap:10px;margin-top:4px}
+.hdr-title{font-family:var(--font-d);font-size:1.2rem;font-weight:600;line-height:1.1}
+.hdr-sub{font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;font-style:italic;color:#E8C6CE;margin-top:3px}
+.hdr-badge{margin-left:auto;font-size:.66rem;font-weight:600;background:rgba(201,163,74,.18);color:var(--gold-lt);border:1px solid rgba(201,163,74,.35);border-radius:20px;padding:2px 9px}
+
+main{max-width:560px;margin:0 auto;padding:20px 16px 40px}
+.view{display:flex;flex-direction:column;gap:18px}
+h1{font-family:var(--font-d);font-size:1.5rem;font-weight:600;line-height:1.2}
+.lead{font-size:.92rem;color:var(--text-2)}
+.sec-h{font-size:.7rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-text)}
+.card{background:var(--ivory);border:1px solid var(--light-gray);border-radius:var(--rl);padding:14px}
+.small{font-size:.78rem;color:var(--text-2)}
+.center{text-align:center}
+
+/* Buttons */
+.btn-main{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:50px;border:none;border-radius:var(--r);background:var(--gold);color:var(--burgundy-deep);font-size:.95rem;font-weight:600;text-decoration:none}
+.btn-main:disabled{background:#EFE8DF;color:#8C817C;cursor:default}
+.btn-line{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;min-height:46px;border:1px solid var(--burgundy);border-radius:var(--r);background:var(--ivory);color:var(--burgundy);font-size:.9rem;font-weight:600;text-decoration:none}
+.btn-add{display:flex;align-items:center;justify-content:center;gap:8px;min-height:48px;border:1.5px dashed var(--gold);border-radius:var(--r);background:rgba(201,163,74,.08);color:#6E5416;font-size:.9rem;font-weight:600;position:relative}
+.btn-add input{position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer}
+.add-row{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:8px}
+.btn-add.alt{border-style:solid;border-color:var(--light-gray);background:var(--ivory);color:var(--charcoal);font-weight:500}
+
+/* Photos */
+.photos{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.photo{margin:0;background:var(--ivory);border:1px solid var(--light-gray);border-radius:var(--r);overflow:hidden;position:relative}
+.photo img{display:block;width:100%;height:110px;object-fit:cover;background:#EFE8DF}
+.photo figcaption{padding:6px 9px;font-size:.76rem}
+.photo-x{position:absolute;top:6px;right:6px;width:34px;height:34px;border-radius:17px;border:none;background:rgba(45,36,32,.75);color:#fff;display:flex;align-items:center;justify-content:center}
+.photos-empty{grid-column:1/-1;border:1px dashed var(--light-gray);border-radius:var(--r);padding:22px 14px;text-align:center;font-size:.86rem;color:var(--text-2);background:var(--ivory)}
+.tips{font-size:.8rem;color:var(--text-2);line-height:1.5}
+.tips li{margin-left:18px;margin-bottom:3px}
+
+/* Form bits */
+.chk{display:flex;align-items:center;gap:10px;min-height:40px;font-size:.92rem;cursor:pointer}
+.chk input{width:22px;height:22px;accent-color:var(--burgundy);flex-shrink:0}
+.fld{display:flex;flex-direction:column;gap:5px;margin-top:6px}
+.fld label{font-size:.78rem;color:var(--text-2)}
+.fld input{height:44px;border:1px solid var(--light-gray);border-radius:var(--r);padding:0 12px;background:var(--cream);font-size:16px}
+.fld input:focus{outline:none;border-color:var(--burgundy);background:var(--ivory)}
+
+/* Working */
+.steps{list-style:none;display:flex;flex-direction:column;gap:16px}
+.step{display:flex;gap:12px;align-items:flex-start}
+.dot{flex-shrink:0;width:26px;height:26px;border-radius:13px;border:2px solid var(--light-gray);display:flex;align-items:center;justify-content:center}
+.step.done .dot{background:var(--gold);border-color:var(--gold);color:var(--burgundy-deep)}
+.step.now .dot{border:3px solid var(--light-gray);border-top-color:var(--burgundy);animation:spin .9s linear infinite}
+.step-t{font-size:.9rem;font-weight:600}
+.step-d{font-size:.78rem;color:var(--text-2)}
+.step.wait .step-t{color:#8C817C}
+@keyframes spin{to{transform:rotate(360deg)}}
+.thumbs{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px}
+.thumbs img{width:100%;height:52px;object-fit:cover;border-radius:6px;border:1px solid var(--light-gray)}
+.err{border-color:#E9B8C2;background:#FDF3F5}
+.err-t{font-family:var(--font-d);font-size:1.05rem;font-weight:600;color:var(--burgundy)}
+
+/* Results */
+.sum-h{font-family:var(--font-d);font-size:1.25rem;font-weight:600}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.chip{font-size:.74rem;padding:4px 10px;border-radius:20px;background:#ECE6E2;color:#4A403C}
+.chip.gold{background:#F1E7D2;color:#6E5416}
+.chip.red{background:#F6E1E5;color:#7A1F33}
+/* Wine colour tags (Red, White, Rosé …) */
+.chip.s-red{background:#EBD3D9;color:#6A1A2C}
+.chip.s-white{background:#F4EDD3;color:#5E4E17}
+.chip.s-rose{background:#FBE1E6;color:#9C3550}
+.chip.s-other{background:#E4E1EC;color:#463F5C}
+.pick{background:var(--ivory);border:1px solid var(--light-gray);border-radius:var(--rl);padding:16px;display:flex;flex-direction:column;gap:11px;box-shadow:0 2px 10px rgba(44,36,32,.06)}
+.pick-top{display:flex;gap:12px;align-items:flex-start}
+.rank{flex-shrink:0;width:34px;height:34px;border-radius:17px;background:var(--burgundy-deep);color:var(--gold-lt);font-family:var(--font-d);font-weight:600;font-size:1.05rem;display:flex;align-items:center;justify-content:center}
+.wname{font-family:var(--font-d);font-size:1.08rem;font-weight:600;line-height:1.25}
+.wsub{font-size:.78rem;color:var(--text-2)}
+.price-row{display:flex;align-items:baseline;flex-wrap:wrap;gap:8px}
+.price-big{font-family:var(--font-d);font-size:1.6rem;font-weight:600;color:var(--burgundy);line-height:1}
+.loy{font-size:.7rem;font-weight:600;padding:3px 8px;border-radius:4px;background:#F7D44C;color:var(--charcoal)}
+.was{font-size:.84rem;color:var(--text-2);text-decoration:line-through}
+.also{font-size:.8rem;color:var(--text-2)}
+.why{font-size:.9rem;line-height:1.55;color:#3D3330}
+.conf-row{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.conf{font-size:.72rem;font-weight:600;padding:3px 9px;border-radius:20px}
+.conf.high{background:#E1EEE8;color:#24493E}
+.conf.medium{background:#F6EBD3;color:#6B4A12}
+.conf.low{background:#F6E1E5;color:#7A1F33}
+.note{font-size:.78rem;color:#7A1F33}
+.poor{background:var(--ivory);border:1px solid var(--light-gray);border-radius:var(--rl);padding:2px 14px}
+.poor-row{padding:12px 0;border-bottom:1px solid #F0E8E0;display:flex;flex-direction:column;gap:3px}
+.poor-row:last-child{border-bottom:none}
+.poor-top{display:flex;justify-content:space-between;gap:10px;font-size:.9rem;font-weight:600}
+.poor-top span:last-child{color:var(--burgundy);white-space:nowrap}
+.poor-why{font-size:.82rem;color:var(--text-2)}
+
+/* Shelf heat map */
+.heat{display:flex;flex-direction:column;gap:12px}
+.heat-head{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.heat-tools{display:flex;gap:6px}
+.tool{min-height:36px;padding:0 12px;border-radius:18px;border:1px solid var(--light-gray);background:var(--ivory);font-size:.8rem}
+.tool[aria-pressed="true"]{background:var(--burgundy-deep);border-color:var(--burgundy-deep);color:var(--parchment)}
+.heat-tabs{display:flex;flex-wrap:wrap;gap:6px}
+.heat-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:var(--r);background:#2D2420}
+.heat-wrap{position:relative;width:100%;line-height:0}
+.heat-scroll.zoomed .heat-wrap{width:220%}
+.heat-wrap img{display:block;width:100%;height:auto;user-select:none;-webkit-user-select:none}
+.heat-layer{position:absolute;inset:0}
+.heat-layer.off .spot{background:none!important}
+.spot{position:absolute;border:none;padding:0;background:transparent;border-radius:40%;-webkit-tap-highlight-color:transparent}
+.spot.none{outline:2px dashed rgba(255,255,255,.75);outline-offset:-6px;border-radius:8px}
+/* A wine of a colour you didn't ask for: dimmed, not coloured */
+.spot.other{background:rgba(30,24,22,.38)!important;border-radius:8px}
+.spot.sel{box-shadow:0 0 0 3px #fff,0 0 0 5px var(--burgundy-deep);border-radius:10px}
+.badges,.leaders{position:absolute;inset:0;pointer-events:none;overflow:visible}
+.spot-badge{position:absolute;transform:translate(-50%,-50%);min-width:30px;height:30px;padding:0 6px;border-radius:15px;background:var(--burgundy-deep);color:var(--gold-lt);border:2px solid #fff;font-family:var(--font-d);font-weight:600;font-size:.95rem;line-height:26px;text-align:center;box-shadow:0 2px 6px rgba(0,0,0,.35);pointer-events:auto;cursor:pointer}
+.spot-badge.poor{background:#fff;color:#9A2A33;border-color:#9A2A33;font-family:var(--font-b);font-size:.8rem}
+.legend{display:flex;flex-direction:column;gap:5px}
+.legend-bar{height:10px;border-radius:5px;background:linear-gradient(90deg,#2E9E5B,#9BBF3A,#E2B33C,#E07A2E,#C8323A)}
+.legend-labels{display:flex;justify-content:space-between;font-size:.74rem;color:var(--text-2)}
+.heat-sel{border-top:1px solid #F0E8E0;padding-top:12px;display:flex;flex-direction:column;gap:6px}
+.heat-sel-top{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.verdict{display:inline-block;font-size:.72rem;font-weight:600;padding:3px 9px;border-radius:20px;color:#fff}
+.vdot{display:inline-block;width:10px;height:10px;border-radius:5px;margin-right:7px;vertical-align:1px;flex-shrink:0}
+
+/* Full list */
+.filters{display:flex;flex-wrap:wrap;gap:8px}
+.filter{min-height:38px;padding:0 14px;border-radius:19px;border:1px solid var(--light-gray);background:var(--ivory);font-size:.84rem}
+.filter[aria-pressed="true"]{background:var(--burgundy-deep);border-color:var(--burgundy-deep);color:var(--parchment);font-weight:600}
+/* "Looking for" buttons on the photo screen (same look as the filters) */
+.choices{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.choice{min-height:40px;padding:0 16px;border-radius:20px;border:1px solid var(--light-gray);background:var(--ivory);font-size:.88rem}
+.choice[aria-pressed="true"]{background:var(--burgundy-deep);border-color:var(--burgundy-deep);color:var(--parchment);font-weight:600}
+.list{background:var(--ivory);border:1px solid var(--light-gray);border-radius:var(--rl);padding:0 14px}
+.row{padding:12px 0;border-bottom:1px solid #F0E8E0;display:flex;flex-direction:column;gap:5px}
+.row:last-child{border-bottom:none}
+.row-top{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.row-name{font-size:.9rem;font-weight:600;line-height:1.3}
+.row-price{font-size:.95rem;font-weight:600;color:var(--burgundy);white-space:nowrap;text-align:right}
+.row-mid{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:.76rem;color:var(--text-2)}
+.list-empty{padding:18px 0;text-align:center;font-size:.86rem;color:var(--text-2)}
+
+/* Toast */
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%) translateY(90px);background:var(--charcoal);color:var(--parchment);padding:10px 18px;border-radius:24px;font-size:.86rem;transition:transform .25s ease;z-index:50;max-width:calc(100% - 32px);text-align:center}
+.toast.show{transform:translateX(-50%) translateY(0)}
+@media (prefers-reduced-motion:reduce){.step.now .dot{animation:none;border-top-color:var(--burgundy)}.toast{transition:none}}
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <div class="hdr-in">
+    <a class="hdr-back" href="/" id="backLink">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
+      <span id="backLabel">Back to my journal</span>
+    </a>
+    <div class="hdr-row">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#E2C070" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="1.5"/><path d="M3 12h18M7 4v8M11 4v8M15 4v8M7 12v8M12 12v8M17 12v8"/></svg>
+      <div>
+        <div class="hdr-title">Shelf Scanner</div>
+        <div class="hdr-sub">Welds Wine Wisdoms</div>
+      </div>
+      <span class="hdr-badge" title="Only admins can see this while it is being tested">Testing</span>
+    </div>
+  </div>
+</header>
+
+<main>
+
+  <!-- Checking who you are / not allowed -->
+  <section class="view" id="viewGate">
+    <div class="card center" id="gateBox">
+      <p class="lead">Checking you’re signed in…</p>
+    </div>
+  </section>
+
+  <!-- 1. Take photos -->
+  <section class="view" id="viewCapture" hidden>
+    <div>
+      <h1>Find the best value on the shelf</h1>
+      <p class="lead" style="margin-top:6px">Take a few photos of the same shelf: one wide shot, then closer shots of each row. Overlapping photos are fine — they help double-check the prices.</p>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div style="display:flex;justify-content:space-between;align-items:baseline">
+        <h2 class="sec-h">Your photos</h2>
+        <span class="small" id="photoCount">0 of 6</span>
+      </div>
+      <div class="photos" id="photoGrid"></div>
+      <div class="add-row" id="addRow">
+        <label class="btn-add">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8a2 2 0 0 1 2-2h2l2-2h6l2 2h2a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><circle cx="12" cy="13" r="3.5"/></svg>
+          <span id="cameraLabel">Take a photo</span>
+          <input type="file" accept="image/*" capture="environment" id="cameraInput" aria-label="Take a photo of the shelf"/>
+        </label>
+        <label class="btn-add alt">
+          <span>Saved photos</span>
+          <input type="file" accept="image/*" multiple id="galleryInput" aria-label="Choose saved photos"/>
+        </label>
+      </div>
+      <ul class="tips" id="tips">
+        <li>Hold the phone level and fill the frame with the shelf.</li>
+        <li>Make sure the price tags are in shot, not just the bottles.</li>
+        <li>If a tag has glare on it, take another photo from a slight angle.</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h2 class="sec-h">Looking for</h2>
+      <div class="choices" role="group" aria-label="Which colour of wine you want">
+        <button type="button" class="choice" data-want="any" aria-pressed="true">Any</button>
+        <button type="button" class="choice" data-want="red" aria-pressed="false">Red</button>
+        <button type="button" class="choice" data-want="white" aria-pressed="false">White</button>
+        <button type="button" class="choice" data-want="rose" aria-pressed="false">Rosé</button>
+      </div>
+      <p class="small" style="margin-top:8px">Every wine is still listed, but the best-value picks only come from this colour.</p>
+    </div>
+
+    <div class="card">
+      <h2 class="sec-h">Prices</h2>
+      <label class="chk" style="margin-top:6px">
+        <input type="checkbox" id="loyaltyInput"/>
+        <span>I have a loyalty card (Clubcard, Nectar…)</span>
+      </label>
+      <div class="fld">
+        <label for="shopInput">Shop (optional)</label>
+        <input type="text" id="shopInput" placeholder="e.g. Tesco" maxlength="60" autocomplete="off"/>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <button class="btn-main" id="scanBtn" disabled>Find the best value</button>
+      <p class="small center">Uses one AI request per scan.</p>
+    </div>
+  </section>
+
+  <!-- 2. Reading the shelf -->
+  <section class="view" id="viewWorking" hidden>
+    <div class="center">
+      <h1 style="color:var(--burgundy);font-style:italic">Reading your shelf…</h1>
+      <p class="lead" style="margin-top:6px" id="workingLead">All your photos are read together, so a wine seen in more than one photo is only listed once.</p>
+    </div>
+    <div class="thumbs" id="workingThumbs"></div>
+    <div class="card" id="stepsCard">
+      <ol class="steps" id="steps"></ol>
+    </div>
+    <div class="card err" id="errorCard" hidden>
+      <div class="err-t" id="errorTitle">That didn’t work</div>
+      <p class="small" style="margin-top:6px;color:var(--charcoal)" id="errorText"></p>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-top:14px">
+        <button class="btn-main" id="retryBtn">Try again</button>
+        <button class="btn-line" id="errorBackBtn">Back to my photos</button>
+      </div>
+    </div>
+    <p class="small center" id="workingNote">This can take up to a minute with several photos.</p>
+    <button class="btn-line" id="cancelBtn">Cancel</button>
+  </section>
+
+  <!-- 3. Best value -->
+  <section class="view" id="viewResults" hidden>
+    <div class="card" id="summaryCard"></div>
+    <section class="card heat" id="heatSection" hidden>
+      <div class="heat-head">
+        <h2 class="sec-h">Shelf heat map</h2>
+        <div class="heat-tools">
+          <button class="tool" id="heatToggle" aria-pressed="false" type="button">Hide colours</button>
+          <button class="tool" id="heatZoom" aria-pressed="false" type="button">Zoom</button>
+        </div>
+      </div>
+      <div class="heat-tabs" id="heatTabs" role="group" aria-label="Choose photo"></div>
+      <div class="heat-scroll" id="heatScroll">
+        <div class="heat-wrap">
+          <img id="heatImg" alt="Your photo of the shelf"/>
+          <div class="heat-layer" id="heatLayer"></div>
+          <svg class="leaders" id="heatLeaders" aria-hidden="true"></svg>
+          <div class="badges" id="heatBadges" aria-hidden="true"></div>
+        </div>
+      </div>
+      <div class="legend" aria-hidden="true">
+        <div class="legend-bar"></div>
+        <div class="legend-labels"><span>Best on this shelf</span><span>Fair</span><span>Poor value</span></div>
+      </div>
+      <p class="small">Numbers mark the top picks. A dashed outline means no price was seen. Tap any wine on the photo for details. Positions are the AI’s best estimate, so they can be slightly out.</p>
+      <p class="small" id="heatWantNote" hidden></p>
+      <div class="heat-sel" id="heatSel" hidden></div>
+    </section>
+    <h2 class="sec-h" id="picksHead">Best value on this shelf</h2>
+    <div style="display:flex;flex-direction:column;gap:14px" id="picks"></div>
+    <h2 class="sec-h" id="poorHead">Paying for the name</h2>
+    <div class="poor" id="poor"></div>
+    <button class="btn-main" id="seeAllBtn">See all wines found</button>
+    <button class="btn-line" id="newScanBtn">Start a new shelf scan</button>
+    <p class="small center">Prices are read from your photos and can be wrong. Always check the shelf tag before you buy.</p>
+  </section>
+
+  <!-- 4. Everything found -->
+  <section class="view" id="viewAll" hidden>
+    <div>
+      <h1>Everything found</h1>
+      <p class="lead" style="margin-top:6px">Cheapest first. Each wine shows which of your photos it was read from.</p>
+    </div>
+    <div class="filters" role="group" aria-label="Show">
+      <button class="filter" data-filter="all" aria-pressed="true">All</button>
+      <button class="filter" data-filter="check" aria-pressed="false">To check</button>
+      <button class="filter" data-filter="noprice" aria-pressed="false">No price</button>
+      <button class="filter" data-filter="red" aria-pressed="false">Red</button>
+      <button class="filter" data-filter="white" aria-pressed="false">White</button>
+      <button class="filter" data-filter="rose" aria-pressed="false">Rosé</button>
+    </div>
+    <div class="list" id="allList"></div>
+    <button class="btn-line" id="allBackBtn">Back to best value</button>
+  </section>
+
+</main>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
 /* ══════════════════════════════════════════════════════════════
-   Welds Wine Wisdoms — Shelf Scanner worker
-   ──────────────────────────────────────────────────────────────
-   A separate Cloudflare worker, used only by shelf.html.
-   It is completely independent of the main worker (worker.js):
-   if this one breaks, the journal carries on as normal.
+   Shelf Scanner page
+   This page is separate from the journal (index.html). It only
+   reads who you are from Supabase; it never changes your wines.
+══════════════════════════════════════════════════════════════ */
 
-   What it does:
-     POST /scan    Takes 1–6 photos of the same shelf, sends them to
-                   Claude together, and returns every wine found, its
-                   price, and the best-value picks. The page can
-                   ask for one colour only ("want": red, white or
-                   rose), and then the picks only come from that colour.
-     GET  /health  Says "ok" — handy to check it is deployed.
-
-   Setup (one secret only):
-     ANTHROPIC_API_KEY   your Claude API key
-                         (Cloudflare → this worker → Settings → Variables
-                          and Secrets → Add → type "Secret")
-
-   Who can use it:
-     Only signed-in Welds Wine members. While ADMIN_ONLY is true,
-     only admins (profiles.is_admin = true). To open it up to every
-     member later, change ADMIN_ONLY to false and redeploy.
-   ══════════════════════════════════════════════════════════════ */
-
+// ── Settings ─────────────────────────────────────────────────
+// The address of the shelf scanner worker (the new, separate one).
+const SHELF_WORKER_URL = 'https://weldswine-shelf.james-weld.workers.dev';
+// Same Supabase project and public key as the journal
+const SUPABASE_URL = 'https://phcnswuwrqarikzjvfqd.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_6FvpnoWmZ8pSFy-GWZfFQw_ciawP5aA';
+// While testing, only admins can use the page (the worker checks this too)
 const ADMIN_ONLY = true;
 
-// The model that reads the shelf. Sonnet reads small price tags far
-// more reliably than Haiku, which matters here.
-const MODEL = "claude-sonnet-4-6";
-
-// Same Supabase project as the journal. The publishable key is public
-// (it is already in index.html), so it is fine to keep it here.
-const SUPABASE_URL = "https://phcnswuwrqarikzjvfqd.supabase.co";
-const SUPABASE_KEY = "sb_publishable_6FvpnoWmZ8pSFy-GWZfFQw_ciawP5aA";
-
 const MAX_PHOTOS = 6;
-const MAX_PHOTO_BYTES = 4 * 1024 * 1024; // per photo, after base64 decoding (Claude's limit is 5 MB)
+const PHOTO_MAX_PX = 1568;          // long side sent to the AI; small price text needs the detail
+const PHOTO_QUALITY = 0.85;
+const SCAN_TIMEOUT_MS = 150000;     // give up after two and a half minutes
+const DRAFT_KEY = 'wwShelfDraft';   // photos in progress (this tab only)
+const RESULT_KEY = 'wwShelfResult'; // last result (this tab only)
+const PREFS_KEY = 'wwShelfPrefs';   // loyalty card, shop and colour (remembered on this device)
 
-const ALLOWED_ORIGINS = [
-  "https://weldswine.co.uk",
-  "https://www.weldswine.co.uk",
-  "https://james-weld.github.io",
-  "http://localhost",
-  "http://127.0.0.1"
-];
+// ── State ────────────────────────────────────────────────────
+let sb = null;
+let photos = [];          // [{ id, url }]
+let result = null;
+let scanAbort = null;
+let stepTimers = [];
+let wakeLock = null;
+let listFilter = 'all';
+let wantColour = 'any';   // the colour chosen on the photo screen: any, red, white or rose
 
-/* ── Helpers ─────────────────────────────────────────────────── */
+const $ = id => document.getElementById(id);
 
-function corsHeaders(request) {
-  const origin = request.headers.get("Origin") || "";
-  const allowed = ALLOWED_ORIGINS.some((o) => origin === o || origin.startsWith(o + ":"));
-  return {
-    "Access-Control-Allow-Origin": allowed ? origin : ALLOWED_ORIGINS[0],
-    "Access-Control-Allow-Methods": "POST, GET, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type, Authorization",
-    "Access-Control-Max-Age": "86400",
-    "Vary": "Origin",
-    "Content-Type": "application/json"
-  };
+// ── Small helpers ────────────────────────────────────────────
+function el(tag, cls, text) {
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (text !== undefined && text !== null) e.textContent = text;
+  return e;
 }
-
-function originAllowed(request) {
-  const origin = request.headers.get("Origin") || "";
-  // No Origin header = not a browser page (e.g. a test from the command line).
-  // Those still need a valid sign-in token, so they are safe to let through.
-  if (!origin) return true;
-  return ALLOWED_ORIGINS.some((o) => origin === o || origin.startsWith(o + ":"));
+function toast(msg) {
+  const t = $('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._t);
+  t._t = setTimeout(() => t.classList.remove('show'), 3200);
 }
-
-function reply(request, status, body) {
-  return new Response(JSON.stringify(body), { status, headers: corsHeaders(request) });
+function showView(id) {
+  ['viewGate', 'viewCapture', 'viewWorking', 'viewResults', 'viewAll'].forEach(v => { $(v).hidden = v !== id; });
+  window.scrollTo(0, 0);
 }
-
-// Who is calling? Checks the Supabase sign-in token, and (while ADMIN_ONLY)
-// that the person is an admin. Returns { user } or { error, status }.
-async function checkCaller(request) {
-  const token = (request.headers.get("Authorization") || "").replace(/^Bearer\s+/i, "").trim();
-  if (!token) return { error: "NOT_SIGNED_IN", status: 401 };
-
-  let user;
-  try {
-    const res = await fetch(SUPABASE_URL + "/auth/v1/user", {
-      headers: { apikey: SUPABASE_KEY, Authorization: "Bearer " + token }
-    });
-    if (!res.ok) return { error: "NOT_SIGNED_IN", status: 401 };
-    user = await res.json();
-  } catch (e) {
-    return { error: "AUTH_CHECK_FAILED", status: 502 };
-  }
-  if (!user || !user.id) return { error: "NOT_SIGNED_IN", status: 401 };
-
-  if (ADMIN_ONLY) {
-    try {
-      // Read the person's own profile using their own sign-in (the journal does the same)
-      const res = await fetch(
-        SUPABASE_URL + "/rest/v1/profiles?id=eq." + encodeURIComponent(user.id) + "&select=is_admin",
-        { headers: { apikey: SUPABASE_KEY, Authorization: "Bearer " + token } }
-      );
-      const rows = res.ok ? await res.json() : [];
-      if (!rows.length || rows[0].is_admin !== true) return { error: "ADMIN_ONLY", status: 403 };
-    } catch (e) {
-      return { error: "AUTH_CHECK_FAILED", status: 502 };
-    }
-  }
-  return { user };
+function money(n) {
+  if (n === null || n === undefined) return '';
+  return '£' + (Number.isInteger(n) ? String(n) : n.toFixed(2));
 }
-
-// Approximate size in bytes of a base64 string once decoded
-function base64Bytes(b64) {
-  const len = b64.length;
-  const pad = b64.endsWith("==") ? 2 : b64.endsWith("=") ? 1 : 0;
-  return Math.floor((len * 3) / 4) - pad;
+function listJoin(nums) {
+  if (nums.length <= 1) return String(nums[0] || '');
+  return nums.slice(0, -1).join(', ') + ' and ' + nums[nums.length - 1];
 }
+function newId() { return Math.random().toString(36).slice(2, 10); }
 
-/* ── The instructions given to Claude ────────────────────────── */
-
-// The colours the page can ask for, and how to name them in the prompt
-const WANT_WORDS = { red: "red", white: "white", rose: "rosé" };
-
-function buildPrompt(photoCount, hasLoyaltyCard, shop, want) {
-  const w = WANT_WORDS[want];   // undefined means any colour
-  const colourRule = w ? `
-   - IMPORTANT: the person only wants a ${w} wine today. Your best-value picks and your poor-value wines must ALL be ${w} wines ("style": "${w === "rosé" ? "Rosé" : w[0].toUpperCase() + w.slice(1)}"). Do not pick any other style, and do not pick a wine if you cannot tell whether it is ${w}. If no ${w} wine has a readable price, leave "picks" empty.
-   - Still list EVERY wine on the shelf in "wines", whatever its colour, and still give every wine a value score.` : "";
-  return `You are helping a wine lover in a UK shop find the best value wine on a shelf.
-
-You have been given ${photoCount} photo${photoCount === 1 ? "" : "s"} of the SAME shelf, labelled Photo 1 to Photo ${photoCount}. They may overlap: one may be a wide shot and others close-ups of particular rows. ${shop ? `The shop is: ${shop}.` : "The shop was not given; work it out from the tags if you can."}
-
-YOUR TASKS
-
-1. Read every wine you can see across all the photos.
-   - The same wine often appears in more than one photo, and there are often several bottles of the same wine side by side. List each different wine ONCE.
-   - Where a wine or its price appears in more than one photo, use the clearest reading, and record every photo it appears in.
-   - Number the shelves from the top: the top shelf is 1.
-   - Give each wine a "style". Use the colour of the wine and the glass, the grape, the label and what you know of the wine. Sparkling wines are "Sparkling" (not White or Rosé), sweet wines are "Dessert", and port, sherry and similar are "Fortified". If you cannot tell, use null.
-
-2. Match each wine to its price tag.
-   - Price tags usually sit on the shelf edge directly below the bottles, but not always exactly under them. Use the wide photo to work out which tag belongs to which bottles, and the close-ups to read the numbers.
-   - Many UK shops show a normal price and a loyalty-card price (Tesco Clubcard, Sainsbury's Nectar and so on), or an offer price with the old price shown. Record the normal price in "price" and any loyalty or offer price in "loyalty_price".
-   - NEVER guess or invent a price. If you cannot see a tag for a wine, or cannot read it, set the prices to null and say why in "note".
-
-3. Judge your confidence for each wine:
-   - "high": wine and price clearly readable, and the tag clearly belongs to that wine (ideally seen in more than one photo).
-   - "medium": readable, but the tag-to-bottle match or a detail is a reasonable judgement.
-   - "low": partly hidden, blurred, glare, or the match is a guess. Explain in "note" what the person should check.
-
-4. Pick the best value.
-   - The person ${hasLoyaltyCard ? "HAS" : "does NOT have"} a loyalty card${hasLoyaltyCard ? ", so use loyalty prices where shown" : ", so use normal prices, not loyalty prices"}.
-   - Value means how good the wine usually is compared with what it costs here. Use your knowledge of these producers and wines, and of their usual UK prices. A wine that is on offer below its usual price is good value.
-   - Only pick wines with a price you could read. Prefer high or medium confidence wines.
-   - Choose up to 3 best-value picks, best first, each with a short reason (1 or 2 plain sentences, British English, no hype). Mention it if the price is worth double-checking.
-   - Also list up to 3 wines that are poor value (for example, paying for a brand name), each with a short reason.
-   - If you are not familiar with a wine, say so honestly in the reason rather than inventing facts about it.${colourRule}
-
-5. Give every wine a value score.
-   - "value_score" is a whole number from 1 to 10 for how good value the wine is at the price YOU would pay here: 10 = outstanding value, 7 = good value, 5 = fair, 3 = poor, 1 = very poor value.
-   - Your best-value picks must have the highest scores on the shelf, in order: pick 1 the highest, then pick 2, then pick 3. Your poor-value wines must have the lowest scores.
-   - If no price could be read for a wine, set "value_score" to null.
-
-6. Say where each wine is in the photos, so it can be marked on a picture of the shelf.
-   - Choose the "overview_photo": the photo that shows the most of the shelf (usually the wide shot).
-   - For each wine, give "location": a box around that wine's front-facing bottles (all of its bottles side by side, not the price tag) in ONE photo.
-   - Use the overview photo whenever the wine can be seen in it, so the whole shelf can be shown on one picture. Otherwise use the photo where the wine is clearest.
-   - Give the box as fractions of that photo's width and height, measured from its top-left corner: "x" and "y" are the top-left corner of the box, "w" and "h" its width and height. All four are between 0 and 1. For example, a wine in the top-left quarter of the photo might be {"photo": 1, "x": 0.05, "y": 0.02, "w": 0.2, "h": 0.22}.
-   - Boxes for different wines must not overlap: neighbouring wines on the same shelf should sit side by side, each box ending where the next wine's bottles begin.
-   - Be as accurate as you can. If you cannot tell where a wine is, set "location" to null.
-
-7. Write a one-sentence summary of the shelf.
-
-Return ONLY a valid JSON object — no markdown fences, no explanation — exactly in this shape:
-{
-  "shop": "shop name or null",
-  "summary": "one sentence",
-  "overview_photo": 1,
-  "wines": [
-    {
-      "id": "w1",
-      "name": "wine name as you would ask for it in a shop",
-      "producer": "producer or null",
-      "grape": "grape or blend or null",
-      "country": "country or null",
-      "region": "region or null",
-      "style": "Red, White, Rosé, Sparkling, Dessert, Fortified or null",
-      "vintage": 2021 or null,
-      "shelf": 1 or null,
-      "price": 8.5 or null,
-      "loyalty_price": 7.5 or null,
-      "photos": [1, 3],
-      "confidence": "high, medium or low",
-      "value_score": 7 or null,
-      "location": { "photo": 1, "x": 0.05, "y": 0.02, "w": 0.2, "h": 0.22 } or null,
-      "note": "short note on anything to check, or null"
-    }
-  ],
-  "picks": [ { "wine_id": "w1", "reason": "..." } ],
-  "poor_value": [ { "wine_id": "w2", "reason": "..." } ]
-}
-
-Prices are numbers in pounds (8.5 means £8.50). Give each wine a unique id ("w1", "w2" and so on) and use those ids in "picks" and "poor_value".`;
-}
-
-/* ── Tidy up Claude's answer so the page can trust its shape ── */
-
-function str(v, max = 200) {
-  if (v === null || v === undefined) return null;
-  const s = String(v).trim();
-  return s ? s.slice(0, max) : null;
-}
-function num(v) {
-  if (v === null || v === undefined || v === "") return null;
-  const n = typeof v === "number" ? v : parseFloat(String(v).replace(/[^0-9.]/g, ""));
-  return Number.isFinite(n) && n > 0 && n < 10000 ? Math.round(n * 100) / 100 : null;
-}
-
-// Turn whatever the AI wrote for "style" into one of six labels (or null)
-function cleanStyle(v) {
-  const s = String(v || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-  if (!s) return null;
-  if (s.includes("sparkl") || s.includes("champagne") || s.includes("prosecco") || s.includes("cava")) return "Sparkling";
-  if (s.includes("rose") || s.includes("blush")) return "Rosé";
-  if (s.includes("fortif") || s.includes("port") || s.includes("sherry")) return "Fortified";
-  if (s.includes("dessert") || s.includes("sweet")) return "Dessert";
-  if (s.includes("red")) return "Red";
-  if (s.includes("white")) return "White";
-  return null;
-}
-// The same, as the short key the page uses: red, white, rose …
+// ── Wine colours ─────────────────────────────────────────────
+// The worker gives each wine a "style": Red, White, Rosé, Sparkling,
+// Dessert, Fortified, or null if the AI couldn't tell.
+const COLOUR_WORDS = { red: ['red', 'reds'], white: ['white', 'whites'], rose: ['rosé', 'rosés'] };
 function styleKey(style) {
-  return { Red: "red", White: "white", "Rosé": "rose" }[style] || null;
+  const s = String(style || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  if (s === 'red') return 'red';
+  if (s === 'white') return 'white';
+  if (s === 'rose') return 'rose';
+  return s ? 'other' : null;
 }
-
-// A box on a photo, as fractions (0–1) of the photo's width and height
-function cleanLocation(loc, photoCount) {
-  if (!loc || typeof loc !== "object") return null;
-  const photo = parseInt(loc.photo, 10);
-  if (!(photo >= 1 && photo <= photoCount)) return null;
-  const f = (v) => { const n = typeof v === "number" ? v : parseFloat(v); return Number.isFinite(n) ? n : null; };
-  let x = f(loc.x), y = f(loc.y), w = f(loc.w), h = f(loc.h);
-  if (x === null || y === null || w === null || h === null) return null;
-  // Some answers use percentages (0–100) instead of fractions
-  if (Math.max(x, y, w, h) > 1.5) { x /= 100; y /= 100; w /= 100; h /= 100; }
-  x = Math.min(Math.max(x, 0), 0.98); y = Math.min(Math.max(y, 0), 0.98);
-  w = Math.min(Math.max(w, 0.01), 1 - x); h = Math.min(Math.max(h, 0.01), 1 - y);
-  const r = (n) => Math.round(n * 1000) / 1000;
-  return { photo, x: r(x), y: r(y), w: r(w), h: r(h) };
+function styleTag(w) {
+  if (!w.style) return null;
+  return el('span', 'chip s-' + styleKey(w.style), w.style);
 }
-
-function cleanResult(raw, photoCount, want) {
-  const overview = parseInt(raw.overview_photo, 10);
-  const out = {
-    shop: str(raw.shop, 60), summary: str(raw.summary, 400),
-    overview_photo: overview >= 1 && overview <= photoCount ? overview : 1,
-    wines: [], picks: [], poor_value: []
-  };
-  const ids = new Set();
-  (Array.isArray(raw.wines) ? raw.wines : []).slice(0, 80).forEach((w, i) => {
-    if (!w || typeof w !== "object") return;
-    let id = str(w.id, 20) || "w" + (i + 1);
-    while (ids.has(id)) id = id + "x";
-    ids.add(id);
-    const conf = ["high", "medium", "low"].includes(String(w.confidence).toLowerCase())
-      ? String(w.confidence).toLowerCase() : "medium";
-    const vintage = parseInt(w.vintage, 10);
-    const shelf = parseInt(w.shelf, 10);
-    const photos = (Array.isArray(w.photos) ? w.photos : [])
-      .map((p) => parseInt(p, 10))
-      .filter((p) => p >= 1 && p <= photoCount);
-    let price = num(w.price), loyalty = num(w.loyalty_price);
-    if (!price && loyalty) { price = loyalty; loyalty = null; }        // only one price seen
-    if (loyalty && price && loyalty >= price) loyalty = null;            // not actually a discount
-    const score = parseInt(w.value_score, 10);
-    out.wines.push({
-      id,
-      name: str(w.name, 120) || "Unnamed wine",
-      producer: str(w.producer, 80),
-      grape: str(w.grape, 80),
-      country: str(w.country, 40),
-      region: str(w.region, 80),
-      style: cleanStyle(w.style),
-      vintage: vintage >= 1900 && vintage <= 2100 ? vintage : null,
-      shelf: shelf >= 1 && shelf <= 20 ? shelf : null,
-      price,
-      loyalty_price: loyalty,
-      photos: [...new Set(photos)].sort((a, b) => a - b),
-      confidence: conf,
-      value_score: price && score >= 1 && score <= 10 ? score : null,
-      location: cleanLocation(w.location, photoCount),
-      note: str(w.note, 200)
-    });
-  });
-  const known = new Set(out.wines.map((w) => w.id));
-  const used = new Set();
-  // Keep only known wines, each wine once (and never both a pick and poor value)
-  // If only one colour was wanted, never let a wine of another colour
-  // through as a pick or poor-value wine (a safety net in case the AI
-  // forgets). Wines with no style are kept: the AI was told not to pick
-  // a wine unless it was sure of its colour.
-  const styleOf = new Map(out.wines.map((w) => [w.id, w.style]));
-  const wrongColour = (id) => want && styleOf.get(id) && styleKey(styleOf.get(id)) !== want;
-  const cleanList = (list, max) => {
-    const outList = [];
-    for (const p of (Array.isArray(list) ? list : [])) {
-      if (outList.length >= max) break;
-      const id = p && String(p.wine_id);
-      if (!id || !known.has(id) || used.has(id) || wrongColour(id)) continue;
-      used.add(id);
-      outList.push({ wine_id: id, reason: str(p.reason, 400) || "" });
-    }
-    return outList;
-  };
-  out.picks = cleanList(raw.picks, 3);
-  out.poor_value = cleanList(raw.poor_value, 3);
-  return out;
+// The colour this scan's picks were limited to (null = any colour)
+function scanWant() { return result && COLOUR_WORDS[result.want] ? result.want : null; }
+// Is this wine "in the running" for this scan? Wines whose colour
+// couldn't be read are kept in, so nothing is hidden by mistake.
+function inRunning(w) {
+  const want = scanWant();
+  if (!want || !w.style) return true;
+  return styleKey(w.style) === want;
 }
+function notWantText() { const want = scanWant(); return want ? 'Not a ' + COLOUR_WORDS[want][0] : ''; }
 
-/* ── The scan itself ─────────────────────────────────────────── */
-
-async function handleScan(request, env) {
-  const apiKey = env && env.ANTHROPIC_API_KEY;
-  if (!apiKey) return reply(request, 500, { error: "NO_KEY_IN_WORKER" });
-
-  const caller = await checkCaller(request);
-  if (caller.error) return reply(request, caller.status, { error: caller.error });
-
-  let body;
-  try { body = await request.json(); }
-  catch { return reply(request, 400, { error: "BAD_REQUEST" }); }
-
-  const photos = Array.isArray(body.photos) ? body.photos : [];
-  if (!photos.length) return reply(request, 400, { error: "NO_PHOTOS" });
-  if (photos.length > MAX_PHOTOS) return reply(request, 400, { error: "TOO_MANY_PHOTOS" });
-
-  const content = [];
-  for (let i = 0; i < photos.length; i++) {
-    let b64 = String(photos[i] || "");
-    let mediaType = "image/jpeg";
-    const m = b64.match(/^data:(image\/(?:jpeg|png|webp));base64,/);
-    if (m) { mediaType = m[1]; b64 = b64.slice(m[0].length); }
-    if (!/^[A-Za-z0-9+/=]+$/.test(b64)) return reply(request, 400, { error: "BAD_PHOTO" });
-    if (base64Bytes(b64) > MAX_PHOTO_BYTES) return reply(request, 413, { error: "PHOTO_TOO_BIG" });
-    content.push({ type: "text", text: "Photo " + (i + 1) + ":" });
-    content.push({ type: "image", source: { type: "base64", media_type: mediaType, data: b64 } });
-  }
-  const shop = str(body.shop, 60);
-  // Which colour the person is after: "red", "white", "rose", or null for any
-  const want = WANT_WORDS[body.want] ? body.want : null;
-  content.push({ type: "text", text: buildPrompt(photos.length, body.loyaltyCard === true, shop, want) });
-
-  let res;
+// ── Remembered settings ─────────────────────────────────────
+function loadPrefs() {
   try {
-    res = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "x-api-key": apiKey, "anthropic-version": "2023-06-01" },
-      body: JSON.stringify({ model: MODEL, max_tokens: 8000, messages: [{ role: "user", content }] })
-    });
-  } catch (e) {
-    return reply(request, 502, { error: "AI_UNREACHABLE" });
-  }
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    console.error("shelf scan: Anthropic error", res.status, JSON.stringify(err));
-    if (res.status === 401) return reply(request, 500, { error: "INVALID_KEY" });
-    if (res.status === 429 || res.status === 529) return reply(request, 429, { error: "BUSY" });
-    return reply(request, 502, { error: "AI_ERROR", detail: (err.error && err.error.message) || ("status " + res.status) });
-  }
-
-  const data = await res.json();
-  const text = (data.content || []).filter((b) => b.type === "text").map((b) => b.text).join("");
-  const cleaned = text.replace(/```json\s*/gi, "").replace(/```\s*/gi, "").trim();
-  const match = cleaned.match(/\{[\s\S]*\}/);
-  let parsed;
-  try { parsed = JSON.parse(match ? match[0] : cleaned); }
-  catch {
-    console.error("shelf scan: could not read AI answer:", text.slice(0, 500));
-    return reply(request, 422, { error: "UNREADABLE_ANSWER" });
-  }
-
-  const result = cleanResult(parsed, photos.length, want);
-  result.photo_count = photos.length;
-  result.loyalty_card = body.loyaltyCard === true;
-  result.want = want;
-  result.scanned_at = new Date().toISOString();
-  return reply(request, 200, result);
+    const p = JSON.parse(localStorage.getItem(PREFS_KEY) || '{}');
+    $('loyaltyInput').checked = p.loyalty !== false;   // ticked unless you've unticked it before
+    $('shopInput').value = p.shop || '';
+    setWant(COLOUR_WORDS[p.want] ? p.want : 'any');
+  } catch (_) { $('loyaltyInput').checked = true; }
+}
+function setWant(v) {
+  wantColour = v;
+  document.querySelectorAll('.choice').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.want === v)));
+}
+function savePrefs() {
+  try { localStorage.setItem(PREFS_KEY, JSON.stringify({ loyalty: $('loyaltyInput').checked, shop: $('shopInput').value.trim(), want: wantColour })); } catch (_) {}
 }
 
-/* ── Entry point ─────────────────────────────────────────────── */
-
-export default {
-  async fetch(request, env) {
-    if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: corsHeaders(request) });
-    if (!originAllowed(request)) return reply(request, 403, { error: "ORIGIN_NOT_ALLOWED" });
-
-    const path = new URL(request.url).pathname.replace(/\/+$/, "") || "/";
-    if (request.method === "GET" && (path === "/health" || path === "/")) {
-      return reply(request, 200, { ok: true, service: "shelf-scanner", admin_only: ADMIN_ONLY, key_set: !!(env && env.ANTHROPIC_API_KEY) });
+// ── Keep photos safe if the phone reloads the page ───────────
+// Phones sometimes throw the page away while the camera is open.
+// Keeping the photos in this tab's storage means they come back.
+function saveDraft() {
+  let keep = photos.slice();
+  while (true) {
+    try {
+      if (!keep.length) { sessionStorage.removeItem(DRAFT_KEY); return; }
+      sessionStorage.setItem(DRAFT_KEY, JSON.stringify({ ts: Date.now(), photos: keep.map(p => p.url) }));
+      return;
+    } catch (_) {
+      keep = keep.slice(0, -1);   // too big for storage: keep fewer
+      if (!keep.length) { try { sessionStorage.removeItem(DRAFT_KEY); } catch (__) {} return; }
     }
-    if (request.method === "POST" && path === "/scan") {
-      try { return await handleScan(request, env); }
-      catch (e) {
-        console.error("shelf scan: unexpected error", e && e.stack || e);
-        return reply(request, 500, { error: "UNEXPECTED" });
+  }
+}
+function loadDraft() {
+  try {
+    const d = JSON.parse(sessionStorage.getItem(DRAFT_KEY) || 'null');
+    if (!d || !Array.isArray(d.photos) || Date.now() - (d.ts || 0) > 3 * 60 * 60 * 1000) return;
+    photos = d.photos.filter(u => typeof u === 'string' && u.startsWith('data:image/')).slice(0, MAX_PHOTOS).map(url => ({ id: newId(), url }));
+  } catch (_) {}
+}
+function saveResult() {
+  try { result ? sessionStorage.setItem(RESULT_KEY, JSON.stringify(result)) : sessionStorage.removeItem(RESULT_KEY); } catch (_) {}
+}
+function loadResult() {
+  try {
+    const r = JSON.parse(sessionStorage.getItem(RESULT_KEY) || 'null');
+    if (r && Array.isArray(r.wines) && Date.now() - new Date(r.scanned_at).getTime() < 3 * 60 * 60 * 1000) result = r;
+  } catch (_) {}
+}
+
+// ── Photos ───────────────────────────────────────────────────
+function shrinkPhoto(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error('read'));
+    reader.onload = () => {
+      const img = new Image();
+      img.onerror = () => reject(new Error('decode'));
+      img.onload = () => {
+        try {
+          const r = Math.min(PHOTO_MAX_PX / img.width, PHOTO_MAX_PX / img.height, 1);
+          const c = document.createElement('canvas');
+          c.width = Math.round(img.width * r);
+          c.height = Math.round(img.height * r);
+          c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+          resolve(c.toDataURL('image/jpeg', PHOTO_QUALITY));
+        } catch (e) { reject(e); }
+      };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+async function addFiles(fileList) {
+  const files = Array.from(fileList || []).filter(f => f && (f.type || '').startsWith('image/') || /\.(jpe?g|png|heic|heif|webp)$/i.test(f && f.name || ''));
+  if (!files.length) return;
+  let skipped = 0, failed = 0;
+  for (const f of files) {
+    if (photos.length >= MAX_PHOTOS) { skipped++; continue; }
+    try { photos.push({ id: newId(), url: await shrinkPhoto(f) }); }
+    catch (_) { failed++; }
+  }
+  renderPhotos();
+  saveDraft();
+  if (failed) toast(failed === 1 ? 'One photo couldn’t be opened — try taking it again' : failed + ' photos couldn’t be opened');
+  else if (skipped) toast('You can use up to ' + MAX_PHOTOS + ' photos per scan');
+}
+
+function removePhoto(id) {
+  photos = photos.filter(p => p.id !== id);
+  renderPhotos();
+  saveDraft();
+}
+
+function renderPhotos() {
+  const grid = $('photoGrid');
+  grid.textContent = '';
+  if (!photos.length) {
+    grid.appendChild(el('div', 'photos-empty', 'No photos yet. Start with one wide shot of the whole shelf.'));
+  }
+  photos.forEach((p, i) => {
+    const fig = el('figure', 'photo');
+    const img = el('img');
+    img.src = p.url;
+    img.alt = 'Photo ' + (i + 1) + ' of the shelf';
+    const x = el('button', 'photo-x');
+    x.type = 'button';
+    x.setAttribute('aria-label', 'Remove photo ' + (i + 1));
+    x.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>';
+    x.addEventListener('click', () => removePhoto(p.id));
+    const cap = el('figcaption');
+    cap.appendChild(el('b', null, 'Photo ' + (i + 1)));
+    fig.append(img, x, cap);
+    grid.appendChild(fig);
+  });
+  $('photoCount').textContent = photos.length + ' of ' + MAX_PHOTOS;
+  $('addRow').hidden = photos.length >= MAX_PHOTOS;
+  $('cameraLabel').textContent = photos.length ? 'Take another photo' : 'Take a photo';
+  $('tips').hidden = photos.length >= 2;
+  const btn = $('scanBtn');
+  btn.disabled = !photos.length;
+  btn.textContent = photos.length ? 'Find the best value · ' + photos.length + (photos.length === 1 ? ' photo' : ' photos') : 'Find the best value';
+}
+
+// ── The "reading the shelf" progress steps ───────────────────
+const STEPS = [
+  ['Sending your photos', 'Uploading them securely'],
+  ['Reading the bottles', 'Spotting every wine across your photos'],
+  ['Combining overlapping photos', 'Merging wines seen more than once, using the clearest view'],
+  ['Reading price tags', 'Matching each tag to its bottles, including loyalty prices'],
+  ['Working out the best value', 'Comparing each price with how good the wine usually is']
+];
+function renderSteps(current) {
+  const ol = $('steps');
+  ol.textContent = '';
+  STEPS.forEach(([t, d], i) => {
+    const li = el('li', 'step ' + (i < current ? 'done' : i === current ? 'now' : 'wait'));
+    const dot = el('span', 'dot');
+    dot.setAttribute('aria-hidden', 'true');
+    if (i < current) dot.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L19 7"/></svg>';
+    const txt = el('div');
+    txt.append(el('div', 'step-t', t), el('div', 'step-d', d));
+    li.append(dot, txt);
+    ol.appendChild(li);
+  });
+}
+function startSteps() {
+  stepTimers.forEach(clearTimeout);
+  stepTimers = [];
+  renderSteps(0);
+  // The AI does all of this in one go, so these steps are paced to roughly match
+  [3000, 8000, 15000, 24000].forEach((ms, i) => stepTimers.push(setTimeout(() => renderSteps(i + 1), ms)));
+}
+function stopSteps() { stepTimers.forEach(clearTimeout); stepTimers = []; }
+
+async function keepScreenOn(on) {
+  try {
+    if (on && 'wakeLock' in navigator) wakeLock = await navigator.wakeLock.request('screen');
+    else if (!on && wakeLock) { await wakeLock.release(); wakeLock = null; }
+  } catch (_) {}
+}
+
+// ── Scan ─────────────────────────────────────────────────────
+const ERRORS = {
+  NOT_SIGNED_IN: ['You’re signed out', 'Go back to your journal, sign in, then open the Shelf Scanner again. Your photos will still be here.'],
+  ADMIN_ONLY: ['Not available yet', 'The Shelf Scanner is still being tested and is only open to admins.'],
+  NO_KEY_IN_WORKER: ['Scanner not set up', 'The shelf scanner worker has no Claude API key yet. Add ANTHROPIC_API_KEY as a secret in Cloudflare.'],
+  INVALID_KEY: ['Scanner not set up', 'The Claude API key in the shelf scanner worker was rejected. Check it in Cloudflare.'],
+  BUSY: ['The AI is busy', 'Too many requests right now. Wait a minute and try again.'],
+  PHOTO_TOO_BIG: ['A photo is too large', 'Remove the last photo and take it again.'],
+  UNREADABLE_ANSWER: ['Couldn’t read the shelf', 'The AI’s answer came back garbled. Trying again usually works.'],
+  TIMEOUT: ['That took too long', 'Try again, perhaps with fewer photos.'],
+  NETWORK: ['No connection', 'Couldn’t reach the scanner. Check your signal and try again — your photos are still here.']
+};
+
+async function runScan() {
+  if (!photos.length) return;
+  savePrefs();
+  showView('viewWorking');
+  $('errorCard').hidden = true;
+  $('stepsCard').hidden = false;
+  $('cancelBtn').hidden = false;
+  $('workingNote').hidden = false;
+  $('workingLead').hidden = false;
+  const thumbs = $('workingThumbs');
+  thumbs.textContent = '';
+  photos.forEach((p, i) => { const im = el('img'); im.src = p.url; im.alt = 'Photo ' + (i + 1); thumbs.appendChild(im); });
+  startSteps();
+  keepScreenOn(true);
+
+  scanAbort = new AbortController();
+  let timedOut = false;
+  const timeout = setTimeout(() => { timedOut = true; if (scanAbort) scanAbort.abort(); }, SCAN_TIMEOUT_MS);
+  let errorCode = null, errorDetail = '';
+  try {
+    const { data } = await sb.auth.getSession();
+    const token = data && data.session && data.session.access_token;
+    if (!token) throw Object.assign(new Error('NOT_SIGNED_IN'), { code: 'NOT_SIGNED_IN' });
+    const res = await fetch(SHELF_WORKER_URL.replace(/\/$/, '') + '/scan', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify({ photos: photos.map(p => p.url), loyaltyCard: $('loyaltyInput').checked, shop: $('shopInput').value.trim() || null, want: wantColour === 'any' ? null : wantColour }),
+      signal: scanAbort.signal
+    });
+    const body = await res.json().catch(() => ({}));
+    if (!res.ok || !Array.isArray(body.wines)) {
+      errorCode = body.error || 'HTTP_' + res.status;
+      errorDetail = body.detail || '';
+    } else {
+      result = body;
+      saveResult();
+    }
+  } catch (e) {
+    if (e && e.code) errorCode = e.code;
+    else if (timedOut) errorCode = 'TIMEOUT';
+    else if (scanAbort && scanAbort.signal.aborted) errorCode = 'CANCELLED';
+    else errorCode = 'NETWORK';
+  } finally {
+    clearTimeout(timeout);
+    scanAbort = null;
+    stopSteps();
+    keepScreenOn(false);
+  }
+
+  if (errorCode === 'CANCELLED') { showView('viewCapture'); return; }
+  if (errorCode) {
+    console.warn('[shelf] scan failed:', errorCode, errorDetail);
+    const [title, text] = ERRORS[errorCode] || ['That didn’t work', 'Something went wrong (' + errorCode + (errorDetail ? ': ' + errorDetail : '') + '). Try again.'];
+    $('errorTitle').textContent = title;
+    $('errorText').textContent = text;
+    $('stepsCard').hidden = true;
+    $('cancelBtn').hidden = true;
+    $('workingNote').hidden = true;
+    $('workingLead').hidden = true;
+    $('retryBtn').hidden = errorCode === 'ADMIN_ONLY' || errorCode === 'NOT_SIGNED_IN';
+    $('errorCard').hidden = false;
+    return;
+  }
+  renderResults();
+  showView('viewResults');
+}
+
+// ── Results ──────────────────────────────────────────────────
+function loyaltyName() {
+  const s = ((result && result.shop) || $('shopInput').value || '').toLowerCase();
+  if (s.includes('tesco')) return 'Clubcard';
+  if (s.includes('sainsbury')) return 'Nectar';
+  if (s.includes('boots')) return 'Advantage';
+  if (s.includes('co-op') || s.includes('coop')) return 'Member';
+  return 'Loyalty';
+}
+function payPrice(w) {
+  if (result && result.loyalty_card && w.loyalty_price) return w.loyalty_price;
+  return w.price;
+}
+function wineById(id) { return result.wines.find(w => w.id === id); }
+function wineSub(w) {
+  return [w.style, w.grape, [w.region, w.country].filter(Boolean).join(', '), w.vintage].filter(Boolean).join(' · ');
+}
+function seenText(w) {
+  if (!w.photos || !w.photos.length) return '';
+  return w.photos.length === 1 ? 'Seen in photo ' + w.photos[0] + ' only' : 'Seen in photos ' + listJoin(w.photos);
+}
+function confChip(w) {
+  const label = { high: 'High confidence', medium: 'Medium confidence', low: 'Check this' }[w.confidence] || 'Medium confidence';
+  return el('span', 'conf ' + (w.confidence || 'medium'), label);
+}
+
+function priceRow(w) {
+  const row = el('div', 'price-row');
+  if (!w.price) { row.appendChild(el('span', 'also', 'Price not visible')); return row; }
+  const card = result.loyalty_card;
+  if (w.loyalty_price && card) {
+    row.append(el('span', 'price-big', money(w.loyalty_price)), el('span', 'loy', loyaltyName()), el('span', 'was', money(w.price)));
+  } else {
+    row.appendChild(el('span', 'price-big', money(w.price)));
+    if (w.loyalty_price) row.appendChild(el('span', 'also', money(w.loyalty_price) + ' with ' + loyaltyName()));
+  }
+  return row;
+}
+
+function renderResults() {
+  const r = result;
+  const wines = r.wines;
+  const priced = wines.filter(w => w.price);
+  const noPrice = wines.length - priced.length;
+  const toCheck = wines.filter(w => w.confidence === 'low').length;
+
+  // Summary
+  const sum = $('summaryCard');
+  sum.textContent = '';
+  const h = el('div');
+  h.appendChild(el('span', 'sum-h', wines.length + (wines.length === 1 ? ' wine found' : ' wines found')));
+  const where = [r.photo_count ? 'in ' + r.photo_count + (r.photo_count === 1 ? ' photo' : ' photos') : '', r.shop || ''].filter(Boolean).join(' · ');
+  if (where) h.appendChild(el('span', 'small', '  ' + where));
+  sum.appendChild(h);
+  if (r.summary) { const p = el('p', 'small', r.summary); p.style.marginTop = '6px'; p.style.color = 'var(--charcoal)'; sum.appendChild(p); }
+  const chips = el('div', 'chips');
+  chips.appendChild(el('span', 'chip gold', r.loyalty_card ? loyaltyName() + ' prices used' : 'Normal prices used'));
+  const want = scanWant();
+  if (want) chips.appendChild(el('span', 'chip s-' + want, 'Picks: ' + COLOUR_WORDS[want][1] + ' only'));
+  if (toCheck) chips.appendChild(el('span', 'chip red', toCheck + (toCheck === 1 ? ' price to check' : ' prices to check')));
+  if (noPrice) chips.appendChild(el('span', 'chip', noPrice + ' with no price visible'));
+  sum.appendChild(chips);
+
+  // Picks
+  const picksBox = $('picks');
+  picksBox.textContent = '';
+  const picks = (r.picks || []).map(p => ({ p, w: wineById(p.wine_id) })).filter(x => x.w);
+  $('picksHead').hidden = false;
+  $('picksHead').textContent = want ? 'Best value ' + COLOUR_WORDS[want][1] + ' on this shelf' : 'Best value on this shelf';
+  if (!picks.length) {
+    const c = el('div', 'card');
+    const wantCount = want ? wines.filter(w => styleKey(w.style) === want).length : 0;
+    c.appendChild(el('p', 'small', want && wines.length && !wantCount
+      ? 'No ' + COLOUR_WORDS[want][1] + ' could be found in these photos. Tap “See all wines found” to see what is on the shelf, or start a new scan with “Any” chosen.'
+      : wines.length
+      ? 'No clear best-value picks — probably because too few prices could be read. Try adding close-up photos of the price tags.'
+      : 'No wines could be read in these photos. Try a closer, brighter photo with the price tags in shot.'));
+    picksBox.appendChild(c);
+  }
+  picks.forEach(({ p, w }, i) => {
+    const card = el('article', 'pick');
+    const top = el('div', 'pick-top');
+    top.appendChild(el('span', 'rank', String(i + 1)));
+    const names = el('div');
+    names.style.minWidth = '0';
+    names.appendChild(el('h3', 'wname', w.name));
+    const sub = wineSub(w);
+    if (sub) names.appendChild(el('div', 'wsub', sub));
+    top.appendChild(names);
+    card.appendChild(top);
+    card.appendChild(priceRow(w));
+    if (p.reason) card.appendChild(el('p', 'why', p.reason));
+    const cr = el('div', 'conf-row');
+    cr.appendChild(confChip(w));
+    const seen = seenText(w);
+    if (seen) cr.appendChild(el('span', 'small', seen));
+    card.appendChild(cr);
+    if (w.note) card.appendChild(el('div', 'note', w.note));
+    picksBox.appendChild(card);
+  });
+
+  // Poor value
+  const poorBox = $('poor');
+  poorBox.textContent = '';
+  const poor = (r.poor_value || []).map(p => ({ p, w: wineById(p.wine_id) })).filter(x => x.w);
+  $('poorHead').hidden = poorBox.hidden = !poor.length;
+  poor.forEach(({ p, w }) => {
+    const row = el('div', 'poor-row');
+    const top = el('div', 'poor-top');
+    const pp = payPrice(w);
+    top.append(el('span', null, w.name), el('span', null, pp ? money(pp) + (r.loyalty_card && w.loyalty_price ? ' ' + loyaltyName() : '') : ''));
+    row.appendChild(top);
+    if (p.reason) row.appendChild(el('div', 'poor-why', p.reason));
+    poorBox.appendChild(row);
+  });
+
+  $('seeAllBtn').textContent = 'See all ' + wines.length + (wines.length === 1 ? ' wine' : ' wines') + ' found';
+  $('seeAllBtn').hidden = !wines.length;
+
+  heatSelected = null;
+  computeHeatScores();
+  try { renderHeat(); } catch (e) { console.warn('[shelf] heat map failed:', e); $('heatSection').hidden = true; }
+}
+
+// ── Heat map ─────────────────────────────────────────────────
+let heatPhoto = 1, heatSelected = null, heatOff = false, heatZoomed = false;
+
+/* How the colours are worked out
+   1. Every wine with a price gets a value score from the AI (1–10).
+   2. The scores are made to agree with the picks: pick 1 always scores
+      highest on the shelf, then pick 2, then pick 3, then everything
+      else, and the poor-value wines always score lowest. (The AI
+      sometimes gives pick 3 a higher score than pick 1; this fixes that.)
+   3. The colour slides smoothly from red to green. The greenest green is
+      kept for the best wine on this shelf (pick 1), so it always stands
+      out. If even the best wine is only fair value, nothing turns deep
+      green.                                                             */
+let heatScores = {};   // wine id -> score used for colours (and drawing order)
+let heatShown = {};    // wine id -> whole-number score shown as "x/10"
+
+function computeHeatScores() {
+  heatScores = {}; heatShown = {};
+  if (!result) return;
+  // Only wines of the colour you asked for take part (all of them if "Any")
+  const priced = result.wines.filter(w => w.value_score && inRunning(w));
+  const pickIds = (result.picks || []).map(p => p.wine_id).filter(id => priced.some(w => w.id === id));
+  const poorIds = (result.poor_value || []).map(p => p.wine_id).filter(id => priced.some(w => w.id === id));
+  const others = priced.filter(w => !pickIds.includes(w.id) && !poorIds.includes(w.id));
+  others.forEach(w => { heatScores[w.id] = w.value_score; heatShown[w.id] = w.value_score; });
+  const otherMax = others.length ? Math.max(...others.map(w => w.value_score)) : 1;
+  const otherMin = others.length ? Math.min(...others.map(w => w.value_score)) : 10;
+  // Picks: hand out the picks' own scores in rank order, then make sure
+  // each one beats the next and beats every other wine
+  const pickScores = pickIds.map(id => wineById(id).value_score).sort((a, b) => b - a);
+  let floor = otherMax;
+  for (let i = pickIds.length - 1; i >= 0; i--) {
+    const sc = Math.max(pickScores[i], floor + 0.25);
+    heatScores[pickIds[i]] = Math.min(sc, 10.75);
+    // The number shown stays honest: the AI's score, never more than 1 above it
+    heatShown[pickIds[i]] = Math.min(10, Math.max(pickScores[i], Math.min(otherMax, pickScores[i] + 1)));
+    floor = heatScores[pickIds[i]];
+  }
+  // Poor value: never above the ordinary wines
+  poorIds.forEach(id => {
+    heatScores[id] = Math.max(1, Math.min(wineById(id).value_score, otherMin - 0.25));
+    heatShown[id] = Math.max(1, Math.min(wineById(id).value_score, otherMin));
+  });
+}
+function heatScore(w) { if (w && !inRunning(w)) return null; return w && heatScores[w.id] !== undefined ? heatScores[w.id] : (w && w.value_score) || null; }
+function shownScore(w) { if (!w) return null; const s = heatShown[w.id] !== undefined ? heatShown[w.id] : w.value_score; return s ? Math.max(1, Math.min(10, Math.round(s))) : null; }
+
+const HEAT_STOPS = [[0, [200, 50, 58]], [0.3, [224, 122, 46]], [0.5, [226, 179, 60]], [0.72, [155, 191, 58]], [1, [46, 158, 91]]];
+function wineColour(w) {
+  const sc = heatScore(w);
+  if (!sc) return null;
+  const all = Object.values(heatScores);
+  // Best on this shelf = greenest, unless even the best is only fair value
+  const top = Math.max(8, all.length ? Math.max(...all) : 10);
+  const t = Math.min(Math.max((sc - 1) / (top - 1), 0), 1);
+  for (let i = 1; i < HEAT_STOPS.length; i++) {
+    const [t1, c1] = HEAT_STOPS[i], [t0, c0] = HEAT_STOPS[i - 1];
+    if (t <= t1) {
+      const f = (t - t0) / (t1 - t0);
+      return c0.map((v, k) => Math.round(v + (c1[k] - v) * f));
+    }
+  }
+  return HEAT_STOPS[HEAT_STOPS.length - 1][1];
+}
+function verdictText(score) {
+  if (!score) return 'No price seen';
+  score = Math.round(score);
+  if (score >= 8) return 'Great value';
+  if (score >= 6) return 'Good value';
+  if (score === 5) return 'Fair value';
+  if (score >= 3) return 'Poor value';
+  return 'Very poor value';
+}
+function pickRank(id) { const i = (result.picks || []).findIndex(p => p.wine_id === id); return i >= 0 ? i + 1 : 0; }
+function isPoor(id) { return (result.poor_value || []).some(p => p.wine_id === id); }
+
+function renderHeat() {
+  const sec = $('heatSection');
+  const located = result.wines.filter(w => w.location && photos[w.location.photo - 1]);
+  if (!located.length) { sec.hidden = true; return; }
+  sec.hidden = false;
+
+  // Which photos have wines marked on them
+  const byPhoto = {};
+  located.forEach(w => { byPhoto[w.location.photo] = (byPhoto[w.location.photo] || 0) + 1; });
+  const photoNums = Object.keys(byPhoto).map(Number).sort((a, b) => a - b);
+  if (!byPhoto[heatPhoto]) heatPhoto = byPhoto[result.overview_photo] ? result.overview_photo : photoNums[0];
+
+  const tabs = $('heatTabs');
+  tabs.textContent = '';
+  tabs.hidden = photoNums.length < 2;
+  photoNums.forEach(n => {
+    const b = el('button', 'tool', 'Photo ' + n + ' · ' + byPhoto[n] + (byPhoto[n] === 1 ? ' wine' : ' wines'));
+    b.type = 'button';
+    b.setAttribute('aria-pressed', String(n === heatPhoto));
+    b.addEventListener('click', () => { heatPhoto = n; heatSelected = null; renderHeat(); });
+    tabs.appendChild(b);
+  });
+
+  const img = $('heatImg');
+  img.onload = () => layoutBadges();   // sizes are only known once the photo has loaded
+  if (img.getAttribute('src') !== photos[heatPhoto - 1].url) img.src = photos[heatPhoto - 1].url;
+  $('heatImg').alt = 'Photo ' + heatPhoto + ' of the shelf, with each wine coloured by how good value it is';
+  $('heatScroll').classList.toggle('zoomed', heatZoomed);
+  $('heatLayer').classList.toggle('off', heatOff);
+
+  const onThis = located.filter(w => w.location.photo === heatPhoto);
+  // Default selection: the best pick shown on this photo
+  if (!heatSelected || !onThis.some(w => w.id === heatSelected)) {
+    const best = onThis.filter(w => pickRank(w.id)).sort((a, b) => pickRank(a.id) - pickRank(b.id))[0];
+    heatSelected = best ? best.id : null;
+  }
+
+  const layer = $('heatLayer');
+  layer.textContent = '';
+  heatBadges = [];
+  // Draw the poorest first so the best value sits on top where boxes overlap
+  onThis.slice().sort((a, b) => (heatScore(a) || 0) - (heatScore(b) || 0)).forEach(w => {
+    const L = w.location;
+    const spot = el('button', 'spot');
+    spot.type = 'button';
+    // Let the colour spread a little beyond the bottles, like a heat map
+    const padX = L.w * 0.12, padY = L.h * 0.08;
+    const left = Math.max(0, L.x - padX), top = Math.max(0, L.y - padY);
+    spot.style.left = (left * 100) + '%';
+    spot.style.top = (top * 100) + '%';
+    spot.style.width = (Math.min(1 - left, L.w + padX * 2) * 100) + '%';
+    spot.style.height = (Math.min(1 - top, L.h + padY * 2) * 100) + '%';
+    const c = wineColour(w);
+    if (c) {
+      const rgb = c.join(',');
+      // The picks glow a little more strongly so they stand out
+      const strong = pickRank(w.id) ? [0.75, 0.55] : [0.55, 0.38];
+      spot.style.background = 'radial-gradient(ellipse at center, rgba(' + rgb + ',' + strong[0] + ') 0%, rgba(' + rgb + ',' + strong[1] + ') 45%, rgba(' + rgb + ',0) 75%)';
+    } else {
+      spot.classList.add(inRunning(w) ? 'none' : 'other');
+    }
+    if (w.id === heatSelected) spot.classList.add('sel');
+    const rank = pickRank(w.id);
+    if (rank || isPoor(w.id)) heatBadges.push({ w, rank, poor: !rank });
+    const pp = payPrice(w);
+    spot.setAttribute('aria-label', w.name + (pp ? ', ' + money(pp) : ', no price seen') + ', ' + (inRunning(w) ? verdictText(heatScore(w)) : notWantText()) + (rank ? ', best value pick ' + rank : ''));
+    spot.addEventListener('click', () => { heatSelected = w.id; renderHeat(); });
+    layer.appendChild(spot);
+  });
+
+  const want = scanWant();
+  $('heatWantNote').hidden = !want;
+  if (want) $('heatWantNote').textContent = 'Only ' + COLOUR_WORDS[want][1] + ' are coloured. Darkened wines are other colours.';
+
+  layoutBadges();
+  renderHeatSelection();
+}
+
+// ── Number badges: keep them from sitting on top of each other ──
+// Each badge starts at the top-centre of its wine. If that spot is
+// already taken by another badge, it is moved to the nearest free spot
+// and a thin line is drawn back to its wine. Best picks are placed
+// first, so they move the least.
+let heatBadges = [];
+const BADGE_GAP = 36;   // px between badge centres
+
+function layoutBadges() {
+  const box = $('heatBadges'), svg = $('heatLeaders');
+  box.textContent = '';
+  svg.textContent = '';
+  const W = box.clientWidth, H = box.clientHeight;
+  const order = heatBadges.slice().sort((a, b) => (a.rank || 99) - (b.rank || 99));
+  const placed = [];
+  order.forEach(item => {
+    const L = item.w.location;
+    let x, y, anchorX, anchorY;
+    if (W > 0 && H > 0) {
+      anchorX = (L.x + L.w / 2) * W;
+      anchorY = L.y * H + Math.min(L.h * H * 0.12, 20);
+      const want = { x: anchorX, y: anchorY + 15 };
+      const pos = freeSpot(want, placed, W, H);
+      x = pos.x; y = pos.y;
+      placed.push(pos);
+    }
+    const b = el('span', 'spot-badge' + (item.poor ? ' poor' : ''), item.poor ? '✕' : String(item.rank));
+    if (W > 0 && H > 0) { b.style.left = x + 'px'; b.style.top = y + 'px'; }
+    else {   // size not known yet (photo still loading): use the wine's position
+      b.style.left = ((L.x + L.w / 2) * 100) + '%';
+      b.style.top = 'calc(' + (L.y * 100) + '% + 18px)';
+    }
+    b.addEventListener('click', () => { heatSelected = item.w.id; renderHeat(); });
+    box.appendChild(b);
+    // Moved away from its wine? Draw a line back to it
+    if (W > 0 && Math.hypot(x - anchorX, y - (anchorY + 15)) > 12) {
+      const tx = anchorX, ty = (L.y + L.h / 2) * H;
+      const ns = 'http://www.w3.org/2000/svg';
+      [['rgba(45,36,32,.7)', 4], ['#fff', 2]].forEach(([col, wd]) => {
+        const ln = document.createElementNS(ns, 'line');
+        ln.setAttribute('x1', x); ln.setAttribute('y1', y);
+        ln.setAttribute('x2', tx); ln.setAttribute('y2', ty);
+        ln.setAttribute('stroke', col); ln.setAttribute('stroke-width', wd); ln.setAttribute('stroke-linecap', 'round');
+        svg.appendChild(ln);
+      });
+      const dot = document.createElementNS(ns, 'circle');
+      dot.setAttribute('cx', tx); dot.setAttribute('cy', ty); dot.setAttribute('r', 4);
+      dot.setAttribute('fill', '#fff'); dot.setAttribute('stroke', 'rgba(45,36,32,.7)'); dot.setAttribute('stroke-width', 1.5);
+      svg.appendChild(dot);
+    }
+  });
+}
+
+// The nearest position to "want" that doesn't overlap a placed badge and stays inside the photo
+function freeSpot(want, placed, W, H) {
+  const m = 17;
+  const clampX = v => Math.min(Math.max(v, m), W - m), clampY = v => Math.min(Math.max(v, m), H - m);
+  const ok = p => placed.every(q => Math.hypot(p.x - q.x, p.y - q.y) >= BADGE_GAP);
+  let best = null;
+  for (let ring = 0; ring <= 8 && !best; ring++) {
+    const cands = [];
+    if (ring === 0) cands.push([0, 0]);
+    for (let i = -ring; i <= ring; i++) {
+      for (let j = -ring; j <= ring; j++) {
+        if (Math.max(Math.abs(i), Math.abs(j)) !== ring) continue;
+        cands.push([i, j]);
       }
     }
-    return reply(request, 404, { error: "NOT_FOUND" });
+    // Prefer sideways moves, then the smallest distance
+    cands.sort((a, b) => (Math.hypot(a[0], a[1] * 1.3)) - (Math.hypot(b[0], b[1] * 1.3)));
+    for (const [i, j] of cands) {
+      const p = { x: clampX(want.x + i * BADGE_GAP * 0.6), y: clampY(want.y + j * BADGE_GAP * 0.6) };
+      if (ok(p)) { best = p; break; }
+    }
   }
-};
+  return best || { x: clampX(want.x), y: clampY(want.y) };
+}
+
+function renderHeatSelection() {
+  const box = $('heatSel');
+  const w = heatSelected && wineById(heatSelected);
+  if (!w) { box.hidden = true; return; }
+  box.hidden = false;
+  box.textContent = '';
+  const top = el('div', 'heat-sel-top');
+  top.appendChild(el('span', 'wname', w.name));
+  const pp = payPrice(w);
+  top.appendChild(el('span', 'row-price', pp ? money(pp) + (result.loyalty_card && w.loyalty_price ? ' ' + loyaltyName() : '') : '—'));
+  box.appendChild(top);
+  const tags = el('div', 'conf-row');
+  const c = wineColour(w);
+  const sc = shownScore(w);
+  const running = inRunning(w);
+  const v = el('span', 'verdict', running ? verdictText(sc) + (sc ? ' · ' + sc + '/10' : '') : notWantText());
+  v.style.background = c ? 'rgb(' + c.join(',') + ')' : '#8C817C';
+  // Dark text on the lighter yellows and limes, white on the rest
+  if (c && (0.299 * c[0] + 0.587 * c[1] + 0.114 * c[2]) > 150) v.style.color = '#2D2420';
+  tags.appendChild(v);
+  tags.appendChild(confChip(w));
+  box.appendChild(tags);
+  const rank = pickRank(w.id);
+  const reason = rank ? result.picks[rank - 1].reason : (isPoor(w.id) ? (result.poor_value.find(p => p.wine_id === w.id) || {}).reason : '');
+  if (rank) box.appendChild(el('div', 'small', 'Best value pick ' + rank));
+  if (reason) box.appendChild(el('p', 'why', reason));
+  const sub = wineSub(w);
+  if (sub) box.appendChild(el('div', 'small', sub));
+  if (w.note) box.appendChild(el('div', 'note', w.note));
+}
+
+function renderAll() {
+  const list = $('allList');
+  list.textContent = '';
+  document.querySelectorAll('.filter').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.filter === listFilter)));
+  const wines = result.wines.slice();
+  const counts = {
+    all: wines.length,
+    check: wines.filter(w => w.confidence === 'low').length,
+    noprice: wines.filter(w => !w.price).length,
+    red: wines.filter(w => styleKey(w.style) === 'red').length,
+    white: wines.filter(w => styleKey(w.style) === 'white').length,
+    rose: wines.filter(w => styleKey(w.style) === 'rose').length
+  };
+  const labels = { all: 'All', check: 'To check', noprice: 'No price', red: 'Red', white: 'White', rose: 'Rosé' };
+  document.querySelectorAll('.filter').forEach(b => {
+    const f = b.dataset.filter;
+    b.textContent = labels[f] + ' ' + counts[f];
+    // Hide a colour button when there are none of that colour (unless it's the one chosen)
+    if (f === 'red' || f === 'white' || f === 'rose') b.hidden = !counts[f] && listFilter !== f;
+  });
+  let shown = wines;
+  if (listFilter === 'check') shown = wines.filter(w => w.confidence === 'low');
+  if (listFilter === 'noprice') shown = wines.filter(w => !w.price);
+  if (listFilter === 'red' || listFilter === 'white' || listFilter === 'rose') shown = wines.filter(w => styleKey(w.style) === listFilter);
+  shown.sort((a, b) => {
+    const pa = payPrice(a), pb = payPrice(b);
+    if (!pa !== !pb) return pa ? -1 : 1;
+    return (pa || 0) - (pb || 0) || a.name.localeCompare(b.name);
+  });
+  if (!shown.length) { list.appendChild(el('div', 'list-empty', 'Nothing here.')); return; }
+  shown.forEach(w => {
+    const row = el('div', 'row');
+    const top = el('div', 'row-top');
+    const nm = el('span', 'row-name');
+    const dc = wineColour(w);
+    if (dc) {
+      const dot = el('span', 'vdot');
+      dot.style.background = 'rgb(' + dc.join(',') + ')';
+      dot.title = verdictText(heatScore(w));
+      nm.appendChild(dot);
+    }
+    nm.appendChild(document.createTextNode(w.name));
+    top.appendChild(nm);
+    const price = el('span', 'row-price');
+    if (!w.price) price.textContent = '—';
+    else if (result.loyalty_card && w.loyalty_price) { price.textContent = money(w.loyalty_price); }
+    else price.textContent = money(w.price);
+    top.appendChild(price);
+    row.appendChild(top);
+    const mid = el('div', 'row-mid');
+    mid.appendChild(el('span', null, [w.shelf ? 'Shelf ' + w.shelf : '', seenText(w)].filter(Boolean).join(' · ') || wineSub(w)));
+    if (w.price && w.loyalty_price) {
+      mid.appendChild(el('span', null, result.loyalty_card ? money(w.price) + ' without ' + loyaltyName() : money(w.loyalty_price) + ' with ' + loyaltyName()));
+    }
+    row.appendChild(mid);
+    const cr = el('div', 'conf-row');
+    const st = styleTag(w);
+    if (st) cr.appendChild(st);
+    cr.appendChild(confChip(w));
+    if (w.note) cr.appendChild(el('span', 'note', w.note));
+    row.appendChild(cr);
+    list.appendChild(row);
+  });
+}
+
+// ── Sign-in check ────────────────────────────────────────────
+function gate(title, text, linkText) {
+  const box = $('gateBox');
+  box.textContent = '';
+  box.appendChild(el('h1', null, title));
+  const p = el('p', 'lead', text);
+  p.style.marginTop = '8px';
+  box.appendChild(p);
+  const a = el('a', 'btn-main', linkText || 'Go to my journal');
+  a.href = '/';
+  a.style.marginTop = '16px';
+  box.appendChild(a);
+  showView('viewGate');
+}
+
+async function start() {
+  if (typeof supabase === 'undefined') { gate('Couldn’t load', 'The page didn’t load properly. Check your connection and refresh.', 'Back to my journal'); return; }
+  sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { flowType: 'implicit' } });
+  let session = null;
+  try { session = (await sb.auth.getSession()).data.session; } catch (_) {}
+  if (!session || !session.user) { gate('Please sign in first', 'Sign in on your journal, then open the Shelf Scanner from the menu.'); return; }
+  if (ADMIN_ONLY) {
+    let isAdmin = false;
+    try {
+      const { data } = await sb.from('profiles').select('is_admin').eq('id', session.user.id).maybeSingle();
+      isAdmin = !!(data && data.is_admin);
+    } catch (_) {}
+    if (!isAdmin) { gate('Not available yet', 'The Shelf Scanner is still being tested and isn’t open to everyone yet.'); return; }
+  }
+  loadPrefs();
+  loadDraft();
+  loadResult();
+  renderPhotos();
+  if (result) { renderResults(); showView('viewResults'); }
+  else showView('viewCapture');
+}
+
+// ── Wire up buttons ──────────────────────────────────────────
+$('cameraInput').addEventListener('change', e => { addFiles(e.target.files); e.target.value = ''; });
+$('galleryInput').addEventListener('change', e => { addFiles(e.target.files); e.target.value = ''; });
+$('scanBtn').addEventListener('click', runScan);
+$('retryBtn').addEventListener('click', runScan);
+$('errorBackBtn').addEventListener('click', () => showView('viewCapture'));
+$('cancelBtn').addEventListener('click', () => { if (scanAbort) scanAbort.abort(); });
+$('seeAllBtn').addEventListener('click', () => { listFilter = 'all'; renderAll(); showView('viewAll'); });
+$('allBackBtn').addEventListener('click', () => showView('viewResults'));
+$('newScanBtn').addEventListener('click', () => {
+  result = null; saveResult();
+  photos = []; saveDraft();
+  renderPhotos();
+  showView('viewCapture');
+});
+document.querySelectorAll('.filter').forEach(b => b.addEventListener('click', () => { listFilter = b.dataset.filter; renderAll(); }));
+document.querySelectorAll('.choice').forEach(b => b.addEventListener('click', () => { setWant(b.dataset.want); savePrefs(); }));
+$('heatToggle').addEventListener('click', () => {
+  heatOff = !heatOff;
+  $('heatToggle').setAttribute('aria-pressed', String(heatOff));
+  $('heatToggle').textContent = heatOff ? 'Show colours' : 'Hide colours';
+  $('heatLayer').classList.toggle('off', heatOff);
+});
+$('heatZoom').addEventListener('click', () => {
+  heatZoomed = !heatZoomed;
+  $('heatZoom').setAttribute('aria-pressed', String(heatZoomed));
+  $('heatScroll').classList.toggle('zoomed', heatZoomed);
+  layoutBadges();
+});
+// Re-place badges when the screen size changes (e.g. turning the phone)
+let resizeTimer = null;
+window.addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(() => { if (!$('heatSection').hidden) layoutBadges(); }, 150); });
+$('loyaltyInput').addEventListener('change', savePrefs);
+$('shopInput').addEventListener('change', savePrefs);
+
+start();
+</script>
+</body>
+</html>
