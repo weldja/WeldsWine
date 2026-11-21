@@ -1140,6 +1140,8 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
 .dup-clink-text{position:absolute;top:10px;left:0;right:0;text-align:center;font-family:var(--font-d);font-size:17px;font-weight:500;color:var(--gold);opacity:0;animation:dupTextIn .5s 1s ease-out forwards}
 .dup-clink-sub{position:absolute;top:33px;left:0;right:0;text-align:center;font-size:11px;color:rgba(255,255,255,.45);opacity:0;animation:dupTextIn .5s 1.15s ease-out forwards}
 @keyframes dupTextIn{to{opacity:1;transform:translateY(0)}}
+.wine-card.card-found{animation:cardFoundGlow 1.5s ease-in-out 2}
+@keyframes cardFoundGlow{0%,100%{box-shadow:0 0 0 0 rgba(201,163,74,0)}50%{box-shadow:0 0 0 4px rgba(201,163,74,.85)}}
 .dup-warn{padding:12px 14px;background:#FFF8E6;border:1px solid #E8C84A;border-radius:10px;display:flex;align-items:flex-start;gap:9px;margin-bottom:16px;opacity:0;animation:dupTextIn .4s 1.3s ease-out forwards}
 .dup-warn-icon{font-size:16px;flex-shrink:0;margin-top:1px}
 .dup-warn-text{font-size:13px;color:var(--charcoal);line-height:1.45}
@@ -8848,6 +8850,16 @@ let _dupRatingVal   = 0;
      must all match instead, because "same producer, same year" alone is not
      enough to say it is the same bottle.
 
+  3. DIFFERENT SUPERMARKETS = DIFFERENT WINES. If both wines mention a
+     supermarket (in the name or producer) and they're different shops,
+     e.g. Asda Exceptional vs Morrisons The Best, they are different wines.
+
+  4. VAGUE NAMES NEED THE PRODUCER TOO. If the names are only partly the
+     same, or the name is just a place and a grape (e.g. "Barossa Shiraz",
+     which supermarkets and many producers all use), the producer must
+     also match. Otherwise any two Barossa Shirazes of the same year
+     would be treated as the same wine.
+
   Text is compared loosely: capitals, accents (é = e), punctuation and
   filler words like "Château", "Domaine" or "the" are ignored.
 */
@@ -8860,6 +8872,54 @@ const _DUP_FILLER_WORDS = new Set([
   'tenuta', 'weingut', 'quinta', 'maison', 'clos', 'estate', 'estates',
   'winery', 'wines', 'wine', 'vineyard', 'vineyards', 'cellars', 'cellar'
 ]);
+
+// Words that describe a style or a shop's range rather than one particular wine
+const _DUP_GENERIC_WORDS = new Set([
+  'valley', 'reserve', 'reserva', 'riserva', 'old', 'vine', 'vines', 'red', 'white',
+  'rose', 'classic', 'selection', 'special', 'premium', 'single', 'blend', 'best',
+  'finest', 'extra', 'taste', 'difference', 'collection', 'exquisite', 'specially',
+  'selected', 'morrisons', 'tesco', 'sainsbury', 'sainsburys', 'asda', 'waitrose',
+  'aldi', 'lidl', 'co', 'op', 'coop', 'marks', 'spencer', 'ms', 'wine', 'of',
+  'exceptional', 'deluxe', 'signature', 'by', 'our', 'blended', 'winemakers'
+]);
+
+// Supermarkets, so own-label wines from different shops are never confused
+const _DUP_SHOPS = {
+  morrisons: 'morrisons', tesco: 'tesco', sainsbury: 'sainsburys', sainsburys: 'sainsburys',
+  asda: 'asda', waitrose: 'waitrose', aldi: 'aldi', lidl: 'lidl', coop: 'coop',
+  marks: 'ms', ms: 'ms', ocado: 'ocado', majestic: 'majestic'
+};
+
+// Which supermarkets a piece of text mentions: "Exceptional by Asda" -> {"asda"}
+function _dupShops(...texts) {
+  const found = new Set();
+  texts.forEach(t => {
+    const cleaned = _dupClean(t).replace(/\bco op\b/g, 'coop').replace(/\bm and s\b/g, 'ms');
+    cleaned.split(' ').forEach(w => { if (_DUP_SHOPS[w]) found.add(_DUP_SHOPS[w]); });
+  });
+  return found;
+}
+
+// True when every word of a text is a place, grape or style from the details,
+// e.g. a producer read as "Barossa Valley". That isn't really a producer.
+function _dupOnlyDetails(text, ...details) {
+  const words = _dupWords(text);
+  if (!words.length) return false;
+  const known = new Set();
+  details.forEach(d => _dupWords(d).forEach(w => known.add(w)));
+  return words.every(w => known.has(w));
+}
+
+// True when a name is only places, grapes, styles and range words — e.g.
+// "Barossa Shiraz" or "The Best Barossa Valley Shiraz". Such names don't
+// identify one wine on their own.
+function _dupNameIsGeneric(name, ...details) {
+  const words = _dupWords(name);
+  if (!words.length) return false;
+  const known = new Set(_DUP_GENERIC_WORDS);
+  details.forEach(d => _dupWords(d).forEach(w => known.add(w)));
+  return words.every(w => known.has(w));
+}
 
 // Lower-case, remove accents and punctuation: "Château d'Yquem" -> "chateau d yquem"
 function _dupClean(value) {
@@ -8885,6 +8945,14 @@ function _dupTextSimilarity(a, b) {
   let shared = 0;
   wordsA.forEach(w => { if (wordsB.has(w)) shared++; });
   return shared / Math.max(wordsA.size, wordsB.size);
+}
+
+// True when every meaningful word of the shorter text is in the longer one
+function _dupContains(a, b) {
+  const wa = _dupWords(a), wb = _dupWords(b);
+  if (!wa.length || !wb.length) return false;
+  const [small, big] = wa.length <= wb.length ? [wa, new Set(wb)] : [wb, new Set(wa)];
+  return small.every(w => big.has(w));
 }
 
 // The numbers in a wine name, ignoring years: "Bin 28 Kalimna 2019" -> ["28"]
@@ -8921,6 +8989,15 @@ function findDuplicateWine(scanData) {
 
   for (const w of wines) {
     let score = 0;
+    // Places, grapes and styles of both wines — used to spot vague names and producers
+    const details = [scanData.grape, scanData.region, scanData.appellation, scanData.country, scanData.style,
+                     w.grape, w.region, w.country, w.style];
+
+    // ── Supermarket ──
+    // Asda's Barossa Shiraz and Morrisons' Barossa Shiraz are different wines
+    const scanShops = _dupShops(scan.name, scan.winery);
+    const wShops    = _dupShops(w.name, w.winery);
+    if (scanShops.size && wShops.size && ![...scanShops].some(x => wShops.has(x))) continue;
 
     // ── Name ──
     // Numbers in a name identify the wine ("Bin 28" vs "Bin 128", "No. 5" vs "No. 7"),
@@ -8943,7 +9020,18 @@ function findDuplicateWine(scanData) {
     let wineryMatches = false;
     if (winerySim !== null) {
       if (winerySim === 0) continue;               // different producer
-      if (winerySim >= 0.6) { score += 2; wineryMatches = true; }
+      // Also a match when one producer name sits inside the other,
+      // e.g. "Morrisons" and "Morrisons The Best", or "Penfolds" and "Penfolds Barossa"
+      // A "producer" that's really just the region (e.g. "Barossa Valley") doesn't count as a match.
+      const placeOnly = _dupOnlyDetails(scan.winery, ...details) || _dupOnlyDetails(w.winery, ...details);
+      if (!placeOnly && (winerySim >= 0.6 || _dupContains(scan.winery, w.winery))) { score += 2; wineryMatches = true; }
+    }
+
+    // A name that's only partly the same, or that's just a place + grape
+    // ("Barossa Shiraz"), isn't enough on its own: the producer must agree too.
+    if (nameMatches && !wineryMatches) {
+      const vague = _dupNameIsGeneric(scan.name, ...details) || _dupNameIsGeneric(w.name, ...details);
+      if (nameSim < 1 || vague) continue;
     }
 
     // ── Vintage ──
@@ -9115,14 +9203,29 @@ async function handleAddToExisting() {
 
     closeDuplicateOverlay();
     closeScanModal();
-    showToast(`Bottle added! Now ${w.bottleCount} bottles ✓`);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    // Say WHICH wine got the bottle, and take the user to its card,
+    // so it's never a mystery where the scan went.
+    showToast(`Added to "${w.name || 'wine'}" — now ${w.bottleCount} bottles ✓`);
+    _revealWineCard(w.id);
   } catch (err) {
     console.error('handleAddToExisting error:', err);
     showToast('Failed to add — check your connection');
     btn.disabled = false;
     btn.innerHTML = `Add Bottle to Existing`;
   }
+}
+
+// Scroll to a wine's card and make it glow briefly so it's easy to spot
+function _revealWineCard(id) {
+  const card = wineGrid.querySelector(`[data-id="${id}"]`);
+  if (!card) { window.scrollTo({ top: 0, behavior: 'smooth' }); return; }
+  setTimeout(() => {
+    card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    card.classList.remove('card-found');
+    void card.offsetWidth;
+    card.classList.add('card-found');
+    setTimeout(() => card.classList.remove('card-found'), 3200);
+  }, 350);
 }
 
 function showScanScreen(id) {
