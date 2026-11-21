@@ -1,8 +1,8 @@
-# Welds Wine Wisdoms — https://weldswine.co.uk
-# Allow all crawlers, point to sitemap
-
+# Welds Wine Wisdoms
+# Everything may be crawled. The Shelf Scanner app itself (shelf.html)
+# is kept out of Google by a "noindex" tag inside the page, not here:
+# Google has to be allowed to read the page to see that tag.
 User-agent: *
 Allow: /
 
-# Sitemap location
 Sitemap: https://weldswine.co.uk/sitemap.xml
