@@ -127,16 +127,22 @@ async function send_push(env, subscription, payload) {
   return { status: res.status, expired: res.status === 410 || res.status === 404 };
 }
 __name(send_push, "send_push");
+// Only our own web pages may call the worker's POST routes.
+// The origin must match EXACTLY: "https://weldswine.co.uk.example.com" used to
+// pass because only the start was checked, and a request with no origin at all
+// (a script, not a browser) was let straight through. Browsers always send an
+// origin on these POST requests, so the real app is not affected.
 function origin_ok(request) {
   const origin = request.headers.get("Origin") || "";
+  if (!origin) return false;
   const allowedOrigins = [
     "https://weldswine.co.uk",
     "https://www.weldswine.co.uk",
-    "https://james-weld.github.io",
-    "http://localhost",
-    "http://127.0.0.1"
+    "https://james-weld.github.io"
   ];
-  return allowedOrigins.some((o) => origin.startsWith(o)) || origin === "";
+  if (allowedOrigins.includes(origin)) return true;
+  // Local testing on your own computer, any port (e.g. http://localhost:8080)
+  return /^http:\/\/(localhost|127\.0\.0\.1)(:\d{1,5})?$/.test(origin);
 }
 __name(origin_ok, "origin_ok");
 async function gather_subs(env, cellar_id, exclude_endpoint) {
@@ -483,7 +489,6 @@ async function getWinePhoto(env, winery, region, country, wineName, extraProduce
 
 async function sb_fetch(env, path, opts = {}) {
   const key = env.SUPABASE_SERVICE_KEY;
-  console.log("sb_fetch: key present=", !!key, "first10=", key ? key.slice(0, 10) : "null", "env keys=", Object.keys(env || {}).join(","));
   if (!key) throw new Error("SUPABASE_SERVICE_KEY not set in Worker secrets");
   const res = await fetch(`${SUPABASE_URL}/rest/v1${path}`, {
     method: opts.method || "GET",
@@ -577,6 +582,15 @@ var templates = {
       ${btn(APP_URL, "Open Admin Panel")}`)
     };
   }, "access_request_notify"),
+  // Contact form message, sent to the admins only
+  contact: /* @__PURE__ */ __name2((rawName, rawEmail, rawMessage) => ({
+    subject: `\u2709\uFE0F Contact form: ${String(rawName || rawEmail || "someone").slice(0, 60)}`,
+    html: baseEmail(`
+      <p style="font-family:Georgia,serif;font-size:1rem;color:#2C2420;line-height:1.6;margin:0 0 12px">New message from the ${APP_NAME} contact form.</p>
+      <p style="font-family:Georgia,serif;font-size:.92rem;color:#6B5D58;line-height:1.7;margin:0 0 4px"><strong>Name:</strong> ${escEmail(rawName) || "(not given)"}</p>
+      <p style="font-family:Georgia,serif;font-size:.92rem;color:#6B5D58;line-height:1.7;margin:0 0 12px"><strong>Email:</strong> ${escEmail(rawEmail) || "(not given)"}</p>
+      <p style="font-family:Georgia,serif;font-size:.92rem;color:#2C2420;line-height:1.7;margin:0;padding:12px;background:#F5EFE6;border-radius:6px;white-space:pre-wrap">${escEmail(rawMessage)}</p>`)
+  }), "contact"),
   // Sent to the person who asked for access, so they know it arrived
   access_request_received: /* @__PURE__ */ __name2((rawName) => ({
     subject: `We've received your request \u{1F377}`,
@@ -585,13 +599,13 @@ var templates = {
       <p style="font-family:Georgia,serif;font-size:.92rem;color:#6B5D58;line-height:1.7;margin:0 0 24px">Your request for access has arrived safely. We'll email you again with a link to set up your account once it's ready.</p>`)
   }), "access_request_received")
 };
-async function sendEmail(env, { to, subject, html }) {
+async function sendEmail(env, { to, subject, html, reply_to }) {
   const key = env?.RESEND_API_KEY || RESEND_API_KEY;
   if (!key || key === "PASTE_YOUR_RESEND_KEY_HERE") throw new Error("RESEND_KEY_NOT_SET");
   const r = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
-    body: JSON.stringify({ from: EMAIL_FROM, to, subject, html })
+    body: JSON.stringify(reply_to ? { from: EMAIL_FROM, to, subject, html, reply_to } : { from: EMAIL_FROM, to, subject, html })
   });
   if (!r.ok) {
     const e = await r.json().catch(() => ({}));
@@ -604,6 +618,45 @@ __name2(sendEmail, "sendEmail");
 /* ═══════════════════════════════════════════════════════════════
    ADMIN HELPERS
    ═══════════════════════════════════════════════════════════════ */
+// Email addresses of everyone with profiles.is_admin = true
+async function getAdminEmails(env) {
+  const admins = await sb_fetch(env, "/profiles?is_admin=eq.true&select=id", { prefer: "return=representation" }) || [];
+  const emails = [];
+  for (const a of admins) {
+    const uRes = await fetch(`${SUPABASE_URL}/auth/v1/admin/users/${a.id}`, {
+      headers: { apikey: env.SUPABASE_SERVICE_KEY, Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}` }
+    });
+    if (uRes.ok) { const u = await uRes.json(); if (u.email) emails.push(u.email); }
+  }
+  return emails;
+}
+__name(getAdminEmails, "getAdminEmails");
+
+// A fresh set-password link for an existing user (Supabase "recovery" link,
+// which makes index.html show the set-password form). Returns { url, error }.
+async function makeSetPasswordLink(env, email) {
+  try {
+    const linkRes = await fetch(`${SUPABASE_URL}/auth/v1/admin/generate_link`, {
+      method: "POST",
+      headers: {
+        apikey: env.SUPABASE_SERVICE_KEY,
+        Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ type: "recovery", email, options: { redirectTo: APP_URL + "/?type=recovery" } })
+    });
+    if (!linkRes.ok) {
+      const t = await linkRes.text().catch(() => "");
+      return { url: null, error: `generate_link ${linkRes.status}: ${t.slice(0, 300)}` };
+    }
+    const linkData = await linkRes.json();
+    const url = linkData.action_link || linkData.properties?.action_link || null;
+    return url ? { url, error: null } : { url: null, error: "generate_link returned no action_link" };
+  } catch (e) {
+    return { url: null, error: "generate_link failed: " + e.message };
+  }
+}
+__name(makeSetPasswordLink, "makeSetPasswordLink");
 async function verifyAdmin(env, request) {
   const authHeader = request.headers.get("Authorization") || "";
   const token = authHeader.replace(/^Bearer\s+/i, "").trim();
@@ -620,7 +673,7 @@ async function verifyAdmin(env, request) {
     }
     const user = await res.json();
     if (!user || !user.id) { console.log("verifyAdmin: no user in response"); return { user: null, reason: "no_user" }; }
-    console.log("verifyAdmin: user=" + user.id + " email=" + user.email);
+    console.log("verifyAdmin: user=" + user.id);
     // Check is_admin flag in profiles
     const profileRes = await fetch(
       `${SUPABASE_URL}/rest/v1/profiles?id=eq.${user.id}&select=is_admin`,
@@ -632,7 +685,6 @@ async function verifyAdmin(env, request) {
       return { user: null, reason: "profile_query_failed" };
     }
     const profiles = await profileRes.json();
-    console.log("verifyAdmin: profiles=" + JSON.stringify(profiles));
     if (!profiles || !profiles.length) {
       return { user: null, reason: "no_profile_found" };
     }
@@ -1024,7 +1076,11 @@ var worker_default = {
       if (!origin_ok(request)) return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403, headers: cors });
       let body;
       try { body = await request.json(); } catch { return new Response(JSON.stringify({ error: "Invalid JSON" }), { status: 400, headers: cors }); }
-      const { name, email, message } = body || {};
+      const { name: rawReqName, email: rawReqEmail, message: rawReqMessage } = body || {};
+      // Keep it short: this name goes into a confirmation email to the given address
+      const name = String(rawReqName || "").trim().slice(0, 80);
+      const email = String(rawReqEmail || "").trim().slice(0, 200);
+      const message = rawReqMessage ? String(rawReqMessage).trim().slice(0, 1000) : null;
       if (!name || !email) return new Response(JSON.stringify({ error: "name and email required" }), { status: 400, headers: cors });
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return new Response(JSON.stringify({ error: "Invalid email" }), { status: 400, headers: cors });
       try {
@@ -1185,34 +1241,7 @@ var worker_default = {
         // so type must be "recovery": Supabase refuses "invite" links for
         // registered emails. A recovery link also fires PASSWORD_RECOVERY in
         // index.html, which shows the set-password form.
-        let inviteUrl = null;
-        let linkError = null;
-        try {
-          const linkRes = await fetch(`${SUPABASE_URL}/auth/v1/admin/generate_link`, {
-            method: "POST",
-            headers: {
-              apikey: env.SUPABASE_SERVICE_KEY,
-              Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}`,
-              "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-              type: "recovery",
-              email,
-              options: { redirectTo: APP_URL + "/?type=recovery" }
-            })
-          });
-          if (linkRes.ok) {
-            const linkData = await linkRes.json();
-            // Depending on Supabase version, action_link is top-level or under properties
-            inviteUrl = linkData.action_link || linkData.properties?.action_link || null;
-            if (!inviteUrl) linkError = "generate_link returned no action_link";
-          } else {
-            const t = await linkRes.text().catch(() => "");
-            linkError = `generate_link ${linkRes.status}: ${t.slice(0, 300)}`;
-          }
-        } catch (e) {
-          linkError = "generate_link failed: " + e.message;
-        }
+        const { url: inviteUrl, error: linkError } = await makeSetPasswordLink(env, email);
         if (linkError) console.error("create-user: " + linkError);
 
         // Send invite email — only if we have a real set-password link,
@@ -1246,10 +1275,58 @@ var worker_default = {
           ok: true,
           user_id: userId,
           invite_sent: inviteSent,
-          invite_error: inviteSent ? null : (linkError || emailError)
+          invite_error: inviteSent ? null : (linkError || emailError),
+          // Only when the email failed: the admin can pass the link on by hand
+          invite_url: inviteSent ? null : inviteUrl
         }), { status: 200, headers: cors });
       } catch (e) {
         console.error("create-user error:", e.message);
+        return new Response(JSON.stringify({ error: e.message }), { status: 500, headers: cors });
+      }
+    }
+
+    // ── POST /api/admin/resend-invite — email someone a fresh set-password link ──
+    if (url.pathname.endsWith("/api/admin/resend-invite") && request.method === "POST") {
+      const { user: admin, reason: _authReason } = await verifyAdmin(env, request);
+      if (!admin) return new Response(JSON.stringify({ error: "Unauthorized", reason: _authReason }), { status: 401, headers: cors });
+      let body;
+      try { body = await request.json(); } catch { return new Response(JSON.stringify({ error: "Invalid JSON" }), { status: 400, headers: cors }); }
+      const userId = String((body && body.user_id) || "");
+      if (!/^[0-9a-f-]{36}$/i.test(userId)) return new Response(JSON.stringify({ error: "user_id required" }), { status: 400, headers: cors });
+      try {
+        const uRes = await fetch(`${SUPABASE_URL}/auth/v1/admin/users/${userId}`, {
+          headers: { apikey: env.SUPABASE_SERVICE_KEY, Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}` }
+        });
+        if (!uRes.ok) return new Response(JSON.stringify({ error: uRes.status === 404 ? "User not found" : `Supabase Admin ${uRes.status}` }), { status: uRes.status === 404 ? 404 : 502, headers: cors });
+        const u = await uRes.json();
+        if (!u.email) return new Response(JSON.stringify({ error: "That account has no email address" }), { status: 400, headers: cors });
+        let displayName = (u.user_metadata && u.user_metadata.full_name) || "";
+        try {
+          const prof = await sb_fetch(env, "/profiles?id=eq." + userId + "&select=display_name", { prefer: "return=representation" });
+          if (prof && prof[0] && prof[0].display_name) displayName = prof[0].display_name;
+        } catch (_) {}
+        const { url: inviteUrl, error: linkError } = await makeSetPasswordLink(env, u.email);
+        let inviteSent = false, emailError = null;
+        if (inviteUrl) {
+          try {
+            const { subject, html } = templates.invite(inviteUrl, escEmail(displayName));
+            await sendEmail(env, { to: u.email, subject, html });
+            inviteSent = true;
+          } catch (e) {
+            emailError = e.message === "RESEND_KEY_NOT_SET" ? "RESEND_API_KEY secret is not set in Cloudflare" : e.message;
+            console.error("resend-invite: email failed:", e.message);
+          }
+        }
+        if (linkError) console.error("resend-invite: " + linkError);
+        return new Response(JSON.stringify({
+          ok: true,
+          email: u.email,
+          invite_sent: inviteSent,
+          invite_error: inviteSent ? null : (linkError || emailError),
+          invite_url: inviteSent ? null : inviteUrl
+        }), { status: 200, headers: cors });
+      } catch (e) {
+        console.error("resend-invite error:", e.message);
         return new Response(JSON.stringify({ error: e.message }), { status: 500, headers: cors });
       }
     }
@@ -1520,14 +1597,21 @@ var worker_default = {
       } catch {
         return new Response(JSON.stringify({ error: "Invalid JSON" }), { status: 400, headers: cors });
       }
-      const { type, email, url: linkUrl } = body2;
-      if (!type || !email) return new Response(JSON.stringify({ error: "type and email required" }), { status: 400, headers: cors });
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return new Response(JSON.stringify({ error: "Invalid email" }), { status: 400, headers: cors });
-      if (!templates[type]) return new Response(JSON.stringify({ error: `Unknown type: ${type}` }), { status: 400, headers: cors });
-      if ((type === "magic_link" || type === "reset_password") && !linkUrl) return new Response(JSON.stringify({ error: "url required" }), { status: 400, headers: cors });
+      // SECURITY: this route used to send any of our emails to ANY address the
+      // caller chose. Now it only handles the contact form, and the message
+      // always goes to the admins, never to an address from the request.
+      const { type, name, email, message } = body2 || {};
+      if (type !== "contact") return new Response(JSON.stringify({ error: "Unknown type" }), { status: 400, headers: cors });
+      const cleanMessage = String(message || "").trim().slice(0, 4000);
+      const cleanName = String(name || "").trim().slice(0, 100);
+      const cleanEmail = String(email || "").trim().slice(0, 200);
+      if (!cleanMessage) return new Response(JSON.stringify({ error: "message required" }), { status: 400, headers: cors });
+      const replyTo = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail) ? cleanEmail : null;
       try {
-        const { subject, html } = templates[type](linkUrl);
-        await sendEmail(env, { to: email, subject, html });
+        const adminEmails = await getAdminEmails(env);
+        if (!adminEmails.length) throw new Error("No admin email found \u2014 set profiles.is_admin = true for your account");
+        const { subject, html } = templates.contact(cleanName, cleanEmail, cleanMessage);
+        for (const to of adminEmails) await sendEmail(env, { to, subject, html, reply_to: replyTo || undefined });
         return new Response(JSON.stringify({ ok: true }), { status: 200, headers: cors });
       } catch (e) {
         const msg = e.message || "";
@@ -1972,6 +2056,8 @@ Rules:
     }
     // No API route matched — pass non-POST requests through to static origin (Cloudflare Pages)
     if (request.method !== "POST") return fetch(request);
+    // Label scanning spends your Anthropic credit, so only our own pages may use it
+    if (!origin_ok(request)) return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403, headers: cors });
     const anthropicKey = env?.ANTHROPIC_API_KEY || ANTHROPIC_API_KEY;
     if (!anthropicKey || anthropicKey === "PASTE_YOUR_ANTHROPIC_KEY_HERE") return new Response(JSON.stringify({ error: "NO_KEY_IN_WORKER" }), { status: 500, headers: cors });
     let body;
