@@ -735,6 +735,12 @@ body{font-family:var(--font-b);background:var(--cream);color:var(--charcoal);min
 .form-section{font-family:var(--font-d);font-size:.75rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--burgundy);margin:18px 0 10px;padding-bottom:5px;border-bottom:1px solid var(--light-gray)}
 .form-section:first-child{margin-top:0}
 .form-row{margin-bottom:13px}
+/* Bottles − 1 + control in the add/edit form */
+.bottle-stepper{display:flex;align-items:center;gap:14px}
+.bs-btn{width:44px;height:44px;border-radius:50%;border:1.5px solid var(--burgundy);background:var(--ivory);color:var(--burgundy);font-family:var(--font-b);font-size:1.3rem;font-weight:600;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+.bs-btn:disabled{border-color:var(--light-gray);color:var(--light-gray);cursor:default}
+.bs-count{min-width:2ch;text-align:center;font-family:var(--font-d);font-size:1.25rem;font-weight:600;color:var(--charcoal)}
+.bs-hint{font-size:.75rem;color:var(--warm-gray)}
 .form-row.two-col{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .form-group{display:flex;flex-direction:column;gap:4px}
 label{font-family:var(--font-b);font-size:.75rem;letter-spacing:.08em;text-transform:uppercase;color:var(--warm-gray)}
@@ -2987,6 +2993,17 @@ body{
           <div class="form-group">
             <label for="purchasedFrom">Where Purchased</label>
             <input type="text" id="purchasedFrom" placeholder="e.g. Majestic"/>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label id="bottleCountLabel">Bottles</label>
+            <div class="bottle-stepper" role="group" aria-labelledby="bottleCountLabel">
+              <button type="button" class="bs-btn" id="bottleMinus" aria-label="One bottle fewer">−</button>
+              <span class="bs-count" id="bottleCountDisplay" aria-live="polite">1</span>
+              <button type="button" class="bs-btn" id="bottlePlus" aria-label="One more bottle">+</button>
+              <span class="bs-hint">how many you've had or bought</span>
+            </div>
           </div>
         </div>
 
@@ -6504,8 +6521,20 @@ async function _loadFormPhoto(details) {
   }
 }
 
+/* ── Bottles − 1 + control ───────────────────────────────── */
+let _formBottleCount = 1;
+function _setFormBottles(n) {
+  _formBottleCount = Math.max(1, Math.min(999, parseInt(n, 10) || 1));
+  document.getElementById('bottleCountDisplay').textContent = _formBottleCount;
+  // Can't go below 1 — to remove a wine completely, delete it instead
+  document.getElementById('bottleMinus').disabled = _formBottleCount <= 1;
+}
+document.getElementById('bottleMinus').addEventListener('click', () => _setFormBottles(_formBottleCount - 1));
+document.getElementById('bottlePlus').addEventListener('click',  () => _setFormBottles(_formBottleCount + 1));
+
 function openModal(wine=null, injectFront=null, injectBack=null) {
   wineForm.reset();
+  _setFormBottles(wine ? (wine.bottleCount || 1) : 1);
   currentPhotoFront = injectFront;
   currentPhotoBack  = injectBack;
   currentLocLat=null; currentLocLng=null; currentLocLabel='';
@@ -6834,6 +6863,7 @@ async function handleSave(e) {
     style:        document.getElementById('style').value||null,
     price:        document.getElementById('price').value.trim()||null,
     purchasedFrom:document.getElementById('purchasedFrom').value.trim()||null,
+    bottleCount:  _formBottleCount,
     dateTasted:   toTaste ? null : (document.getElementById('dateTasted').value||null),
     notes:        document.getElementById('notes').value.trim()||null,
     rating:       toTaste ? null : (parseFloat(ratingInput.value)||null),
@@ -6859,8 +6889,10 @@ async function handleSave(e) {
   }
 
   // DB confirmed — now update local array
-  if (idx >= 0) { entry.createdAt = wines[idx].createdAt; wines[idx] = entry; }
+  // On an edit, keep the details the form doesn't show (ratings history, who added it, etc.)
+  if (idx >= 0) { entry.createdAt = wines[idx].createdAt; wines[idx] = { ...wines[idx], ...entry }; }
   else { wines.unshift(entry); }
+  const savedWine = idx >= 0 ? wines[idx] : entry;
 
   showToast(idx >= 0 ? 'Wine updated ✓' : (toTaste ? 'Saved to taste later ✓' : 'Wine saved ✓'));
   if (idx < 0) notifyWineAdded(entry); // fire & forget
@@ -6884,7 +6916,7 @@ async function handleSave(e) {
     // Update: replace just the one card using reliable data-id attribute
     const existing = wineGrid.querySelector(`[data-id="${entry.id}"]`);
     if (existing) {
-      const newCard = createCard(entry);
+      const newCard = createCard(savedWine);
       wineGrid.replaceChild(newCard, existing);
     }
   } else {
@@ -7023,18 +7055,26 @@ window.updatePushBtn = function updatePushBtn() {
     });
 };
 
+// This device's push address, so the worker doesn't notify the person who did the action.
+// navigator.serviceWorker.ready waits FOREVER if the service worker never starts
+// (e.g. sw.js failed to load, or an in-app browser), which used to stop the
+// notification being sent at all. Now we give up after 3 seconds and send anyway.
+async function _myPushEndpoint() {
+  try {
+    if (!navigator.serviceWorker) return null;
+    const timeout = new Promise(resolve => setTimeout(() => resolve(null), 3000));
+    const reg = await Promise.race([navigator.serviceWorker.ready, timeout]);
+    if (!reg) { console.warn('[notify] service worker not ready after 3s — sending without exclude_endpoint'); return null; }
+    const mySub = reg.pushManager ? await reg.pushManager.getSubscription() : null;
+    return mySub ? mySub.endpoint : null;
+  } catch (e) { return null; }
+}
+
 async function notifyWineAdded(entry, bottleCount) {
   if (!window._cellarId || !_currentUser) return;
   // Get this device's endpoint so the worker can exclude it
   // Wrapped separately so a missing pushManager (e.g. iOS browser tab) doesn't block the fetch
-  let myEndpoint = null;
-  try {
-    if (navigator.serviceWorker) {
-      const reg = await navigator.serviceWorker.ready;
-      const mySub = reg.pushManager ? await reg.pushManager.getSubscription() : null;
-      myEndpoint = mySub ? mySub.endpoint : null;
-    }
-  } catch(ignore) {}
+  const myEndpoint = await _myPushEndpoint();
   try {
     // Worker fetches subscriptions server-side (bypasses RLS) and sends pushes
     const _notifyUrl = Scanner.getProxyUrl() + '/notify-wine-added';
@@ -7418,14 +7458,7 @@ function renderIntelPanelHTML(d) {
 /* ── Notify cellar members of a new comment (fire & forget) ── */
 async function notifyWineCommented(wine, commentBody) {
   if (!window._cellarId || !_currentUser || !wine) return;
-  let myEndpoint = null;
-  try {
-    if (navigator.serviceWorker) {
-      const reg = await navigator.serviceWorker.ready;
-      const mySub = reg.pushManager ? await reg.pushManager.getSubscription() : null;
-      myEndpoint = mySub ? mySub.endpoint : null;
-    }
-  } catch(ignore) {}
+  const myEndpoint = await _myPushEndpoint();
   try {
     const res = await fetch(Scanner.getProxyUrl() + '/notify-wine-commented', {
       method: 'POST',
@@ -8438,6 +8471,8 @@ async function saveWineToDB(entry) {
     cellar_id:     window._cellarId || null,
     added_by:      entry.addedBy || _currentUser.id
   };
+  // Bottle count from the form's − 1 + control (other save paths leave it untouched)
+  if (entry.bottleCount != null) row.bottle_count = Math.max(1, parseInt(entry.bottleCount, 10) || 1);
   const { error } = await _sb.from('wines').upsert(row, { onConflict: 'id' });
   if (error) {
     console.error('saveWineToDB FAILED', {
