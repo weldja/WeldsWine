@@ -85,7 +85,14 @@ self.addEventListener('push', event => {
   event.waitUntil(
     self.registration.showNotification(data.title, {
       body:  data.body,
-      icon:  '/icon-192.png',
+      // Rich parts (all optional — anything missing is simply left out):
+      //   icon  = the wine's label photo, shown as a thumbnail (falls back to the app icon)
+      //   image = the estate/region photo, shown large when expanded (Android)
+      //   actions = up to two buttons under the notification
+      icon:      data.icon  || '/icon-192.png',
+      image:     data.image || undefined,
+      actions:   Array.isArray(data.actions) ? data.actions.slice(0, 2) : [],
+      timestamp: data.timestamp || Date.now(),
       badge: '/badge-96.png',
       // Grouping: repeat comments on one wine collapse into a single
       // notification that re-alerts, instead of stacking up.
@@ -98,6 +105,8 @@ self.addEventListener('push', event => {
 });
 self.addEventListener('notificationclick', event => {
   event.notification.close();
+  // "Later" button: just dismiss, don't open the app
+  if (event.action === 'later') return;
   const d      = event.notification.data || {};
   const target = d.url || '/';
   event.waitUntil(
