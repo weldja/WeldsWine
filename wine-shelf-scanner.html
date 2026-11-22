@@ -52,6 +52,13 @@
       "browserRequirements": "Requires a modern web browser and a camera.",
       "inLanguage": "en-GB",
       "image": "https://weldswine.co.uk/wine-shelf-scanner.png",
+      "screenshot": {
+        "@type": "ImageObject",
+        "url": "https://weldswine.co.uk/images/wine-shelf-scanner-heat-map-example.jpg",
+        "width": 920,
+        "height": 825,
+        "caption": "A real Shelf Scanner result: an Asda wine shelf with every wine colour-coded from best to worst value, the three best buys numbered and three poor-value wines crossed out"
+      },
       "featureList": [
         "Reads every wine and price tag from up to six photos of the same shelf",
         "Uses loyalty card prices such as Clubcard and Nectar if you have one",
@@ -170,7 +177,7 @@ h1{font-family:var(--font-d);font-weight:600;font-size:clamp(2rem,5.2vw,3.1rem);
 .shelf{background:#EFE4D6;border-radius:var(--rl);padding:14px;border:1px solid var(--light-gray)}
 .shelf svg{display:block;width:100%;height:auto}
 .shelf figcaption{font-size:.84rem;color:var(--text-2);padding:10px 4px 2px}
-.legend-bar{height:8px;border-radius:4px;margin:8px 4px 4px;background:linear-gradient(90deg,#2E9E5B,#9BBF3A,#E2B33C,#E07A2E,#C8323A)}
+.legend-bar{height:8px;border-radius:4px;margin:8px 4px 4px;background:linear-gradient(90deg,#0B8A3E 0 20%,#8BD13B 20% 40%,#FFD21F 40% 60%,#FF7A1A 60% 80%,#C4122F 80% 100%)}
 .legend-labels{display:flex;justify-content:space-between;font-size:.76rem;color:var(--text-2);padding:0 4px}
 /* The one bit of movement: the colours appear one by one, as if the shelf is being read */
 @media (prefers-reduced-motion:no-preference){
@@ -217,6 +224,22 @@ h3{font-family:var(--font-d);font-weight:600;font-size:1.15rem;line-height:1.3}
 footer{background:var(--burgundy-deep);color:#E8C6CE;font-size:.86rem;padding:22px 20px calc(22px + env(safe-area-inset-bottom,0px))}
 footer a{color:var(--gold-lt)}
 footer .wrap{display:flex;flex-wrap:wrap;gap:8px 24px;justify-content:space-between;padding:0}
+/* Real scan example */
+.ex{display:grid;gap:28px;margin-top:22px;align-items:start}
+@media (min-width:900px){.ex{grid-template-columns:1.15fr 1fr;gap:44px}}
+.ex-fig{margin:0;background:#fff;border:1px solid var(--light-gray);border-radius:var(--rl);padding:10px}
+.ex-fig img{display:block;width:100%;height:auto;border-radius:var(--r)}
+.ex-fig figcaption{font-size:.84rem;color:var(--text-2);padding:10px 4px 2px}
+.ex-key{list-style:none;margin:12px 0 0;padding:0;display:flex;flex-direction:column;gap:10px}
+.ex-key li{display:flex;align-items:flex-start;gap:12px;line-height:1.5}
+.ex-sym{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:15px;font-weight:600;margin-top:1px}
+.ex-sym.pick{background:var(--burgundy-deep);color:var(--gold-lt);font-family:var(--font-d)}
+.ex-sym.poor{background:#fff;color:#9A2A33;border:2px solid #9A2A33;font-size:.85rem}
+.ex-sym.dash{border:2px dashed #8C817C;border-radius:6px}
+.ex-sym.band{border-radius:6px}
+.ex-sym.striped{background-image:repeating-linear-gradient(135deg,rgba(255,255,255,.45) 0 4px,transparent 4px 9px)}
+.ex h3 + .ex-key{margin-top:10px}
+.ex-keys h3:not(:first-child){margin-top:24px}
 </style>
 </head>
 <body>
@@ -337,8 +360,8 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:8px 24px;justify-content:space-betw
           </g>
         </svg>
         <div class="legend-bar" aria-hidden="true"></div>
-        <div class="legend-labels" aria-hidden="true"><span>Best value on this shelf</span><span>Fair</span><span>Poor value</span></div>
-        <figcaption>An example of what you see after a scan. The numbers mark the three best-value wines; the cross marks a wine where you’re paying for the name.</figcaption>
+        <div class="legend-labels" aria-hidden="true"><span>Best</span><span>Good</span><span>Fair</span><span>Poor</span><span>Worst</span></div>
+        <figcaption>An illustration of what you see after a scan. The numbers mark the three best-value wines; the cross marks a wine where you’re paying for the name. <a href="#example">See a real scan</a>.</figcaption>
       </figure>
     </div>
   </div>
@@ -360,6 +383,45 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:8px 24px;justify-content:space-betw
           <p>You get the three best-value wines with a plain reason for each, the wines that aren’t worth their price, and your own photo coloured from good value to poor.</p>
         </li>
       </ol>
+    </div>
+  </section>
+
+  <section class="block" id="example" aria-labelledby="ex-h">
+    <div class="wrap">
+      <h2 id="ex-h">A real shelf scan, explained</h2>
+      <p class="measure" style="max-width:38rem">This is one photo of the red wine shelf in a UK Asda. The Shelf Scanner read every wine and its price tag, judged how good each wine is for what it costs here, and coloured the photo so the best buys stand out at a glance.</p>
+
+      <div class="ex">
+        <figure class="ex-fig">
+          <picture>
+            <source srcset="/images/wine-shelf-scanner-heat-map-example.webp" type="image/webp"/>
+            <img src="/images/wine-shelf-scanner-heat-map-example.jpg"
+                 width="920" height="825" loading="lazy" decoding="async"
+                 alt="Photo of an Asda wine shelf of Argentine and Chilean reds. Each wine is outlined in green, yellow, orange or red to show its value, the three best buys are numbered 1 to 3, and three poor-value wines are marked with a cross."/>
+          </picture>
+          <figcaption>A real result from the Shelf Scanner: one photo, every wine on the shelf rated for value.</figcaption>
+        </figure>
+
+        <div class="ex-keys">
+          <h3>What the colours mean</h3>
+          <ul class="ex-key">
+            <li><span class="ex-sym band" style="background-color:#0B8A3E" aria-hidden="true"></span><span><strong>Best</strong> – the strongest value on this shelf.</span></li>
+            <li><span class="ex-sym band" style="background-color:#8BD13B" aria-hidden="true"></span><span><strong>Good</strong> – a sensible buy for the money.</span></li>
+            <li><span class="ex-sym band" style="background-color:#FFD21F" aria-hidden="true"></span><span><strong>Fair</strong> – about what you’d expect to pay.</span></li>
+            <li><span class="ex-sym band striped" style="background-color:#FF7A1A" aria-hidden="true"></span><span><strong>Poor</strong> – you’re paying more than the wine is worth.</span></li>
+            <li><span class="ex-sym band striped" style="background-color:#C4122F" aria-hidden="true"></span><span><strong>Worst</strong> – the weakest value on the shelf.</span></li>
+          </ul>
+
+          <h3>What the symbols mean</h3>
+          <ul class="ex-key">
+            <li><span class="ex-sym pick" aria-hidden="true">1</span><span><strong>Numbered circle</strong> – a best-value pick. 1 is the best buy on the shelf, then 2 and 3, each with a short reason.</span></li>
+            <li><span class="ex-sym poor" aria-hidden="true">✕</span><span><strong>Cross</strong> – a poor-value wine to avoid, often one where you’re mostly paying for the brand name.</span></li>
+            <li><span class="ex-sym dash" aria-hidden="true"></span><span><strong>Dashed outline</strong> – no price tag could be seen for that wine, so it isn’t rated.</span></li>
+          </ul>
+
+          <p>In this scan the top pick was on the bottom shelf, where good-value bottles often hide, while the poor-value wines were on the top and middle shelves. Tap any wine in the app to see its price and why it was rated that way.</p>
+        </div>
+      </div>
     </div>
   </section>
 
