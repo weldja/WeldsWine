@@ -8440,6 +8440,27 @@ async function loadWinesFromDB(cacheKey) {
    huge request. Downloading every photo at once used so much memory on phones
    that the page could crash and restart itself. Wines whose photos are already
    in memory are skipped. */
+/* Swap one card for a fresh copy that has its newly loaded photo, keeping
+   the card's place and state (Top pick badge, in-focus, no entrance animation).
+   The rest of the grid is left alone, so other thumbnails don't flicker. */
+function _refreshCardPhoto(w) {
+  try {
+    const old = wineGrid.querySelector('.wine-card[data-id="' + CSS.escape(String(w.id)) + '"]');
+    if (!old) return; // not on screen (filtered out, or another view) — next render picks it up
+    const fresh = createCard(w);
+    fresh.className = old.className;
+    fresh.classList.add('no-enter');
+    fresh.style.animationDelay = '';
+    const pick = old.querySelector('.card-top-pick');
+    const body = fresh.querySelector('.card-body');
+    if (pick && body && !body.querySelector('.card-top-pick')) body.insertBefore(pick, body.firstChild);
+    if (typeof _focusObs !== 'undefined' && _focusObs) _focusObs.unobserve(old);
+    old.replaceWith(fresh);
+  } catch (e) {
+    console.warn('_refreshCardPhoto failed, redrawing grid:', e);
+    renderGrid();
+  }
+}
 const PHOTO_BATCH_SIZE = 12;
 let _photoLoadToken = 0;
 async function _loadWinePhotos() {
@@ -8453,7 +8474,6 @@ async function _loadWinePhotos() {
       if (error) throw error;
       if (token !== _photoLoadToken) return;
       const byId = new Map(wines.map(w => [w.id, w]));
-      let changed = false;
       (data || []).forEach(row => {
         const w = byId.get(row.id);
         if (!w) return;
@@ -8461,10 +8481,12 @@ async function _loadWinePhotos() {
         const back  = row.photo_back  || null;
         if (w.photoFront !== front || w.photoBack !== back) {
           w.photoFront = front; w.photoBack = back; w.photo = front;
-          changed = true;
+          // Only this wine's card is updated. (This used to rebuild the whole
+          // grid after every batch, so every thumbnail already on screen faded
+          // out and back in again — the flicker — until all photos had loaded.)
+          _refreshCardPhoto(w);
         }
       });
-      if (changed) renderGrid();
     } catch (e) {
       console.warn('Could not load a batch of wine photos:', e);
     }
