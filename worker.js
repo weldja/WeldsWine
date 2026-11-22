@@ -1655,6 +1655,38 @@ var worker_default = {
           body: { added_by: admin.id, former_member_name: displayName }
         });
 
+        // 2b. Hand over the other things that point at their login, otherwise
+        //     Supabase refuses to delete it ("violates foreign key constraint").
+        //     Nothing is deleted: events, comments, shares and cellars they own
+        //     move to the cellar owner (or to you, the admin).
+        const ownerCache = {};
+        const ownerOf = async (cid) => {
+          if (!cid) return admin.id;
+          if (ownerCache[cid]) return ownerCache[cid];
+          const c = await sb_fetch(env, "/cellars?id=eq." + encodeURIComponent(cid) + "&select=owner_id", { prefer: "return=representation" }).catch(() => []) || [];
+          const o = c[0] && c[0].owner_id;
+          return (ownerCache[cid] = (o && o !== userId) ? o : admin.id);
+        };
+        // Events they created (the name of the event stays the same)
+        const theirEvents = await sb_fetch(env, "/events?created_by=eq." + enc + "&select=id,cellar_id", { prefer: "return=representation" }).catch(() => []) || [];
+        for (const ev of theirEvents) {
+          await sb_fetch(env, "/events?id=eq." + encodeURIComponent(ev.id), {
+            method: "PATCH", body: { created_by: await ownerOf(ev.cellar_id) }
+          });
+        }
+        // Comments they wrote (author_name is kept, so their name still shows)
+        await sb_fetch(env, "/wine_comments?user_id=eq." + enc, {
+          method: "PATCH", body: { user_id: admin.id }
+        }).catch((e) => console.warn("delete-user: comments:", e.message));
+        // Wines they shared by link (the link keeps working)
+        await sb_fetch(env, "/shared_wines?user_id=eq." + enc, {
+          method: "PATCH", body: { user_id: admin.id }
+        }).catch((e) => console.warn("delete-user: shares:", e.message));
+        // Cellars they own (e.g. their own automatic cellar) pass to you
+        await sb_fetch(env, "/cellars?owner_id=eq." + enc, {
+          method: "PATCH", body: { owner_id: admin.id }
+        }).catch((e) => console.warn("delete-user: cellars:", e.message));
+
         // 3. Remove memberships and notification subscriptions
         await sb_fetch(env, "/cellar_members?user_id=eq." + enc, { method: "DELETE" }).catch((e) => console.warn("delete-user: memberships:", e.message));
         await sb_fetch(env, "/push_subscriptions?user_id=eq." + enc, { method: "DELETE" }).catch((e) => console.warn("delete-user: push subs:", e.message));
@@ -1663,7 +1695,9 @@ var worker_default = {
         const delRes = await fetch(`${SUPABASE_URL}/auth/v1/admin/users/${enc}`, { method: "DELETE", headers: authHeaders });
         if (!delRes.ok && delRes.status !== 404) {
           const err = await delRes.json().catch(() => ({}));
-          throw new Error("Wines were kept, but the login could not be deleted: " + (err.msg || err.message || err.error_description || "Supabase " + delRes.status));
+          const why = err.msg || err.message || err.error_description || "Supabase " + delRes.status;
+          const tbl = (why.match(/on table "(\w+)"\s*$/) || [])[1];   // the table that still points at them
+          throw new Error("Wines were kept, but the login could not be deleted" + (tbl ? " \u2014 something in the \u201c" + tbl + "\u201d table still points at this person" : "") + ": " + why);
         }
         await sb_fetch(env, "/profiles?id=eq." + enc, { method: "DELETE" }).catch((e) => console.warn("delete-user: profile:", e.message));
 
