@@ -1261,7 +1261,7 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
 .admin-cellar-header{display:flex;justify-content:space-between;align-items:center;padding:14px}
 .admin-cellar-title{font-family:var(--font-d);font-size:1rem;font-weight:600;color:var(--charcoal)}
 .admin-cellar-meta{font-family:var(--font-b);font-size:.72rem;color:var(--warm-gray);margin-top:2px}
-.admin-cellar-delete{width:34px;height:34px;border-radius:var(--r);border:1px solid var(--light-gray);background:transparent;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:.85rem;transition:var(--tr);flex-shrink:0}
+.admin-cellar-delete{width:36px;height:36px;border-radius:var(--r);border:1px solid rgba(45,36,32,.18);background:rgba(45,36,32,.05);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:1rem;color:var(--charcoal);margin-left:6px;transition:var(--tr);flex-shrink:0}
 .admin-cellar-delete:hover{background:#fef2f2;border-color:#dc2626}
 .admin-member-list{border-top:1px solid var(--light-gray)}
 .admin-member-row{display:flex;align-items:center;padding:10px 14px;gap:10px}
@@ -1271,8 +1271,8 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
 .admin-member-name{font-family:var(--font-b);font-size:.85rem;font-weight:500;color:var(--charcoal)}
 .admin-member-role{font-family:var(--font-b);font-size:.68rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--gold);margin-left:4px}
 .admin-member-email{font-family:var(--font-b);font-size:.72rem;color:var(--warm-gray);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.admin-remove-member{width:30px;height:30px;border-radius:50%;border:none;background:transparent;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;font-size:.8rem;color:var(--light-gray);transition:var(--tr)}
-.admin-remove-member:hover{background:#fef2f2;color:#dc2626}
+.admin-remove-member{width:36px;height:36px;border-radius:50%;border:1px solid rgba(45,36,32,.18);background:rgba(45,36,32,.05);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;font-size:1rem;color:var(--charcoal);margin-left:6px;transition:var(--tr)}
+.admin-remove-member:hover{background:#fef2f2;border-color:#dc2626;color:#dc2626}
 .admin-add-member-row{display:flex;gap:6px;padding:10px 14px;border-top:1px solid #f0ebe5;align-items:center}
 .admin-add-member-row select{flex:1;padding:8px 10px;border:1px solid var(--light-gray);border-radius:var(--r);font-family:var(--font-b);font-size:.82rem;background:var(--cream);color:var(--charcoal);outline:none;-webkit-appearance:none;min-width:0}
 .admin-add-member-toggle{display:flex;align-items:center;gap:6px;padding:10px 14px;border-top:1px solid #f0ebe5;cursor:pointer;color:var(--burgundy);font-family:var(--font-b);font-size:.82rem;font-weight:500;background:none;border-left:none;border-right:none;border-bottom:none;width:100%;transition:var(--tr)}
@@ -2084,17 +2084,17 @@ body{
 .comments-list{display:flex;flex-direction:column;gap:12px;margin-bottom:18px}
 .comment-item{background:var(--cream);border:1px solid var(--light-gray);border-radius:var(--r);padding:12px 14px;position:relative}
 .comment-header{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.comment-item:has(.comment-edit) .comment-header{padding-right:76px}
+.comment-item:has(.comment-delete):not(:has(.comment-edit)) .comment-header{padding-right:40px}
 .comment-avatar{width:26px;height:26px;border-radius:50%;background:var(--burgundy);color:#fff;font-family:var(--font-b);font-size:.72rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .comment-author{font-family:var(--font-b);font-size:.8rem;font-weight:600;color:var(--charcoal)}
 .comment-time{font-family:var(--font-b);font-size:.7rem;color:var(--warm-gray);margin-left:auto}
 .comment-body{font-family:var(--font-b);font-size:.88rem;color:var(--charcoal);line-height:1.55}
-.comment-delete{position:absolute;top:8px;right:8px;background:none;border:none;cursor:pointer;color:var(--warm-gray);font-size:.75rem;opacity:0;transition:opacity .15s;padding:2px 5px}
-.comment-item:hover .comment-delete{opacity:.5}
-.comment-delete:hover{opacity:1!important;color:#dc2626}
-.comment-edit{position:absolute;top:8px;right:32px;background:none;border:none;cursor:pointer;color:var(--warm-gray);font-size:.75rem;opacity:0;transition:opacity .15s;padding:2px 5px}
-.comment-item:hover .comment-edit{opacity:.5}
-.comment-edit:hover{opacity:1!important;color:var(--burgundy)}
-@media (hover:none){.comment-delete,.comment-edit{opacity:.45}}
+.comment-delete,.comment-edit{position:absolute;top:6px;width:30px;height:30px;border-radius:50%;border:1px solid rgba(45,36,32,.18);background:rgba(255,255,255,.7);cursor:pointer;color:var(--charcoal);font-size:.9rem;display:flex;align-items:center;justify-content:center;padding:0;transition:var(--tr)}
+.comment-delete{right:6px}
+.comment-edit{right:42px}
+.comment-delete:hover{background:#fef2f2;border-color:#dc2626;color:#dc2626}
+.comment-edit:hover{background:rgba(114,47,55,.08);border-color:var(--burgundy);color:var(--burgundy)}
 .comment-edited{font-size:.68rem;color:var(--warm-gray);font-style:italic;margin-left:2px}
 .comment-edit-form{margin-top:6px}
 .comment-edit-input{width:100%;box-sizing:border-box;display:block}
@@ -2166,10 +2166,8 @@ body{
 .ev-bname{font-family:var(--font-d);font-size:1rem;font-weight:600;line-height:1.2;color:var(--charcoal)}
 .ev-bmeta{font-size:.66rem;color:var(--warm-gray);margin-top:2px}
 .ev-brate{font-family:var(--font-d);font-weight:700;font-size:1rem;color:var(--burgundy);flex-shrink:0}
-.ev-bremove{background:none;border:none;color:var(--warm-gray);font-size:.75rem;cursor:pointer;padding:8px;opacity:0;transition:opacity .15s;flex-shrink:0}
-.ev-bottle:hover .ev-bremove{opacity:.5}
-.ev-bremove:hover{opacity:1!important;color:#dc2626}
-@media (hover:none){.ev-bremove{opacity:.4}}
+.ev-bremove{width:30px;height:30px;border-radius:50%;border:1px solid rgba(45,36,32,.18);background:rgba(45,36,32,.05);color:var(--charcoal);font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;flex-shrink:0;transition:var(--tr)}
+.ev-bremove:hover{background:#fef2f2;border-color:#dc2626;color:#dc2626}
 .ev-badge-row{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
 .ev-chip{font-family:var(--font-b);font-size:.64rem;color:var(--warm-gray);border:1px solid var(--light-gray);border-radius:999px;padding:6px 12px;background:var(--ivory);cursor:pointer;min-height:30px;transition:var(--tr)}
 .ev-chip:hover{border-color:var(--burgundy);color:var(--burgundy)}
