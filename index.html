@@ -8440,32 +8440,38 @@ async function loadWinesFromDB(cacheKey) {
    huge request. Downloading every photo at once used so much memory on phones
    that the page could crash and restart itself. Wines whose photos are already
    in memory are skipped. */
-/* Swap one card for a fresh copy that has its newly loaded photo, keeping
-   the card's place and state (Top pick badge, in-focus, no entrance animation).
-   The rest of the grid is left alone, so other thumbnails don't flicker. */
+/* Put a newly loaded photo into a card that is already on screen.
+   Only the card's picture column is swapped; the card itself, and every
+   other card, stays exactly as it is, so nothing else redraws or flickers.
+   Returns true if a card on screen was updated. */
+const _CARD_IMG_COLS = '.card-thumb-wrap, .card-thumb-single-wrap, .card-label-strip';
 function _refreshCardPhoto(w) {
   try {
-    const old = wineGrid.querySelector('.wine-card[data-id="' + CSS.escape(String(w.id)) + '"]');
-    if (!old) return; // not on screen (filtered out, or another view) — next render picks it up
-    const fresh = createCard(w);
-    fresh.className = old.className;
-    fresh.classList.add('no-enter');
-    fresh.style.animationDelay = '';
-    const pick = old.querySelector('.card-top-pick');
-    const body = fresh.querySelector('.card-body');
-    if (pick && body && !body.querySelector('.card-top-pick')) body.insertBefore(pick, body.firstChild);
-    if (typeof _focusObs !== 'undefined' && _focusObs) _focusObs.unobserve(old);
-    old.replaceWith(fresh);
+    const card = wineGrid.querySelector('.wine-card[data-id="' + CSS.escape(String(w.id)) + '"]');
+    if (!card) return false; // not on screen (filtered out, or another view) — next render picks it up
+    const oldCol = card.querySelector(':scope > ' + _CARD_IMG_COLS.split(', ').join(', :scope > '));
+    if (!oldCol) return false;
+    const fresh  = createCard(w);           // build a copy just to take its picture column
+    const newCol = fresh.querySelector(':scope > ' + _CARD_IMG_COLS.split(', ').join(', :scope > '));
+    if (typeof _focusObs !== 'undefined' && _focusObs) _focusObs.unobserve(fresh); // the copy is thrown away
+    if (!newCol) return false;
+    oldCol.replaceWith(newCol);
+    const img = newCol.querySelector('img');
+    if (img) tintCardFromLabel(card, img, w.id); // accent colour belongs to the real card
+    return true;
   } catch (e) {
-    console.warn('_refreshCardPhoto failed, redrawing grid:', e);
-    renderGrid();
+    console.warn('_refreshCardPhoto failed:', e);
+    return false;
   }
 }
 const PHOTO_BATCH_SIZE = 12;
 let _photoLoadToken = 0;
 async function _loadWinePhotos() {
   const token = ++_photoLoadToken;
-  const todo = wines.filter(w => !w.photoFront && !w.photoBack).map(w => w.id);
+  let todo = wines.filter(w => !w.photoFront && !w.photoBack).map(w => w.id);
+  // Highlights reel wines go in the first batch, so the reel only refreshes once
+  const reelIds = new Set((typeof _hlrItems !== 'undefined' && Array.isArray(_hlrItems) ? _hlrItems : []).map(it => it && it.w && it.w.id).filter(Boolean));
+  if (reelIds.size) todo = [...todo.filter(id => reelIds.has(id)), ...todo.filter(id => !reelIds.has(id))];
   for (let i = 0; i < todo.length; i += PHOTO_BATCH_SIZE) {
     if (token !== _photoLoadToken) return; // a newer wine load has started — let that one win
     const batch = todo.slice(i, i + PHOTO_BATCH_SIZE);
@@ -8474,6 +8480,7 @@ async function _loadWinePhotos() {
       if (error) throw error;
       if (token !== _photoLoadToken) return;
       const byId = new Map(wines.map(w => [w.id, w]));
+      let updated = 0, reelChanged = false;
       (data || []).forEach(row => {
         const w = byId.get(row.id);
         if (!w) return;
@@ -8484,9 +8491,12 @@ async function _loadWinePhotos() {
           // Only this wine's card is updated. (This used to rebuild the whole
           // grid after every batch, so every thumbnail already on screen faded
           // out and back in again — the flicker — until all photos had loaded.)
-          _refreshCardPhoto(w);
+          if (_refreshCardPhoto(w)) updated++;
+          if (reelIds.has(w.id)) reelChanged = true;
         }
       });
+      if (reelChanged) { try { renderHighlightsReel(); } catch (_) {} }
+      console.log('[photos] batch ' + (i / PHOTO_BATCH_SIZE + 1) + ': ' + updated + ' card photos filled in place (no grid redraw)');
     } catch (e) {
       console.warn('Could not load a batch of wine photos:', e);
     }
