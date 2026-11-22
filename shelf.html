@@ -142,7 +142,7 @@ h1{font-family:var(--font-d);font-size:1.5rem;font-weight:600;line-height:1.2}
 .heat.zoomed .heat-wrap{width:220%}
 .heat-wrap img{display:block;width:100%;height:auto;user-select:none;-webkit-user-select:none}
 .heat-layer{position:absolute;inset:0}
-.heat.off .spot{background:none!important}
+.heat.off .spot{background:none!important;border-color:transparent!important}
 .spot{position:absolute;border:none;padding:0;background:transparent;border-radius:40%;-webkit-tap-highlight-color:transparent}
 .spot.none{outline:2px dashed rgba(255,255,255,.75);outline-offset:-6px;border-radius:8px}
 /* A wine of a colour you didn't ask for: dimmed, not coloured */
@@ -152,8 +152,12 @@ h1{font-family:var(--font-d);font-size:1.5rem;font-weight:600;line-height:1.2}
 .spot-badge{position:absolute;transform:translate(-50%,-50%);min-width:30px;height:30px;padding:0 6px;border-radius:15px;background:var(--burgundy-deep);color:var(--gold-lt);border:2px solid #fff;font-family:var(--font-d);font-weight:600;font-size:.95rem;line-height:26px;text-align:center;box-shadow:0 2px 6px rgba(0,0,0,.35);pointer-events:auto;cursor:pointer}
 .spot-badge.poor{background:#fff;color:#9A2A33;border-color:#9A2A33;font-family:var(--font-b);font-size:.8rem}
 .legend{display:flex;flex-direction:column;gap:5px}
-.legend-bar{height:10px;border-radius:5px;background:linear-gradient(90deg,#2E9E5B,#9BBF3A,#E2B33C,#E07A2E,#C8323A)}
-.legend-labels{display:flex;justify-content:space-between;font-size:.74rem;color:var(--text-2)}
+/* Five separate colour bands, so neighbouring wines are easy to tell apart */
+.legend-steps{display:grid;grid-template-columns:repeat(5,1fr);gap:4px}
+.legend-step{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:.72rem;color:var(--text-2);text-align:center}
+.legend-swatch{width:100%;height:14px;border-radius:4px}
+/* Poor and worst value also get white stripes, so they don't rely on colour alone */
+.legend-swatch.striped{background-image:repeating-linear-gradient(135deg,rgba(255,255,255,.45) 0 4px,transparent 4px 9px)}
 .heat-sel{border-top:1px solid #F0E8E0;padding-top:12px;display:flex;flex-direction:column;gap:6px}
 .heat-sel-top{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
 .verdict{display:inline-block;font-size:.72rem;font-weight:600;padding:3px 9px;border-radius:20px;color:#fff}
@@ -311,8 +315,13 @@ h1{font-family:var(--font-d);font-size:1.5rem;font-weight:600;line-height:1.2}
       <!-- Every photo is shown here, one under another -->
       <div class="heat-photos" id="heatPhotos"></div>
       <div class="legend" aria-hidden="true">
-        <div class="legend-bar"></div>
-        <div class="legend-labels"><span>Best on this shelf</span><span>Fair</span><span>Poor value</span></div>
+        <div class="legend-steps">
+          <div class="legend-step"><span class="legend-swatch" style="background-color:#0B8A3E"></span>Best</div>
+          <div class="legend-step"><span class="legend-swatch" style="background-color:#8BD13B"></span>Good</div>
+          <div class="legend-step"><span class="legend-swatch" style="background-color:#FFD21F"></span>Fair</div>
+          <div class="legend-step"><span class="legend-swatch striped" style="background-color:#FF7A1A"></span>Poor</div>
+          <div class="legend-step"><span class="legend-swatch striped" style="background-color:#C4122F"></span>Worst</div>
+        </div>
       </div>
       <p class="small">Numbers mark the top picks. A dashed outline means no price was seen. Tap any wine on the photo for details. Positions are the AI’s best estimate, so they can be slightly out.</p>
       <p class="small" id="heatWantNote" hidden></p>
@@ -915,22 +924,32 @@ function computeHeatScores() {
 function heatScore(w) { if (w && !inRunning(w)) return null; return w && heatScores[w.id] !== undefined ? heatScores[w.id] : (w && w.value_score) || null; }
 function shownScore(w) { if (!w) return null; const s = heatShown[w.id] !== undefined ? heatShown[w.id] : w.value_score; return s ? Math.max(1, Math.min(10, Math.round(s))) : null; }
 
-const HEAT_STOPS = [[0, [200, 50, 58]], [0.3, [224, 122, 46]], [0.5, [226, 179, 60]], [0.72, [155, 191, 58]], [1, [46, 158, 91]]];
-function wineColour(w) {
+// Five clear colour bands, from worst value (0) to best on this shelf (4).
+// Separate bands instead of a smooth blend make neighbouring wines easier to tell apart.
+const HEAT_BANDS = [
+  [196, 18, 47],    // 0 Worst  – deep red
+  [255, 122, 26],   // 1 Poor   – bright orange
+  [255, 210, 31],   // 2 Fair   – yellow
+  [139, 209, 59],   // 3 Good   – light green
+  [11, 138, 62]     // 4 Best   – strong green
+];
+// Which band a wine falls in, or -1 if it has no score
+function wineBand(w) {
   const sc = heatScore(w);
-  if (!sc) return null;
+  if (!sc) return -1;
   const all = Object.values(heatScores);
   // Best on this shelf = greenest, unless even the best is only fair value
   const top = Math.max(8, all.length ? Math.max(...all) : 10);
   const t = Math.min(Math.max((sc - 1) / (top - 1), 0), 1);
-  for (let i = 1; i < HEAT_STOPS.length; i++) {
-    const [t1, c1] = HEAT_STOPS[i], [t0, c0] = HEAT_STOPS[i - 1];
-    if (t <= t1) {
-      const f = (t - t0) / (t1 - t0);
-      return c0.map((v, k) => Math.round(v + (c1[k] - v) * f));
-    }
-  }
-  return HEAT_STOPS[HEAT_STOPS.length - 1][1];
+  if (t >= 0.85) return 4;
+  if (t >= 0.62) return 3;
+  if (t >= 0.42) return 2;
+  if (t >= 0.22) return 1;
+  return 0;
+}
+function wineColour(w) {
+  const b = wineBand(w);
+  return b < 0 ? null : HEAT_BANDS[b];
 }
 function verdictText(score) {
   if (!score) return 'No price seen';
@@ -1002,8 +1021,8 @@ function renderHeat() {
       const spot = el('button', 'spot');
       spot.type = 'button';
       spot.dataset.id = w.id;
-      // Let the colour spread a little beyond the bottles, like a heat map
-      const padX = L.w * 0.12, padY = L.h * 0.08;
+      // A small margin around the bottles (kept small so neighbouring wines don't overlap)
+      const padX = L.w * 0.03, padY = L.h * 0.03;
       const left = Math.max(0, L.x - padX), top = Math.max(0, L.y - padY);
       spot.style.left = (left * 100) + '%';
       spot.style.top = (top * 100) + '%';
@@ -1012,9 +1031,16 @@ function renderHeat() {
       const c = wineColour(w);
       if (c) {
         const rgb = c.join(',');
-        // The picks glow a little more strongly so they stand out
-        const strong = pickRank(w.id) ? [0.75, 0.55] : [0.55, 0.38];
-        spot.style.background = 'radial-gradient(ellipse at center, rgba(' + rgb + ',' + strong[0] + ') 0%, rgba(' + rgb + ',' + strong[1] + ') 45%, rgba(' + rgb + ',0) 75%)';
+        // An even tint across the bottles with a solid border in the same colour,
+        // so each wine reads as its own clear block. The picks are tinted a little more strongly.
+        const fill = pickRank(w.id) ? 0.55 : 0.45;
+        const tint = 'rgba(' + rgb + ',' + fill + ')';
+        // Poor and worst value also get white stripes, so they don't rely on colour alone
+        spot.style.background = wineBand(w) <= 1
+          ? 'repeating-linear-gradient(135deg, rgba(255,255,255,.28) 0 6px, transparent 6px 14px), ' + tint
+          : tint;
+        spot.style.border = '3px solid rgb(' + rgb + ')';
+        spot.style.borderRadius = '10px';
       } else {
         spot.classList.add(inRunning(w) ? 'none' : 'other');
       }
