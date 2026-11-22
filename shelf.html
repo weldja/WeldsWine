@@ -334,7 +334,7 @@ h1{font-family:var(--font-d);font-size:1.5rem;font-weight:600;line-height:1.2}
       <h3 class="heat-cap" style="margin:4px 0 0">What the symbols mean</h3>
       <ul class="sym-key">
         <li><span class="sym pick" aria-hidden="true">1</span><span>Best-value pick. 1 is the best buy on the shelf, then 2 and 3.</span></li>
-        <li><span class="sym poor" aria-hidden="true">✕</span><span>Poor value – one to avoid, for example paying extra for the brand name.</span></li>
+        <li><span class="sym poor" aria-hidden="true">✕</span><span>Poor value – one of the weakest buys on this shelf, for example paying extra for the brand name. Tap it to see why.</span></li>
         <li><span class="sym dash" aria-hidden="true"></span><span>Dashed outline – no price tag could be seen, so it has no value rating.</span></li>
         <li><span class="sym sel" aria-hidden="true"></span><span>White frame – the wine you’ve tapped, shown in the details below.</span></li>
       </ul>
@@ -956,6 +956,9 @@ function wineBand(w) {
   // Best on this shelf = greenest, unless even the best is only fair value
   const top = Math.max(8, all.length ? Math.max(...all) : 10);
   const t = Math.min(Math.max((sc - 1) / (top - 1), 0), 1);
+  // A wine marked with a cross (poor value) is never shown as Fair or better,
+  // so the colour and the cross always agree
+  if (w && isPoor(w.id)) return t < 0.22 ? 0 : 1;
   if (t >= 0.85) return 4;
   if (t >= 0.62) return 3;
   if (t >= 0.42) return 2;
