@@ -1674,18 +1674,22 @@ var worker_default = {
             method: "PATCH", body: { created_by: await ownerOf(ev.cellar_id) }
           });
         }
-        // Comments they wrote (author_name is kept, so their name still shows)
+        // Bottles they added to events (the bottles stay in the event)
+        await sb_fetch(env, "/event_wines?added_by=eq." + enc, {
+          method: "PATCH", body: { added_by: admin.id }
+        });
+                // Comments they wrote (author_name is kept, so their name still shows)
         await sb_fetch(env, "/wine_comments?user_id=eq." + enc, {
           method: "PATCH", body: { user_id: admin.id }
-        }).catch((e) => console.warn("delete-user: comments:", e.message));
+        });   // must succeed: the database would otherwise delete these along with the login
         // Wines they shared by link (the link keeps working)
         await sb_fetch(env, "/shared_wines?user_id=eq." + enc, {
           method: "PATCH", body: { user_id: admin.id }
-        }).catch((e) => console.warn("delete-user: shares:", e.message));
+        });   // must succeed: the database would otherwise delete these along with the login
         // Cellars they own (e.g. their own automatic cellar) pass to you
         await sb_fetch(env, "/cellars?owner_id=eq." + enc, {
           method: "PATCH", body: { owner_id: admin.id }
-        }).catch((e) => console.warn("delete-user: cellars:", e.message));
+        });   // must succeed: the database would otherwise delete these along with the login
 
         // 3. Remove memberships and notification subscriptions
         await sb_fetch(env, "/cellar_members?user_id=eq." + enc, { method: "DELETE" }).catch((e) => console.warn("delete-user: memberships:", e.message));
