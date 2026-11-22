@@ -1354,12 +1354,96 @@ var worker_default = {
       }
     }
 
+    // ── POST /api/my-cellar — make sure the signed-in person has a cellar ──
+    // Called by the site after sign-in when the person isn't in any cellar.
+    // 1. Already in a cellar  → nothing to do, return it
+    // 2. Owns a cellar but lost their membership row → put them back in it
+    // 3. No cellar at all → create "<name>'s cellar" with them as owner
+    // Nothing is ever deleted here.
+    if (url.pathname.endsWith("/api/my-cellar") && request.method === "POST") {
+      const me = await verifyMember(env, request);
+      if (!me) return new Response(JSON.stringify({ error: "MEMBERS_ONLY" }), { status: 401, headers: cors });
+      try {
+        const uid = encodeURIComponent(me.id);
+        // 1. Already a member somewhere?
+        const mine = await sb_fetch(env, "/cellar_members?user_id=eq." + uid + "&select=cellar_id,role&limit=1", { prefer: "return=representation" }) || [];
+        if (mine.length) {
+          return new Response(JSON.stringify({ cellar_id: mine[0].cellar_id, role: mine[0].role, created: false }), { status: 200, headers: cors });
+        }
+        // 2. Owns a cellar (e.g. their old one after joining and leaving a friend's)?
+        const owned = await sb_fetch(env, "/cellars?owner_id=eq." + uid + "&select=id&order=created_at.asc&limit=1", { prefer: "return=representation" }) || [];
+        let cellarId = owned.length ? owned[0].id : null;
+        let created = false;
+        // 3. Brand new: create their own cellar
+        if (!cellarId) {
+          const prof = await sb_fetch(env, "/profiles?id=eq." + uid + "&select=display_name", { prefer: "return=representation" }) || [];
+          const who = (prof[0] && prof[0].display_name) || (me.email || "").split("@")[0] || "My";
+          const made = await sb_fetch(env, "/cellars", {
+            method: "POST",
+            body: { name: who + "\u2019s cellar", owner_id: me.id },
+            prefer: "return=representation",
+            headers: { Prefer: "return=representation" }
+          });
+          cellarId = made && made[0] && made[0].id;
+          if (!cellarId) throw new Error("cellar not created");
+          created = true;
+        } else {
+          // Coming back to an old cellar: bring it out of the archive
+          await sb_fetch(env, "/cellars?id=eq." + encodeURIComponent(cellarId), {
+            method: "PATCH", body: { archived_at: null },
+            prefer: "return=minimal", headers: { Prefer: "return=minimal" }
+          }).catch(() => {});   // fine if the archived_at column doesn't exist yet
+        }
+        await sb_fetch(env, "/cellar_members", {
+          method: "POST",
+          body: { cellar_id: cellarId, user_id: me.id, role: "owner" },
+          prefer: "return=minimal",
+          headers: { Prefer: "return=minimal" }
+        });
+        console.log("my-cellar: user=" + me.id.slice(0, 8) + " cellar=" + cellarId.slice(0, 8) + (created ? " (new)" : " (re-attached)"));
+        return new Response(JSON.stringify({ cellar_id: cellarId, role: "owner", created }), { status: 200, headers: cors });
+      } catch (e) {
+        console.error("my-cellar error:", e.message);
+        return new Response(JSON.stringify({ error: e.message }), { status: 500, headers: cors });
+      }
+    }
+
+    // ── POST /api/admin/cellars/:id/archive — archive or un-archive a cellar ──
+    // Body: { archived: true | false }. Archiving only hides the cellar in the
+    // admin list. Its wines and settings are untouched.
+    if (url.pathname.match(/\/api\/admin\/cellars\/[^/]+\/archive$/) && request.method === "POST") {
+      const { user: admin, reason: _authReason } = await verifyAdmin(env, request);
+      if (!admin) return new Response(JSON.stringify({ error: "Unauthorized", reason: _authReason }), { status: 401, headers: cors });
+      const parts = url.pathname.split("/");
+      const cellarId = parts[parts.length - 2];
+      let body = {};
+      try { body = await request.json(); } catch (_) {}
+      try {
+        await sb_fetch(env, "/cellars?id=eq." + encodeURIComponent(cellarId), {
+          method: "PATCH",
+          body: { archived_at: body.archived === false ? null : new Date().toISOString() },
+          prefer: "return=minimal",
+          headers: { Prefer: "return=minimal" }
+        });
+        return new Response(JSON.stringify({ ok: true }), { status: 200, headers: cors });
+      } catch (e) {
+        const msg = /archived_at/.test(e.message || "") ? "Run the SQL to add the archived_at column first" : e.message;
+        return new Response(JSON.stringify({ error: msg }), { status: 500, headers: cors });
+      }
+    }
+
     // ── GET /api/admin/cellars — list all cellars with members ──
     if (url.pathname.endsWith("/api/admin/cellars") && request.method === "GET") {
       const { user: admin, reason: _authReason } = await verifyAdmin(env, request);
       if (!admin) return new Response(JSON.stringify({ error: "Unauthorized", reason: _authReason }), { status: 401, headers: cors });
       try {
-        const cellars = await sb_fetch(env, "/cellars?select=id,name,owner_id,created_at&order=created_at.asc", { prefer: "return=representation" });
+        let cellars;
+        try {
+          cellars = await sb_fetch(env, "/cellars?select=id,name,owner_id,created_at,archived_at&order=created_at.asc", { prefer: "return=representation" });
+        } catch (e) {
+          // archived_at column not added yet — list without it
+          cellars = await sb_fetch(env, "/cellars?select=id,name,owner_id,created_at&order=created_at.asc", { prefer: "return=representation" });
+        }
         const result = [];
         for (const c of (cellars || [])) {
           const members = await sb_fetch(env, "/cellar_members?cellar_id=eq." + c.id + "&select=user_id,role", { prefer: "return=representation" }) || [];

@@ -9996,6 +9996,7 @@ async function _bootstrapInner() {
   if (memberships && memberships.length > 0) {
     const pick = memberships[0];
     window._cellarId = pick.cellar_id; window._cellarRole = pick.role;
+    _backfillExistingWines();   // wines saved before they had a cellar join this one (background)
     await _refreshCellarMembers(); _updateCellarPill();
     setTimeout(_subscribeRealtime, 500);
     return;
@@ -10021,9 +10022,22 @@ async function _bootstrapInner() {
     return;
   }
 
-  // No cellar found — admin creates users and assigns cellars now.
-  // User will see an empty state until admin assigns them to a cellar.
-  console.log('[bootstrap] no cellar found for user — awaiting admin assignment');
+  // No cellar found — give them their own cellar. Friends can join it with
+  // the invite link, or they can join a friend's (they then start fresh there,
+  // and this cellar keeps its wines; nothing is deleted).
+  await profileReady; // the cellar is named after their profile
+  try {
+    const res = await _adminFetch('/api/my-cellar', { method: 'POST' });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || !data.cellar_id) throw new Error(data.error || ('status ' + res.status));
+    window._cellarId = data.cellar_id; window._cellarRole = data.role || 'owner';
+    console.log('[bootstrap] own cellar ' + (data.created ? 'created' : 're-attached') + ': ' + data.cellar_id.slice(0, 8));
+    await _backfillExistingWines(); // wines scanned before the cellar existed
+    await _refreshCellarMembers(); _updateCellarPill();
+    setTimeout(_subscribeRealtime, 500);
+  } catch (e) {
+    console.error('[bootstrap] could not set up own cellar:', e);
+  }
 }
 async function _backfillExistingWines() {
   if (!window._cellarId || !_currentUser) return;
@@ -10319,7 +10333,13 @@ async function joinCellarViaToken(token, showErrors = true, confirmSwitch = fals
    CELLAR SETTINGS UI
 ══════════════════════════════════════════════════════════════ */
 async function openCellarSettings() {
-  if (!window._cellarId) { showToast('Cellar not loaded yet — try again in a moment'); return; }
+  if (!window._cellarId) {
+    // Still starting up, or setting up their own cellar failed
+    showToast(_winesLoaded
+      ? 'Your cellar isn\u2019t set up yet \u2014 please sign out and back in'
+      : 'Cellar not loaded yet \u2014 try again in a moment');
+    return;
+  }
 
   // Always refresh member list on open so newly joined members appear immediately
   await _refreshCellarMembers();
@@ -10894,6 +10914,22 @@ async function handleAdminCreateUser() {
 }
 
 /* ── Cellars tab ───────────────────────────────────────────── */
+let _adminCellarFilter = 'active';   // 'active' | 'empty' | 'archived'
+
+// Archive (hide) or restore a cellar. Its wines are never touched.
+async function setCellarArchived(cellarId, name, archived) {
+  if (archived && !confirm('Archive \u201c' + name + '\u201d?\n\nIt will be hidden from this list. Its wines are kept, and you can restore it from Archived at any time.')) return;
+  try {
+    const res = await _adminFetch('/api/admin/cellars/' + cellarId + '/archive', { method: 'POST', body: { archived } });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || 'Failed');
+    showToast(archived ? '\u2713 Cellar archived' : '\u2713 Cellar restored');
+    loadAdminCellars();
+  } catch (e) {
+    showToast('Could not ' + (archived ? 'archive' : 'restore') + ': ' + (e.message || 'error'));
+  }
+}
+
 async function loadAdminCellars() {
   const container = document.getElementById('adminCellarsList');
   container.innerHTML = '<div class="admin-empty">Loading…</div>';
@@ -10915,7 +10951,34 @@ async function loadAdminCellars() {
       return;
     }
     container.innerHTML = '';
-    _adminCellars.forEach(c => {
+
+    // Housekeeping filter: Active (default) / Empty / Archived
+    const nEmpty    = _adminCellars.filter(c => !c.archived_at && !c.members.length).length;
+    const nArchived = _adminCellars.filter(c => c.archived_at).length;
+    const bar = document.createElement('div');
+    bar.style.cssText = 'display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px';
+    [['active', 'Active'], ['empty', 'Empty (' + nEmpty + ')'], ['archived', 'Archived (' + nArchived + ')']].forEach(([k, label]) => {
+      const b = document.createElement('button');
+      b.className = 'admin-btn-sm' + (_adminCellarFilter === k ? '' : ' admin-btn-dismiss');
+      b.style.minHeight = '36px';
+      b.textContent = label;
+      b.onclick = () => { _adminCellarFilter = k; loadAdminCellars(); };
+      bar.appendChild(b);
+    });
+    container.appendChild(bar);
+
+    const shown = _adminCellars.filter(c =>
+      _adminCellarFilter === 'archived' ? !!c.archived_at :
+      _adminCellarFilter === 'empty'    ? (!c.archived_at && !c.members.length) :
+                                          !c.archived_at);
+    if (!shown.length) {
+      const none = document.createElement('div');
+      none.className = 'admin-empty';
+      none.textContent = _adminCellarFilter === 'empty' ? 'No empty cellars' :
+                         _adminCellarFilter === 'archived' ? 'No archived cellars' : 'No active cellars';
+      container.appendChild(none);
+    }
+    shown.forEach(c => {
       const card = document.createElement('div');
       card.className = 'admin-cellar-card';
       card.id = 'adminCellar_' + c.id;
@@ -10940,8 +11003,11 @@ async function loadAdminCellars() {
         <div class="admin-cellar-header">
           <div>
             <div class="admin-cellar-title">${escHtml(c.name)}</div>
-            <div class="admin-cellar-meta">${c.members.length} member${c.members.length !== 1 ? 's' : ''} · ${c.wine_count} wine${c.wine_count !== 1 ? 's' : ''}</div>
+            <div class="admin-cellar-meta">${c.members.length} member${c.members.length !== 1 ? 's' : ''} · ${c.wine_count} wine${c.wine_count !== 1 ? 's' : ''}${c.archived_at ? ' · archived' : ''}</div>
           </div>
+          ${c.archived_at
+            ? `<button class="admin-cellar-delete" onclick="setCellarArchived('${escJs(c.id)}','${escJs(c.name)}',false)" title="Restore cellar">↩</button>`
+            : (!c.members.length ? `<button class="admin-cellar-delete" onclick="setCellarArchived('${escJs(c.id)}','${escJs(c.name)}',true)" title="Archive empty cellar (keeps its wines)">🗄</button>` : '')}
           <button class="admin-cellar-delete" onclick="confirmDeleteCellar('${escJs(c.id)}','${escJs(c.name)}')" title="Delete cellar">🗑</button>
         </div>
         <div class="admin-member-list">
