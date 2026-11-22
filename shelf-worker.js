@@ -126,7 +126,7 @@ function buildPrompt(photoCount, hasLoyaltyCard, shop, want) {
    - Still list EVERY wine on the shelf in "wines", whatever its colour, and still give every wine a value score.` : "";
   return `You are helping a wine lover in a UK shop find the best value wine on a shelf.
 
-You have been given ${photoCount} photo${photoCount === 1 ? "" : "s"} of the SAME shelf, labelled Photo 1 to Photo ${photoCount}. They may overlap: one may be a wide shot and others close-ups of particular rows. ${shop ? `The shop is: ${shop}.` : "The shop was not given; work it out from the tags if you can."}
+You have been given ${photoCount} photo${photoCount === 1 ? "" : "s"} of the SAME shelf, labelled Photo 1 to Photo ${photoCount}. They may overlap: one may be a wide shot and others close-ups of particular rows. ${shop ? `The shop is: ${shop}.` : `The shop was not given. Only fill in "shop" if you can see clear proof in the photos, such as the shop's name or logo on a sign, a price tag or an offer ticket. Do NOT guess the shop from the wines, the shelving, the style of the tags or the prices. If there is no clear proof, set "shop" to null.`}
 
 YOUR TASKS
 
@@ -391,6 +391,9 @@ async function handleScan(request, env) {
   const result = cleanResult(parsed, photos.length, want);
   result.photo_count = photos.length;
   result.loyalty_card = body.loyaltyCard === true;
+  // If the person chose the shop, always show their choice. Otherwise mark the AI's answer as a guess.
+  if (shop) { result.shop = shop; result.shop_guessed = false; }
+  else { result.shop_guessed = !!result.shop; }
   result.want = want;
   result.scanned_at = new Date().toISOString();
   return reply(request, 200, result);

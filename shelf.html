@@ -73,6 +73,9 @@ h1{font-family:var(--font-d);font-size:1.5rem;font-weight:600;line-height:1.2}
 .fld{display:flex;flex-direction:column;gap:5px;margin-top:6px}
 .fld label{font-size:.78rem;color:var(--text-2)}
 .fld input{height:44px;border:1px solid var(--light-gray);border-radius:var(--r);padding:0 12px;background:var(--cream);font-size:16px}
+.fld select{height:44px;border:1px solid var(--light-gray);border-radius:var(--r);padding:0 12px;background:var(--cream);font-size:16px;color:inherit}
+.shop-line{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px}
+.shop-line select{height:36px;border:1px solid var(--light-gray);border-radius:var(--r);padding:0 10px;background:var(--cream);font-size:15px;color:inherit}
 .fld input:focus{outline:none;border-color:var(--burgundy);background:var(--ivory)}
 
 /* Working */
@@ -261,7 +264,7 @@ h1{font-family:var(--font-d);font-size:1.5rem;font-weight:600;line-height:1.2}
       </label>
       <div class="fld">
         <label for="shopInput">Shop (optional)</label>
-        <input type="text" id="shopInput" placeholder="e.g. Tesco" maxlength="60" autocomplete="off"/>
+        <select id="shopInput"></select>
       </div>
     </div>
 
@@ -439,10 +442,11 @@ function notWantText() { const want = scanWant(); return want ? 'Not a ' + COLOU
 
 // ── Remembered settings ─────────────────────────────────────
 function loadPrefs() {
+  // The shop is deliberately NOT remembered, so a shop from an earlier trip can't carry over
+  fillShopSelect($('shopInput'), '', 'Not sure – let it work it out');
   try {
     const p = JSON.parse(localStorage.getItem(PREFS_KEY) || '{}');
     $('loyaltyInput').checked = p.loyalty !== false;   // ticked unless you've unticked it before
-    $('shopInput').value = p.shop || '';
     setWant(COLOUR_WORDS[p.want] ? p.want : 'any');
   } catch (_) { $('loyaltyInput').checked = true; }
 }
@@ -451,7 +455,27 @@ function setWant(v) {
   document.querySelectorAll('.choice').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.want === v)));
 }
 function savePrefs() {
-  try { localStorage.setItem(PREFS_KEY, JSON.stringify({ loyalty: $('loyaltyInput').checked, shop: $('shopInput').value.trim(), want: wantColour })); } catch (_) {}
+  try { localStorage.setItem(PREFS_KEY, JSON.stringify({ loyalty: $('loyaltyInput').checked, want: wantColour })); } catch (_) {}
+}
+
+// ── Shop list ───────────────────────────────────────────────
+const SHOPS = ['Aldi', 'Asda', 'Co-op', 'Lidl', 'M&S', 'Majestic', 'Morrisons', "Sainsbury's", 'Tesco', 'Waitrose'];
+// Fill a dropdown with the shops. "blankText" is the wording for "no shop chosen".
+// If "current" isn't in the list (e.g. an unusual shop the AI read), it is added so it can still be shown.
+function fillShopSelect(sel, current, blankText) {
+  sel.textContent = '';
+  const blank = document.createElement('option');
+  blank.value = ''; blank.textContent = blankText;
+  sel.appendChild(blank);
+  const names = SHOPS.slice();
+  if (current && !names.some(n => n.toLowerCase() === current.toLowerCase())) names.push(current);
+  names.forEach(n => {
+    const o = document.createElement('option');
+    o.value = n; o.textContent = n;
+    if (current && n.toLowerCase() === current.toLowerCase()) o.selected = true;
+    sel.appendChild(o);
+  });
+  if (!current) blank.selected = true;
 }
 
 // ── Keep photos safe if the phone reloads the page ───────────
@@ -707,6 +731,10 @@ function loyaltyName() {
   if (s.includes('tesco')) return 'Clubcard';
   if (s.includes('sainsbury')) return 'Nectar';
   if (s.includes('boots')) return 'Advantage';
+  if (s.includes('asda')) return 'Asda Rewards';
+  if (s.includes('morrisons')) return 'More Card';
+  if (s.includes('waitrose')) return 'myWaitrose';
+  if (s.includes('m&s') || s.includes('marks')) return 'Sparks';
   if (s.includes('co-op') || s.includes('coop')) return 'Member';
   return 'Loyalty';
 }
@@ -752,9 +780,24 @@ function renderResults() {
   sum.textContent = '';
   const h = el('div');
   h.appendChild(el('span', 'sum-h', wines.length + (wines.length === 1 ? ' wine found' : ' wines found')));
-  const where = [r.photo_count ? 'in ' + r.photo_count + (r.photo_count === 1 ? ' photo' : ' photos') : '', r.shop || ''].filter(Boolean).join(' · ');
+  const where = r.photo_count ? 'in ' + r.photo_count + (r.photo_count === 1 ? ' photo' : ' photos') : '';
   if (where) h.appendChild(el('span', 'small', '  ' + where));
   sum.appendChild(h);
+
+  // Shop line, with a dropdown so a wrong or missing shop can be put right
+  const shopLine = el('div', 'shop-line');
+  shopLine.appendChild(el('span', 'small', r.shop && r.shop_guessed ? 'Shop (best guess):' : 'Shop:'));
+  const shopSel = document.createElement('select');
+  shopSel.setAttribute('aria-label', 'Shop');
+  fillShopSelect(shopSel, r.shop || '', 'Not known – tap to choose');
+  shopSel.addEventListener('change', () => {
+    result.shop = shopSel.value || null;
+    result.shop_guessed = false;
+    saveResult();
+    renderResults();
+  });
+  shopLine.appendChild(shopSel);
+  sum.appendChild(shopLine);
   if (r.summary) { const p = el('p', 'small', r.summary); p.style.marginTop = '6px'; p.style.color = 'var(--charcoal)'; sum.appendChild(p); }
   const chips = el('div', 'chips');
   chips.appendChild(el('span', 'chip gold', r.loyalty_card ? loyaltyName() + ' prices used' : 'Normal prices used'));
