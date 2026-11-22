@@ -66,6 +66,14 @@ h1{font-family:var(--font-d);font-size:1.5rem;font-weight:600;line-height:1.2}
 .photos-empty{grid-column:1/-1;border:1px dashed var(--light-gray);border-radius:var(--r);padding:22px 14px;text-align:center;font-size:.86rem;color:var(--text-2);background:var(--ivory)}
 .tips{font-size:.8rem;color:var(--text-2);line-height:1.5}
 .tips li{margin-left:18px;margin-bottom:3px}
+/* "See an example result" – tucked away until tapped */
+.ex-peek{margin-top:12px;border-top:1px solid var(--light-gray);padding-top:10px}
+.ex-peek summary{cursor:pointer;font-size:.86rem;font-weight:600;color:var(--burgundy);list-style:none;display:flex;align-items:center;gap:6px;min-height:36px}
+.ex-peek summary::-webkit-details-marker{display:none}
+.ex-peek summary::before{content:"▸";transition:transform .15s}
+.ex-peek[open] summary::before{transform:rotate(90deg)}
+.ex-peek img{display:block;width:100%;height:auto;border-radius:var(--r);margin-top:8px;border:1px solid var(--light-gray)}
+.ex-peek p{font-size:.8rem;color:var(--text-2);line-height:1.5;margin-top:8px}
 
 /* Form bits */
 .chk{display:flex;align-items:center;gap:10px;min-height:40px;font-size:.92rem;cursor:pointer}
@@ -255,6 +263,15 @@ h1{font-family:var(--font-d);font-size:1.5rem;font-weight:600;line-height:1.2}
         <li>Make sure the price tags are in shot, not just the bottles.</li>
         <li>If a tag has glare on it, take another photo from a slight angle.</li>
       </ul>
+      <details class="ex-peek">
+        <summary>See an example result</summary>
+        <picture>
+          <source srcset="/images/wine-shelf-scanner-heat-map-example.webp" type="image/webp"/>
+          <img src="/images/wine-shelf-scanner-heat-map-example.jpg" width="920" height="825" loading="lazy" decoding="async"
+               alt="Example result: an Asda wine shelf with each wine outlined from green for best value to red for worst, the three best buys numbered 1 to 3 and three poor-value wines marked with a cross."/>
+        </picture>
+        <p>Each wine is coloured from <strong>Best</strong> (green) to <strong>Worst</strong> (red). Numbers 1–3 are the best buys, a cross marks poor value, and a dashed outline means no price could be seen. <a href="/wine-shelf-scanner.html#example">Read the full explanation</a>.</p>
+      </details>
     </div>
 
     <div class="card">
