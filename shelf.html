@@ -153,6 +153,14 @@ h1{font-family:var(--font-d);font-size:1.5rem;font-weight:600;line-height:1.2}
 .spot-badge.poor{background:#fff;color:#9A2A33;border-color:#9A2A33;font-family:var(--font-b);font-size:.8rem}
 .legend{display:flex;flex-direction:column;gap:5px}
 /* Five separate colour bands, so neighbouring wines are easy to tell apart */
+/* Key explaining the symbols drawn on the photo */
+.sym-key{display:flex;flex-direction:column;gap:9px;margin:0;padding:0;list-style:none}
+.sym-key li{display:flex;align-items:center;gap:10px;font-size:.84rem;color:var(--charcoal)}
+.sym{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;min-width:28px;height:28px;padding:0 5px;border-radius:14px;font-weight:600;font-size:.9rem;line-height:1}
+.sym.pick{background:var(--burgundy-deep);color:var(--gold-lt);border:2px solid #fff;box-shadow:0 0 0 1px var(--light-gray);font-family:var(--font-d)}
+.sym.poor{background:#fff;color:#9A2A33;border:2px solid #9A2A33;font-size:.78rem}
+.sym.dash{width:28px;border:2px dashed #8C817C;border-radius:6px;background:transparent}
+.sym.sel{width:28px;border-radius:7px;background:transparent;box-shadow:0 0 0 2px #fff,0 0 0 4px var(--burgundy-deep)}
 .legend-steps{display:grid;grid-template-columns:repeat(5,1fr);gap:4px}
 .legend-step{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:.72rem;color:var(--text-2);text-align:center}
 .legend-swatch{width:100%;height:14px;border-radius:4px}
@@ -323,7 +331,14 @@ h1{font-family:var(--font-d);font-size:1.5rem;font-weight:600;line-height:1.2}
           <div class="legend-step"><span class="legend-swatch striped" style="background-color:#C4122F"></span>Worst</div>
         </div>
       </div>
-      <p class="small">Numbers mark the top picks. A dashed outline means no price was seen. Tap any wine on the photo for details. Positions are the AI’s best estimate, so they can be slightly out.</p>
+      <h3 class="heat-cap" style="margin:4px 0 0">What the symbols mean</h3>
+      <ul class="sym-key">
+        <li><span class="sym pick" aria-hidden="true">1</span><span>Best-value pick. 1 is the best buy on the shelf, then 2 and 3.</span></li>
+        <li><span class="sym poor" aria-hidden="true">✕</span><span>Poor value – one to avoid, for example paying extra for the brand name.</span></li>
+        <li><span class="sym dash" aria-hidden="true"></span><span>Dashed outline – no price tag could be seen, so it has no value rating.</span></li>
+        <li><span class="sym sel" aria-hidden="true"></span><span>White frame – the wine you’ve tapped, shown in the details below.</span></li>
+      </ul>
+      <p class="small">Tap any wine on the photo for its price and the reason it was rated. Positions are the AI’s best estimate, so they can be slightly out.</p>
       <p class="small" id="heatWantNote" hidden></p>
       <div class="heat-sel" id="heatSel" hidden></div>
     </section>
