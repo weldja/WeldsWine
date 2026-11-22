@@ -1,13 +1,20 @@
 /* ══════════════════════════════════════════════════════════
    Welds Wine Wisdoms — Service Worker
-   Strategy: network-first for API/auth, cache-first for assets
+   Strategy:
+   - API/auth calls: never touched, always straight to the network
+   - Pages (HTML): network-first, saved copy only when offline
+   - This site's own files (images, icons, manifest): show the saved copy
+     straight away for speed, but fetch a fresh copy in the background,
+     so an updated image appears on the next visit
+   - Fonts and libraries from other sites: cache-first (they never change)
 ══════════════════════════════════════════════════════════ */
-const CACHE_NAME = 'www-v2';
+// Bump this number whenever you want every visitor's saved copies cleared
+const CACHE_NAME = 'www-v3';
 // Static assets to cache on install
 const PRECACHE = [
   '/',
   '/index.html',
-  'https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,500;0,600;1,500&family=Inter:wght@400;500&600&display=swap',
+  'https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,500;0,600;1,500&family=Inter:wght@400;500;600&display=swap',
   'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css',
   'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2'
 ];
@@ -54,11 +61,30 @@ self.addEventListener('fetch', event => {
           caches.open(CACHE_NAME).then(c => c.put(event.request, clone));
           return res;
         })
-        .catch(() => caches.match('/index.html'))
+        // Offline: show the saved copy of this page if there is one, otherwise the cellar
+        .catch(() => caches.match(event.request).then(saved => saved || caches.match('/index.html')))
     );
     return;
   }
-  // Cache-first for everything else (fonts, CSS, JS)
+  // This site's own files: answer from the saved copy if there is one (fast),
+  // and always fetch a fresh copy in the background to replace it.
+  if (new URL(url).origin === self.location.origin) {
+    event.respondWith(
+      caches.open(CACHE_NAME).then(cache =>
+        cache.match(event.request).then(cached => {
+          const fresh = fetch(event.request).then(res => {
+            if (res.ok) cache.put(event.request, res.clone());
+            return res;
+          }).catch(() => cached);
+          // Keep the service worker awake until the background refresh has finished
+          event.waitUntil(fresh.then(() => {}, () => {}));
+          return cached || fresh;
+        })
+      )
+    );
+    return;
+  }
+  // Fonts and libraries from other sites: cache-first
   event.respondWith(
     caches.match(event.request).then(cached => {
       if (cached) return cached;
