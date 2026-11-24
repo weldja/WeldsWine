@@ -95,6 +95,10 @@ h1{font-family:var(--font-d);font-size:1.5rem;font-weight:600;line-height:1.2}
 .step-t{font-size:.9rem;font-weight:600}
 .step-d{font-size:.78rem;color:var(--text-2)}
 .step.wait .step-t{color:#8C817C}
+.eta{margin-bottom:18px}
+.eta-bar{height:8px;border-radius:4px;background:var(--light-gray);overflow:hidden}
+.eta-bar span{display:block;height:100%;width:0;background:var(--burgundy);border-radius:4px;transition:width 1s linear}
+.eta-t{font-size:.85rem;font-weight:600;margin-top:8px;text-align:center}
 @keyframes spin{to{transform:rotate(360deg)}}
 .thumbs{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px}
 .thumbs img{width:100%;height:52px;object-fit:cover;border-radius:6px;border:1px solid var(--light-gray)}
@@ -199,7 +203,7 @@ h1{font-family:var(--font-d);font-size:1.5rem;font-weight:600;line-height:1.2}
 /* Toast */
 .toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%) translateY(90px);background:var(--charcoal);color:var(--parchment);padding:10px 18px;border-radius:24px;font-size:.86rem;transition:transform .25s ease;z-index:50;max-width:calc(100% - 32px);text-align:center}
 .toast.show{transform:translateX(-50%) translateY(0)}
-@media (prefers-reduced-motion:reduce){.step.now .dot{animation:none;border-top-color:var(--burgundy)}.toast{transition:none}}
+@media (prefers-reduced-motion:reduce){.step.now .dot{animation:none;border-top-color:var(--burgundy)}.toast{transition:none}.eta-bar span{transition:none}}
 </style>
 </head>
 <body>
@@ -325,6 +329,10 @@ h1{font-family:var(--font-d);font-size:1.5rem;font-weight:600;line-height:1.2}
     </div>
     <div class="thumbs" id="workingThumbs"></div>
     <div class="card" id="stepsCard">
+      <div class="eta">
+        <div class="eta-bar" id="etaBar" role="progressbar" aria-label="Scan progress (estimated)" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span id="etaFill"></span></div>
+        <div class="eta-t" id="etaText">Working it out…</div>
+      </div>
       <ol class="steps" id="steps"></ol>
     </div>
     <div class="card err" id="errorCard" hidden>
@@ -336,7 +344,7 @@ h1{font-family:var(--font-d);font-size:1.5rem;font-weight:600;line-height:1.2}
         <button class="btn-line" id="errorBackBtn">Back to my photos</button>
       </div>
     </div>
-    <p class="small center" id="workingNote">This can take up to a minute with several photos.</p>
+    <p class="small center" id="workingNote">The time is an estimate. It gets more accurate the more you scan.</p>
     <button class="btn-line" id="cancelBtn">Cancel</button>
   </section>
 
@@ -682,14 +690,48 @@ function renderSteps(current) {
     ol.appendChild(li);
   });
 }
+// ── Time left (an estimate) ─────────────────────────────────
+// The AI answers in one go, so there is no real progress to report.
+// Instead we estimate how long a scan takes from the number of photos,
+// and learn from this device's past scans how far off that guess is.
+const ETA_KEY = 'wwShelfEta';
+function baseSeconds(n) { return 40 + 12 * n; }   // first guess before any scans have been timed
+function etaFactor() {
+  try { const f = parseFloat(localStorage.getItem(ETA_KEY)); return f >= 0.3 && f <= 4 ? f : 1; } catch (_) { return 1; }
+}
+function estimateSeconds(n) { return Math.round(baseSeconds(n) * etaFactor()); }
+// After a scan finishes, nudge the guess towards how long it really took
+function learnScanTime(n, seconds) {
+  const actual = seconds / baseSeconds(n);
+  const next = Math.min(4, Math.max(0.3, etaFactor() * 0.6 + actual * 0.4));
+  try { localStorage.setItem(ETA_KEY, next.toFixed(3)); } catch (_) {}
+}
+let etaTimer = null, scanStartedAt = 0;
+function showEta(total) {
+  const gone = (Date.now() - scanStartedAt) / 1000;
+  const left = Math.round(total - gone);
+  // Fill most of the bar on time, then creep slowly towards the end if it overruns
+  const pct = gone <= total ? (gone / total) * 92 : 92 + 7 * (1 - Math.exp(-(gone - total) / 30));
+  $('etaFill').style.width = pct.toFixed(1) + '%';
+  $('etaBar').setAttribute('aria-valuenow', String(Math.round(pct)));
+  $('etaText').textContent = left > 60 ? 'About ' + Math.ceil(left / 60) + ' minutes left'
+    : left > 5 ? 'About ' + left + ' seconds left'
+    : left > -15 ? 'Nearly there…'
+    : 'Taking a little longer than usual…';
+}
 function startSteps() {
   stepTimers.forEach(clearTimeout);
   stepTimers = [];
   renderSteps(0);
-  // The AI does all of this in one go, so these steps are paced to roughly match
-  [3000, 8000, 15000, 24000].forEach((ms, i) => stepTimers.push(setTimeout(() => renderSteps(i + 1), ms)));
+  const total = estimateSeconds(photos.length);
+  scanStartedAt = Date.now();
+  // The AI does all of this in one go, so the steps are paced across the estimated time
+  [0.06, 0.18, 0.35, 0.6].forEach((f, i) => stepTimers.push(setTimeout(() => renderSteps(i + 1), f * total * 1000)));
+  clearInterval(etaTimer);
+  showEta(total);
+  etaTimer = setInterval(() => showEta(total), 1000);
 }
-function stopSteps() { stepTimers.forEach(clearTimeout); stepTimers = []; }
+function stopSteps() { stepTimers.forEach(clearTimeout); stepTimers = []; clearInterval(etaTimer); etaTimer = null; }
 
 async function keepScreenOn(on) {
   try {
@@ -759,6 +801,7 @@ async function runScan() {
     } else {
       result = body;
       saveResult();
+      learnScanTime(photos.length, (Date.now() - scanStartedAt) / 1000);
     }
   } catch (e) {
     if (e && e.code) errorCode = e.code;
