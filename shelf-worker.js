@@ -28,7 +28,7 @@ const ADMIN_ONLY = false;
 
 // The model that reads the shelf. Sonnet reads small price tags far
 // more reliably than Haiku, which matters here.
-const MODEL = "claude-sonnet-4-6";
+const MODEL = "claude-sonnet-5-5";
 
 // Same Supabase project as the journal. The publishable key is public
 // (it is already in index.html), so it is fine to keep it here.
@@ -363,8 +363,11 @@ async function handleScan(request, env) {
   try {
     res = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
-      headers: { "Content-Type": "application/json", "x-api-key": apiKey, "anthropic-version": "2023-06-01" },
-      body: JSON.stringify({ model: MODEL, max_tokens: 12000, messages: [{ role: "user", content }] })
+      headers: { "Content-Type": "application/json", "x-api-key": apiKey, "anthropic-version": "2023-06-01", "anthropic-beta": "server-side-fallback-2026-07-01" },
+      // Sonnet 5.5 thinks before answering and that thinking shares max_tokens,
+      // so allow more room. "medium" effort keeps the thinking (and cost) in check.
+      // If the AI declines a request, "fallbacks" lets the API retry it on another model.
+      body: JSON.stringify({ model: MODEL, max_tokens: 16000, output_config: { effort: "medium" }, fallbacks: "default", messages: [{ role: "user", content }] })
     });
   } catch (e) {
     return reply(request, 502, { error: "AI_UNREACHABLE" });

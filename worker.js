@@ -1969,12 +1969,16 @@ Rules:
             headers: {
               "Content-Type": "application/json",
               "x-api-key": enrichKey,
-              "anthropic-version": "2023-06-01"
+              "anthropic-version": "2023-06-01",
+              "anthropic-beta": "server-side-fallback-2026-07-01"
             },
             body: JSON.stringify({
-              model: "claude-sonnet-4-6",
-              max_tokens: 2000,
-              tools: [{ type: "web_search_20250305", name: "web_search", max_uses: 2 }],
+              model: "claude-sonnet-5-5",
+              // Thinking shares max_tokens on Sonnet 5.5, so allow more room than the answer needs
+              max_tokens: 8000,
+              output_config: { effort: "medium" },
+              fallbacks: "default",
+              tools: [{ type: "web_search_20260209", name: "web_search", max_uses: 2 }],
               messages: [{ role: "user", content: enrichContent }]
             })
           });
@@ -2059,7 +2063,7 @@ Rules:
             drink_from: enrichParsed.drink_from,
             drink_to: enrichParsed.drink_to,
             region_photo: enrichParsed.region_photo,
-            model_used: "claude-sonnet-4-6"
+            model_used: "claude-sonnet-5-5"
           };
           // Await the write — Cloudflare Workers kill unawaited promises on Response return
           try {
@@ -2238,7 +2242,7 @@ Return exactly:
       anthropicResp = await fetch("https://api.anthropic.com/v1/messages", {
         method: "POST",
         headers: { "Content-Type": "application/json", "x-api-key": anthropicKey, "anthropic-version": "2023-06-01" },
-        body: JSON.stringify({ model: "claude-haiku-4-5-20251001", max_tokens: 800, messages: [{ role: "user", content: [...imageBlocks, { type: "text", text: (backImageBase64 ? "First image = FRONT, second = BACK. Use both.\n\n" : "Examine carefully.\n\n") + PROMPT }] }] })
+        body: JSON.stringify({ model: "claude-haiku-5-5", max_tokens: 800, thinking: { type: "disabled" }, messages: [{ role: "user", content: [...imageBlocks, { type: "text", text: (backImageBase64 ? "First image = FRONT, second = BACK. Use both.\n\n" : "Examine carefully.\n\n") + PROMPT }] }] })
       });
     } catch (e) {
       return new Response(JSON.stringify({ error: "Failed to reach Anthropic: " + e.message }), { status: 502, headers: cors });
