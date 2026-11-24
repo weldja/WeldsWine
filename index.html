@@ -1246,6 +1246,21 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
 .admin-tab .admin-badge{display:inline-flex;align-items:center;justify-content:center;background:var(--burgundy);color:var(--ivory);font-size:.68rem;font-weight:600;min-width:18px;height:18px;border-radius:9px;padding:0 5px;margin-left:4px;position:relative;top:-1px}
 .admin-tab-body{display:none;padding:20px 0 0}
 .admin-tab-body.active{display:block}
+.usage-periods{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.usage-total{font-family:var(--font-b);font-size:.8rem;color:var(--warm-gray);margin-bottom:14px;line-height:1.5}
+.usage-total strong{color:var(--charcoal)}
+.usage-feature-row{display:flex;align-items:center;gap:8px;padding:8px 14px;flex-wrap:wrap}
+.usage-feature-row+.usage-feature-row{border-top:1px solid #f0ebe5}
+.usage-feature-name{flex:1;min-width:110px;font-family:var(--font-b);font-size:.82rem;color:var(--charcoal)}
+.usage-feature-name small{display:block;font-size:.7rem;color:var(--warm-gray);margin-top:1px}
+.usage-limit-ctl{display:flex;gap:6px;align-items:center}
+.usage-limit-ctl select,.usage-limit-ctl input{padding:7px 8px;border:1px solid var(--light-gray);border-radius:var(--r);font-family:var(--font-b);font-size:.8rem;background:var(--cream);color:var(--charcoal);outline:none;min-height:36px}
+.usage-limit-ctl select{-webkit-appearance:none;appearance:none;padding-right:10px}
+.usage-limit-ctl input{width:70px}
+.usage-limit-ctl select:focus,.usage-limit-ctl input:focus{border-color:var(--burgundy)}
+.usage-used{font-family:var(--font-b);font-size:.72rem;color:var(--warm-gray);white-space:nowrap}
+.usage-used.full{color:#b91c1c;font-weight:600}
+.usage-user-cost{font-family:var(--font-b);font-size:.82rem;font-weight:600;color:var(--charcoal);white-space:nowrap}
 .admin-request-card{background:var(--ivory);border:1px solid var(--light-gray);border-radius:var(--rl);padding:14px;margin-bottom:10px}
 .admin-request-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px}
 .admin-request-name{font-family:var(--font-b);font-weight:600;font-size:.92rem;color:var(--charcoal)}
@@ -4210,6 +4225,7 @@ const Scanner = (() => {
     if (!resp.ok) {
       const c = body?.error || '';
       if (c === 'MEMBERS_ONLY')                        throw new Error('MEMBERS_ONLY');
+      if (c === 'USAGE_LIMIT')                         throw Object.assign(new Error('USAGE_LIMIT'), { limitInfo: body });
       if (c === 'INVALID_KEY' || resp.status === 401)  throw new Error('BAD_KEY');
       if (c === 'RATE_LIMIT'  || resp.status === 429)  throw new Error('RATE_LIMIT');
       if (c === 'PARSE_ERROR' || resp.status === 422)  throw new Error('PARSE_ERROR');
@@ -7315,7 +7331,18 @@ async function _fetchEnrichmentNow(wineId, forceRefresh, wineObj) {
         refresh:  !!forceRefresh
       })
     });
-    if (!res.ok) { console.warn('enrich: HTTP', res.status); return null; }
+    if (!res.ok) {
+      console.warn('enrich: HTTP', res.status);
+      if (res.status === 429) {
+        const b = await res.json().catch(() => ({}));
+        // Research often runs in the background, so say so once rather than on every wine
+        if (b.error === 'USAGE_LIMIT' && !window._enrichLimitShown) {
+          window._enrichLimitShown = true;
+          showToast('Wine Intel limit reached. ' + usageLimitText(b, 'Wine Intel lookups'));
+        }
+      }
+      return null;
+    }
     const data = await res.json();
     if (data.error) { console.warn('enrich: API error', data.error); return null; }
     return data;
@@ -8831,6 +8858,14 @@ function showScanResultsUI(res) {
   ]);
 }
 
+// "You've used all 50 of your label scans this month. They reset on 1 December."
+function usageLimitText(b, what) {
+  b = b || {};
+  if (b.limit === 0) return 'This is switched off for your account. Ask an admin if you need it.';
+  const reset = b.resets_at ? new Date(b.resets_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', timeZone: 'Europe/London' }) : null;
+  return 'You’ve used all ' + b.limit + ' of your ' + what + ' this month.' + (reset ? ' They reset on ' + reset + '.' : '') + ' Ask an admin if you need more.';
+}
+
 function showScanErrorUI(err) {
   const m=err.message||'';
   if (m === 'MEMBERS_ONLY') { showScanMembersOnly(); return; }
@@ -8842,7 +8877,8 @@ function showScanErrorUI(err) {
     BAD_KEY:          ['Invalid API key',        'The key in your cloudflare-worker.js was rejected. Check it at console.anthropic.com, update the Worker code, and redeploy.'],
     RATE_LIMIT:  ['Rate limit reached', 'Too many requests. Wait a minute and try again.'],
     PARSE_ERROR: ['Could not read the label', 'Try a clearer, better-lit photo with the label filling the frame.'],
-    NETWORK_ERROR:['Could not reach proxy', 'Check the Worker URL in ⚙ Scan Setup is correct and that the Worker is deployed and running in Cloudflare.']
+    NETWORK_ERROR:['Could not reach proxy', 'Check the Worker URL in ⚙ Scan Setup is correct and that the Worker is deployed and running in Cloudflare.'],
+    USAGE_LIMIT: ['Scan limit reached', usageLimitText(err.limitInfo, 'label scans')]
   };
   const [title,detail]=msgs[m]||['Analysis failed', m||'Unexpected error. Please try again.'];
   document.getElementById('scanErrorMsg').textContent=title;
@@ -9652,6 +9688,7 @@ function updateKeyBadge() {
       <button class="admin-tab" data-admin-tab="create" onclick="switchAdminTab('create')">Create User</button>
       <button class="admin-tab" data-admin-tab="cellars" onclick="switchAdminTab('cellars')">Cellars</button>
       <button class="admin-tab" data-admin-tab="intel" onclick="switchAdminTab('intel')">Intel</button>
+      <button class="admin-tab" data-admin-tab="usage" onclick="switchAdminTab('usage')">Usage</button>
     </div>
     <div class="modal-body" style="padding-top:0">
 
@@ -9699,6 +9736,11 @@ function updateKeyBadge() {
         <button class="auth-btn-primary" id="adminIntelBtn" onclick="startBulkEnrich()" style="margin-top:16px;display:none;min-height:44px">Enrich all</button>
         <button class="admin-btn-sm admin-btn-dismiss" id="adminIntelStopBtn" onclick="stopBulkEnrich()" style="margin-top:10px;width:100%;display:none;min-height:44px">Stop</button>
         <div class="admin-form-help" style="text-align:center;margin-top:12px">Each wine takes ~20–30s to research. Keep this panel open while it runs.</div>
+      </div>
+
+      <!-- AI usage and limits tab (filled in by loadAdminUsageTab) -->
+      <div class="admin-tab-body" id="adminTabUsage">
+        <div id="adminUsageBody"><div class="admin-empty">Loading…</div></div>
       </div>
 
       <!-- Cellars tab -->
@@ -10623,6 +10665,8 @@ function switchAdminTab(tab) {
   document.getElementById('adminTabCreate').classList.toggle('active', tab === 'create');
   document.getElementById('adminTabCellars').classList.toggle('active', tab === 'cellars');
   document.getElementById('adminTabIntel').classList.toggle('active', tab === 'intel');
+  document.getElementById('adminTabUsage').classList.toggle('active', tab === 'usage');
+  if (tab === 'usage') loadAdminUsageTab();
   if (tab === 'requests') loadAdminRequests();
   if (tab === 'create') loadAdminCreateTab();
   if (tab === 'cellars') loadAdminCellars();
@@ -10706,6 +10750,189 @@ async function startBulkEnrich() {
   stopBtn.style.display = 'none';
   status.textContent = (_bulkEnrichStop ? 'Stopped. ' : 'Finished. ') + ok + ' enriched' + (failed ? ', ' + failed + ' failed' : '');
   loadAdminIntelTab();
+}
+
+/* ── Usage tab: AI usage, estimated cost and monthly limits per person ── */
+var _adminUsagePeriod = 'month';
+var _adminUsage = null;
+var USAGE_FEATURE_NAMES = { label: 'Label scans', shelf: 'Shelf scans', research: 'Wine Intel', deals: 'Deals checks' };
+var USAGE_LIMITED_FEATURES = ['label', 'shelf', 'research'];   // deals is one shared result, so tracked only
+
+function _fmtCost(c) {
+  c = Number(c) || 0;
+  if (!c) return '$0';
+  return '$' + (c < 1 ? c.toFixed(3) : c.toFixed(2));
+}
+function _fmtTokens(n) {
+  n = Number(n) || 0;
+  return n >= 1e6 ? (n / 1e6).toFixed(1) + 'M' : n >= 1e3 ? (n / 1e3).toFixed(1) + 'k' : String(n);
+}
+function _limitWords(limit) { return limit === null || limit === undefined ? 'unlimited' : limit === 0 ? 'off' : String(limit); }
+
+async function loadAdminUsageTab() {
+  const box = document.getElementById('adminUsageBody');
+  if (!box) return;
+  box.innerHTML = '<div class="admin-empty">Loading…</div>';
+  try {
+    const res = await _adminFetch('/api/admin/usage?period=' + encodeURIComponent(_adminUsagePeriod));
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || data.reason || 'Failed');
+    _adminUsage = data;
+    renderAdminUsage();
+  } catch (e) {
+    box.innerHTML = '<div class="admin-empty">' + escHtml('Could not load usage: ' + (e.message || 'unknown error') +
+      '. If this is new, run supabase-usage-limits.sql in Supabase first.') + '</div>';
+  }
+}
+
+// A limit picker: [Default (n) | Unlimited | Off | Limit…] plus a number box for "Limit…"
+function _limitControl(current, isOverride, defaultText, onSave) {
+  const wrap = document.createElement('div');
+  wrap.className = 'usage-limit-ctl';
+  const sel = document.createElement('select');
+  const opts = [];
+  if (defaultText !== null) opts.push(['default', defaultText]);
+  opts.push(['unlimited', 'Unlimited'], ['off', 'Off'], ['number', 'Limit…']);
+  opts.forEach(([v, t]) => { const o = document.createElement('option'); o.value = v; o.textContent = t; sel.appendChild(o); });
+  const num = document.createElement('input');
+  num.type = 'number'; num.min = '1'; num.max = '100000'; num.step = '1'; num.inputMode = 'numeric';
+  num.placeholder = 'a month';
+  num.setAttribute('aria-label', 'Monthly limit');
+  if (defaultText !== null && !isOverride) sel.value = 'default';
+  else if (current === null || current === undefined) sel.value = 'unlimited';
+  else if (current === 0) sel.value = 'off';
+  else { sel.value = 'number'; num.value = current; }
+  num.style.display = sel.value === 'number' ? '' : 'none';
+  const save = () => {
+    if (sel.value === 'number') {
+      const n = parseInt(num.value, 10);
+      if (!(n >= 1 && n <= 100000)) { num.focus(); return; }
+      onSave(n);
+    } else {
+      onSave(sel.value === 'default' ? 'default' : sel.value === 'off' ? 0 : null);
+    }
+  };
+  sel.onchange = () => {
+    num.style.display = sel.value === 'number' ? '' : 'none';
+    if (sel.value === 'number') { if (!num.value) { num.focus(); return; } }
+    save();
+  };
+  num.onchange = save;
+  num.onkeydown = (e) => { if (e.key === 'Enter') { e.preventDefault(); save(); } };
+  wrap.appendChild(sel);
+  wrap.appendChild(num);
+  return wrap;
+}
+
+async function _saveUsageLimit(path, body, label) {
+  try {
+    const res = await _adminFetch(path, { method: 'PUT', body });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || data.reason || 'Failed');
+    showToast(label);
+  } catch (e) {
+    showToast('Could not save: ' + (e.message || 'unknown error'));
+  }
+  loadAdminUsageTab();
+}
+
+function renderAdminUsage() {
+  const box = document.getElementById('adminUsageBody');
+  const d = _adminUsage;
+  if (!box || !d) return;
+  box.innerHTML = '';
+
+  // Period chooser
+  const bar = document.createElement('div');
+  bar.className = 'usage-periods';
+  [['month', 'This month'], ['last-month', 'Last month'], ['all', 'All time']].forEach(([k, label]) => {
+    const b = document.createElement('button');
+    b.className = 'admin-btn-sm' + (_adminUsagePeriod === k ? '' : ' admin-btn-dismiss');
+    b.style.minHeight = '36px';
+    b.style.flex = '0 0 auto';
+    b.textContent = label;
+    b.onclick = () => { _adminUsagePeriod = k; loadAdminUsageTab(); };
+    bar.appendChild(b);
+  });
+  box.appendChild(bar);
+
+  // Totals for the period
+  const users = (d.users || []).map(u => {
+    const usage = u.usage || {};
+    const cost = Object.values(usage).reduce((s, x) => s + (Number(x.cost_usd) || 0), 0);
+    const calls = Object.values(usage).reduce((s, x) => s + (Number(x.calls) || 0), 0);
+    return Object.assign({}, u, { _cost: cost, _calls: calls });
+  });
+  const totalCost = users.reduce((s, u) => s + u._cost, 0);
+  const totalCalls = users.reduce((s, u) => s + u._calls, 0);
+  const total = document.createElement('div');
+  total.className = 'usage-total';
+  total.innerHTML = '<strong>' + totalCalls + '</strong> AI call' + (totalCalls === 1 ? '' : 's') +
+    ' · about <strong>' + escHtml(_fmtCost(totalCost)) + '</strong>' +
+    '<br>Costs are estimates from token counts. Your Anthropic bill is the true figure. Limits are per calendar month and reset on the 1st.';
+  box.appendChild(total);
+
+  // Defaults for everyone
+  const defCard = document.createElement('div');
+  defCard.className = 'admin-cellar-card';
+  defCard.innerHTML = '<div class="admin-cellar-header"><div><div class="admin-cellar-title">Default monthly limits</div>' +
+    '<div class="admin-cellar-meta">Everyone gets these unless you set their own below. Admins are unlimited unless you set theirs.</div></div></div>';
+  const defList = document.createElement('div');
+  defList.className = 'admin-member-list';
+  USAGE_LIMITED_FEATURES.forEach(f => {
+    const row = document.createElement('div');
+    row.className = 'usage-feature-row';
+    row.innerHTML = '<div class="usage-feature-name">' + escHtml(USAGE_FEATURE_NAMES[f]) + '</div>';
+    row.appendChild(_limitControl(d.defaults[f], true, null, (v) =>
+      _saveUsageLimit('/api/admin/usage-defaults', { feature: f, limit: v }, 'Default for ' + USAGE_FEATURE_NAMES[f].toLowerCase() + ': ' + _limitWords(v))));
+    defList.appendChild(row);
+  });
+  defCard.appendChild(defList);
+  box.appendChild(defCard);
+
+  // One card per person, biggest spender first
+  users.sort((a, b) => (b._cost - a._cost) || (a.display_name || a.email || '').localeCompare(b.display_name || b.email || ''));
+  users.forEach(u => {
+    const name = u.deleted ? 'Deleted accounts' : (u.display_name || (u.email ? u.email.split('@')[0] : 'Member'));
+    const card = document.createElement('div');
+    card.className = 'admin-cellar-card';
+    card.innerHTML = '<div class="admin-cellar-header"><div style="min-width:0">' +
+      '<div class="admin-cellar-title">' + escHtml(name) + (u.is_admin ? '<span class="admin-member-role">Admin</span>' : '') + '</div>' +
+      '<div class="admin-cellar-meta">' + escHtml(u.deleted ? 'Usage from accounts that no longer exist' : (u.email || '')) + '</div></div>' +
+      '<div class="usage-user-cost">' + escHtml(_fmtCost(u._cost)) + '</div></div>';
+    const list = document.createElement('div');
+    list.className = 'admin-member-list';
+    const features = u.deleted ? Object.keys(u.usage || {}) : (d.features || USAGE_LIMITED_FEATURES);
+    features.forEach(f => {
+      const us = (u.usage || {})[f];
+      const limited = !u.deleted && USAGE_LIMITED_FEATURES.includes(f);
+      if (!us && !limited) return;   // e.g. no deals checks: nothing to show
+      const row = document.createElement('div');
+      row.className = 'usage-feature-row';
+      const stats = us
+        ? us.calls + ' call' + (us.calls === 1 ? '' : 's') + (us.failed ? ' (+' + us.failed + ' failed)' : '') +
+          ' · ' + _fmtTokens(us.input_tokens) + ' in / ' + _fmtTokens(us.output_tokens) + ' out' +
+          (us.web_searches ? ' · ' + us.web_searches + ' search' + (us.web_searches === 1 ? '' : 'es') : '') +
+          ' · ' + _fmtCost(us.cost_usd)
+        : 'No use';
+      row.innerHTML = '<div class="usage-feature-name">' + escHtml(USAGE_FEATURE_NAMES[f] || f) + '<small>' + escHtml(stats) + '</small></div>';
+      if (limited) {
+        const lim = (u.limits || {})[f] || { limit: null, source: 'default' };
+        const used = (u.month_used || {})[f] || 0;
+        const usedEl = document.createElement('span');
+        usedEl.className = 'usage-used' + (lim.limit !== null && used >= lim.limit ? ' full' : '');
+        usedEl.textContent = lim.limit === null ? used + ' this month' : used + ' / ' + lim.limit + ' this month';
+        row.appendChild(usedEl);
+        const defText = u.is_admin ? 'Default (admin: unlimited)' : 'Default (' + _limitWords(d.defaults[f]) + ')';
+        row.appendChild(_limitControl(lim.limit, lim.source === 'user', defText, (v) =>
+          _saveUsageLimit('/api/admin/usage-limits', { user_id: u.id, feature: f, limit: v },
+            name + ' · ' + USAGE_FEATURE_NAMES[f].toLowerCase() + ': ' + (v === 'default' ? 'default' : _limitWords(v)))));
+      }
+      list.appendChild(row);
+    });
+    card.appendChild(list);
+    box.appendChild(card);
+  });
 }
 
 /* ── Requests tab ──────────────────────────────────────────── */

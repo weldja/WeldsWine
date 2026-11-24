@@ -13,10 +13,11 @@
                    rose), and then the picks only come from that colour.
      GET  /health  Says "ok" — handy to check it is deployed.
 
-   Setup (one secret only):
-     ANTHROPIC_API_KEY   your Claude API key
-                         (Cloudflare → this worker → Settings → Variables
-                          and Secrets → Add → type "Secret")
+   Setup (secrets: Cloudflare → this worker → Settings → Variables
+   and Secrets → Add → type "Secret"):
+     ANTHROPIC_API_KEY     your Claude API key
+     SUPABASE_SERVICE_KEY  the same service key the main worker uses;
+                           needed for usage tracking and scan limits
 
    Who can use it:
      Only signed-in Welds Wine members. While ADMIN_ONLY is true,
@@ -105,6 +106,67 @@ async function checkCaller(request) {
     }
   }
   return { user };
+}
+
+/* ── AI usage tracking and per-user limits ───────────────────────
+   Same tables as the journal (supabase-usage-limits.sql). Needs the
+   SUPABASE_SERVICE_KEY secret on this worker. Without it, or if
+   Supabase can't be reached, scans are allowed and not recorded. */
+
+// US dollars per million tokens (estimates; keep in step with worker.js)
+const AI_PRICES = {
+  "claude-sonnet-5-5": { in: 2, out: 10, cacheRead: 0.1 },
+  "claude-sonnet-5": { in: 2, out: 10 }
+};
+const WEB_SEARCH_PRICE = 0.01;
+
+async function sbService(env, path, method, body) {
+  const key = env && env.SUPABASE_SERVICE_KEY;
+  if (!key) throw new Error("SUPABASE_SERVICE_KEY not set on the shelf worker");
+  const res = await fetch(SUPABASE_URL + "/rest/v1" + path, {
+    method,
+    headers: { apikey: key, Authorization: "Bearer " + key, "Content-Type": "application/json", Prefer: "return=representation" },
+    body: body ? JSON.stringify(body) : undefined
+  });
+  if (!res.ok) throw new Error("Supabase " + res.status + ": " + (await res.text().catch(() => "")).slice(0, 200));
+  const text = await res.text();
+  return text ? JSON.parse(text) : null;
+}
+
+// Returns { allowed, id, used, limit, resets_at }, or { allowed: true } if the check couldn't run
+async function claimUsage(env, userId, feature) {
+  try {
+    const r = await sbService(env, "/rpc/claim_usage", "POST", { p_user: userId, p_feature: feature });
+    if (r && typeof r.allowed === "boolean") return r;
+  } catch (e) {
+    console.error("claimUsage: check failed, allowing the scan:", e.message);
+  }
+  return { allowed: true, id: null };
+}
+
+async function finishUsage(env, claim, data, ok) {
+  if (!claim || !claim.id) return;
+  try {
+    const u = (data && data.usage) || {};
+    const model = (data && data.model) || MODEL;
+    const p = AI_PRICES[model] || AI_PRICES[MODEL];
+    const n = {
+      model,
+      input_tokens: u.input_tokens || 0,
+      output_tokens: u.output_tokens || 0,
+      cache_read_tokens: u.cache_read_input_tokens || 0,
+      cache_write_tokens: u.cache_creation_input_tokens || 0,
+      web_searches: (u.server_tool_use && u.server_tool_use.web_search_requests) || 0
+    };
+    const tokenCost = (n.input_tokens * p.in + n.output_tokens * p.out +
+      n.cache_read_tokens * (p.cacheRead != null ? p.cacheRead : p.in / 10) +
+      n.cache_write_tokens * p.in * 1.25) / 1e6;
+    n.cost_usd = Math.round((tokenCost + n.web_searches * WEB_SEARCH_PRICE) * 1e6) / 1e6;
+    n.status = ok ? "ok" : "failed";
+    await sbService(env, "/api_usage?id=eq." + encodeURIComponent(claim.id), "PATCH", n);
+  } catch (e) {
+    console.error("finishUsage: could not record usage:", e.message);
+  }
 }
 
 // Approximate size in bytes of a base64 string once decoded
@@ -378,7 +440,7 @@ function cleanResult(raw, photoCount, want, mode, budget, loyaltyCard) {
 
 /* ── The scan itself ─────────────────────────────────────────── */
 
-async function handleScan(request, env) {
+async function handleScan(request, env, ctx) {
   const apiKey = env && env.ANTHROPIC_API_KEY;
   if (!apiKey) return reply(request, 500, { error: "NO_KEY_IN_WORKER" });
 
@@ -414,6 +476,11 @@ async function handleScan(request, env) {
   if (mode === "budget" && !budget) mode = "value";   // no sensible budget given
   content.push({ type: "text", text: buildPrompt(photos.length, body.loyaltyCard === true, shop, want, mode, budget) });
 
+  // Within this person's monthly shelf-scan limit?
+  const claim = await claimUsage(env, caller.user.id, "shelf");
+  if (!claim.allowed) return reply(request, 429, { error: "USAGE_LIMIT", used: claim.used, limit: claim.limit, resets_at: claim.resets_at });
+  const record = (d, ok) => { const p = finishUsage(env, claim, d, ok); if (ctx && ctx.waitUntil) ctx.waitUntil(p); return p; };
+
   let res;
   try {
     res = await fetch("https://api.anthropic.com/v1/messages", {
@@ -426,9 +493,11 @@ async function handleScan(request, env) {
       body: JSON.stringify({ model: MODEL, max_tokens: 20000, output_config: { effort: "high" }, fallbacks: "default", messages: [{ role: "user", content }] })
     });
   } catch (e) {
+    record(null, false);
     return reply(request, 502, { error: "AI_UNREACHABLE" });
   }
   if (!res.ok) {
+    record(null, false);
     const err = await res.json().catch(() => ({}));
     console.error("shelf scan: Anthropic error", res.status, JSON.stringify(err));
     if (res.status === 401) return reply(request, 500, { error: "INVALID_KEY" });
@@ -443,9 +512,11 @@ async function handleScan(request, env) {
   let parsed;
   try { parsed = JSON.parse(match ? match[0] : cleaned); }
   catch {
+    record(data, false);
     console.error("shelf scan: could not read AI answer:", text.slice(0, 500));
     return reply(request, 422, { error: "UNREADABLE_ANSWER" });
   }
+  record(data, true);
 
   const result = cleanResult(parsed, photos.length, want, mode, budget, body.loyaltyCard === true);
   result.photo_count = photos.length;
@@ -463,16 +534,16 @@ async function handleScan(request, env) {
 /* ── Entry point ─────────────────────────────────────────────── */
 
 export default {
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: corsHeaders(request) });
     if (!originAllowed(request)) return reply(request, 403, { error: "ORIGIN_NOT_ALLOWED" });
 
     const path = new URL(request.url).pathname.replace(/\/+$/, "") || "/";
     if (request.method === "GET" && (path === "/health" || path === "/")) {
-      return reply(request, 200, { ok: true, service: "shelf-scanner", admin_only: ADMIN_ONLY, key_set: !!(env && env.ANTHROPIC_API_KEY) });
+      return reply(request, 200, { ok: true, service: "shelf-scanner", admin_only: ADMIN_ONLY, key_set: !!(env && env.ANTHROPIC_API_KEY), usage_tracking: !!(env && env.SUPABASE_SERVICE_KEY) });
     }
     if (request.method === "POST" && path === "/scan") {
-      try { return await handleScan(request, env); }
+      try { return await handleScan(request, env, ctx); }
       catch (e) {
         console.error("shelf scan: unexpected error", e && e.stack || e);
         return reply(request, 500, { error: "UNEXPECTED" });

@@ -853,7 +853,7 @@ async function runScan() {
     const body = await res.json().catch(() => ({}));
     if (!res.ok || !Array.isArray(body.wines)) {
       errorCode = body.error || 'HTTP_' + res.status;
-      errorDetail = body.detail || '';
+      errorDetail = errorCode === 'USAGE_LIMIT' ? usageLimitText(body) : (body.detail || '');
     } else {
       result = body;
       saveResult();
@@ -881,9 +881,19 @@ async function runScan() {
   showView('viewResults');
 }
 
+// "You've used all 20 shelf scans this month. They reset on 1 December."
+function usageLimitText(b) {
+  const reset = b && b.resets_at ? new Date(b.resets_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', timeZone: 'Europe/London' }) : null;
+  const used = b && b.limit === 0
+    ? 'Shelf scanning is switched off for your account.'
+    : 'You’ve used all ' + (b && b.limit) + ' of your shelf scans this month.';
+  return used + (reset && !(b && b.limit === 0) ? ' They reset on ' + reset + '.' : '') + ' Ask an admin if you need more.';
+}
+
 // The "that didn't work" card, also used for "scanning is for members"
 function showScanProblem(code, detail) {
-  const [title, text] = ERRORS[code] || ['That didn’t work', 'Something went wrong (' + code + (detail ? ': ' + detail : '') + '). Try again.'];
+  const [title, text] = code === 'USAGE_LIMIT' ? ['Scan limit reached', detail] :
+    ERRORS[code] || ['That didn’t work', 'Something went wrong (' + code + (detail ? ': ' + detail : '') + '). Try again.'];
   const needsSignIn = code === 'NOT_SIGNED_IN' || code === 'MEMBERS_ONLY';
   if ($('viewWorking').hidden) {   // not started yet: show the photos being kept
     const thumbs = $('workingThumbs');
@@ -899,7 +909,7 @@ function showScanProblem(code, detail) {
   $('cancelBtn').hidden = true;
   $('workingNote').hidden = true;
   $('workingLead').hidden = true;
-  $('retryBtn').hidden = needsSignIn || code === 'ADMIN_ONLY';
+  $('retryBtn').hidden = needsSignIn || code === 'ADMIN_ONLY' || code === 'USAGE_LIMIT';
   $('joinBtn').hidden = !needsSignIn;
   $('errorCard').hidden = false;
 }

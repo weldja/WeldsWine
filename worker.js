@@ -723,6 +723,73 @@ async function verifyMember(env, request) {
 __name(verifyMember, "verifyMember");
 
 /* ═══════════════════════════════════════════════════════════════
+   AI USAGE TRACKING AND PER-USER LIMITS
+   Tables and functions: supabase-usage-limits.sql
+   Each call to Claude is "claimed" first (checks the person's monthly
+   limit and records a pending row), then "finished" with the tokens
+   used and an estimated cost. If Supabase can't be reached the call
+   is allowed, so a database hiccup never stops people scanning.
+   ═══════════════════════════════════════════════════════════════ */
+// US dollars per million tokens. Estimates only: your Anthropic bill is the true figure.
+// Cache reads default to a tenth of the input price, cache writes to 1.25x.
+var AI_PRICES = {
+  "claude-haiku-5-5": { in: 0.1, out: 0.5 },
+  "claude-sonnet-5-5": { in: 2, out: 10, cacheRead: 0.1 },
+  "claude-sonnet-5": { in: 2, out: 10 },
+  "claude-sonnet-4-6": { in: 3, out: 15 }
+};
+var WEB_SEARCH_PRICE = 0.01; // $10 per 1,000 searches
+var USAGE_FEATURES = ["label", "shelf", "research", "deals"];
+function usageNumbers(model, usage) {
+  const u = usage || {};
+  const p = AI_PRICES[model] || AI_PRICES["claude-sonnet-5-5"];
+  const n = {
+    model: model || null,
+    input_tokens: u.input_tokens || 0,
+    output_tokens: u.output_tokens || 0,
+    cache_read_tokens: u.cache_read_input_tokens || 0,
+    cache_write_tokens: u.cache_creation_input_tokens || 0,
+    web_searches: (u.server_tool_use && u.server_tool_use.web_search_requests) || 0
+  };
+  const tokenCost = (
+    n.input_tokens * p.in +
+    n.output_tokens * p.out +
+    n.cache_read_tokens * (p.cacheRead != null ? p.cacheRead : p.in / 10) +
+    n.cache_write_tokens * p.in * 1.25
+  ) / 1e6;
+  n.cost_usd = Math.round((tokenCost + n.web_searches * WEB_SEARCH_PRICE) * 1e6) / 1e6;
+  return n;
+}
+__name(usageNumbers, "usageNumbers");
+// Returns { allowed, id, used, limit, resets_at }, or { allowed: true } if the check couldn't run
+async function claimUsage(env, userId, feature) {
+  try {
+    const r = await sb_fetch(env, "/rpc/claim_usage", { method: "POST", body: { p_user: userId, p_feature: feature }, prefer: "return=representation" });
+    if (r && typeof r.allowed === "boolean") return r;
+    console.error("claimUsage: unexpected answer", JSON.stringify(r));
+  } catch (e) {
+    console.error("claimUsage: check failed, allowing the call:", e.message);
+  }
+  return { allowed: true, id: null };
+}
+__name(claimUsage, "claimUsage");
+// Record how the call went. data = the Anthropic response body (or null if there wasn't one).
+async function finishUsage(env, claim, data, ok, fallbackModel) {
+  if (!claim || !claim.id) return;
+  try {
+    const n = usageNumbers((data && data.model) || fallbackModel, data && data.usage);
+    await sb_fetch(env, "/api_usage?id=eq." + encodeURIComponent(claim.id), { method: "PATCH", body: { ...n, status: ok ? "ok" : "failed" } });
+  } catch (e) {
+    console.error("finishUsage: could not record usage:", e.message);
+  }
+}
+__name(finishUsage, "finishUsage");
+function usageLimitResponse(claim, cors) {
+  return new Response(JSON.stringify({ error: "USAGE_LIMIT", used: claim.used, limit: claim.limit, resets_at: claim.resets_at }), { status: 429, headers: cors });
+}
+__name(usageLimitResponse, "usageLimitResponse");
+
+/* ═══════════════════════════════════════════════════════════════
    PUBLIC WINE PAGE RENDERERS
    ═══════════════════════════════════════════════════════════════ */
 function esc(s) { return (s || "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
@@ -989,7 +1056,7 @@ var worker_default = {
     const cors = {
       "Access-Control-Allow-Origin": "*",
       "Access-Control-Allow-Headers": "Content-Type, Authorization",
-      "Access-Control-Allow-Methods": "POST, GET, DELETE, PATCH, OPTIONS",
+      "Access-Control-Allow-Methods": "POST, GET, PUT, DELETE, PATCH, OPTIONS",
       "Content-Type": "application/json"
     };
     if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: cors });
@@ -1600,6 +1667,116 @@ var worker_default = {
       }
     }
 
+    // ── GET /api/admin/usage?period=month|last-month|all — AI usage and limits per user ──
+    if (url.pathname.endsWith("/api/admin/usage") && request.method === "GET") {
+      const { user: admin, reason: _authReason } = await verifyAdmin(env, request);
+      if (!admin) return new Response(JSON.stringify({ error: "Unauthorized", reason: _authReason }), { status: 401, headers: cors });
+      try {
+        // Month boundaries in UK time, worked out by Postgres so they match the limit checks
+        const monthStartAgo = (n) => sb_fetch(env, "/rpc/usage_month_start", { method: "POST", body: { p_months_back: n }, prefer: "return=representation" });
+        const monthStart = await monthStartAgo(0);
+        const period = ["month", "last-month", "all"].includes(url.searchParams.get("period")) ? url.searchParams.get("period") : "month";
+        let from = monthStart, to = null;
+        if (period === "last-month") {
+          from = await monthStartAgo(1);
+          to = monthStart;
+        } else if (period === "all") {
+          from = null;
+        }
+        const summary = (from, to) => sb_fetch(env, "/rpc/usage_summary", { method: "POST", body: { p_from: from, p_to: to }, prefer: "return=representation" }).then((r) => r || []);
+        const [periodRows, monthRows, profiles, overrides, defaultRows] = await Promise.all([
+          summary(from, to),
+          period === "month" ? null : summary(monthStart, null),
+          sb_fetch(env, "/profiles?select=id,display_name,is_admin&order=display_name.asc", { prefer: "return=representation" }),
+          sb_fetch(env, "/usage_limits?select=user_id,feature,monthly_limit", { prefer: "return=representation" }),
+          sb_fetch(env, "/usage_limit_defaults?select=feature,monthly_limit", { prefer: "return=representation" })
+        ]);
+        const defaults = {};
+        for (const f of USAGE_FEATURES) defaults[f] = null;
+        for (const r of defaultRows || []) defaults[r.feature] = r.monthly_limit;
+        const byUser = {};
+        const blank = (id, p) => ({ id, display_name: p ? p.display_name : null, is_admin: !!(p && p.is_admin), email: "", deleted: !p, limits: {}, usage: {}, month_used: {} });
+        for (const p of profiles || []) byUser[p.id] = blank(p.id, p);
+        for (const r of periodRows) {
+          const k = r.user_id || "deleted";
+          if (!byUser[k]) byUser[k] = blank(r.user_id, null);
+          byUser[k].usage[r.feature] = { calls: Number(r.calls), failed: Number(r.failed), input_tokens: Number(r.input_tokens), output_tokens: Number(r.output_tokens), web_searches: Number(r.web_searches), cost_usd: Number(r.cost_usd) };
+        }
+        for (const r of (monthRows || periodRows)) {
+          const k = r.user_id || "deleted";
+          if (byUser[k]) byUser[k].month_used[r.feature] = Number(r.calls);
+        }
+        const overrideMap = {};
+        for (const o of overrides || []) overrideMap[o.user_id + ":" + o.feature] = o.monthly_limit;
+        for (const u of Object.values(byUser)) {
+          if (u.deleted) continue;
+          for (const f of USAGE_FEATURES) {
+            const key = u.id + ":" + f;
+            if (key in overrideMap) u.limits[f] = { limit: overrideMap[key], source: "user" };
+            else if (u.is_admin) u.limits[f] = { limit: null, source: "admin" };
+            else u.limits[f] = { limit: defaults[f], source: "default" };
+          }
+        }
+        // Add email addresses
+        await Promise.all(Object.values(byUser).filter((u) => !u.deleted).map(async (u) => {
+          try {
+            const uRes = await fetch(`${SUPABASE_URL}/auth/v1/admin/users/${u.id}`, {
+              headers: { apikey: env.SUPABASE_SERVICE_KEY, Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}` }
+            });
+            if (uRes.ok) { const au = await uRes.json(); u.email = au.email || ""; }
+          } catch (_) {}
+        }));
+        return new Response(JSON.stringify({ period, from, to, month_start: monthStart, features: USAGE_FEATURES, defaults, users: Object.values(byUser) }), { status: 200, headers: cors });
+      } catch (e) {
+        console.error("admin usage:", e.message);
+        return new Response(JSON.stringify({ error: e.message }), { status: 500, headers: cors });
+      }
+    }
+
+    // ── PUT /api/admin/usage-limits — set one person's monthly limit for one feature ──
+    // body: { user_id, feature, limit }  limit: a whole number (0 = blocked), null = unlimited, "default" = use the default
+    if (url.pathname.endsWith("/api/admin/usage-limits") && request.method === "PUT") {
+      const { user: admin, reason: _authReason } = await verifyAdmin(env, request);
+      if (!admin) return new Response(JSON.stringify({ error: "Unauthorized", reason: _authReason }), { status: 401, headers: cors });
+      try {
+        const { user_id, feature, limit } = await request.json();
+        if (!user_id || !USAGE_FEATURES.includes(feature)) return new Response(JSON.stringify({ error: "user_id and a valid feature are required" }), { status: 400, headers: cors });
+        if (limit === "default") {
+          await sb_fetch(env, "/usage_limits?user_id=eq." + encodeURIComponent(user_id) + "&feature=eq." + encodeURIComponent(feature), { method: "DELETE" });
+        } else {
+          if (limit !== null && !(Number.isInteger(limit) && limit >= 0 && limit <= 100000)) return new Response(JSON.stringify({ error: "Limit must be a whole number from 0 to 100000, or unlimited" }), { status: 400, headers: cors });
+          await sb_fetch(env, "/usage_limits?on_conflict=user_id,feature", {
+            method: "POST",
+            body: { user_id, feature, monthly_limit: limit, updated_at: new Date().toISOString() },
+            prefer: "resolution=merge-duplicates,return=representation"
+          });
+        }
+        return new Response(JSON.stringify({ ok: true }), { status: 200, headers: cors });
+      } catch (e) {
+        return new Response(JSON.stringify({ error: e.message }), { status: 500, headers: cors });
+      }
+    }
+
+    // ── PUT /api/admin/usage-defaults — set everyone's default monthly limit for one feature ──
+    // body: { feature, limit }  limit: a whole number (0 = blocked) or null = unlimited
+    if (url.pathname.endsWith("/api/admin/usage-defaults") && request.method === "PUT") {
+      const { user: admin, reason: _authReason } = await verifyAdmin(env, request);
+      if (!admin) return new Response(JSON.stringify({ error: "Unauthorized", reason: _authReason }), { status: 401, headers: cors });
+      try {
+        const { feature, limit } = await request.json();
+        if (!USAGE_FEATURES.includes(feature)) return new Response(JSON.stringify({ error: "A valid feature is required" }), { status: 400, headers: cors });
+        if (limit !== null && !(Number.isInteger(limit) && limit >= 0 && limit <= 100000)) return new Response(JSON.stringify({ error: "Limit must be a whole number from 0 to 100000, or unlimited" }), { status: 400, headers: cors });
+        await sb_fetch(env, "/usage_limit_defaults?on_conflict=feature", {
+          method: "POST",
+          body: { feature, monthly_limit: limit },
+          prefer: "resolution=merge-duplicates,return=representation"
+        });
+        return new Response(JSON.stringify({ ok: true }), { status: 200, headers: cors });
+      } catch (e) {
+        return new Response(JSON.stringify({ error: e.message }), { status: 500, headers: cors });
+      }
+    }
+
     /* ═══════════════════════════════════════════════════════════
        END ADMIN API
        ═══════════════════════════════════════════════════════════ */
@@ -1880,9 +2057,15 @@ var worker_default = {
       const refresh = url.searchParams.get("refresh") === "1";
       console.log("enrich: wine_id=", wine_id, "refresh=", refresh);
 
-      // If refresh requested, delete existing row first (members only)
-      if (refresh && !(await verifyMember(env, request))) return new Response(JSON.stringify({ error: "MEMBERS_ONLY" }), { status: 401, headers: cors });
+      const wineParts = [name, winery, grape, region, country, vintage, style].filter(Boolean);
+      let enrichMember = null, enrichClaim = null;
+      // If refresh requested, delete existing row first (members only, within their research limit)
       if (refresh) {
+        enrichMember = await verifyMember(env, request);
+        if (!enrichMember) return new Response(JSON.stringify({ error: "MEMBERS_ONLY" }), { status: 401, headers: cors });
+        if (wineParts.length < 2) return new Response(JSON.stringify({ error: "Not enough wine info to research" }), { status: 400, headers: cors });
+        enrichClaim = await claimUsage(env, enrichMember.id, "research");
+        if (!enrichClaim.allowed) return usageLimitResponse(enrichClaim, cors);
         try {
           const sbKey = env.SUPABASE_SERVICE_KEY;
           await fetch(`${SUPABASE_URL}/rest/v1/wine_enrichments?wine_id=eq.${encodeURIComponent(wine_id)}`, {
@@ -1904,10 +2087,17 @@ var worker_default = {
       }
 
       // Saved results above are free to read; asking Claude is members only
-      if (!(await verifyMember(env, request))) return new Response(JSON.stringify({ error: "MEMBERS_ONLY" }), { status: 401, headers: cors });
+      if (!enrichMember) {
+        enrichMember = await verifyMember(env, request);
+        if (!enrichMember) return new Response(JSON.stringify({ error: "MEMBERS_ONLY" }), { status: 401, headers: cors });
+      }
 
-      const wineParts = [name, winery, grape, region, country, vintage, style].filter(Boolean);
       if (wineParts.length < 2) return new Response(JSON.stringify({ error: "Not enough wine info to research" }), { status: 400, headers: cors });
+      // Within this person's monthly research limit? (Already checked when refreshing.)
+      if (!enrichClaim) {
+        enrichClaim = await claimUsage(env, enrichMember.id, "research");
+        if (!enrichClaim.allowed) return usageLimitResponse(enrichClaim, cors);
+      }
 
       const enrichPromptText = `You are a wine research assistant. ${photoBase64 ? "I have attached an image of the wine's front label — use it together with the metadata below to identify the exact wine and producer." : "Given the wine details below, identify the wine and producer."}
 
@@ -1963,6 +2153,8 @@ Rules:
       // even if the page that asked for it is closed or refreshed, so the result
       // still gets saved and is there the next time someone opens the wine.
       const enrichWork = (async () => {
+        let usageRecorded = false;
+        const recordEnrich = async (d, ok) => { if (usageRecorded) return; usageRecorded = true; await finishUsage(env, enrichClaim, d, ok, "claude-sonnet-5-5"); };
         try {
           const enrichResp = await fetch("https://api.anthropic.com/v1/messages", {
             method: "POST",
@@ -1983,6 +2175,7 @@ Rules:
             })
           });
           if (!enrichResp.ok) {
+            await recordEnrich(null, false);
             const errB = await enrichResp.json().catch(() => ({}));
             console.error("enrich: Anthropic error", enrichResp.status, JSON.stringify(errB));
             return new Response(JSON.stringify({ error: errB?.error?.message || `Anthropic ${enrichResp.status}` }), { status: enrichResp.status, headers: cors });
@@ -1993,7 +2186,11 @@ Rules:
           const match2 = cleaned2.match(/\{[\s\S]*\}/);
           let enrichParsed;
           try { enrichParsed = JSON.parse(match2 ? match2[0] : cleaned2); }
-          catch { return new Response(JSON.stringify({ error: "PARSE_ERROR", raw: rawText2.slice(0, 500) }), { status: 422, headers: cors }); }
+          catch {
+            await recordEnrich(enrichData, false);
+            return new Response(JSON.stringify({ error: "PARSE_ERROR", raw: rawText2.slice(0, 500) }), { status: 422, headers: cors });
+          }
+          await recordEnrich(enrichData, true);
 
           // Normalise arrays
           if (typeof enrichParsed.food_pairings === "string") try { enrichParsed.food_pairings = JSON.parse(enrichParsed.food_pairings); } catch { enrichParsed.food_pairings = []; }
@@ -2089,6 +2286,7 @@ Rules:
           enrichParsed.wine_id = wine_id;
           return new Response(JSON.stringify(enrichParsed), { status: 200, headers: cors });
         } catch (e) {
+          await recordEnrich(null, false);
           console.error("enrich: exception", e.message);
           return new Response(JSON.stringify({ error: e.message }), { status: 502, headers: cors });
         }
@@ -2113,9 +2311,13 @@ Rules:
       } catch (e) { console.warn("deals: saved result check failed:", e.message); }
 
       // The saved result above is free to read; a fresh search is members only
-      if (!(await verifyMember(env, request))) return new Response(JSON.stringify({ error: "MEMBERS_ONLY" }), { status: 401, headers: cors });
+      const dealsMember = await verifyMember(env, request);
+      if (!dealsMember) return new Response(JSON.stringify({ error: "MEMBERS_ONLY" }), { status: 401, headers: cors });
       const dealsKey = env?.ANTHROPIC_API_KEY || ANTHROPIC_API_KEY;
       if (!dealsKey) return new Response(JSON.stringify({ error: "NO_KEY" }), { status: 500, headers: cors });
+      const dealsClaim = await claimUsage(env, dealsMember.id, "deals");
+      if (!dealsClaim.allowed) return usageLimitResponse(dealsClaim, cors);
+      const recordDeals = (d, ok) => { const p = finishUsage(env, dealsClaim, d, ok, "claude-sonnet-4-6"); if (ctx && ctx.waitUntil) ctx.waitUntil(p); return p; };
       const todayUK = new Date().toLocaleDateString("en-CA", { timeZone: "Europe/London" }); // YYYY-MM-DD
       const dealsPrompt = `Today's date is ${todayUK} (UK).
 
@@ -2142,6 +2344,7 @@ Rules:
 - source_url must be a real URL from your search results \u2014 never invent one
 - If none of the supermarkets are running the offer today, return {"offers": []}`;
 
+      let dealsData = null;
       try {
         const dealsResp = await fetch("https://api.anthropic.com/v1/messages", {
           method: "POST",
@@ -2158,17 +2361,22 @@ Rules:
           })
         });
         if (!dealsResp.ok) {
+          recordDeals(null, false);
           const errD = await dealsResp.json().catch(() => ({}));
           console.error("deals: Anthropic error", dealsResp.status, JSON.stringify(errD));
           return new Response(JSON.stringify({ error: errD?.error?.message || `Anthropic ${dealsResp.status}` }), { status: dealsResp.status, headers: cors });
         }
-        const dealsData = await dealsResp.json();
+        dealsData = await dealsResp.json();
         const dealsRaw = (dealsData.content || []).filter(b => b.type === "text").map(b => b.text).join("");
         const dealsCleaned = dealsRaw.replace(/```json\s*/gi, "").replace(/```\s*/gi, "").trim();
         const dealsMatch = dealsCleaned.match(/\{[\s\S]*\}/);
         let dealsParsed;
         try { dealsParsed = JSON.parse(dealsMatch ? dealsMatch[0] : dealsCleaned); }
-        catch { return new Response(JSON.stringify({ error: "PARSE_ERROR", raw: dealsRaw.slice(0, 500) }), { status: 422, headers: cors }); }
+        catch {
+          recordDeals(dealsData, false);
+          return new Response(JSON.stringify({ error: "PARSE_ERROR", raw: dealsRaw.slice(0, 500) }), { status: 422, headers: cors });
+        }
+        recordDeals(dealsData, true);
 
         // Keep only offers with a named retailer, a real source link and an end date that hasn't passed
         const dealsText = v => typeof v === "string" ? (v.replace(/<\/?cite[^>]*>/gi, "").replace(/\s{2,}/g, " ").trim().slice(0, 300) || null) : null;
@@ -2205,6 +2413,7 @@ Rules:
 
         return new Response(JSON.stringify({ checked_at: checkedAt, offers, retailers: DEAL_RETAILERS, cached: false }), { status: 200, headers: cors });
       } catch (e) {
+        if (!dealsData) recordDeals(null, false);
         console.error("deals: exception", e.message);
         return new Response(JSON.stringify({ error: e.message }), { status: 502, headers: cors });
       }
@@ -2214,7 +2423,8 @@ Rules:
     // Label scanning spends your Anthropic credit, so only our own pages may use it
     if (!origin_ok(request)) return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403, headers: cors });
     // ...and only for signed-in members
-    if (!(await verifyMember(env, request))) return new Response(JSON.stringify({ error: "MEMBERS_ONLY" }), { status: 401, headers: cors });
+    const scanMember = await verifyMember(env, request);
+    if (!scanMember) return new Response(JSON.stringify({ error: "MEMBERS_ONLY" }), { status: 401, headers: cors });
     const anthropicKey = env?.ANTHROPIC_API_KEY || ANTHROPIC_API_KEY;
     if (!anthropicKey || anthropicKey === "PASTE_YOUR_ANTHROPIC_KEY_HERE") return new Response(JSON.stringify({ error: "NO_KEY_IN_WORKER" }), { status: 500, headers: cors });
     let body;
@@ -2225,6 +2435,10 @@ Rules:
     }
     const { imageBase64, backImageBase64 = null, mimeType = "image/jpeg" } = body;
     if (!imageBase64) return new Response(JSON.stringify({ error: "imageBase64 required" }), { status: 400, headers: cors });
+    // Within this person's monthly label-scan limit?
+    const scanClaim = await claimUsage(env, scanMember.id, "label");
+    if (!scanClaim.allowed) return usageLimitResponse(scanClaim, cors);
+    const recordScan = (d, ok) => { const p = finishUsage(env, scanClaim, d, ok, "claude-haiku-5-5"); if (ctx && ctx.waitUntil) ctx.waitUntil(p); return p; };
     const imageBlocks = [{ type: "image", source: { type: "base64", media_type: mimeType, data: imageBase64 } }];
     if (backImageBase64) imageBlocks.push({ type: "image", source: { type: "base64", media_type: mimeType, data: backImageBase64 } });
     const PROMPT = `Return ONLY a valid JSON object \u2014 no markdown, no explanation, nothing else.
@@ -2245,9 +2459,11 @@ Return exactly:
         body: JSON.stringify({ model: "claude-haiku-5-5", max_tokens: 800, thinking: { type: "disabled" }, messages: [{ role: "user", content: [...imageBlocks, { type: "text", text: (backImageBase64 ? "First image = FRONT, second = BACK. Use both.\n\n" : "Examine carefully.\n\n") + PROMPT }] }] })
       });
     } catch (e) {
+      recordScan(null, false);
       return new Response(JSON.stringify({ error: "Failed to reach Anthropic: " + e.message }), { status: 502, headers: cors });
     }
     if (!anthropicResp.ok) {
+      recordScan(null, false);
       const errBody = await anthropicResp.json().catch(() => ({}));
       const status = anthropicResp.status;
       if (status === 401) return new Response(JSON.stringify({ error: "INVALID_KEY" }), { status: 401, headers: cors });
@@ -2262,8 +2478,10 @@ Return exactly:
     try {
       parsed = JSON.parse(match ? match[0] : cleaned);
     } catch {
+      recordScan(data, false);
       return new Response(JSON.stringify({ error: "PARSE_ERROR", raw: rawText }), { status: 422, headers: cors });
     }
+    recordScan(data, true);
     // Safety net: a wine named only after its estate sometimes comes back with no name.
     // Use the producer/estate name so the Name field is never left empty.
     if (parsed && !String(parsed.name || "").trim() && String(parsed.winery || "").trim()) {
