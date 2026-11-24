@@ -726,7 +726,7 @@ function startSteps() {
   const total = estimateSeconds(photos.length);
   scanStartedAt = Date.now();
   // The AI does all of this in one go, so the steps are paced across the estimated time
-  [0.06, 0.18, 0.35, 0.6].forEach((f, i) => stepTimers.push(setTimeout(() => renderSteps(i + 1), f * total * 1000)));
+  [0.1, 0.3, 0.55, 0.8].forEach((f, i) => stepTimers.push(setTimeout(() => renderSteps(i + 1), f * total * 1000)));
   clearInterval(etaTimer);
   showEta(total);
   etaTimer = setInterval(() => showEta(total), 1000);
