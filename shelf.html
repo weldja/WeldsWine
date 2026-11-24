@@ -286,6 +286,20 @@ h1{font-family:var(--font-d);font-size:1.5rem;font-weight:600;line-height:1.2}
     </div>
 
     <div class="card">
+      <h2 class="sec-h">I want</h2>
+      <div class="choices" role="group" aria-label="What kind of pick you want">
+        <button type="button" class="choice" data-mode="value" aria-pressed="true">Best value</button>
+        <button type="button" class="choice" data-mode="budget" aria-pressed="false">Under a budget</button>
+        <button type="button" class="choice" data-mode="treat" aria-pressed="false">A treat</button>
+      </div>
+      <div class="fld" id="budgetFld" hidden>
+        <label for="budgetInput">Most I’ll pay for a bottle (£)</label>
+        <input type="number" id="budgetInput" inputmode="decimal" min="3" max="500" step="0.5" placeholder="e.g. 10"/>
+      </div>
+      <p class="small" style="margin-top:8px" id="modeHelp">The most quality for your money, not just the cheapest bottle.</p>
+    </div>
+
+    <div class="card">
       <h2 class="sec-h">Prices</h2>
       <label class="chk" style="margin-top:6px">
         <input type="checkbox" id="loyaltyInput"/>
@@ -410,7 +424,7 @@ let isMember = false;   // signed in? Visitors can use the page but not scan
 const MAX_PHOTOS = 6;
 const PHOTO_MAX_PX = 1568;          // long side sent to the AI; small price text needs the detail
 const PHOTO_QUALITY = 0.85;
-const SCAN_TIMEOUT_MS = 150000;     // give up after two and a half minutes
+const SCAN_TIMEOUT_MS = 180000;     // give up after three minutes
 const DRAFT_KEY = 'wwShelfDraft';   // photos in progress (this tab only)
 const RESULT_KEY = 'wwShelfResult'; // last result (this tab only)
 const PREFS_KEY = 'wwShelfPrefs';   // loyalty card, shop and colour (remembered on this device)
@@ -424,6 +438,7 @@ let stepTimers = [];
 let wakeLock = null;
 let listFilter = 'all';
 let wantColour = 'any';   // the colour chosen on the photo screen: any, red, white or rose
+let pickMode = 'value';   // what kind of pick: value, budget or treat
 
 const $ = id => document.getElementById(id);
 
@@ -489,14 +504,32 @@ function loadPrefs() {
     const p = JSON.parse(localStorage.getItem(PREFS_KEY) || '{}');
     $('loyaltyInput').checked = p.loyalty !== false;   // ticked unless you've unticked it before
     setWant(COLOUR_WORDS[p.want] ? p.want : 'any');
+    if (p.budget) $('budgetInput').value = p.budget;
+    setMode(MODE_HELP[p.mode] ? p.mode : 'value');
   } catch (_) { $('loyaltyInput').checked = true; }
 }
 function setWant(v) {
   wantColour = v;
-  document.querySelectorAll('.choice').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.want === v)));
+  document.querySelectorAll('.choice[data-want]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.want === v)));
+}
+const MODE_HELP = {
+  value: 'The most quality for your money, not just the cheapest bottle.',
+  budget: 'The best quality for the money, staying within your budget.',
+  treat: 'The best wine on the shelf for a special occasion.'
+};
+function setMode(v) {
+  pickMode = v;
+  document.querySelectorAll('.choice[data-mode]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.mode === v)));
+  $('budgetFld').hidden = v !== 'budget';
+  $('modeHelp').textContent = MODE_HELP[v];
+}
+// The budget typed in, or null if it isn't a sensible number
+function budgetValue() {
+  const n = parseFloat($('budgetInput').value);
+  return n >= 3 && n <= 500 ? Math.round(n * 100) / 100 : null;
 }
 function savePrefs() {
-  try { localStorage.setItem(PREFS_KEY, JSON.stringify({ loyalty: $('loyaltyInput').checked, want: wantColour })); } catch (_) {}
+  try { localStorage.setItem(PREFS_KEY, JSON.stringify({ loyalty: $('loyaltyInput').checked, want: wantColour, mode: pickMode, budget: budgetValue() })); } catch (_) {}
 }
 
 // ── Shop list ───────────────────────────────────────────────
@@ -681,6 +714,11 @@ const ERRORS = {
 
 async function runScan() {
   if (!photos.length) return;
+  if (pickMode === 'budget' && !budgetValue()) {
+    toast('Enter a budget between £3 and £500, or choose Best value.');
+    $('budgetInput').focus();
+    return;
+  }
   savePrefs();
   // Visitors can take photos and choose options, but scanning is for members
   if (!isMember) {
@@ -711,7 +749,7 @@ async function runScan() {
     const res = await fetch(SHELF_WORKER_URL.replace(/\/$/, '') + '/scan', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-      body: JSON.stringify({ photos: photos.map(p => p.url), loyaltyCard: $('loyaltyInput').checked, shop: $('shopInput').value.trim() || null, want: wantColour === 'any' ? null : wantColour }),
+      body: JSON.stringify({ photos: photos.map(p => p.url), loyaltyCard: $('loyaltyInput').checked, shop: $('shopInput').value.trim() || null, want: wantColour === 'any' ? null : wantColour, mode: pickMode, budget: pickMode === 'budget' ? budgetValue() : null }),
       signal: scanAbort.signal
     });
     const body = await res.json().catch(() => ({}));
@@ -796,6 +834,16 @@ function confChip(w) {
   return el('span', 'conf ' + (w.confidence || 'medium'), label);
 }
 
+// How good the wine is, ignoring the price (null if the AI couldn't tell)
+function qualityChip(w) {
+  if (!w.quality_score) return null;
+  const c = el('span', 'chip', 'Quality ' + w.quality_score + '/10');
+  c.title = 'How good the wine is, ignoring its price';
+  return c;
+}
+// What kind of pick this scan was for (older saved scans were always "value")
+function scanMode() { return result && (result.mode === 'budget' || result.mode === 'treat') ? result.mode : 'value'; }
+
 function priceRow(w) {
   const row = el('div', 'price-row');
   if (!w.price) { row.appendChild(el('span', 'also', 'Price not visible')); return row; }
@@ -844,6 +892,9 @@ function renderResults() {
   chips.appendChild(el('span', 'chip gold', r.loyalty_card ? loyaltyName() + ' prices used' : 'Normal prices used'));
   const want = scanWant();
   if (want) chips.appendChild(el('span', 'chip s-' + want, 'Picks: ' + COLOUR_WORDS[want][1] + ' only'));
+  const mode = scanMode();
+  if (mode === 'budget' && r.budget) chips.appendChild(el('span', 'chip', 'Budget: up to ' + money(r.budget)));
+  if (mode === 'treat') chips.appendChild(el('span', 'chip', 'Looking for a treat'));
   if (toCheck) chips.appendChild(el('span', 'chip red', toCheck + (toCheck === 1 ? ' price to check' : ' prices to check')));
   if (noPrice) chips.appendChild(el('span', 'chip', noPrice + ' with no price visible'));
   sum.appendChild(chips);
@@ -853,14 +904,19 @@ function renderResults() {
   picksBox.textContent = '';
   const picks = (r.picks || []).map(p => ({ p, w: wineById(p.wine_id) })).filter(x => x.w);
   $('picksHead').hidden = false;
-  $('picksHead').textContent = want ? 'Best value ' + COLOUR_WORDS[want][1] + ' on this shelf' : 'Best value on this shelf';
+  const kind = want ? COLOUR_WORDS[want][1] : 'wines';
+  $('picksHead').textContent = mode === 'treat' ? 'Best ' + kind + ' for a treat'
+    : mode === 'budget' && r.budget ? 'Best value ' + kind + ' up to ' + money(r.budget)
+    : want ? 'Best value ' + kind + ' on this shelf' : 'Best value on this shelf';
   if (!picks.length) {
     const c = el('div', 'card');
     const wantCount = want ? wines.filter(w => styleKey(w.style) === want).length : 0;
     c.appendChild(el('p', 'small', want && wines.length && !wantCount
       ? 'No ' + COLOUR_WORDS[want][1] + ' could be found in these photos. Tap “See all wines found” to see what is on the shelf, or start a new scan with “Any” chosen.'
+      : mode === 'budget' && r.budget && wines.some(w => payPrice(w)) && !wines.some(w => payPrice(w) && payPrice(w) <= r.budget)
+      ? 'No wine within ' + money(r.budget) + ' could be found in these photos. Tap “See all wines found” to see the prices, or try a higher budget.'
       : wines.length
-      ? 'No clear best-value picks — probably because too few prices could be read. Try adding close-up photos of the price tags.'
+      ? 'No clear picks — probably because too few prices could be read. Try adding close-up photos of the price tags.'
       : 'No wines could be read in these photos. Try a closer, brighter photo with the price tags in shot.'));
     picksBox.appendChild(c);
   }
@@ -878,6 +934,8 @@ function renderResults() {
     card.appendChild(priceRow(w));
     if (p.reason) card.appendChild(el('p', 'why', p.reason));
     const cr = el('div', 'conf-row');
+    const qc = qualityChip(w);
+    if (qc) cr.appendChild(qc);
     cr.appendChild(confChip(w));
     const seen = seenText(w);
     if (seen) cr.appendChild(el('span', 'small', seen));
@@ -1206,11 +1264,13 @@ function renderHeatSelection() {
   // Dark text on the lighter yellows and limes, white on the rest
   if (c && (0.299 * c[0] + 0.587 * c[1] + 0.114 * c[2]) > 150) v.style.color = '#2D2420';
   tags.appendChild(v);
+  const qc = qualityChip(w);
+  if (qc) tags.appendChild(qc);
   tags.appendChild(confChip(w));
   box.appendChild(tags);
   const rank = pickRank(w.id);
   const reason = rank ? result.picks[rank - 1].reason : (isPoor(w.id) ? (result.poor_value.find(p => p.wine_id === w.id) || {}).reason : '');
-  if (rank) box.appendChild(el('div', 'small', 'Best value pick ' + rank));
+  if (rank) box.appendChild(el('div', 'small', (scanMode() === 'treat' ? 'Treat pick ' : 'Best value pick ') + rank));
   if (reason) box.appendChild(el('p', 'why', reason));
   const sub = wineSub(w);
   if (sub) box.appendChild(el('div', 'small', sub));
@@ -1275,6 +1335,8 @@ function renderAll() {
     const cr = el('div', 'conf-row');
     const st = styleTag(w);
     if (st) cr.appendChild(st);
+    const qc = qualityChip(w);
+    if (qc) cr.appendChild(qc);
     cr.appendChild(confChip(w));
     if (w.note) cr.appendChild(el('span', 'note', w.note));
     row.appendChild(cr);
@@ -1341,7 +1403,13 @@ $('newScanBtn').addEventListener('click', () => {
   showView('viewCapture');
 });
 document.querySelectorAll('.filter').forEach(b => b.addEventListener('click', () => { listFilter = b.dataset.filter; renderAll(); }));
-document.querySelectorAll('.choice').forEach(b => b.addEventListener('click', () => { setWant(b.dataset.want); savePrefs(); }));
+document.querySelectorAll('.choice[data-want]').forEach(b => b.addEventListener('click', () => { setWant(b.dataset.want); savePrefs(); }));
+document.querySelectorAll('.choice[data-mode]').forEach(b => b.addEventListener('click', () => {
+  setMode(b.dataset.mode);
+  savePrefs();
+  if (b.dataset.mode === 'budget' && !budgetValue()) $('budgetInput').focus();
+}));
+$('budgetInput').addEventListener('change', savePrefs);
 $('heatToggle').addEventListener('click', () => {
   heatOff = !heatOff;
   $('heatToggle').setAttribute('aria-pressed', String(heatOff));

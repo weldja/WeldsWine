@@ -119,11 +119,39 @@ function base64Bytes(b64) {
 // The colours the page can ask for, and how to name them in the prompt
 const WANT_WORDS = { red: "red", white: "white", rose: "rosé" };
 
-function buildPrompt(photoCount, hasLoyaltyCard, shop, want) {
+// What kind of pick the person wants. "value" is the default.
+const MODES = ["value", "budget", "treat"];
+
+// Picks must be at least this good (quality_score), unless no wine
+// that could be picked reaches it. Stops a cheap but dull wine winning.
+const QUALITY_FLOOR = 6;
+
+// How to choose the picks, for each mode
+function pickRules(mode, budget, priceWord) {
+  if (mode === "budget") return `
+   - The person has a budget of £${budget} a bottle. Only pick wines whose ${priceWord} is £${budget} or less.
+   - Among those, pick the wines with the most quality for the money, as described for value above. Do not just pick the cheapest wines under the budget: a wine near the top of the budget that drinks well above its price is a better pick than a cheaper, plainer one.
+   - If no wine with a readable price is within the budget, leave "picks" empty.`;
+  if (mode === "treat") return `
+   - The person wants a treat: the best wine on this shelf for a special occasion. Pick the wines with the highest quality, best first.
+   - Price still matters a little: between two wines of similar quality, prefer the one that is fairer value, and avoid wines whose price is mostly for a famous name or fancy packaging.
+   - Your reason should say what makes the wine special.`;
+  return `
+   - Pick the wines that give the most quality per pound. Best value is NOT the lowest price.`;
+}
+
+function buildPrompt(photoCount, hasLoyaltyCard, shop, want, mode, budget) {
   const w = WANT_WORDS[want];   // undefined means any colour
+  const priceWord = hasLoyaltyCard ? "loyalty price (or normal price if there is no loyalty price)" : "normal price";
   const colourRule = w ? `
-   - IMPORTANT: the person only wants a ${w} wine today. Your best-value picks and your poor-value wines must ALL be ${w} wines ("style": "${w === "rosé" ? "Rosé" : w[0].toUpperCase() + w.slice(1)}"). Do not pick any other style, and do not pick a wine if you cannot tell whether it is ${w}. If no ${w} wine has a readable price, leave "picks" empty.
-   - Still list EVERY wine on the shelf in "wines", whatever its colour, and still give every wine a value score.` : "";
+   - IMPORTANT: the person only wants a ${w} wine today. Your picks and your poor-value wines must ALL be ${w} wines ("style": "${w === "rosé" ? "Rosé" : w[0].toUpperCase() + w.slice(1)}"). Do not pick any other style, and do not pick a wine if you cannot tell whether it is ${w}. If no ${w} wine has a readable price, leave "picks" empty.
+   - Still list EVERY wine on the shelf in "wines", whatever its colour, and still give every wine a quality score and a value score.` : "";
+  const pickHeading = mode === "treat" ? "Pick the best wine for a treat." : mode === "budget" ? `Pick the best value within the budget of £${budget}.` : "Pick the best value.";
+  const scoreOrderRule = mode === "value"
+    ? `
+   - Your picks must have the highest value scores on the shelf, in order: pick 1 the highest, then pick 2, then pick 3. Your poor-value wines must have the lowest scores.`
+    : `
+   - Your poor-value wines must have the lowest value scores. (Your picks are chosen by the rules in task 5, so they need not have the highest value scores.)`;
   return `You are helping a wine lover in a UK shop find the best value wine on a shelf.
 
 You have been given ${photoCount} photo${photoCount === 1 ? "" : "s"} of the SAME shelf, labelled Photo 1 to Photo ${photoCount}. They may overlap: one may be a wide shot and others close-ups of particular rows. ${shop ? `The shop is: ${shop}.` : `The shop was not given. Only fill in "shop" if you can see clear proof in the photos, such as the shop's name or logo on a sign, a price tag or an offer ticket. Do NOT guess the shop from the wines, the shelving, the style of the tags or the prices. If there is no clear proof, set "shop" to null.`}
@@ -146,20 +174,28 @@ YOUR TASKS
    - "medium": readable, but the tag-to-bottle match or a detail is a reasonable judgement.
    - "low": partly hidden, blurred, glare, or the match is a guess. Explain in "note" what the person should check.
 
-4. Pick the best value.
+4. Judge how good each wine is, BEFORE you think about its price here.
+   - "quality_score" is a whole number from 1 to 10 for how good the wine in the bottle is, ignoring the price on this shelf completely: 10 = exceptional, 8 = very good, 6 = good, 4 = ordinary, 2 = poor.
+   - Base it on what you know: the producer's reputation, the region and appellation (and its classification, e.g. Cru, Reserva, DOCG), the grape, the vintage, critics' and wine writers' views, and whether it is a mass-market brand made to a price or a wine made with care.
+   - Mass-market brands and basic supermarket own-labels are usually 3 to 5. Do not raise a score because the wine is cheap or on offer, and do not lower it because it is expensive.
+   - If you can identify the wine, always give a score, even if you have to judge from the region, grape and style. If you cannot tell what the wine is, set it to null.
+
+5. ${pickHeading}
    - The person ${hasLoyaltyCard ? "HAS" : "does NOT have"} a loyalty card${hasLoyaltyCard ? ", so use loyalty prices where shown" : ", so use normal prices, not loyalty prices"}.
-   - Value means how good the wine usually is compared with what it costs here. Use your knowledge of these producers and wines, and of their usual UK prices. A wine that is on offer below its usual price is good value.
+   - Value means quality compared with the price here. A £12 wine that drinks like a £20 wine is better value than a £5 wine that drinks like a £5 wine. Use your quality scores and your knowledge of these wines' usual UK prices.
+   - A discount only makes a wine good value if the wine is good at its normal price. A dull wine on offer is still a dull wine.
+   - Mass-market brands and the very cheapest wines are rarely the best value, even when on offer.${pickRules(mode, budget, priceWord)}
    - Only pick wines with a price you could read. Prefer high or medium confidence wines.
-   - Choose up to 3 best-value picks, best first, each with a short reason (1 or 2 plain sentences, British English, no hype). Mention it if the price is worth double-checking.
+   - Do not pick a wine with a quality score below ${QUALITY_FLOOR} unless no wine you could pick reaches ${QUALITY_FLOOR}.
+   - Choose up to 3 picks, best first, each with a short reason (1 or 2 plain sentences, British English, no hype) that says why the wine is good, not just that it is cheap. Mention it if the price is worth double-checking.
    - Also list up to 3 wines that are poor value (for example, paying for a brand name), each with a short reason.
    - If you are not familiar with a wine, say so honestly in the reason rather than inventing facts about it.${colourRule}
 
-5. Give every wine a value score.
-   - "value_score" is a whole number from 1 to 10 for how good value the wine is at the price YOU would pay here: 10 = outstanding value, 7 = good value, 5 = fair, 3 = poor, 1 = very poor value.
-   - Your best-value picks must have the highest scores on the shelf, in order: pick 1 the highest, then pick 2, then pick 3. Your poor-value wines must have the lowest scores.
+6. Give every wine a value score.
+   - "value_score" is a whole number from 1 to 10 for how good value the wine is at the price YOU would pay here, judged as quality for the money: 10 = outstanding value, 7 = good value, 5 = fair, 3 = poor, 1 = very poor value. A cheap, ordinary wine is fair value at best, not good value.${scoreOrderRule}
    - If no price could be read for a wine, set "value_score" to null.
 
-6. Say where each wine is in the photos, so it can be marked on a picture of the shelf.
+7. Say where each wine is in the photos, so it can be marked on a picture of the shelf.
    - Choose the "overview_photo": the photo that shows the most of the shelf (usually the wide shot).
    - For each wine, give "locations": a list of boxes, ONE box for EACH photo the wine can be seen in. Each box goes around that wine's front-facing bottles in that photo (all of its bottles side by side, not the price tag).
    - Every photo is shown to the person, one under another, so mark each wine in every photo where it appears, not just one. Never give two boxes for the same photo.
@@ -167,7 +203,7 @@ YOUR TASKS
    - Boxes for different wines must not overlap: neighbouring wines on the same shelf should sit side by side, each box ending where the next wine's bottles begin.
    - Be as accurate as you can. Leave out any photo where you cannot tell where the wine is. If you cannot place it in any photo, give an empty list.
 
-7. Write a one-sentence summary of the shelf.
+8. Write a one-sentence summary of the shelf.
 
 Return ONLY a valid JSON object — no markdown fences, no explanation — exactly in this shape:
 {
@@ -189,6 +225,7 @@ Return ONLY a valid JSON object — no markdown fences, no explanation — exact
       "loyalty_price": 7.5 or null,
       "photos": [1, 3],
       "confidence": "high, medium or low",
+      "quality_score": 7 or null,
       "value_score": 7 or null,
       "locations": [ { "photo": 1, "x": 0.05, "y": 0.02, "w": 0.2, "h": 0.22 }, { "photo": 3, "x": 0.4, "y": 0.1, "w": 0.3, "h": 0.5 } ],
       "note": "short note on anything to check, or null"
@@ -247,7 +284,7 @@ function cleanLocation(loc, photoCount) {
   return { photo, x: r(x), y: r(y), w: r(w), h: r(h) };
 }
 
-function cleanResult(raw, photoCount, want) {
+function cleanResult(raw, photoCount, want, mode, budget, loyaltyCard) {
   const overview = parseInt(raw.overview_photo, 10);
   const out = {
     shop: str(raw.shop, 60), summary: str(raw.summary, 400),
@@ -271,6 +308,7 @@ function cleanResult(raw, photoCount, want) {
     if (!price && loyalty) { price = loyalty; loyalty = null; }        // only one price seen
     if (loyalty && price && loyalty >= price) loyalty = null;            // not actually a discount
     const score = parseInt(w.value_score, 10);
+    const quality = parseInt(w.quality_score, 10);
     // Where the wine is: one box per photo it appears in. (Older answers
     // gave a single "location", so that is accepted too.)
     const rawLocs = Array.isArray(w.locations) ? w.locations : (w.location ? [w.location] : []);
@@ -294,6 +332,7 @@ function cleanResult(raw, photoCount, want) {
       loyalty_price: loyalty,
       photos: [...new Set(photos)].sort((a, b) => a - b),
       confidence: conf,
+      quality_score: quality >= 1 && quality <= 10 ? quality : null,
       value_score: price && score >= 1 && score <= 10 ? score : null,
       locations,
       // Kept for older pages: the box on the overview photo, or the first one
@@ -308,21 +347,32 @@ function cleanResult(raw, photoCount, want) {
   // through as a pick or poor-value wine (a safety net in case the AI
   // forgets). Wines with no style are kept: the AI was told not to pick
   // a wine unless it was sure of its colour.
-  const styleOf = new Map(out.wines.map((w) => [w.id, w.style]));
-  const wrongColour = (id) => want && styleOf.get(id) && styleKey(styleOf.get(id)) !== want;
-  const cleanList = (list, max) => {
+  const byId = new Map(out.wines.map((w) => [w.id, w]));
+  const wrongColour = (id) => want && byId.get(id).style && styleKey(byId.get(id).style) !== want;
+  // The price this person would pay
+  const payPrice = (w) => (loyaltyCard && w.loyalty_price) || w.price;
+  // On a budget, a pick must be within it (a safety net, as above)
+  const overBudget = (id) => mode === "budget" && budget && !(payPrice(byId.get(id)) <= budget);
+  // Quality floor: picks must score at least QUALITY_FLOOR for quality,
+  // unless no wine that could be picked (right colour, readable price,
+  // within budget) reaches it, in which case there is no floor.
+  const couldPick = out.wines.filter((w) => w.price && !wrongColour(w.id) && !overBudget(w.id));
+  const floorOn = couldPick.some((w) => w.quality_score >= QUALITY_FLOOR);
+  const belowFloor = (id) => floorOn && !(byId.get(id).quality_score >= QUALITY_FLOOR);
+  const cleanList = (list, max, isPicks) => {
     const outList = [];
     for (const p of (Array.isArray(list) ? list : [])) {
       if (outList.length >= max) break;
       const id = p && String(p.wine_id);
       if (!id || !known.has(id) || used.has(id) || wrongColour(id)) continue;
+      if (isPicks && (overBudget(id) || belowFloor(id))) continue;
       used.add(id);
       outList.push({ wine_id: id, reason: str(p.reason, 400) || "" });
     }
     return outList;
   };
-  out.picks = cleanList(raw.picks, 3);
-  out.poor_value = cleanList(raw.poor_value, 3);
+  out.picks = cleanList(raw.picks, 3, true);
+  out.poor_value = cleanList(raw.poor_value, 3, false);
   return out;
 }
 
@@ -357,7 +407,12 @@ async function handleScan(request, env) {
   const shop = str(body.shop, 60);
   // Which colour the person is after: "red", "white", "rose", or null for any
   const want = WANT_WORDS[body.want] ? body.want : null;
-  content.push({ type: "text", text: buildPrompt(photos.length, body.loyaltyCard === true, shop, want) });
+  // What kind of pick: best value (default), best under a budget, or a treat
+  let mode = MODES.includes(body.mode) ? body.mode : "value";
+  const budgetNum = Number(body.budget);
+  const budget = mode === "budget" && budgetNum >= 3 && budgetNum <= 500 ? Math.round(budgetNum * 100) / 100 : null;
+  if (mode === "budget" && !budget) mode = "value";   // no sensible budget given
+  content.push({ type: "text", text: buildPrompt(photos.length, body.loyaltyCard === true, shop, want, mode, budget) });
 
   let res;
   try {
@@ -365,9 +420,10 @@ async function handleScan(request, env) {
       method: "POST",
       headers: { "Content-Type": "application/json", "x-api-key": apiKey, "anthropic-version": "2023-06-01", "anthropic-beta": "server-side-fallback-2026-07-01" },
       // Sonnet 5.5 thinks before answering and that thinking shares max_tokens,
-      // so allow more room. "medium" effort keeps the thinking (and cost) in check.
+      // so allow plenty of room. "high" effort gives it time to judge each
+      // wine's quality properly, which costs a little more per scan.
       // If the AI declines a request, "fallbacks" lets the API retry it on another model.
-      body: JSON.stringify({ model: MODEL, max_tokens: 16000, output_config: { effort: "medium" }, fallbacks: "default", messages: [{ role: "user", content }] })
+      body: JSON.stringify({ model: MODEL, max_tokens: 20000, output_config: { effort: "high" }, fallbacks: "default", messages: [{ role: "user", content }] })
     });
   } catch (e) {
     return reply(request, 502, { error: "AI_UNREACHABLE" });
@@ -391,13 +447,15 @@ async function handleScan(request, env) {
     return reply(request, 422, { error: "UNREADABLE_ANSWER" });
   }
 
-  const result = cleanResult(parsed, photos.length, want);
+  const result = cleanResult(parsed, photos.length, want, mode, budget, body.loyaltyCard === true);
   result.photo_count = photos.length;
   result.loyalty_card = body.loyaltyCard === true;
   // If the person chose the shop, always show their choice. Otherwise mark the AI's answer as a guess.
   if (shop) { result.shop = shop; result.shop_guessed = false; }
   else { result.shop_guessed = !!result.shop; }
   result.want = want;
+  result.mode = mode;
+  result.budget = budget;
   result.scanned_at = new Date().toISOString();
   return reply(request, 200, result);
 }
