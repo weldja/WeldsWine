@@ -101,7 +101,28 @@ h1{font-family:var(--font-d);font-size:1.5rem;font-weight:600;line-height:1.2}
 .eta-t{font-size:.85rem;font-weight:600;margin-top:8px;text-align:center}
 @keyframes spin{to{transform:rotate(360deg)}}
 .thumbs{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px}
-.thumbs img{width:100%;height:52px;object-fit:cover;border-radius:6px;border:1px solid var(--light-gray)}
+.thumbs img{width:100%;height:52px;object-fit:cover;border-radius:6px;border:1px solid var(--light-gray);transition:opacity .3s}
+.thumbs.scanning img{opacity:.45}
+.thumbs.scanning img.on{opacity:1;border-color:var(--burgundy)}
+/* Searchlight sweeping over the photo while the scan runs */
+.scanlight{position:relative;overflow:hidden;border-radius:var(--r);background:#1b1513;margin-bottom:8px}
+.scanlight img{display:block;width:100%;max-height:300px;object-fit:contain;transition:opacity .4s}
+.scanlight img.swap{opacity:0}
+.scanlight::before,.scanlight::after{content:"";position:absolute;inset:0;pointer-events:none;background-size:300% 300%;animation:sweep 7s ease-in-out infinite}
+/* the dark veil with a clear circle where the light falls */
+.scanlight::after{background-image:radial-gradient(circle at center,transparent 0,transparent 11%,rgba(20,14,12,.68) 21%)}
+/* a warm glow inside the circle */
+.scanlight::before{z-index:1;background-image:radial-gradient(circle at center,rgba(255,236,190,.35) 0,rgba(255,236,190,.12) 9%,transparent 15%);mix-blend-mode:screen}
+/* With a 300% background, position p puts the light's centre at (1.5 - 2p) of the box,
+   so 25%–75% keeps it on the photo (75% = left/top edge, 25% = right/bottom edge) */
+@keyframes sweep{
+  0%{background-position:67.5% 65%}
+  20%{background-position:50% 67.5%}
+  40%{background-position:32.5% 52.5%}
+  60%{background-position:52.5% 45%}
+  80%{background-position:67.5% 32.5%}
+  100%{background-position:67.5% 65%}
+}
 .err{border-color:#E9B8C2;background:#FDF3F5}
 .err-t{font-family:var(--font-d);font-size:1.05rem;font-weight:600;color:var(--burgundy)}
 
@@ -203,7 +224,7 @@ h1{font-family:var(--font-d);font-size:1.5rem;font-weight:600;line-height:1.2}
 /* Toast */
 .toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%) translateY(90px);background:var(--charcoal);color:var(--parchment);padding:10px 18px;border-radius:24px;font-size:.86rem;transition:transform .25s ease;z-index:50;max-width:calc(100% - 32px);text-align:center}
 .toast.show{transform:translateX(-50%) translateY(0)}
-@media (prefers-reduced-motion:reduce){.step.now .dot{animation:none;border-top-color:var(--burgundy)}.toast{transition:none}.eta-bar span{transition:none}}
+@media (prefers-reduced-motion:reduce){.step.now .dot{animation:none;border-top-color:var(--burgundy)}.toast{transition:none}.eta-bar span{transition:none}.scanlight::before,.scanlight::after{animation:none;background-position:50% 50%}}
 </style>
 </head>
 <body>
@@ -327,6 +348,7 @@ h1{font-family:var(--font-d);font-size:1.5rem;font-weight:600;line-height:1.2}
       <h1 style="color:var(--burgundy);font-style:italic" id="workingTitle">Reading your shelf…</h1>
       <p class="lead" style="margin-top:6px" id="workingLead">All your photos are read together, so a wine seen in more than one photo is only listed once.</p>
     </div>
+    <div class="scanlight" id="scanLight" hidden aria-hidden="true"><img id="scanImg" alt=""/></div>
     <div class="thumbs" id="workingThumbs"></div>
     <div class="card" id="stepsCard">
       <div class="eta">
@@ -731,7 +753,40 @@ function startSteps() {
   showEta(total);
   etaTimer = setInterval(() => showEta(total), 1000);
 }
-function stopSteps() { stepTimers.forEach(clearTimeout); stepTimers = []; clearInterval(etaTimer); etaTimer = null; }
+function stopSteps() { stepTimers.forEach(clearTimeout); stepTimers = []; clearInterval(etaTimer); etaTimer = null; stopSearchlight(); }
+
+// ── Searchlight over the photos while scanning ──────────────
+// Shows each photo in turn with a light sweeping across it, and
+// highlights the matching thumbnail underneath.
+let lightTimer = null, lightIndex = 0;
+function showLightPhoto(i) {
+  const img = $('scanImg');
+  lightIndex = i;
+  img.src = photos[i].url;
+  img.classList.remove('swap');
+  document.querySelectorAll('#workingThumbs img').forEach((t, j) => t.classList.toggle('on', j === i));
+}
+function startSearchlight() {
+  clearInterval(lightTimer);
+  if (!photos.length) return;
+  $('scanLight').hidden = false;
+  $('workingThumbs').classList.add('scanning');
+  showLightPhoto(0);
+  if (photos.length > 1) {
+    // Move to the next photo once the light has swept across this one
+    lightTimer = setInterval(() => {
+      const img = $('scanImg');
+      img.classList.add('swap');
+      setTimeout(() => showLightPhoto((lightIndex + 1) % photos.length), 400);
+    }, 7000);
+  }
+}
+function stopSearchlight() {
+  clearInterval(lightTimer);
+  lightTimer = null;
+  $('scanLight').hidden = true;
+  $('workingThumbs').classList.remove('scanning');
+}
 
 async function keepScreenOn(on) {
   try {
@@ -778,6 +833,7 @@ async function runScan() {
   thumbs.textContent = '';
   photos.forEach((p, i) => { const im = el('img'); im.src = p.url; im.alt = 'Photo ' + (i + 1); thumbs.appendChild(im); });
   startSteps();
+  startSearchlight();
   keepScreenOn(true);
 
   scanAbort = new AbortController();
@@ -838,6 +894,7 @@ function showScanProblem(code, detail) {
   $('errorTitle').textContent = title;
   $('errorText').textContent = text;
   $('workingTitle').hidden = true;
+  stopSearchlight();
   $('stepsCard').hidden = true;
   $('cancelBtn').hidden = true;
   $('workingNote').hidden = true;
