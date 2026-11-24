@@ -695,7 +695,7 @@ function renderSteps(current) {
 // Instead we estimate how long a scan takes from the number of photos,
 // and learn from this device's past scans how far off that guess is.
 const ETA_KEY = 'wwShelfEta';
-function baseSeconds(n) { return 40 + 12 * n; }   // first guess before any scans have been timed
+function baseSeconds(n) { return 55 + 17 * n; }   // first guess before any scans have been timed
 function etaFactor() {
   try { const f = parseFloat(localStorage.getItem(ETA_KEY)); return f >= 0.3 && f <= 4 ? f : 1; } catch (_) { return 1; }
 }
