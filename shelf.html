@@ -110,9 +110,9 @@ h1{font-family:var(--font-d);font-size:1.5rem;font-weight:600;line-height:1.2}
 .scanlight img.swap{opacity:0}
 .scanlight::before,.scanlight::after{content:"";position:absolute;inset:0;pointer-events:none;background-size:300% 300%;animation:sweep 7s ease-in-out infinite}
 /* the dark veil with a clear circle where the light falls */
-.scanlight::after{background-image:radial-gradient(circle at center,transparent 0,transparent 11%,rgba(20,14,12,.68) 21%)}
-/* a warm glow inside the circle */
-.scanlight::before{z-index:1;background-image:radial-gradient(circle at center,rgba(255,236,190,.35) 0,rgba(255,236,190,.12) 9%,transparent 15%);mix-blend-mode:screen}
+.scanlight::after{background-image:radial-gradient(circle at center,transparent 0,transparent 6%,rgba(20,14,12,.78) 12%)}
+/* a bright warm glow inside the circle */
+.scanlight::before{z-index:1;background-image:radial-gradient(circle at center,rgba(255,244,214,.75) 0,rgba(255,236,190,.45) 3.5%,rgba(255,236,190,.15) 6.5%,transparent 9%);mix-blend-mode:screen}
 /* With a 300% background, position p puts the light's centre at (1.5 - 2p) of the box,
    so 25%–75% keeps it on the photo (75% = left/top edge, 25% = right/bottom edge) */
 @keyframes sweep{
