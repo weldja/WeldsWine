@@ -681,6 +681,7 @@ async function addFiles(fileList) {
   }
   renderPhotos();
   saveDraft();
+  prefetchCaptcha();   // visitors: get the "not a robot" check done while they carry on
   if (failed) toast(failed === 1 ? 'One photo couldn’t be opened — try taking it again' : failed + ' photos couldn’t be opened');
   else if (skipped) toast('You can use up to ' + MAX_PHOTOS + ' photos per scan');
 }
@@ -943,10 +944,26 @@ function loadTurnstile() {
 // if Cloudflare wants a tick, a small box appears at the bottom of the screen.
 // If Turnstile can't give a token, carry on without one (Supabase decides).
 async function getCaptchaToken() {
+  // A token fetched in the background (see prefetchCaptcha) is used if it's fresh
+  const pre = captchaPre;
+  captchaPre = null;   // each token can only be used once
+  if (pre && Date.now() - pre.at < 270000) {
+    const t = await pre.promise;
+    if (t) { console.log('[shelf] captcha: used the token fetched in the background'); return t; }
+  }
   try { return await getCaptchaTokenNow(); }
   catch (e) { console.warn('[shelf] captcha: no token:', e && e.message); return undefined; }
 }
-async function getCaptchaTokenNow() {
+// Visitors: start the check in the background when they add a photo, so the token
+// is usually ready when they tap the button (tokens last 5 minutes). If Cloudflare
+// wants a tick, the background check stops quietly and asks when they tap instead.
+let captchaPre = null;   // { promise, at }
+function prefetchCaptcha() {
+  if (!TURNSTILE_SITE_KEY || isMember) return;
+  if (captchaPre && Date.now() - captchaPre.at < 270000) return;
+  captchaPre = { at: Date.now(), promise: getCaptchaTokenNow(true).catch(() => undefined) };
+}
+async function getCaptchaTokenNow(background) {
   if (!TURNSTILE_SITE_KEY) return undefined;
   await loadTurnstile();
   // Invisible full-screen layer; if Cloudflare wants a tick, the screen dims
@@ -996,7 +1013,11 @@ async function getCaptchaTokenNow() {
       sitekey: TURNSTILE_SITE_KEY,
       appearance: 'interaction-only',
       callback: (t) => { console.log('[shelf] captcha ok in ' + (Date.now() - started) + 'ms'); finish(resolve, t); },
-      'before-interactive-callback': () => { console.log('[shelf] captcha: asking for a tick'); showAsk(true); wait(120000); },
+      'before-interactive-callback': () => {
+        // In the background nobody is waiting yet: stop, and ask when they tap the button
+        if (background) { finish(reject, new Error('CAPTCHA_NEEDS_TICK')); return; }
+        console.log('[shelf] captcha: asking for a tick'); showAsk(true); wait(120000);
+      },
       'after-interactive-callback': () => { showAsk(false); },
       // Cloudflare's advice for errors such as 600010: try again once, then give up
       'error-callback': (code) => {

@@ -3722,7 +3722,7 @@ document.addEventListener('DOMContentLoaded', function() {
   // signing in or signing up, so pressing the button is quicker
   ['authEmail','authPassword','reqName','reqEmail'].forEach(function(id) {
     var el = document.getElementById(id);
-    if (el) el.addEventListener('focus', function() { if (TURNSTILE_SITE_KEY) _loadTurnstile().catch(function(){}); }, { once: true });
+    if (el) el.addEventListener('focus', function() { prefetchCaptcha(); });
   });
 
   // Wire up keyboard shortcuts
@@ -4020,10 +4020,27 @@ function _loadTurnstile() {
 // on without one: while captcha is off in Supabase nothing is lost, and when it
 // is on, Supabase refuses the request and the person is told to try again.
 async function getCaptchaToken() {
+  // A token fetched in the background (see prefetchCaptcha) is used if it's fresh
+  const pre = _captchaPre;
+  _captchaPre = null;   // each token can only be used once
+  if (pre && Date.now() - pre.at < 270000) {
+    const t = await pre.promise;
+    if (t) { console.log('[captcha] used the token fetched in the background'); return t; }
+  }
   try { return await _getCaptchaToken(); }
   catch (e) { console.warn('[captcha] no token:', e && e.message); return undefined; }
 }
-async function _getCaptchaToken() {
+// Start the check in the background (e.g. when someone clicks into the email box),
+// so the token is usually ready by the time they press the button. Tokens last
+// 5 minutes. If Cloudflare wants a tick, the background check stops quietly and
+// the tick is asked for when the button is pressed instead.
+let _captchaPre = null;   // { promise, at }
+function prefetchCaptcha() {
+  if (!TURNSTILE_SITE_KEY || _currentUser) return;
+  if (_captchaPre && Date.now() - _captchaPre.at < 270000) return;
+  _captchaPre = { at: Date.now(), promise: _getCaptchaToken(true).catch(() => undefined) };
+}
+async function _getCaptchaToken(background) {
   if (!TURNSTILE_SITE_KEY) return undefined;
   await _loadTurnstile();
   // The widget lives in a full-screen layer. Normally it's invisible and lets
@@ -4075,7 +4092,11 @@ async function _getCaptchaToken() {
       sitekey: TURNSTILE_SITE_KEY,
       appearance: 'interaction-only',
       callback: (t) => { console.log('[captcha] ok in ' + (Date.now() - started) + 'ms'); finish(resolve, t); },
-      'before-interactive-callback': () => { console.log('[captcha] asking for a tick'); showAsk(true); wait(120000); },
+      'before-interactive-callback': () => {
+        // In the background nobody is waiting yet: stop, and ask when they press the button
+        if (background) { finish(reject, new Error('CAPTCHA_NEEDS_TICK')); return; }
+        console.log('[captcha] asking for a tick'); showAsk(true); wait(120000);
+      },
       'after-interactive-callback': () => { showAsk(false); },
       // Cloudflare's advice for errors such as 600010: try again once, then give up
       'error-callback': (code) => {
@@ -9080,7 +9101,7 @@ function _restoreScanDraft() {
 function openScanModal() {
   _keyCallback = null;  // always clear — prevents key modal re-triggering on second scan
   // Visitors: fetch Cloudflare's "not a robot" code now, so the check is quicker when they tap Analyse
-  if (!_currentUser && TURNSTILE_SITE_KEY) _loadTurnstile().catch(() => {});
+  if (!_currentUser) prefetchCaptcha();
   scanFrontUrl=null; scanBackUrl=null; scanResult=null;
   // Note that a scan is under way, in case the phone reloads the page while the camera is open
   _scanDraft = { open: true, front: null, back: null, ts: Date.now() };
