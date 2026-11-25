@@ -959,11 +959,18 @@ async function getCaptchaTokenNow() {
       fn(v);
     };
     const timer = setTimeout(() => finish(reject, new Error('CAPTCHA_FAILED')), 30000);
+    let retries = 0;
     id = window.turnstile.render(box, {
       sitekey: TURNSTILE_SITE_KEY,
       appearance: 'interaction-only',
       callback: (t) => finish(resolve, t),
-      'error-callback': () => finish(reject, new Error('CAPTCHA_FAILED')),
+      // Cloudflare's advice for errors such as 600010: try again. Twice, then give up.
+      'error-callback': (code) => {
+        console.warn('[shelf] captcha: Turnstile error', code, retries < 2 ? '(retrying)' : '(giving up)');
+        if (retries < 2 && !over) { retries++; setTimeout(() => { try { window.turnstile.reset(id); } catch (_) {} }, 600); return true; }
+        finish(reject, new Error('CAPTCHA_FAILED ' + code));
+        return true;
+      },
       'expired-callback': () => finish(reject, new Error('CAPTCHA_FAILED'))
     });
   });
