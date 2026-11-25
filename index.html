@@ -7791,7 +7791,8 @@ function processPendingImport(data) {
     if (data.rating) setStars(data.rating);
     // Text fields
     const map = {name:'wineName', winery:'winery', vintage:'vintage', country:'country',
-                 region:'region', grape:'grape', notes:'notes', price:'price'};
+                 region:'region', grape:'grape', notes:'notes', price:'price',
+                 purchasedFrom:'purchasedFrom'};
     Object.entries(map).forEach(([src, dest]) => {
       const el = document.getElementById(dest);
       if (el && data[src]) { el.value = String(data[src]); flashAutofill(el); }
@@ -7811,7 +7812,7 @@ function processPendingImport(data) {
     document.getElementById('modalTitle').textContent = 'Add Wine';
     document.getElementById('wineId').value = '';
     document.getElementById('dateTasted').valueAsDate = new Date();
-    showToast(data.fromOwnScan ? 'Here\u2019s the wine you scanned — review and save' : 'Shared wine imported — review and save');
+    showToast(data.fromShelf ? 'From your shelf scan: check it, then Save, or Save without rating to taste it later' : data.fromOwnScan ? 'Here\u2019s the wine you scanned — review and save' : 'Shared wine imported — review and save');
   }, 300);
 }
 

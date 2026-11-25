@@ -221,6 +221,15 @@ h1{font-family:var(--font-d);font-size:1.5rem;font-weight:600;line-height:1.2}
 .row-mid{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:.76rem;color:var(--text-2)}
 .list-empty{padding:18px 0;text-align:center;font-size:.86rem;color:var(--text-2)}
 
+/* Wines you already know (from your cellar) */
+.known{font-size:.72rem;font-weight:600;padding:3px 9px;border-radius:20px;background:#E6ECF4;color:#23405E}
+.known.good{background:#E1EEE8;color:#24493E}
+.known.bad{background:#F6E1E5;color:#7A1F33}
+.btn-small{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:38px;padding:0 14px;border-radius:19px;border:1px solid var(--burgundy);background:var(--ivory);color:var(--burgundy);font-size:.82rem;font-weight:600;align-self:flex-start}
+.btn-small:disabled{opacity:.6;cursor:default}
+/* Share buttons */
+.share-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+
 /* Toast */
 .toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%) translateY(90px);background:var(--charcoal);color:var(--parchment);padding:10px 18px;border-radius:24px;font-size:.86rem;transition:transform .25s ease;z-index:50;max-width:calc(100% - 32px);text-align:center}
 .toast.show{transform:translateX(-50%) translateY(0)}
@@ -373,6 +382,16 @@ h1{font-family:var(--font-d);font-size:1.5rem;font-weight:600;line-height:1.2}
   <!-- 3. Best value -->
   <section class="view" id="viewResults" hidden>
     <div class="card" id="summaryCard"></div>
+    <div class="share-row">
+      <button class="btn-line" id="sharePicBtn" type="button">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+        <span id="sharePicLabel">Share picture</span>
+      </button>
+      <button class="btn-line" id="shareTextBtn" type="button">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7"/><path d="M16 6l-4-4-4 4"/><path d="M12 2v13"/></svg>
+        <span>Share as text</span>
+      </button>
+    </div>
     <section class="card heat" id="heatSection" hidden>
       <div class="heat-head">
         <h2 class="sec-h">Shelf heat map</h2>
@@ -437,8 +456,10 @@ h1{font-family:var(--font-d);font-size:1.5rem;font-weight:600;line-height:1.2}
 <script>
 /* ══════════════════════════════════════════════════════════════
    Shelf Scanner page
-   This page is separate from the journal (index.html). It only
-   reads who you are from Supabase; it never changes your wines.
+   This page is separate from the journal (index.html). It reads
+   who you are and the wines in your cellar from Supabase, to spot
+   wines you already know, but it never changes your wines itself:
+   "Add to my cellar" hands the wine to the journal's Add Wine form.
 ══════════════════════════════════════════════════════════════ */
 
 // ── Settings ─────────────────────────────────────────────────
@@ -967,8 +988,9 @@ function priceRow(w) {
   return row;
 }
 
-function renderResults() {
+function renderResults(keepSelection) {
   const r = result;
+  shareImage = null;   // the picture is made again from the new results
   const wines = r.wines;
   const priced = wines.filter(w => w.price);
   const noPrice = wines.length - priced.length;
@@ -1007,6 +1029,8 @@ function renderResults() {
   if (mode === 'treat') chips.appendChild(el('span', 'chip', 'Looking for a treat'));
   if (toCheck) chips.appendChild(el('span', 'chip red', toCheck + (toCheck === 1 ? ' price to check' : ' prices to check')));
   if (noPrice) chips.appendChild(el('span', 'chip', noPrice + ' with no price visible'));
+  const knownCount = wines.filter(w => knownFor(w)).length;
+  if (knownCount) chips.appendChild(el('span', 'known', knownCount + (knownCount === 1 ? ' wine' : ' wines') + ' from your cellar'));
   sum.appendChild(chips);
 
   // Picks
@@ -1047,10 +1071,13 @@ function renderResults() {
     const qc = qualityChip(w);
     if (qc) cr.appendChild(qc);
     cr.appendChild(confChip(w));
+    const kc = knownChip(w);
+    if (kc) cr.appendChild(kc);
     const seen = seenText(w);
     if (seen) cr.appendChild(el('span', 'small', seen));
     card.appendChild(cr);
     if (w.note) card.appendChild(el('div', 'note', w.note));
+    card.appendChild(addButton(w));
     picksBox.appendChild(card);
   });
 
@@ -1066,15 +1093,18 @@ function renderResults() {
     top.append(el('span', null, w.name), el('span', null, pp ? money(pp) + (r.loyalty_card && w.loyalty_price ? ' ' + loyaltyName() : '') : ''));
     row.appendChild(top);
     if (p.reason) row.appendChild(el('div', 'poor-why', p.reason));
+    const kc = knownChip(w);
+    if (kc) { kc.style.alignSelf = 'flex-start'; row.appendChild(kc); }
     poorBox.appendChild(row);
   });
 
   $('seeAllBtn').textContent = 'See all ' + wines.length + (wines.length === 1 ? ' wine' : ' wines') + ' found';
   $('seeAllBtn').hidden = !wines.length;
 
-  heatSelected = null;
+  if (!keepSelection) heatSelected = null;
   computeHeatScores();
   try { renderHeat(); } catch (e) { console.warn('[shelf] heat map failed:', e); $('heatSection').hidden = true; }
+  setTimeout(prepareShareImage, 600);
 }
 
 // ── Heat map ─────────────────────────────────────────────────
@@ -1377,6 +1407,8 @@ function renderHeatSelection() {
   const qc = qualityChip(w);
   if (qc) tags.appendChild(qc);
   tags.appendChild(confChip(w));
+  const kc = knownChip(w);
+  if (kc) tags.appendChild(kc);
   box.appendChild(tags);
   const rank = pickRank(w.id);
   const reason = rank ? result.picks[rank - 1].reason : (isPoor(w.id) ? (result.poor_value.find(p => p.wine_id === w.id) || {}).reason : '');
@@ -1385,6 +1417,7 @@ function renderHeatSelection() {
   const sub = wineSub(w);
   if (sub) box.appendChild(el('div', 'small', sub));
   if (w.note) box.appendChild(el('div', 'note', w.note));
+  box.appendChild(addButton(w));
 }
 
 function renderAll() {
@@ -1448,10 +1481,446 @@ function renderAll() {
     const qc = qualityChip(w);
     if (qc) cr.appendChild(qc);
     cr.appendChild(confChip(w));
+    const kc = knownChip(w);
+    if (kc) cr.appendChild(kc);
     if (w.note) cr.appendChild(el('span', 'note', w.note));
     row.appendChild(cr);
+    row.appendChild(addButton(w));
     list.appendChild(row);
   });
+}
+
+// ── Wines you already know ───────────────────────────────────
+// The wines in your cellar (and those of anyone you share a cellar
+// with) are read once, and each wine on the shelf is matched to them
+// by name, so the results can say "You gave it 8/10".
+let cellarWines = null;   // [{ name, vintage, rating, mine, who, tokens }]
+
+// Words that don't help tell one wine from another
+const NAME_SKIP = new Set(['the', 'and', 'de', 'du', 'des', 'la', 'le', 'les', 'di', 'del', 'della', 'da', 'do', 'dos', 'das', 'el', 'et', 'wine', 'wines', 'vin', 'vino', 'vinho',
+  'red', 'white', 'rose', 'rosado', 'rosato', 'tinto', 'blanco', 'bianco', 'rosso', 'rouge', 'blanc', 'cl', 'ml', 'aoc', 'aop', 'doc', 'docg', 'igp', 'igt', 'dop',
+  'tesco', 'sainsbury', 'sainsburys', 'asda', 'aldi', 'lidl', 'morrisons', 'waitrose', 'majestic', 'marks', 'spencer', 'coop']);
+function nameTokens(...parts) {
+  const s = parts.filter(Boolean).join(' ').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .replace(/[’']/g, '').replace(/[^a-z0-9]+/g, ' ');
+  return new Set(s.split(' ').filter(t => t.length > 1 && !/^\d+$/.test(t) && !NAME_SKIP.has(t)));
+}
+
+async function loadCellar() {
+  if (!sb || !isMember) return;
+  try {
+    const { data } = await sb.auth.getSession();
+    const me = data && data.session && data.session.user && data.session.user.id;
+    if (!me) return;
+    let ids = [me];
+    const names = {};
+    const mem = await sb.from('cellar_members').select('cellar_id').eq('user_id', me).limit(1);
+    const cellarId = mem.data && mem.data[0] && mem.data[0].cellar_id;
+    if (cellarId) {
+      const all = await sb.from('cellar_members').select('user_id').eq('cellar_id', cellarId);
+      if (all.data && all.data.length) ids = [...new Set(all.data.map(m => m.user_id).concat(me))];
+    }
+    if (ids.length > 1) {
+      const prof = await sb.from('profiles').select('id, display_name').in('id', ids);
+      (prof.data || []).forEach(p => { names[p.id] = String(p.display_name || '').trim().split(/\s+/)[0]; });
+    }
+    const res = await sb.from('wines').select('name,winery,vintage,rating,user_id,added_by').in('user_id', ids);
+    if (res.error) throw res.error;
+    cellarWines = (res.data || []).map(r => {
+      const by = r.added_by || r.user_id;
+      return {
+        name: r.name,
+        vintage: r.vintage ? String(r.vintage) : null,
+        rating: Number(r.rating) > 0 ? Number(r.rating) : null,
+        mine: by === me,
+        who: by === me ? 'You' : (names[by] || 'Someone in your cellar'),
+        tokens: nameTokens(r.name, r.winery)
+      };
+    }).filter(c => c.tokens.size);
+  } catch (e) {
+    console.warn('[shelf] could not read your cellar:', e);
+    return;
+  }
+  // Show the badges on results that are already on screen
+  if (result && (!$('viewResults').hidden || !$('viewAll').hidden)) {
+    renderResults(true);
+    if (!$('viewAll').hidden) renderAll();
+  }
+}
+
+// The cellar wine that best matches a wine on the shelf, or null
+function knownFor(w) {
+  if (!cellarWines || !cellarWines.length || !w) return null;
+  const A = nameTokens(w.name, w.producer);
+  if (!A.size) return null;
+  let best = [], bestScore = 0;
+  cellarWines.forEach(c => {
+    let both = 0;
+    A.forEach(t => { if (c.tokens.has(t)) both++; });
+    if (!both) return;
+    const small = Math.min(A.size, c.tokens.size), big = Math.max(A.size, c.tokens.size);
+    const same = both === A.size && both === c.tokens.size;
+    // Most of the words must agree, and at least two of them, so "Malbec" alone isn't a match
+    if (!same && (both < 2 || both / small < 0.8 || both / big < 0.5)) return;
+    const score = both / (A.size + c.tokens.size - both);
+    if (score > bestScore + 0.001) { best = [c]; bestScore = score; }
+    else if (Math.abs(score - bestScore) <= 0.001) best.push(c);
+  });
+  if (!best.length) return null;
+  // Your own rating first, then your own wine, then the best-rated one in the cellar
+  best.sort((a, b) => (b.mine && b.rating ? 1 : 0) - (a.mine && a.rating ? 1 : 0) || (b.mine ? 1 : 0) - (a.mine ? 1 : 0) || (b.rating || 0) - (a.rating || 0));
+  return best[0];
+}
+
+// "You gave it 8/10", "Jane gave it 9/10", "In your cellar, not tasted yet"
+function knownChip(w) {
+  const c = knownFor(w);
+  if (!c) return null;
+  const other = c.vintage && w.vintage && String(w.vintage) !== c.vintage ? ' (the ' + c.vintage + ')' : '';
+  let text, cls = 'known';
+  if (c.rating) {
+    text = c.who + ' gave it ' + (Number.isInteger(c.rating) ? c.rating : c.rating.toFixed(1)) + '/10' + other;
+    if (c.rating >= 7) cls += ' good'; else if (c.rating <= 5) cls += ' bad';
+  } else {
+    text = c.mine ? 'In your cellar, not tasted yet' + other : c.who + ' has it in the cellar' + other;
+  }
+  const chip = el('span', cls, text);
+  chip.title = 'Matched by name to “' + c.name + '” in your cellar';
+  return chip;
+}
+
+// ── Add to my cellar ─────────────────────────────────────────
+// Hands the wine to the journal's Add Wine form, filled in, with a
+// photo of the bottles cut from your shelf photo. You check it there,
+// then save it (or "Save without rating" to keep it in To taste).
+const JOURNAL_STYLES = ['Red', 'White', 'Rosé', 'Sparkling', 'Dessert', 'Fortified'];
+
+function addButton(w) {
+  const b = el('button', 'btn-small');
+  b.type = 'button';
+  b.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>';
+  b.appendChild(document.createTextNode('Add to my cellar'));
+  b.setAttribute('aria-label', 'Add ' + w.name + ' to my cellar');
+  b.addEventListener('click', () => addToCellar(w, b));
+  return b;
+}
+
+async function addToCellar(w, btn) {
+  if (btn) btn.disabled = true;
+  const pp = payPrice(w);
+  const entry = {
+    name: w.name,
+    winery: w.producer || null,
+    vintage: w.vintage ? String(w.vintage) : null,
+    country: w.country || null,
+    region: w.region || null,
+    grape: w.grape || null,
+    style: JOURNAL_STYLES.includes(w.style) ? w.style : null,
+    price: pp ? money(pp) : null,
+    purchasedFrom: (result && result.shop) || null,
+    photoFront: await cropWinePhoto(w),
+    fromShelf: true
+  };
+  const stash = e => { try { sessionStorage.setItem('wwwImportWine', JSON.stringify(e)); return true; } catch (_) { return false; } };
+  // No room for the photo? Send the details without it rather than lose the wine.
+  if (!stash(entry) && !stash({ ...entry, photoFront: null })) {
+    if (btn) btn.disabled = false;
+    toast('Couldn’t pass the wine to your journal. Try again after closing other tabs.');
+    return;
+  }
+  // Same tab, so the back button brings you straight back to these results
+  location.href = '/?import=1';
+}
+
+// A photo of just this wine's bottles, cut from the clearest shelf photo it's in
+function cropWinePhoto(w) {
+  const locs = wineLocs(w);
+  if (!locs.length) return Promise.resolve(null);
+  const L = locs.slice().sort((a, b) => b.w * b.h - a.w * a.h)[0];   // the biggest view of it, usually a close-up
+  return new Promise(resolve => {
+    const img = new Image();
+    img.onload = () => {
+      try {
+        const pad = 0.04;
+        const x = Math.max(0, L.x - L.w * pad) * img.width, y = Math.max(0, L.y - L.h * pad) * img.height;
+        const cw = Math.min(img.width - x, L.w * (1 + pad * 2) * img.width);
+        const ch = Math.min(img.height - y, L.h * (1 + pad * 2) * img.height);
+        if (cw < 40 || ch < 40) return resolve(null);
+        const s = Math.min(1, 900 / Math.max(cw, ch));
+        const c = document.createElement('canvas');
+        c.width = Math.round(cw * s); c.height = Math.round(ch * s);
+        c.getContext('2d').drawImage(img, x, y, cw, ch, 0, 0, c.width, c.height);
+        resolve(c.toDataURL('image/jpeg', 0.85));
+      } catch (_) { resolve(null); }
+    };
+    img.onerror = () => resolve(null);
+    img.src = photos[L.photo - 1].url;
+  });
+}
+
+// ── Share ────────────────────────────────────────────────────
+// A picture (the shelf with its colours and numbers, then the picks)
+// drawn on the phone, or a short text. Nothing is uploaded.
+let shareImage = null;   // a Promise of the picture, made once per result
+
+function shareTitle() {
+  const date = new Date(result.scanned_at || Date.now()).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+  return (result.shop ? result.shop + ' · ' : '') + date;
+}
+function sharePicks() { return (result.picks || []).map(p => ({ p, w: wineById(p.wine_id) })).filter(x => x.w); }
+function priceWords(w) {
+  const pp = payPrice(w);
+  return pp ? money(pp) + (result.loyalty_card && w.loyalty_price ? ' with ' + loyaltyName() : '') : 'price not seen';
+}
+
+function shareText() {
+  const lines = ['🍷 Shelf scan: ' + shareTitle(), ''];
+  const picks = sharePicks();
+  if (picks.length) {
+    lines.push($('picksHead').textContent + ':');
+    picks.forEach(({ p, w }, i) => {
+      lines.push((i + 1) + '. ' + w.name + (w.vintage && !String(w.name).includes(String(w.vintage)) ? ' ' + w.vintage : '') + ': ' + priceWords(w));
+      if (p.reason) lines.push('   ' + p.reason);
+    });
+  } else {
+    lines.push('No clear picks on this shelf.');
+  }
+  const poor = (result.poor_value || []).map(p => wineById(p.wine_id)).filter(Boolean);
+  if (poor.length) { lines.push('', 'Paying for the name: ' + poor.map(w => w.name + (payPrice(w) ? ' (' + money(payPrice(w)) + ')' : '')).join(', ')); }
+  lines.push('', 'Prices were read from photos by AI, so check the shelf tag.', 'Welds Wine Wisdoms · ' + location.origin + '/shelf.html');
+  return lines.join('\n');
+}
+
+async function shareAsText() {
+  const text = shareText();
+  if (navigator.share) {
+    try { await navigator.share({ title: 'Shelf scan', text }); return; }
+    catch (e) { if (e && e.name === 'AbortError') return; }
+  }
+  try { await navigator.clipboard.writeText(text); toast('Copied. Paste it into a message.'); }
+  catch (_) { toast('Sharing isn’t available on this device.'); }
+}
+
+function loadImage(src) {
+  return new Promise((resolve, reject) => { const i = new Image(); i.onload = () => resolve(i); i.onerror = reject; i.src = src; });
+}
+// Split text into lines that fit, ending with … if it runs over
+function wrapText(ctx, text, maxW, maxLines) {
+  const words = String(text || '').split(/\s+/).filter(Boolean);
+  const lines = [];
+  let line = '';
+  for (let i = 0; i < words.length; i++) {
+    const tryLine = line ? line + ' ' + words[i] : words[i];
+    if (ctx.measureText(tryLine).width <= maxW || !line) { line = tryLine; continue; }
+    lines.push(line);
+    line = words[i];
+    if (lines.length === maxLines) { line = null; break; }
+  }
+  if (line) lines.push(line);
+  if (lines.length > maxLines || (line === null)) {
+    lines.length = maxLines;
+    let last = lines[maxLines - 1];
+    while (last && ctx.measureText(last + '…').width > maxW) last = last.slice(0, -1);
+    lines[maxLines - 1] = last.replace(/[\s,.;:]+$/, '') + '…';
+  }
+  return lines;
+}
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
+}
+
+// Which photo to show: the AI's overview photo, or the one with most wines marked
+function sharePhotoNumber() {
+  const counts = {};
+  result.wines.forEach(w => wineLocs(w).forEach(L => { counts[L.photo] = (counts[L.photo] || 0) + 1; }));
+  const ov = result.overview_photo;
+  if (ov && counts[ov]) return ov;
+  const best = Object.keys(counts).sort((a, b) => counts[b] - counts[a])[0];
+  return best ? Number(best) : null;
+}
+
+// Draw the whole card. Called twice: once to measure the height, once for real.
+function paintShareCard(ctx, photo, n, H) {
+  const W = 1080, P = 52;
+  const C = { deep: '#5C1525', burg: '#8B2439', parch: '#F5EDE2', cream: '#F9F5F0', char: '#2D2420', text2: '#5F5450', gold: '#C9A34A', goldLt: '#E2C070', goldText: '#8A6A1F', line: '#E8DDD4' };
+  const serif = 'Lora, Georgia, serif', sans = 'Inter, system-ui, -apple-system, sans-serif';
+  ctx.fillStyle = C.cream; ctx.fillRect(0, 0, W, H);
+  ctx.textBaseline = 'alphabetic';
+
+  // Header
+  ctx.fillStyle = C.deep; ctx.fillRect(0, 0, W, 156);
+  ctx.fillStyle = C.parch; ctx.font = '600 50px ' + serif; ctx.fillText('Shelf Scanner', P, 78);
+  ctx.fillStyle = '#E8C6CE'; ctx.font = '400 28px ' + sans; ctx.fillText(shareTitle() + ' · ' + result.wines.length + (result.wines.length === 1 ? ' wine' : ' wines') + ' found', P, 124);
+  let y = 156;
+
+  // The shelf photo with its colours and numbers
+  if (photo) {
+    const maxH = 1150;
+    let s = W / photo.width;
+    if (photo.height * s > maxH) s = maxH / photo.height;
+    const pw = photo.width * s, ph = photo.height * s, px = (W - pw) / 2;
+    ctx.fillStyle = '#1b1513'; ctx.fillRect(0, y, W, ph);
+    ctx.drawImage(photo, px, y, pw, ph);
+    const onThis = result.wines.map(w => ({ w, L: wineLocs(w).find(L => L.photo === n) })).filter(x => x.L)
+      .sort((a, b) => (heatScore(a.w) || 0) - (heatScore(b.w) || 0));
+    const badges = [];
+    onThis.forEach(({ w, L }) => {
+      const padX = L.w * 0.03, padY = L.h * 0.03;
+      const bx = px + Math.max(0, L.x - padX) * pw, by = y + Math.max(0, L.y - padY) * ph;
+      const bw = Math.min(1 - Math.max(0, L.x - padX), L.w + padX * 2) * pw, bh = Math.min(1 - Math.max(0, L.y - padY), L.h + padY * 2) * ph;
+      const c = wineColour(w);
+      roundRect(ctx, bx + 3, by + 3, bw - 6, bh - 6, 14);
+      if (c) {
+        ctx.fillStyle = 'rgba(' + c.join(',') + ',' + (pickRank(w.id) ? 0.55 : 0.45) + ')'; ctx.fill();
+        ctx.lineWidth = 6; ctx.strokeStyle = 'rgb(' + c.join(',') + ')'; ctx.setLineDash([]); ctx.stroke();
+      } else if (!inRunning(w)) {
+        ctx.fillStyle = 'rgba(30,24,22,.38)'; ctx.fill();
+      } else {
+        ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(255,255,255,.8)'; ctx.setLineDash([12, 9]); ctx.stroke(); ctx.setLineDash([]);
+      }
+      const rank = pickRank(w.id);
+      if (rank || isPoor(w.id)) badges.push({ L, rank, poor: !rank, bx, by, bw, bh });
+    });
+    // Numbers on top, kept apart from each other (same rule as on screen, scaled up)
+    const k = 1.75, placed = [];
+    badges.sort((a, b) => (a.rank || 99) - (b.rank || 99)).forEach(b => {
+      const want = { x: (b.bx + b.bw / 2 - px) / k, y: (b.by - y + Math.min(b.bh * 0.12, 30) + 26) / k };
+      const pos = freeSpot(want, placed, pw / k, ph / k);
+      placed.push(pos);
+      const cx = px + pos.x * k, cy = y + pos.y * k, r = 27;
+      ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2);
+      ctx.fillStyle = b.poor ? '#fff' : C.deep; ctx.fill();
+      ctx.lineWidth = 4; ctx.strokeStyle = b.poor ? '#9A2A33' : '#fff'; ctx.stroke();
+      ctx.fillStyle = b.poor ? '#9A2A33' : C.goldLt;
+      ctx.font = b.poor ? '600 26px ' + sans : '600 30px ' + serif;
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(b.poor ? '✕' : String(b.rank), cx, cy + 1);
+      ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+    });
+    y += ph;
+
+    // Colour key
+    y += 26;
+    const keys = [['Best', HEAT_BANDS[4]], ['Good', HEAT_BANDS[3]], ['Fair', HEAT_BANDS[2]], ['Poor', HEAT_BANDS[1]], ['Worst', HEAT_BANDS[0]]];
+    const kw = (W - P * 2 - 4 * 10) / 5;
+    keys.forEach(([label, rgb], i) => {
+      const kx = P + i * (kw + 10);
+      roundRect(ctx, kx, y, kw, 16, 5); ctx.fillStyle = 'rgb(' + rgb.join(',') + ')'; ctx.fill();
+      ctx.fillStyle = C.text2; ctx.font = '400 22px ' + sans; ctx.textAlign = 'center';
+      ctx.fillText(label, kx + kw / 2, y + 46); ctx.textAlign = 'left';
+    });
+    y += 60;
+  }
+
+  // The picks
+  y += 40;
+  ctx.fillStyle = C.goldText; ctx.font = '600 24px ' + sans;
+  ctx.fillText($('picksHead').textContent.toUpperCase(), P, y);
+  y += 22;
+  const picks = sharePicks();
+  if (!picks.length) {
+    y += 46; ctx.fillStyle = C.text2; ctx.font = '400 30px ' + sans; ctx.fillText('No clear picks on this shelf.', P, y); y += 20;
+  }
+  picks.forEach(({ p, w }, i) => {
+    y += 28;
+    const top = y;
+    // Card
+    const textX = P + 96, priceW = 230, nameW = W - P - 28 - priceW - textX;
+    ctx.font = '600 38px ' + serif;
+    const nameLines = wrapText(ctx, w.name + (w.vintage && !String(w.name).includes(String(w.vintage)) ? ' ' + w.vintage : ''), nameW, 2);
+    // Everything on the left stays clear of the price column, so nothing overlaps
+    ctx.font = '400 25px ' + sans;
+    const sub = [w.style, w.grape, [w.region, w.country].filter(Boolean).join(', ')].filter(Boolean).join(' · ');
+    const subLine = sub ? wrapText(ctx, sub, nameW, 1) : [];
+    ctx.font = '400 27px ' + sans;
+    const why = p.reason ? wrapText(ctx, p.reason, nameW, 4) : [];
+    // Tall enough for the price, loyalty card and value score on the right
+    const h = Math.max(170, 30 + nameLines.length * 46 + (subLine.length ? 36 : 0) + (why.length ? 14 + why.length * 38 : 0) + 30);
+    roundRect(ctx, P, top, W - P * 2, h, 22); ctx.fillStyle = '#fff'; ctx.fill();
+    ctx.lineWidth = 2; ctx.strokeStyle = C.line; ctx.stroke();
+    // Rank
+    ctx.beginPath(); ctx.arc(P + 50, top + 56, 28, 0, Math.PI * 2); ctx.fillStyle = C.deep; ctx.fill();
+    ctx.fillStyle = C.goldLt; ctx.font = '600 32px ' + serif; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(String(i + 1), P + 50, top + 57);
+    ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+    // Name, details and price
+    let ty = top + 30;
+    ctx.fillStyle = C.char; ctx.font = '600 38px ' + serif;
+    nameLines.forEach(l => { ty += 42; ctx.fillText(l, textX, ty); ty += 4; });
+    const pp = payPrice(w);
+    ctx.textAlign = 'right';
+    ctx.fillStyle = C.burg; ctx.font = '600 44px ' + serif;
+    ctx.fillText(pp ? money(pp) : '—', W - P - 28, top + 74);
+    if (pp && result.loyalty_card && w.loyalty_price) {
+      ctx.fillStyle = C.text2; ctx.font = '600 21px ' + sans; ctx.fillText('with ' + loyaltyName(), W - P - 28, top + 106);
+    }
+    const sc = shownScore(w);
+    if (sc) { ctx.fillStyle = C.text2; ctx.font = '400 21px ' + sans; ctx.fillText('value ' + sc + '/10', W - P - 28, top + (result.loyalty_card && w.loyalty_price ? 134 : 106)); }
+    ctx.textAlign = 'left';
+    if (subLine.length) { ty += 32; ctx.fillStyle = C.text2; ctx.font = '400 25px ' + sans; ctx.fillText(subLine[0], textX, ty); }
+    if (why.length) { ty += 14; ctx.fillStyle = '#3D3330'; ctx.font = '400 27px ' + sans; why.forEach(l => { ty += 38; ctx.fillText(l, textX, ty); }); }
+    y = top + h;
+  });
+
+  // Footer
+  y += 44;
+  ctx.fillStyle = C.line; ctx.fillRect(P, y, W - P * 2, 2);
+  y += 46;
+  ctx.fillStyle = C.text2; ctx.font = '400 22px ' + sans;
+  ctx.fillText('Prices were read from photos by AI, so check the shelf tag.', P, y);
+  y += 36;
+  ctx.fillStyle = C.burg; ctx.font = '600 24px ' + sans;
+  ctx.fillText('Welds Wine Wisdoms · ' + location.host, P, y);
+  return y + 44;
+}
+
+async function buildShareImage() {
+  try { await document.fonts.load('600 40px Lora'); await document.fonts.load('400 24px Inter'); await document.fonts.load('600 24px Inter'); } catch (_) {}
+  const n = sharePhotoNumber();
+  let photo = null;
+  if (n && photos[n - 1]) { try { photo = await loadImage(photos[n - 1].url); } catch (_) {} }
+  // Measure first, then draw at the exact height
+  const scratch = document.createElement('canvas');
+  scratch.width = 1080; scratch.height = 4000;
+  const H = Math.ceil(paintShareCard(scratch.getContext('2d'), photo, n, 4000));
+  const c = document.createElement('canvas');
+  c.width = 1080; c.height = H;
+  paintShareCard(c.getContext('2d'), photo, n, H);
+  return new Promise((resolve, reject) => c.toBlob(b => b ? resolve(b) : reject(new Error('toBlob')), 'image/jpeg', 0.9));
+}
+// Start making the picture early, so tapping Share is instant (phones only
+// allow the share sheet straight after a tap, not seconds later)
+function prepareShareImage() {
+  if (!shareImage && result) { shareImage = buildShareImage(); shareImage.catch(e => console.warn('[shelf] share picture failed:', e)); }
+  return shareImage;
+}
+
+async function shareAsPicture() {
+  const btn = $('sharePicBtn'), label = $('sharePicLabel');
+  btn.disabled = true; label.textContent = 'Making picture…';
+  let blob;
+  try { blob = await prepareShareImage(); }
+  catch (_) { shareImage = null; btn.disabled = false; label.textContent = 'Share picture'; toast('Couldn’t make the picture. Try Share as text.'); return; }
+  btn.disabled = false; label.textContent = 'Share picture';
+  const name = 'shelf-scan' + (result.shop ? '-' + result.shop.toLowerCase().replace(/[^a-z0-9]+/g, '-') : '') + '.jpg';
+  const file = new File([blob], name, { type: 'image/jpeg' });
+  if (navigator.canShare && navigator.canShare({ files: [file] })) {
+    try { await navigator.share({ files: [file], title: 'Shelf scan', text: 'Shelf scan: ' + shareTitle() }); return; }
+    catch (e) {
+      if (e && e.name === 'AbortError') return;
+      // Took too long after the tap: the picture is ready now, so a second tap works
+      if (e && e.name === 'NotAllowedError') { label.textContent = 'Tap again to share'; return; }
+    }
+  }
+  // No share sheet (e.g. a computer): save the picture instead
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = name;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+  toast('Picture saved');
 }
 
 // ── Sign-in check ────────────────────────────────────────────
@@ -1495,6 +1964,7 @@ async function start() {
   renderPhotos();
   if (result) { renderResults(); showView('viewResults'); }
   else showView('viewCapture');
+  loadCellar();   // in the background: adds "You gave it 8/10" badges when it arrives
 }
 
 // ── Wire up buttons ──────────────────────────────────────────
@@ -1537,6 +2007,15 @@ let resizeTimer = null;
 window.addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(() => { if (!$('heatSection').hidden) layoutAllBadges(); }, 150); });
 $('loyaltyInput').addEventListener('change', savePrefs);
 $('shopInput').addEventListener('change', savePrefs);
+$('sharePicBtn').addEventListener('click', shareAsPicture);
+$('shareTextBtn').addEventListener('click', shareAsText);
+// Coming back from the journal with the Back button: the page may be
+// restored as it was, so read the cellar again to show the wine just added
+window.addEventListener('pageshow', e => {
+  if (!e.persisted || !isMember) return;
+  document.querySelectorAll('.btn-small:disabled').forEach(b => { b.disabled = false; });
+  loadCellar();
+});
 
 start();
 </script>
