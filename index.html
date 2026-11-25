@@ -3718,6 +3718,13 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   });
 
+  // Start fetching Cloudflare's "not a robot" code as soon as someone starts
+  // signing in or signing up, so pressing the button is quicker
+  ['authEmail','authPassword','reqName','reqEmail'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.addEventListener('focus', function() { if (TURNSTILE_SITE_KEY) _loadTurnstile().catch(function(){}); }, { once: true });
+  });
+
   // Wire up keyboard shortcuts
   ['authEmail','authPassword'].forEach(function(id) {
     var el = document.getElementById(id);
@@ -9072,6 +9079,8 @@ function _restoreScanDraft() {
 
 function openScanModal() {
   _keyCallback = null;  // always clear — prevents key modal re-triggering on second scan
+  // Visitors: fetch Cloudflare's "not a robot" code now, so the check is quicker when they tap Analyse
+  if (!_currentUser && TURNSTILE_SITE_KEY) _loadTurnstile().catch(() => {});
   scanFrontUrl=null; scanBackUrl=null; scanResult=null;
   // Note that a scan is under way, in case the phone reloads the page while the camera is open
   _scanDraft = { open: true, front: null, back: null, ts: Date.now() };
@@ -9124,23 +9133,31 @@ function updateGoBtn() {
 }
 
 async function doScan() {
-  // Visitors get a free trial: they're signed in as a trial user the first time they scan.
-  // (If the trial isn't available, they're asked to create an account instead.)
-  if (!_currentUser && !(await startTrial())) { showScanMembersOnly(); return; }
   // Must have an API key
   if (!Scanner.hasKey()) {
     closeScanModal();
     openKeyModal(()=> openScanModal());
     return;
   }
+  // Show the working screen straight away, so the tap clearly did something
   document.getElementById('scanThumbF').src=scanFrontUrl||'';
   document.getElementById('scanThumbB').src=scanBackUrl||'';
   document.getElementById('scanThumbB').style.display=scanBackUrl?'':'none';
   showScanScreen('scanAnalysing');
   setScanFooter([]);
+  const sub=document.getElementById('scanLoaderSub');
+
+  // Visitors get a free trial: they're signed in as a trial user the first time they scan
+  // (a few seconds, for the "not a robot" check). If the trial isn't available, they're
+  // asked to create an account instead.
+  if (!_currentUser) {
+    sub.textContent='Getting ready…';
+    if (!(await startTrial())) { showScanMembersOnly(); return; }
+  }
 
   const msgs=['Reading the front label…','Checking the back label…','Identifying grape and region…','Almost done…'];
-  let i=0; const sub=document.getElementById('scanLoaderSub');
+  let i=0;
+  sub.textContent=msgs[0];
   const t=setInterval(()=>{ i=(i+1)%msgs.length; sub.textContent=msgs[i]; },2000);
 
   try {

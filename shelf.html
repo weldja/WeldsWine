@@ -848,23 +848,29 @@ async function runScan() {
     return;
   }
   savePrefs();
-  // Visitors get a free trial: they're signed in as a trial user the first time they scan.
-  // (If the trial isn't available, they're asked to create an account instead.)
-  if (!isMember) {
-    try { isMember = !!(await sb.auth.getSession()).data.session; } catch (_) {}
-    if (!isMember) isMember = await startTrial();
-    if (!isMember) { showScanProblem('MEMBERS_ONLY'); return; }
-  }
+  // Show the working screen straight away, so the tap clearly did something
   showView('viewWorking');
   $('errorCard').hidden = true;
   $('workingTitle').hidden = false;
+  const thumbsNow = $('workingThumbs');
+  thumbsNow.textContent = '';
+  photos.forEach((p, i) => { const im = el('img'); im.src = p.url; im.alt = 'Photo ' + (i + 1); thumbsNow.appendChild(im); });
+  // Visitors get a free trial: they're signed in as a trial user the first time they scan
+  // (a few seconds, for the "not a robot" check). If the trial isn't available, they're
+  // asked to create an account instead.
+  if (!isMember) {
+    $('workingTitle').textContent = 'Getting ready…';
+    $('stepsCard').hidden = true; $('cancelBtn').hidden = true; $('workingNote').hidden = true; $('workingLead').hidden = true;
+    startSearchlight();   // something moving on screen while the check runs
+    try { isMember = !!(await sb.auth.getSession()).data.session; } catch (_) {}
+    if (!isMember) isMember = await startTrial();
+    $('workingTitle').textContent = 'Reading your shelf…';
+    if (!isMember) { showScanProblem('MEMBERS_ONLY'); return; }
+  }
   $('stepsCard').hidden = false;
   $('cancelBtn').hidden = false;
   $('workingNote').hidden = false;
   $('workingLead').hidden = false;
-  const thumbs = $('workingThumbs');
-  thumbs.textContent = '';
-  photos.forEach((p, i) => { const im = el('img'); im.src = p.url; im.alt = 'Photo ' + (i + 1); thumbs.appendChild(im); });
   startSteps();
   startSearchlight();
   keepScreenOn(true);
@@ -2068,6 +2074,8 @@ async function start() {
     $('visitorNote').hidden = false;
     $('backLabel').textContent = 'Back to Welds Wine Wisdoms';
   }
+  // Visitors: fetch Cloudflare's "not a robot" code now, so the check is quicker when they scan
+  if (!isMember && TURNSTILE_SITE_KEY) loadTurnstile().catch(() => {});
   if (ADMIN_ONLY && !isMember) { gate('Please sign in first', 'Sign in on your journal, then open the Shelf Scanner from the menu.'); return; }
   if (ADMIN_ONLY) {
     let isAdmin = false;
