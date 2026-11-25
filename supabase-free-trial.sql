@@ -20,6 +20,27 @@
 -- Once someone creates an account their trial use no longer counts: they get
 -- the normal monthly limits from then on.
 
+-- 0. New-user trigger: trial visitors have no email, so the profile name can't come
+--    from the email. Use the name typed at sign-up, then the start of the email,
+--    then "Member". (Without this, creating a trial user fails with
+--    "Database error creating anonymous user".)
+create or replace function public.handle_new_user()
+returns trigger language plpgsql security definer set search_path to 'public' as $function$
+begin
+  insert into profiles (id, display_name)
+  values (
+    new.id,
+    coalesce(
+      nullif(trim(new.raw_user_meta_data->>'full_name'), ''),
+      nullif(split_part(coalesce(new.email, ''), '@', 1), ''),
+      'Member'
+    )
+  )
+  on conflict (id) do nothing;
+  return new;
+end;
+$function$;
+
 -- 1. Trial allowance per feature (null = unlimited, 0 = not in the trial)
 create table if not exists public.usage_trial_settings (
   feature     text primary key,
