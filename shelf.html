@@ -943,35 +943,63 @@ async function getCaptchaToken() {
 async function getCaptchaTokenNow() {
   if (!TURNSTILE_SITE_KEY) return undefined;
   await loadTurnstile();
-  let box = $('captchaBox');
-  if (!box) {
-    box = el('div');
-    box.id = 'captchaBox';
-    box.style.cssText = 'position:fixed;left:50%;bottom:calc(16px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:60';
-    document.body.appendChild(box);
+  // Invisible full-screen layer; if Cloudflare wants a tick, the screen dims
+  // and the box sits in the middle with a short explanation
+  let layer = $('captchaLayer');
+  if (!layer) {
+    layer = el('div');
+    layer.id = 'captchaLayer';
+    layer.style.cssText = 'position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;padding:16px;pointer-events:none;background:transparent;transition:background .2s';
+    const card = el('div');
+    card.id = 'captchaCard';
+    card.style.cssText = 'border-radius:16px;padding:0;text-align:center;max-width:340px';
+    const msg = el('p', null, 'Quick check that you’re not a robot. Tick the box to carry on.');
+    msg.id = 'captchaMsg';
+    msg.style.cssText = 'display:none;margin:0 0 12px;font-size:.92rem;line-height:1.45;color:#2D2420';
+    const inner = el('div');
+    inner.id = 'captchaBox';
+    card.append(msg, inner);
+    layer.appendChild(card);
+    document.body.appendChild(layer);
   }
+  const showAsk = (on) => {
+    layer.style.pointerEvents = on ? 'auto' : 'none';
+    layer.style.background = on ? 'rgba(28,18,16,.55)' : 'transparent';
+    const card = $('captchaCard');
+    card.style.background = on ? '#fff' : 'transparent';
+    card.style.padding = on ? '20px 18px 16px' : '0';
+    card.style.boxShadow = on ? '0 18px 50px rgba(0,0,0,.3)' : 'none';
+    $('captchaMsg').style.display = on ? 'block' : 'none';
+  };
+  const box = $('captchaBox');
+  const started = Date.now();
   return new Promise((resolve, reject) => {
-    let id = null, over = false;
+    let id = null, over = false, timer = null;
     const finish = (fn, v) => {
       if (over) return; over = true;
       clearTimeout(timer);
+      showAsk(false);
       setTimeout(() => { try { if (id !== null) window.turnstile.remove(id); } catch (_) {} }, 0);
       fn(v);
     };
-    const timer = setTimeout(() => finish(reject, new Error('CAPTCHA_FAILED')), 30000);
+    // 30 seconds for the invisible check; longer once a person is asked to tick
+    const wait = (ms) => { clearTimeout(timer); timer = setTimeout(() => finish(reject, new Error('CAPTCHA_TIMEOUT')), ms); };
+    wait(30000);
     let retries = 0;
     id = window.turnstile.render(box, {
       sitekey: TURNSTILE_SITE_KEY,
       appearance: 'interaction-only',
-      callback: (t) => finish(resolve, t),
-      // Cloudflare's advice for errors such as 600010: try again. Twice, then give up.
+      callback: (t) => { console.log('[shelf] captcha ok in ' + (Date.now() - started) + 'ms'); finish(resolve, t); },
+      'before-interactive-callback': () => { console.log('[shelf] captcha: asking for a tick'); showAsk(true); wait(120000); },
+      'after-interactive-callback': () => { showAsk(false); },
+      // Cloudflare's advice for errors such as 600010: try again once, then give up
       'error-callback': (code) => {
-        console.warn('[shelf] captcha: Turnstile error', code, retries < 2 ? '(retrying)' : '(giving up)');
-        if (retries < 2 && !over) { retries++; setTimeout(() => { try { window.turnstile.reset(id); } catch (_) {} }, 600); return true; }
+        console.warn('[shelf] captcha: Turnstile error', code, retries < 1 ? '(retrying)' : '(giving up)');
+        if (retries < 1 && !over) { retries++; setTimeout(() => { try { window.turnstile.reset(id); } catch (_) {} }, 600); return true; }
         finish(reject, new Error('CAPTCHA_FAILED ' + code));
         return true;
       },
-      'expired-callback': () => finish(reject, new Error('CAPTCHA_FAILED'))
+      'expired-callback': () => finish(reject, new Error('CAPTCHA_EXPIRED'))
     });
   });
 }
