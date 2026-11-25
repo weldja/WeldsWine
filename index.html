@@ -1336,6 +1336,48 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
 .admin-cellar-option-info{flex:1}
 .admin-cellar-option-name{font-family:var(--font-b);font-size:.88rem;font-weight:500;color:var(--charcoal)}
 .admin-cellar-option-members{font-family:var(--font-b);font-size:.72rem;color:var(--warm-gray);margin-top:1px}
+/* Admin panel: roomy on a laptop, full width on a phone */
+.admin-modal{max-width:460px;width:100%}
+@media (min-width:760px){.admin-modal{max-width:min(940px,94vw)}}
+.admin-tabs{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.admin-tab{flex:1 0 auto;padding-left:12px;padding-right:12px;white-space:nowrap}
+/* Words on buttons rather than icons */
+.admin-btn-text{flex:0 0 auto;min-height:36px;padding:6px 12px;border-radius:var(--r);border:1px solid var(--light-gray);background:var(--ivory);font-family:var(--font-b);font-size:.78rem;font-weight:600;color:var(--charcoal);cursor:pointer;white-space:nowrap;margin-left:6px}
+.admin-btn-text:hover{border-color:var(--warm-gray)}
+.admin-btn-text.danger{color:#b91c1c;border-color:#f3c4c4}
+.admin-btn-text.danger:hover{background:#fef2f2}
+.admin-btn-text:disabled{opacity:.55;cursor:default}
+.admin-btn-auto{flex:0 0 auto}
+/* People tab */
+.admin-summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:8px;margin-bottom:14px}
+.admin-stat{background:var(--ivory);border:1px solid var(--light-gray);border-radius:var(--r);padding:10px 12px}
+.admin-stat-n{font-family:var(--font-d);font-size:1.3rem;font-weight:600;color:var(--charcoal);line-height:1.1}
+.admin-stat-l{font-family:var(--font-b);font-size:.7rem;color:var(--warm-gray);margin-top:3px;line-height:1.3}
+.admin-people-tools{display:flex;gap:8px;margin-bottom:10px;align-items:center}
+.admin-people-tools input{flex:1;min-width:0;height:40px;border:1px solid var(--light-gray);border-radius:var(--r);padding:0 12px;font-family:var(--font-b);font-size:16px;background:var(--cream);color:var(--charcoal)}
+.admin-people-filters{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.admin-add-person{background:var(--ivory);border:1.5px solid var(--burgundy);border-radius:var(--rl);padding:14px;margin-bottom:14px}
+.admin-add-person-title{font-family:var(--font-d);font-size:1rem;font-weight:600;color:var(--charcoal);margin-bottom:4px}
+.admin-person-row{display:flex;align-items:center;gap:10px;width:100%;padding:10px 14px;border:none;border-bottom:1px solid #f0ebe5;background:none;text-align:left;cursor:pointer;font:inherit;color:inherit}
+.admin-person-row:last-child{border-bottom:none}
+.admin-person-row:hover{background:var(--cream)}
+.admin-person-facts{font-family:var(--font-b);font-size:.72rem;color:var(--warm-gray);margin-top:2px}
+.admin-person-side{text-align:right;flex-shrink:0;font-family:var(--font-b);font-size:.72rem;color:var(--warm-gray)}
+.admin-person-side strong{display:block;font-size:.82rem;color:var(--charcoal)}
+.admin-chip{display:inline-block;font-family:var(--font-b);font-size:.66rem;font-weight:600;padding:2px 7px;border-radius:10px;margin-left:6px;vertical-align:1px;background:#ECE6E2;color:#4A403C}
+.admin-chip.admin{background:#F1E7D2;color:#6E5416}
+.admin-chip.invited{background:#E6ECF4;color:#23405E}
+.admin-chip.unconfirmed{background:#F6E1E5;color:#7A1F33}
+.admin-chip.trial{background:#E1EEE8;color:#24493E}
+.admin-back{background:none;border:none;color:var(--burgundy);font-family:var(--font-b);font-size:.85rem;font-weight:600;cursor:pointer;padding:6px 0;min-height:40px}
+.admin-person-head{display:flex;align-items:center;gap:12px;margin:4px 0 14px}
+.admin-person-head .admin-member-avatar{width:46px;height:46px;font-size:.95rem}
+.admin-person-name{font-family:var(--font-d);font-size:1.2rem;font-weight:600;color:var(--charcoal)}
+.admin-facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin-bottom:16px}
+.admin-section-h{font-family:var(--font-b);font-size:.7rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--warm-gray);margin:16px 0 8px}
+.admin-actions{display:flex;flex-wrap:wrap;gap:8px}
+.admin-actions .admin-btn-text{margin-left:0}
+.admin-trial-note{font-family:var(--font-b);font-size:.8rem;color:var(--warm-gray);background:var(--cream);border:1px dashed var(--light-gray);border-radius:var(--r);padding:10px 12px;margin-bottom:12px;line-height:1.45}
 
 /* ── Request Access section (replaces Create Account tab) ── */
 .auth-request-section{margin-top:4px}
@@ -3833,6 +3875,13 @@ async function showApp() {
 
   // Free trial visitors: show the "create a free account" banner
   updateTrialBanner();
+
+  // A new member's first sign-in: let the admins know (the worker announces each person once)
+  if (!_isTrialUser() && !(_currentUser.user_metadata && _currentUser.user_metadata.admin_notified) &&
+      typeof Scanner !== 'undefined' && Scanner.hasUrl()) {
+    _authHeaders().then(h => fetch(Scanner.getProxyUrl() + '/api/new-member', { method: 'POST', headers: h, body: '{}' }))
+      .catch(() => {});
+  }
   if (_wantSignup) {
     _wantSignup = false;
     try { window.history.replaceState(history.state, '', window.location.pathname); } catch(_) {}
@@ -10052,29 +10101,35 @@ function updateKeyBadge() {
 
 <!-- ADMIN PANEL OVERLAY -->
 <div class="modal-overlay" id="adminOverlay" role="dialog" aria-modal="true">
-  <div class="modal" style="max-width:460px">
+  <div class="modal admin-modal">
     <div class="modal-header">
       <h2 class="modal-title">👤 User Management</h2>
       <button class="modal-close" onclick="closeAdminPanel()" aria-label="Close">✕</button>
     </div>
-    <div class="admin-tabs">
-      <button class="admin-tab active" data-admin-tab="requests" onclick="switchAdminTab('requests')">Requests <span class="admin-badge" id="adminReqBadge" style="display:none">0</span></button>
-      <button class="admin-tab" data-admin-tab="create" onclick="switchAdminTab('create')">Create User</button>
+    <div class="admin-tabs" role="tablist">
+      <button class="admin-tab active" data-admin-tab="people" onclick="switchAdminTab('people')">People</button>
       <button class="admin-tab" data-admin-tab="cellars" onclick="switchAdminTab('cellars')">Cellars</button>
-      <button class="admin-tab" data-admin-tab="intel" onclick="switchAdminTab('intel')">Intel</button>
       <button class="admin-tab" data-admin-tab="usage" onclick="switchAdminTab('usage')">Usage</button>
+      <button class="admin-tab" data-admin-tab="intel" onclick="switchAdminTab('intel')">Intel</button>
+      <!-- Only shown when someone has asked for access (sign-ups switched off) -->
+      <button class="admin-tab" data-admin-tab="requests" id="adminRequestsTabBtn" onclick="switchAdminTab('requests')" hidden>Requests <span class="admin-badge" id="adminReqBadge" style="display:none">0</span></button>
     </div>
     <div class="modal-body" style="padding-top:0">
 
-      <!-- Requests tab -->
-      <div class="admin-tab-body active" id="adminTabRequests">
-        <div id="adminRequestsList">
-          <div class="admin-empty">Loading…</div>
-        </div>
-      </div>
-
-      <!-- Create User tab -->
-      <div class="admin-tab-body" id="adminTabCreate">
+      <!-- People tab: everyone, a summary, search, add a person, and one page per person -->
+      <div class="admin-tab-body active" id="adminTabPeople">
+        <div id="adminPeopleListView">
+          <div class="admin-summary" id="adminPeopleSummary"></div>
+          <div class="admin-people-tools">
+            <input type="search" id="adminPeopleSearch" placeholder="Search by name or email" aria-label="Search people" oninput="renderAdminPeople()"/>
+            <button class="admin-btn-sm admin-btn-create admin-btn-auto" id="adminAddPersonBtn" onclick="toggleAddPerson()">＋ Add person</button>
+          </div>
+          <div class="admin-people-filters" id="adminPeopleFilters"></div>
+          <div id="adminAddPerson" class="admin-add-person" hidden>
+            <div class="admin-add-person-title">Add a person</div>
+            <div class="admin-form-help" style="margin-bottom:10px">Anyone can also create their own account from the sign-in page. Use this to set someone up yourself: they get an email to choose a password.</div>
+      <!-- (the Add person form, formerly the Create User tab) -->
+      <div id="adminTabCreate">
         <div style="display:flex;flex-direction:column;gap:14px">
           <div class="auth-form-group" style="margin:0">
             <label for="adminCreateEmail">Email</label>
@@ -10095,6 +10150,19 @@ function updateKeyBadge() {
           </button>
           <div class="admin-form-help" style="text-align:center">They'll receive an email to set their password.</div>
           <div class="auth-msg" id="adminCreateMsg"></div>
+          <button class="admin-btn-sm admin-btn-dismiss" type="button" onclick="toggleAddPerson(false)">Close</button>
+        </div>
+      </div>
+          </div><!-- /adminAddPerson -->
+          <div id="adminPeopleList"><div class="admin-empty">Loading…</div></div>
+        </div>
+        <div id="adminPersonDetail" hidden></div>
+      </div>
+
+      <!-- Requests tab (only shown when there are requests) -->
+      <div class="admin-tab-body" id="adminTabRequests">
+        <div id="adminRequestsList">
+          <div class="admin-empty">Loading…</div>
         </div>
       </div>
 
@@ -10131,8 +10199,7 @@ function updateKeyBadge() {
             <button class="admin-btn-sm admin-btn-create" style="flex:1" onclick="handleAdminCreateCellar()">Create</button>
           </div>
         </div>
-        <!-- Every user account, with a Delete button (filled in by renderAdminUsers) -->
-        <div id="adminUsersList" style="margin-top:22px"></div>
+        <!-- (The list of all accounts now lives in the People tab) -->
       </div>
     </div>
   </div>
@@ -10144,6 +10211,7 @@ function updateKeyBadge() {
     <div style="font-size:1.5rem;margin-bottom:12px" id="adminConfirmIcon">⚠️</div>
     <h3 id="adminConfirmTitle">Are you sure?</h3>
     <p id="adminConfirmMsg">This action cannot be undone.</p>
+    <div id="adminConfirmExtra"></div>
     <div class="admin-confirm-actions">
       <button class="admin-btn-sm admin-btn-dismiss" style="flex:1" onclick="closeAdminConfirm()">Cancel</button>
       <button class="admin-btn-sm admin-btn-danger" style="flex:1" id="adminConfirmAction">Remove</button>
@@ -11011,7 +11079,9 @@ async function openAdminPanel(tab) {
   if (!window._isAdmin) { showToast('Admin access required'); return; }
   document.getElementById('adminOverlay').classList.add('open');
   document.body.style.overflow = 'hidden';
-  switchAdminTab(tab || 'requests');
+  switchAdminTab(tab || 'people');
+  // Show the Requests tab only if someone is waiting (checked quietly in the background)
+  if (tab !== 'requests') loadAdminRequests(true);
 }
 
 function closeAdminPanel() {
@@ -11026,15 +11096,21 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function switchAdminTab(tab) {
-  document.querySelectorAll('.admin-tab').forEach(t => t.classList.toggle('active', t.dataset.adminTab === tab));
+  // Old names still work: "create" opens Add person, "users"/"members" open People
+  let addPerson = false;
+  if (tab === 'create') { tab = 'people'; addPerson = true; }
+  if (tab === 'users' || tab === 'members') tab = 'people';
+  if (!['people', 'cellars', 'usage', 'intel', 'requests'].includes(tab)) tab = 'people';
+  if (tab === 'requests') { const rb = document.getElementById('adminRequestsTabBtn'); if (rb) rb.hidden = false; }
+  document.querySelectorAll('.admin-tab').forEach(t => { const on = t.dataset.adminTab === tab; t.classList.toggle('active', on); t.setAttribute('aria-selected', String(on)); });
+  document.getElementById('adminTabPeople').classList.toggle('active', tab === 'people');
   document.getElementById('adminTabRequests').classList.toggle('active', tab === 'requests');
-  document.getElementById('adminTabCreate').classList.toggle('active', tab === 'create');
   document.getElementById('adminTabCellars').classList.toggle('active', tab === 'cellars');
   document.getElementById('adminTabIntel').classList.toggle('active', tab === 'intel');
   document.getElementById('adminTabUsage').classList.toggle('active', tab === 'usage');
+  if (tab === 'people') { showPeopleList(); loadAdminPeople(); if (addPerson) toggleAddPerson(true); }
   if (tab === 'usage') loadAdminUsageTab();
   if (tab === 'requests') loadAdminRequests();
-  if (tab === 'create') loadAdminCreateTab();
   if (tab === 'cellars') loadAdminCellars();
   if (tab === 'intel') loadAdminIntelTab();
 }
@@ -11366,9 +11442,10 @@ function renderAdminUsage() {
 }
 
 /* ── Requests tab ──────────────────────────────────────────── */
-async function loadAdminRequests() {
+// quiet = just update the badge and whether the Requests tab shows (opening the panel)
+async function loadAdminRequests(quiet) {
   const container = document.getElementById('adminRequestsList');
-  container.innerHTML = '<div class="admin-empty">Loading…</div>';
+  if (!quiet) container.innerHTML = '<div class="admin-empty">Loading…</div>';
   try {
     const res = await _adminFetch('/api/admin/requests');
     if (!res.ok) {
@@ -11382,8 +11459,13 @@ async function loadAdminRequests() {
       badge.textContent = requests.length;
       badge.style.display = requests.length > 0 ? '' : 'none';
     }
+    // The Requests tab only appears when someone is waiting (or you're on it)
+    const tabBtn = document.getElementById('adminRequestsTabBtn');
+    const onIt = document.getElementById('adminTabRequests').classList.contains('active');
+    if (tabBtn) tabBtn.hidden = !requests.length && !onIt;
+    if (quiet) return;
     if (!requests.length) {
-      container.innerHTML = '<div class="admin-empty">No pending requests</div>';
+      container.innerHTML = '<div class="admin-empty">No one is waiting. People can create their own accounts, so requests only arrive if sign-ups are switched off.</div>';
       return;
     }
     container.innerHTML = '';
@@ -11407,7 +11489,7 @@ async function loadAdminRequests() {
     });
   } catch (e) {
     console.error('Admin requests load error:', e);
-    container.innerHTML = '<div class="admin-empty">' + escHtml(e.message || 'Could not load requests') + '</div>';
+    if (!quiet) container.innerHTML = '<div class="admin-empty">' + escHtml(e.message || 'Could not load requests') + '</div>';
   }
 }
 
@@ -11437,7 +11519,7 @@ async function dismissRequest(id, btn) {
 }
 
 function createFromRequest(requestId, email, name) {
-  // Switch to Create tab with pre-filled data
+  // Open People → Add person, filled in
   switchAdminTab('create');
   document.getElementById('adminCreateEmail').value = email;
   document.getElementById('adminCreateName').value = name;
@@ -11535,14 +11617,14 @@ async function handleAdminCreateUser() {
     if (!res.ok) throw new Error(data.error || data.reason || 'Failed to create user');
     // Say what really happened: the account can be created while the email fails
     const cellarNote = (cellarId && data.cellar_assigned === false)
-      ? ' They could NOT be added to the cellar — add them from the Cellars tab.' : '';
+      ? ' They could NOT be added to the cellar. Add them from the Cellars tab.' : '';
     if (data.invite_sent !== false) {
       msg.className = cellarNote ? 'auth-msg err' : 'auth-msg ok';
       msg.textContent = 'Account created — invite email sent to ' + email + '.' + cellarNote;
     } else {
       msg.className = 'auth-msg err';
       msg.textContent = 'Account created, but the invite email was NOT sent (' + (data.invite_error || 'unknown reason') + ').' + cellarNote +
-        (data.invite_url ? ' Copy this set-password link and send it to them yourself:' : ' Use the \u2709 button next to their name in the Cellars tab to try again.');
+        (data.invite_url ? ' Copy this set-password link and send it to them yourself:' : ' Open their page in People and use \u201cSend a new set-password link\u201d to try again.');
       if (data.invite_url) {
         const linkBox = document.createElement('input');
         linkBox.type = 'text'; linkBox.readOnly = true; linkBox.value = data.invite_url;
@@ -11556,8 +11638,9 @@ async function handleAdminCreateUser() {
     document.getElementById('adminCreateName').value = '';
     btn.dataset.dismissId = '';
     btn.dataset.dismissEmail = '';
-    // Refresh requests badge
-    loadAdminRequests();
+    // Refresh the requests badge and the list of people
+    loadAdminRequests(true);
+    loadAdminPeople();
   } catch (e) {
     msg.className = 'auth-msg err';
     msg.textContent = e.message || 'Could not create user';
@@ -11568,21 +11651,308 @@ async function handleAdminCreateUser() {
   }
 }
 
+/* ── People tab ─────────────────────────────────────────────
+   Everyone with an account (free-trial visitors are counted in the
+   summary, not listed), a summary strip, search, quick filters,
+   Add person, and one page per person with everything about them.  */
+var _adminPeople = null;          // { summary, defaults, features, people: [...] }
+var _adminPeopleFilter = 'all';   // all | new | invited | admins
+
+function _fmtDate(s) {
+  if (!s) return '—';
+  return new Date(s).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+function _fmtAgo(s) { return s ? _timeAgo(s) : 'never'; }
+
+async function loadAdminPeople() {
+  const list = document.getElementById('adminPeopleList');
+  if (!_adminPeople) list.innerHTML = '<div class="admin-empty">Loading…</div>';
+  try {
+    const res = await _adminFetch('/api/admin/people');
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || data.reason || 'Failed');
+    _adminPeople = data;
+    renderAdminPeopleSummary();
+    renderAdminPeople();
+    // Keep an open person page up to date
+    const detail = document.getElementById('adminPersonDetail');
+    if (!detail.hidden && detail.dataset.id) openPerson(detail.dataset.id);
+  } catch (e) {
+    list.innerHTML = '<div class="admin-empty">' + escHtml('Could not load people: ' + (e.message || 'unknown error') +
+      '. If this is new, deploy the latest worker.js.') + '</div>';
+  }
+}
+
+function renderAdminPeopleSummary() {
+  const box = document.getElementById('adminPeopleSummary');
+  const s = (_adminPeople && _adminPeople.summary) || {};
+  const stat = (n, label) => '<div class="admin-stat"><div class="admin-stat-n">' + escHtml(n === null || n === undefined ? '—' : String(n)) +
+    '</div><div class="admin-stat-l">' + escHtml(label) + '</div></div>';
+  box.innerHTML =
+    stat(s.members, 'members') +
+    stat(s.new_this_week, 'new this week') +
+    stat(s.trials_active, 'free-trial visitors this week') +
+    stat(s.converted, 'trials that became members') +
+    stat(s.ai_cost_month === null || s.ai_cost_month === undefined ? null : _fmtCost(s.ai_cost_month), 'AI cost this month (estimate)');
+}
+
+function _statusChip(p) {
+  if (p.status === 'invited') return '<span class="admin-chip invited" title="Account made, but they haven’t chosen a password yet">Invited</span>';
+  if (p.status === 'unconfirmed') return '<span class="admin-chip unconfirmed" title="They haven’t clicked the link in their confirmation email yet">Email not confirmed</span>';
+  return '';
+}
+
+function renderAdminPeople() {
+  const list = document.getElementById('adminPeopleList');
+  if (!_adminPeople) return;
+  const people = _adminPeople.people || [];
+  const week = 7 * 864e5, now = Date.now();
+  const isNew = p => p.created_at && now - Date.parse(p.created_at) < week;
+  // Quick filters, with counts
+  const counts = {
+    all: people.length,
+    new: people.filter(isNew).length,
+    invited: people.filter(p => p.status !== 'active').length,
+    admins: people.filter(p => p.is_admin).length
+  };
+  const fbox = document.getElementById('adminPeopleFilters');
+  fbox.innerHTML = '';
+  [['all', 'Everyone'], ['new', 'New this week'], ['invited', 'Not set up yet'], ['admins', 'Admins']].forEach(([k, label]) => {
+    const b = document.createElement('button');
+    b.className = 'admin-btn-sm admin-btn-auto' + (_adminPeopleFilter === k ? ' admin-btn-create' : ' admin-btn-dismiss');
+    b.style.minHeight = '34px';
+    b.textContent = label + ' (' + counts[k] + ')';
+    b.onclick = () => { _adminPeopleFilter = k; renderAdminPeople(); };
+    fbox.appendChild(b);
+  });
+  // Search and filter
+  const q = (document.getElementById('adminPeopleSearch').value || '').trim().toLowerCase();
+  let shown = people.filter(p =>
+    _adminPeopleFilter === 'new' ? isNew(p) :
+    _adminPeopleFilter === 'invited' ? p.status !== 'active' :
+    _adminPeopleFilter === 'admins' ? p.is_admin : true);
+  if (q) shown = shown.filter(p => (p.display_name || '').toLowerCase().includes(q) || (p.email || '').toLowerCase().includes(q));
+  // Newest first on "New this week"; otherwise by name
+  shown.sort((a, b) => _adminPeopleFilter === 'new'
+    ? Date.parse(b.created_at || 0) - Date.parse(a.created_at || 0)
+    : (a.display_name || a.email || '').localeCompare(b.display_name || b.email || ''));
+  if (!shown.length) { list.innerHTML = '<div class="admin-empty">' + (q ? 'No one matches “' + escHtml(q) + '”' : 'No one here') + '</div>'; return; }
+  const card = document.createElement('div');
+  card.className = 'admin-cellar-card';
+  shown.forEach(p => {
+    const row = document.createElement('button');
+    row.type = 'button';
+    row.className = 'admin-person-row';
+    row.onclick = () => openPerson(p.id);
+    const name = p.display_name || (p.email ? p.email.split('@')[0] : 'Member');
+    const cellars = (p.cellars || []).map(c => c.name).join(', ');
+    row.innerHTML =
+      '<div class="admin-member-avatar" style="background:' + (p.is_admin ? 'var(--burgundy)' : 'var(--warm-gray)') + '">' + escHtml(name.slice(0, 2).toUpperCase()) + '</div>' +
+      '<div class="admin-member-details">' +
+        '<div class="admin-member-name">' + escHtml(name) +
+          (p.is_admin ? '<span class="admin-chip admin">Admin</span>' : '') + _statusChip(p) +
+          (isNew(p) ? '<span class="admin-chip">New</span>' : '') + '</div>' +
+        '<div class="admin-member-email">' + escHtml(p.email) + '</div>' +
+        '<div class="admin-person-facts">' + escHtml('Joined ' + _fmtDate(p.created_at) + ' · last signed in ' + _fmtAgo(p.last_sign_in_at).toLowerCase() + (cellars ? ' · ' + cellars : '')) + '</div>' +
+      '</div>' +
+      '<div class="admin-person-side"><strong>' + escHtml(String(p.wine_count || 0)) + '</strong>wine' + (p.wine_count === 1 ? '' : 's') +
+        (p.cost_month ? '<br>' + escHtml(_fmtCost(p.cost_month)) + ' AI' : '') + '</div>';
+    card.appendChild(row);
+  });
+  list.innerHTML = '';
+  list.appendChild(card);
+}
+
+function showPeopleList() {
+  document.getElementById('adminPeopleListView').hidden = false;
+  const d = document.getElementById('adminPersonDetail');
+  d.hidden = true; d.dataset.id = '';
+}
+
+function toggleAddPerson(force) {
+  const box = document.getElementById('adminAddPerson');
+  const open = force === undefined ? box.hidden : !!force;
+  box.hidden = !open;
+  document.getElementById('adminAddPersonBtn').textContent = open ? 'Close' : '＋ Add person';
+  if (open) {
+    loadAdminCreateTab();
+    setTimeout(() => { const e = document.getElementById('adminCreateEmail'); if (e && !e.value) e.focus(); }, 50);
+  }
+}
+
+// One page per person: their details, cellar, this month's AI use and limits, and actions
+function openPerson(id) {
+  const p = _adminPeople && (_adminPeople.people || []).find(x => x.id === id);
+  if (!p) { showPeopleList(); return; }
+  const d = document.getElementById('adminPersonDetail');
+  document.getElementById('adminPeopleListView').hidden = true;
+  d.hidden = false; d.dataset.id = id;
+  d.innerHTML = '';
+  const isMe = p.id === _currentUser?.id;
+  const name = p.display_name || (p.email ? p.email.split('@')[0] : 'Member');
+
+  const back = document.createElement('button');
+  back.className = 'admin-back'; back.type = 'button'; back.textContent = '← All people';
+  back.onclick = showPeopleList;
+  d.appendChild(back);
+
+  const head = document.createElement('div');
+  head.className = 'admin-person-head';
+  head.innerHTML = '<div class="admin-member-avatar" style="background:' + (p.is_admin ? 'var(--burgundy)' : 'var(--warm-gray)') + '">' + escHtml(name.slice(0, 2).toUpperCase()) + '</div>' +
+    '<div style="min-width:0"><div class="admin-person-name">' + escHtml(name) + (p.is_admin ? '<span class="admin-chip admin">Admin</span>' : '') + _statusChip(p) + (isMe ? '<span class="admin-chip">You</span>' : '') + '</div>' +
+    '<div class="admin-member-email">' + escHtml(p.email) + '</div></div>';
+  d.appendChild(head);
+
+  const facts = document.createElement('div');
+  facts.className = 'admin-facts';
+  const fact = (n, l) => '<div class="admin-stat"><div class="admin-stat-n" style="font-size:1rem">' + escHtml(n) + '</div><div class="admin-stat-l">' + escHtml(l) + '</div></div>';
+  facts.innerHTML =
+    fact(_fmtDate(p.created_at), p.from_trial ? 'joined (after a free trial)' : 'joined') +
+    fact(_fmtAgo(p.last_sign_in_at), 'last signed in') +
+    fact(String(p.wine_count || 0), 'wines added' + (p.last_wine_at ? ', latest ' + _fmtAgo(p.last_wine_at) : '')) +
+    fact((p.cellars || []).map(c => c.name + (c.role === 'owner' ? ' (owner)' : '')).join(', ') || 'None', 'cellar') +
+    fact(_fmtCost(p.cost_month || 0), 'AI cost this month');
+  d.appendChild(facts);
+  if (p.status === 'invited') {
+    const n = document.createElement('div'); n.className = 'admin-trial-note';
+    n.textContent = name + ' hasn’t chosen a password yet, so they can’t sign in. If their link has expired or gone missing, send a new one below.';
+    d.appendChild(n);
+  } else if (p.status === 'unconfirmed') {
+    const n = document.createElement('div'); n.className = 'admin-trial-note';
+    n.textContent = name + ' hasn’t clicked the link in their confirmation email yet. A new set-password link (below) also confirms their address.';
+    d.appendChild(n);
+  }
+
+  // This month's AI use, with their limits (same controls as the Usage tab)
+  const uh = document.createElement('div'); uh.className = 'admin-section-h'; uh.textContent = 'AI use this month and limits';
+  d.appendChild(uh);
+  const ucard = document.createElement('div'); ucard.className = 'admin-cellar-card';
+  const ulist = document.createElement('div'); ulist.className = 'admin-member-list'; ulist.style.borderTop = 'none';
+  const defaults = _adminPeople.defaults || {};
+  USAGE_LIMITED_FEATURES.forEach(f => {
+    const us = (p.usage_month || {})[f];
+    const lim = (p.limits || {})[f] || { limit: null, source: 'default' };
+    const used = us ? us.calls : 0;
+    const row = document.createElement('div'); row.className = 'usage-feature-row';
+    row.innerHTML = '<div class="usage-feature-name">' + escHtml(USAGE_FEATURE_NAMES[f]) + '<small>' + escHtml(us ? used + ' this month · ' + _fmtCost(us.cost_usd) : 'None this month') + '</small></div>';
+    const usedEl = document.createElement('span');
+    usedEl.className = 'usage-used' + (lim.limit !== null && used >= lim.limit ? ' full' : '');
+    usedEl.textContent = lim.limit === null ? 'no limit' : used + ' / ' + lim.limit;
+    row.appendChild(usedEl);
+    const defText = p.is_admin ? 'Default (admin: unlimited)' : 'Default (' + _limitWords(defaults[f]) + ')';
+    row.appendChild(_limitControl(lim.limit, lim.source === 'user', defText, async (v) => {
+      await _saveUsageLimit('/api/admin/usage-limits', { user_id: p.id, feature: f, limit: v },
+        name + ' · ' + USAGE_FEATURE_NAMES[f].toLowerCase() + ': ' + (v === 'default' ? 'default' : _limitWords(v)));
+      loadAdminPeople();
+    }));
+    ulist.appendChild(row);
+  });
+  ucard.appendChild(ulist);
+  d.appendChild(ucard);
+
+  // Actions, in words
+  const ah = document.createElement('div'); ah.className = 'admin-section-h'; ah.textContent = 'Actions';
+  d.appendChild(ah);
+  const actions = document.createElement('div'); actions.className = 'admin-actions';
+  const addBtn = (label, fn, danger, title) => {
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'admin-btn-text' + (danger ? ' danger' : ''); b.textContent = label;
+    if (title) b.title = title;
+    b.onclick = fn; actions.appendChild(b);
+  };
+  if (!isMe) {
+    addBtn('Send a new set-password link', () => resendInvite(p.id, name, p.email));
+    addBtn(p.is_admin ? 'Remove admin' : 'Make admin', () => setAdminFlag(p, !p.is_admin));
+    if (!p.is_admin) addBtn('Delete account', () => confirmDeleteUser(p.id, name, p.email), true);
+  }
+  addBtn('Manage cellars', () => switchAdminTab('cellars'));
+  d.appendChild(actions);
+  if (isMe) {
+    const n = document.createElement('div'); n.className = 'admin-form-help'; n.style.marginTop = '10px';
+    n.textContent = 'This is you. Ask another admin to change your admin rights or account.';
+    d.appendChild(n);
+  } else if (p.is_admin) {
+    const n = document.createElement('div'); n.className = 'admin-form-help'; n.style.marginTop = '10px';
+    n.textContent = 'To delete an admin’s account, remove their admin rights first.';
+    d.appendChild(n);
+  }
+}
+
+function setAdminFlag(p, makeAdmin) {
+  const name = p.display_name || p.email;
+  adminConfirm({
+    icon: makeAdmin ? '🔑' : '⚠️',
+    title: makeAdmin ? 'Make ' + name + ' an admin?' : 'Remove ' + name + '’s admin rights?',
+    msg: makeAdmin
+      ? 'They’ll be able to open User Management: see everyone’s email address, change limits, create and delete accounts and cellars. Their own AI use becomes unlimited unless you set a limit.'
+      : 'They’ll no longer be able to open User Management. Their account, wines and cellar stay as they are, and the default limits apply to them again.',
+    action: makeAdmin ? 'Make admin' : 'Remove admin', danger: !makeAdmin, busy: 'Saving', failText: 'Could not change admin rights',
+    run: async () => {
+      const res = await _adminFetch('/api/admin/users/' + encodeURIComponent(p.id) + '/admin', { method: 'PATCH', body: { is_admin: makeAdmin } });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || data.reason || 'Failed');
+      showToast(makeAdmin ? name + ' is now an admin' : name + ' is no longer an admin');
+      loadAdminPeople();
+    }
+  });
+}
+
 /* ── Cellars tab ───────────────────────────────────────────── */
-let _adminCellarFilter = 'active';   // 'active' | 'empty' | 'archived'
+let _adminCellarFilter = 'active';   // 'active' | 'empty' | 'archived' | 'trial'
+
+/* One confirmation dialog for every admin action (the app's own, never the browser's).
+   opts: { icon, title, msg, action, danger, extra (an element), run: async () => {} }
+   run() should throw to keep the dialog open with an error; it closes when run() succeeds. */
+function adminConfirm(opts) {
+  const overlay = document.getElementById('adminConfirmOverlay');
+  document.getElementById('adminConfirmIcon').textContent = opts.icon || '\u26a0\ufe0f';
+  document.getElementById('adminConfirmTitle').textContent = opts.title || 'Are you sure?';
+  document.getElementById('adminConfirmMsg').textContent = opts.msg || '';
+  const extra = document.getElementById('adminConfirmExtra');
+  extra.textContent = '';
+  if (opts.extra) extra.appendChild(opts.extra);
+  const actionBtn = document.getElementById('adminConfirmAction');
+  const label = opts.action || 'OK';
+  actionBtn.textContent = label;
+  actionBtn.className = 'admin-btn-sm ' + (opts.danger ? 'admin-btn-danger' : 'admin-btn-create');
+  actionBtn.disabled = false;
+  actionBtn.hidden = !opts.run;
+  // A dialog that only shows information has a single "Close" button
+  document.querySelector('#adminConfirmOverlay .admin-btn-dismiss').textContent = opts.run ? 'Cancel' : 'Close';
+  actionBtn.onclick = async function() {
+    actionBtn.disabled = true;
+    actionBtn.textContent = (opts.busy || 'Working') + '\u2026';
+    try {
+      await opts.run();
+      closeAdminConfirm();
+    } catch (e) {
+      showToast((opts.failText || 'Could not do that') + ': ' + ((e && e.message) || 'unknown error'));
+      actionBtn.disabled = false;
+      actionBtn.textContent = label;
+    }
+  };
+  overlay.classList.add('open');
+}
 
 // Archive (hide) or restore a cellar. Its wines are never touched.
 async function setCellarArchived(cellarId, name, archived) {
-  if (archived && !confirm('Archive \u201c' + name + '\u201d?\n\nIt will be hidden from this list. Its wines are kept, and you can restore it from Archived at any time.')) return;
-  try {
-    const res = await _adminFetch('/api/admin/cellars/' + cellarId + '/archive', { method: 'POST', body: { archived } });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(data.error || 'Failed');
-    showToast(archived ? '\u2713 Cellar archived' : '\u2713 Cellar restored');
-    loadAdminCellars();
-  } catch (e) {
-    showToast('Could not ' + (archived ? 'archive' : 'restore') + ': ' + (e.message || 'error'));
+  if (archived) {
+    adminConfirm({
+      icon: '\ud83d\uddc4', title: 'Archive \u201c' + name + '\u201d?',
+      msg: 'It will be hidden from the list of cellars. Its wines are kept, and you can restore it from Archived at any time.',
+      action: 'Archive', busy: 'Archiving', failText: 'Could not archive',
+      run: () => _setCellarArchivedNow(cellarId, archived)
+    });
+    return;
   }
+  _setCellarArchivedNow(cellarId, archived).catch((e) => showToast('Could not restore: ' + (e.message || 'error')));
+}
+async function _setCellarArchivedNow(cellarId, archived) {
+  const res = await _adminFetch('/api/admin/cellars/' + cellarId + '/archive', { method: 'POST', body: { archived } });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || 'Failed');
+  showToast(archived ? '\u2713 Cellar archived' : '\u2713 Cellar restored');
+  loadAdminCellars();
 }
 
 async function loadAdminCellars() {
@@ -11607,12 +11977,17 @@ async function loadAdminCellars() {
     }
     container.innerHTML = '';
 
-    // Housekeeping filter: Active (default) / Empty / Archived
-    const nEmpty    = _adminCellars.filter(c => !c.archived_at && !c.members.length).length;
+    // Housekeeping filter: Active (default) / Empty / Archived / Free-trial visitors.
+    // Every trial visitor gets a cellar of their own automatically, so those are kept
+    // out of the way in their own filter instead of crowding the real cellars.
+    const nEmpty    = _adminCellars.filter(c => !c.archived_at && !c.trial && !c.members.length).length;
     const nArchived = _adminCellars.filter(c => c.archived_at).length;
+    const nTrial    = _adminCellars.filter(c => !c.archived_at && c.trial).length;
     const bar = document.createElement('div');
     bar.style.cssText = 'display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px';
-    [['active', 'Active'], ['empty', 'Empty (' + nEmpty + ')'], ['archived', 'Archived (' + nArchived + ')']].forEach(([k, label]) => {
+    const filters = [['active', 'Active'], ['empty', 'Empty (' + nEmpty + ')'], ['archived', 'Archived (' + nArchived + ')']];
+    if (nTrial || _adminCellarFilter === 'trial') filters.push(['trial', 'Free-trial visitors (' + nTrial + ')']);
+    filters.forEach(([k, label]) => {
       const b = document.createElement('button');
       b.className = 'admin-btn-sm' + (_adminCellarFilter === k ? '' : ' admin-btn-dismiss');
       b.style.minHeight = '36px';
@@ -11624,13 +11999,27 @@ async function loadAdminCellars() {
 
     const shown = _adminCellars.filter(c =>
       _adminCellarFilter === 'archived' ? !!c.archived_at :
-      _adminCellarFilter === 'empty'    ? (!c.archived_at && !c.members.length) :
-                                          !c.archived_at);
+      _adminCellarFilter === 'trial'    ? (!c.archived_at && c.trial) :
+      _adminCellarFilter === 'empty'    ? (!c.archived_at && !c.trial && !c.members.length) :
+                                          (!c.archived_at && !c.trial));
+    if (_adminCellarFilter === 'active' && nTrial) {
+      const note = document.createElement('div');
+      note.className = 'admin-trial-note';
+      note.textContent = nTrial + ' free-trial visitor' + (nTrial === 1 ? ' has' : 's have') + ' a cellar of their own (made automatically when they save a wine). They’re kept under “Free-trial visitors”. When a visitor creates an account, their cellar shows up here.';
+      container.appendChild(note);
+    }
+    if (_adminCellarFilter === 'trial') {
+      const note = document.createElement('div');
+      note.className = 'admin-trial-note';
+      note.textContent = 'Cellars belonging only to free-trial visitors (no account). To clear out old ones, run select public.delete_old_trial_users(30); in the Supabase SQL Editor.';
+      container.appendChild(note);
+    }
     if (!shown.length) {
       const none = document.createElement('div');
       none.className = 'admin-empty';
       none.textContent = _adminCellarFilter === 'empty' ? 'No empty cellars' :
-                         _adminCellarFilter === 'archived' ? 'No archived cellars' : 'No active cellars';
+                         _adminCellarFilter === 'archived' ? 'No archived cellars' :
+                         _adminCellarFilter === 'trial' ? 'No free-trial cellars' : 'No active cellars';
       container.appendChild(none);
     }
     shown.forEach(c => {
@@ -11643,12 +12032,12 @@ async function loadAdminCellars() {
         const colors = ['var(--burgundy)', 'var(--gold)', '#2D6A4F', '#6366f1', '#ea580c'];
         const color = m.is_admin ? 'var(--burgundy)' : colors[Math.abs(hashStr(m.user_id)) % colors.length];
         const isAdmin = m.is_admin;
-        const removeBtn = isAdmin ? '' : `<button class="admin-remove-member" onclick="confirmRemoveMember('${escJs(c.id)}','${escJs(c.name)}','${escJs(m.user_id)}','${escJs(m.display_name)}')" title="Remove from cellar">✕</button>`;
+        const removeBtn = isAdmin ? '' : `<button class="admin-btn-text" onclick="confirmRemoveMember('${escJs(c.id)}','${escJs(c.name)}','${escJs(m.user_id)}','${escJs(m.display_name)}')" aria-label="Remove ${escHtml(m.display_name)} from ${escHtml(c.name)}">Remove</button>`;
         return `<div class="admin-member-row">
           <div class="admin-member-avatar" style="background:${color}">${escHtml(initials)}</div>
           <div class="admin-member-details">
-            <div class="admin-member-name">${escHtml(m.display_name)}${isAdmin ? '<span class="admin-member-role">Admin</span>' : ''}</div>
-            <div class="admin-member-email">${escHtml(m.email)}</div>
+            <div class="admin-member-name">${escHtml(m.display_name)}${isAdmin ? '<span class="admin-member-role">Admin</span>' : ''}${m.trial ? '<span class="admin-chip trial">Free trial</span>' : ''}</div>
+            <div class="admin-member-email">${escHtml(m.email || (m.trial ? 'No account yet' : ''))}</div>
           </div>
           ${removeBtn}
         </div>`;
@@ -11660,10 +12049,12 @@ async function loadAdminCellars() {
             <div class="admin-cellar-title">${escHtml(c.name)}</div>
             <div class="admin-cellar-meta">${c.members.length} member${c.members.length !== 1 ? 's' : ''} · ${c.wine_count} wine${c.wine_count !== 1 ? 's' : ''}${c.archived_at ? ' · archived' : ''}</div>
           </div>
+          <div style="display:flex;flex-wrap:wrap;justify-content:flex-end;gap:6px">
           ${c.archived_at
-            ? `<button class="admin-cellar-delete" onclick="setCellarArchived('${escJs(c.id)}','${escJs(c.name)}',false)" title="Restore cellar">↩</button>`
-            : (!c.members.length ? `<button class="admin-cellar-delete" onclick="setCellarArchived('${escJs(c.id)}','${escJs(c.name)}',true)" title="Archive empty cellar (keeps its wines)">🗄</button>` : '')}
-          <button class="admin-cellar-delete" onclick="confirmDeleteCellar('${escJs(c.id)}','${escJs(c.name)}')" title="Delete cellar">🗑</button>
+            ? `<button class="admin-btn-text" onclick="setCellarArchived('${escJs(c.id)}','${escJs(c.name)}',false)">Restore</button>`
+            : (!c.members.length ? `<button class="admin-btn-text" onclick="setCellarArchived('${escJs(c.id)}','${escJs(c.name)}',true)" title="Hide this empty cellar. Its wines are kept.">Archive</button>` : '')}
+          <button class="admin-btn-text danger" onclick="confirmDeleteCellar('${escJs(c.id)}','${escJs(c.name)}')">Delete</button>
+          </div>
         </div>
         <div class="admin-member-list">
           ${memberRows}
@@ -11713,26 +12104,34 @@ function renderAdminUsers() {
 }
 
 // Email someone a fresh set-password link (their first one expired, got lost, etc.)
-async function resendInvite(userId, userName, userEmail, btn) {
-  if (!confirm('Email ' + userName + ' a new set-password link' + (userEmail ? ' at ' + userEmail : '') + '?')) return;
-  if (btn) btn.disabled = true;
-  try {
-    const res = await _adminFetch('/api/admin/resend-invite', { method: 'POST', body: { user_id: userId } });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(data.error || data.reason || 'Failed');
-    if (data.invite_sent) {
-      showToast('New link sent to ' + (data.email || userEmail || userName));
-    } else if (data.invite_url) {
-      // The email could not be sent — hand over the link so it can be passed on by hand
-      window.prompt('The email could not be sent (' + (data.invite_error || 'unknown reason') + ').\n\nCopy this link and send it to ' + userName + ' yourself:', data.invite_url);
-    } else {
-      throw new Error(data.invite_error || 'No link could be made');
+async function resendInvite(userId, userName, userEmail) {
+  let linkToShow = null, errText = '';
+  adminConfirm({
+    icon: '✉️', title: 'Send ' + userName + ' a new set-password link?',
+    msg: 'We’ll email a fresh link' + (userEmail ? ' to ' + userEmail : '') + ' so they can choose a new password. Their old password stops working once they use it.',
+    action: 'Send link', busy: 'Sending', failText: 'Could not send link',
+    run: async () => {
+      const res = await _adminFetch('/api/admin/resend-invite', { method: 'POST', body: { user_id: userId } });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || data.reason || 'Failed');
+      if (data.invite_sent) { showToast('New link sent to ' + (data.email || userEmail || userName)); return; }
+      if (!data.invite_url) throw new Error(data.invite_error || 'No link could be made');
+      linkToShow = data.invite_url; errText = data.invite_error || 'unknown reason';
     }
-  } catch (e) {
-    showToast('Could not send link: ' + (e.message || 'unknown error'));
-  } finally {
-    if (btn) btn.disabled = false;
-  }
+  });
+  // If the email couldn't be sent, show the link in the same style of dialog to pass on by hand
+  const actionBtn = document.getElementById('adminConfirmAction');
+  const origClick = actionBtn.onclick;
+  actionBtn.onclick = async function() {
+    await origClick.call(this);
+    if (linkToShow) {
+      const box = document.createElement('input');
+      box.type = 'text'; box.readOnly = true; box.value = linkToShow;
+      box.style.cssText = 'display:block;width:100%;margin:0 0 14px;padding:8px;font-size:.78rem;border:1px solid var(--light-gray);border-radius:var(--r);background:#fff;color:var(--charcoal)';
+      box.onclick = function() { this.select(); };
+      adminConfirm({ icon: '🔗', title: 'The email couldn’t be sent', msg: 'Reason: ' + errText + '. Copy this link and send it to ' + userName + ' yourself:', extra: box });
+    }
+  };
 }
 
 function confirmDeleteUser(userId, userName, userEmail) {
@@ -11756,7 +12155,8 @@ function confirmDeleteUser(userId, userName, userEmail) {
       const kept = data.wines_kept || 0;
       showToast(userName + '\u2019s account deleted' + (kept ? ' \u00B7 ' + kept + ' wine' + (kept !== 1 ? 's' : '') + ' kept' : ''));
       closeAdminConfirm();
-      loadAdminCellars();
+      showPeopleList();
+      loadAdminPeople();
       // Refresh the journal so kept wines show their new label
       if (_currentUser) loadWinesFromDB();
     } catch (e) {
@@ -11845,7 +12245,15 @@ function confirmDeleteCellar(cellarId, cellarName) {
   const overlay = document.getElementById('adminConfirmOverlay');
   document.getElementById('adminConfirmIcon').textContent = '🗑';
   document.getElementById('adminConfirmTitle').textContent = 'Delete ' + cellarName + '?';
-  document.getElementById('adminConfirmMsg').textContent = 'All members will be removed. Wines will be unlinked but not deleted.';
+  // Say exactly what happens, with the real numbers
+  const cel = (_adminCellars || []).find(c => c.id === cellarId);
+  const nM = cel ? cel.members.length : null, nW = cel ? cel.wine_count : null;
+  document.getElementById('adminConfirmMsg').textContent =
+    (nM === null ? 'All members will be removed from it. ' : nM ? 'Its ' + nM + ' member' + (nM === 1 ? '' : 's') + ' will be removed from it and will no longer see each other’s wines. ' : '') +
+    (nW === null ? 'Its wines are kept, but no longer linked to a cellar.' : nW ? 'Its ' + nW + ' wine' + (nW === 1 ? ' is' : 's are') + ' kept, but no longer linked to a cellar.' : 'It has no wines.') +
+    ' This can’t be undone. To just hide it, archive it instead.';
+  document.getElementById('adminConfirmExtra').textContent = '';
+  document.getElementById('adminConfirmAction').hidden = false;
   const actionBtn = document.getElementById('adminConfirmAction');
   actionBtn.textContent = 'Delete cellar';
   actionBtn.className = 'admin-btn-sm admin-btn-danger';
@@ -11869,6 +12277,11 @@ function confirmDeleteCellar(cellarId, cellarName) {
 
 function closeAdminConfirm() {
   document.getElementById('adminConfirmOverlay').classList.remove('open');
+  // Back to the plain layout, so the next dialog starts clean
+  document.getElementById('adminConfirmExtra').textContent = '';
+  const actionBtn = document.getElementById('adminConfirmAction');
+  actionBtn.hidden = false; actionBtn.disabled = false;
+  document.querySelector('#adminConfirmOverlay .admin-btn-dismiss').textContent = 'Cancel';
 }
 
 function showNewCellarForm() {

@@ -582,6 +582,15 @@ var templates = {
       ${btn(APP_URL, "Open Admin Panel")}`)
     };
   }, "access_request_notify"),
+  // A new member has joined (open sign-up), sent to the admins
+  new_member_notify: /* @__PURE__ */ __name2((rawName, rawEmail, fromTrial) => ({
+    subject: `\u{1F389} New member: ${String(rawName || rawEmail || "someone").slice(0, 60)}`,
+    html: baseEmail(`
+      <p style="font-family:Georgia,serif;font-size:1rem;color:#2C2420;line-height:1.6;margin:0 0 12px"><strong>${escEmail(rawName) || "Someone"}</strong> has joined ${APP_NAME}.</p>
+      <p style="font-family:Georgia,serif;font-size:.92rem;color:#6B5D58;line-height:1.7;margin:0 0 8px"><strong>Email:</strong> ${escEmail(rawEmail)}</p>
+      <p style="font-family:Georgia,serif;font-size:.92rem;color:#6B5D58;line-height:1.7;margin:0 0 24px">${fromTrial ? "They tried the app first, then created an account." : "They signed up straight away."}</p>
+      ${btn(APP_URL + "/?admin=people", "Open People")}`)
+  }), "new_member_notify"),
   // Contact form message, sent to the admins only
   contact: /* @__PURE__ */ __name2((rawName, rawEmail, rawMessage) => ({
     subject: `\u2709\uFE0F Contact form: ${String(rawName || rawEmail || "someone").slice(0, 60)}`,
@@ -615,6 +624,68 @@ async function sendEmail(env, { to, subject, html, reply_to }) {
 }
 __name(sendEmail, "sendEmail");
 __name2(sendEmail, "sendEmail");
+
+/* ── Batched look-ups for the admin pages ─────────────────────────
+   Cloudflare limits how many outside requests one call may make
+   (50 on the free plan), so the admin pages fetch whole tables in a
+   few pages of 1000 rows instead of one request per person or cellar. */
+async function sbAll(env, path, max = 20) {
+  const out = [];
+  const sep = path.includes("?") ? "&" : "?";
+  for (let page = 0; page < max; page++) {
+    const rows = await sb_fetch(env, path + sep + "limit=1000&offset=" + page * 1000, { prefer: "return=representation" }) || [];
+    out.push(...rows);
+    if (rows.length < 1000) break;
+  }
+  return out;
+}
+__name(sbAll, "sbAll");
+// Every sign-in account (members and free-trial visitors), 1000 per request
+async function listAuthUsers(env, max = 20) {
+  const out = [];
+  for (let page = 1; page <= max; page++) {
+    const r = await fetch(`${SUPABASE_URL}/auth/v1/admin/users?page=${page}&per_page=1000`, {
+      headers: { apikey: env.SUPABASE_SERVICE_KEY, Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}` }
+    });
+    if (!r.ok) throw new Error("auth users " + r.status);
+    const body = await r.json();
+    const users = Array.isArray(body) ? body : (body.users || []);
+    out.push(...users);
+    if (users.length < 1000) break;
+  }
+  return out;
+}
+__name(listAuthUsers, "listAuthUsers");
+// Status of an account: "active", "invited" (hasn't chosen a password yet) or "unconfirmed" (email not confirmed)
+function accountStatus(u) {
+  if (!u) return "unknown";
+  if (u.user_metadata && u.user_metadata.needs_password === true) return "invited";
+  if (u.email && !u.email_confirmed_at && !u.confirmed_at) return "unconfirmed";
+  return "active";
+}
+__name(accountStatus, "accountStatus");
+// Push and email every admin (best effort)
+async function notifyAdmins(env, { title, body, url, tag, email }) {
+  const admins = await sb_fetch(env, "/profiles?is_admin=eq.true&select=id", { prefer: "return=representation" }) || [];
+  if (!admins.length) return;
+  const ids = admins.map((a) => a.id);
+  try {
+    const subs = await sb_fetch(env, "/push_subscriptions?user_id=in.(" + ids.join(",") + ")&select=subscription", { prefer: "return=representation" }) || [];
+    const payload = JSON.stringify({ title, body, url, tag });
+    for (const row of subs) if (row.subscription) await send_push(env, row.subscription, payload).catch(() => {});
+  } catch (e) { console.warn("notifyAdmins push:", e.message); }
+  if (email) {
+    for (const id of ids) {
+      try {
+        const r = await fetch(`${SUPABASE_URL}/auth/v1/admin/users/${id}`, { headers: { apikey: env.SUPABASE_SERVICE_KEY, Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}` } });
+        if (!r.ok) continue;
+        const u = await r.json();
+        if (u.email) await sendEmail(env, { to: u.email, subject: email.subject, html: email.html }).catch((e) => console.error("notifyAdmins email:", e.message));
+      } catch (_) {}
+    }
+  }
+}
+__name(notifyAdmins, "notifyAdmins");
 /* ═══════════════════════════════════════════════════════════════
    ADMIN HELPERS
    ═══════════════════════════════════════════════════════════════ */
@@ -1425,6 +1496,44 @@ var worker_default = {
       }
     }
 
+    // ── POST /api/new-member — tell the admins someone new has joined ──
+    // Called by the app on a member's first sign-in. Each person is announced once
+    // (marked admin_notified on their account). Trial visitors are skipped until they
+    // create an account; accounts older than 30 days are just marked, not announced.
+    if (url.pathname.endsWith("/api/new-member") && request.method === "POST") {
+      const member = await verifyMember(env, request);
+      if (!member) return new Response(JSON.stringify({ error: "MEMBERS_ONLY" }), { status: 401, headers: cors });
+      if (member.is_anonymous) return new Response(JSON.stringify({ ok: true, skipped: "trial" }), { status: 200, headers: cors });
+      const meta = member.user_metadata || {};
+      if (meta.admin_notified) return new Response(JSON.stringify({ ok: true, skipped: "already" }), { status: 200, headers: cors });
+      // Mark first, so two open tabs can't both announce them
+      try {
+        await fetch(`${SUPABASE_URL}/auth/v1/admin/users/${member.id}`, {
+          method: "PUT",
+          headers: { apikey: env.SUPABASE_SERVICE_KEY, Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}`, "Content-Type": "application/json" },
+          body: JSON.stringify({ user_metadata: { admin_notified: true } })
+        });
+      } catch (e) { console.warn("new-member: could not mark:", e.message); }
+      const recent = member.created_at && Date.now() - Date.parse(member.created_at) < 30 * 864e5;
+      if (!recent) return new Response(JSON.stringify({ ok: true, skipped: "old" }), { status: 200, headers: cors });
+      const name = meta.full_name || (member.email ? member.email.split("@")[0] : "Someone");
+      // Did they try the app first? (any free-trial AI use under this account)
+      let fromTrial = false;
+      try {
+        const t = await sb_fetch(env, "/api_usage?user_id=eq." + member.id + "&trial=eq.true&select=id&limit=1", { prefer: "return=representation" });
+        fromTrial = !!(t && t.length);
+      } catch (_) {}
+      const work = notifyAdmins(env, {
+        title: "\u{1F389} New member",
+        body: name + (member.email ? " (" + member.email + ")" : "") + " has joined",
+        url: APP_URL + "/?admin=people",
+        tag: "new-member",
+        email: templates.new_member_notify(name, member.email, fromTrial)
+      }).catch((e) => console.error("new-member notify:", e.message));
+      if (ctx && ctx.waitUntil) ctx.waitUntil(work); else await work;
+      return new Response(JSON.stringify({ ok: true, notified: true }), { status: 200, headers: cors });
+    }
+
     // ── POST /api/my-cellar — make sure the signed-in person has a cellar ──
     // Called by the site after sign-in when the person isn't in any cellar.
     // 1. Already in a cellar  → nothing to do, return it
@@ -1515,34 +1624,36 @@ var worker_default = {
           // archived_at column not added yet — list without it
           cellars = await sb_fetch(env, "/cellars?select=id,name,owner_id,created_at&order=created_at.asc", { prefer: "return=representation" });
         }
-        const result = [];
-        for (const c of (cellars || [])) {
-          const members = await sb_fetch(env, "/cellar_members?cellar_id=eq." + c.id + "&select=user_id,role", { prefer: "return=representation" }) || [];
-          // Get profiles for members
-          const memberDetails = [];
-          for (const m of members) {
-            const profile = await sb_fetch(env, "/profiles?id=eq." + m.user_id + "&select=display_name,is_admin", { prefer: "return=representation" });
-            const p = profile && profile[0];
-            // Get email from auth
-            let email = "";
-            try {
-              const uRes = await fetch(`${SUPABASE_URL}/auth/v1/admin/users/${m.user_id}`, {
-                headers: { apikey: env.SUPABASE_SERVICE_KEY, Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}` }
-              });
-              if (uRes.ok) { const u = await uRes.json(); email = u.email || ""; }
-            } catch (_) {}
-            memberDetails.push({
+        // A handful of batched look-ups instead of several requests per cellar and member
+        // (which hit Cloudflare's limit of 50 outside requests once there were ~15 cellars)
+        const [members, profiles, authUsers, wineRows] = await Promise.all([
+          sbAll(env, "/cellar_members?select=cellar_id,user_id,role"),
+          sbAll(env, "/profiles?select=id,display_name,is_admin"),
+          listAuthUsers(env),
+          sbAll(env, "/wines?select=cellar_id")
+        ]);
+        const profileById = new Map(profiles.map((p) => [p.id, p]));
+        const authById = new Map(authUsers.map((u) => [u.id, u]));
+        const wineCount = {};
+        for (const w of wineRows) if (w.cellar_id) wineCount[w.cellar_id] = (wineCount[w.cellar_id] || 0) + 1;
+        const membersByCellar = {};
+        for (const m of members) (membersByCellar[m.cellar_id] = membersByCellar[m.cellar_id] || []).push(m);
+        const result = (cellars || []).map((c) => {
+          const memberDetails = (membersByCellar[c.id] || []).map((m) => {
+            const p = profileById.get(m.user_id), u = authById.get(m.user_id);
+            return {
               user_id: m.user_id,
               role: m.role,
               display_name: p?.display_name || "Member",
               is_admin: p?.is_admin || false,
-              email
-            });
-          }
-          // Count wines
-          const wineCount = await sb_fetch(env, "/wines?cellar_id=eq." + c.id + "&select=id", { prefer: "return=representation" }) || [];
-          result.push({ ...c, members: memberDetails, wine_count: wineCount.length });
-        }
+              email: (u && u.email) || "",
+              trial: !!(u && u.is_anonymous)
+            };
+          });
+          // A cellar whose only people are free-trial visitors (made automatically when they first save)
+          const trial = memberDetails.length > 0 && memberDetails.every((m) => m.trial);
+          return { ...c, members: memberDetails, wine_count: wineCount[c.id] || 0, trial };
+        });
         return new Response(JSON.stringify(result), { status: 200, headers: cors });
       } catch (e) {
         return new Response(JSON.stringify({ error: e.message }), { status: 500, headers: cors });
@@ -1652,22 +1763,17 @@ var worker_default = {
       const { user: admin, reason: _authReason } = await verifyAdmin(env, request);
       if (!admin) return new Response(JSON.stringify({ error: "Unauthorized", reason: _authReason }), { status: 401, headers: cors });
       try {
-        const profiles = await sb_fetch(env, "/profiles?select=id,display_name,is_admin&order=display_name.asc", { prefer: "return=representation" }) || [];
-        // Enrich with emails
+        // Two batched look-ups instead of one request per person
+        const [profiles, authUsers] = await Promise.all([
+          sbAll(env, "/profiles?select=id,display_name,is_admin&order=display_name.asc"),
+          listAuthUsers(env)
+        ]);
+        const byId = new Map(authUsers.map((u) => [u.id, u]));
         const result = [];
         for (const p of profiles) {
-          let email = "";
-          try {
-            const uRes = await fetch(`${SUPABASE_URL}/auth/v1/admin/users/${p.id}`, {
-              headers: { apikey: env.SUPABASE_SERVICE_KEY, Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}` }
-            });
-            if (uRes.ok) {
-              const u = await uRes.json();
-              if (u.is_anonymous) continue;   // a visitor on the free trial, not a member
-              email = u.email || "";
-            }
-          } catch (_) {}
-          result.push({ ...p, email });
+          const u = byId.get(p.id);
+          if (u && u.is_anonymous) continue;   // a visitor on the free trial, not a member
+          result.push({ ...p, email: (u && u.email) || "", created_at: u && u.created_at, last_sign_in_at: u && u.last_sign_in_at, status: accountStatus(u) });
         }
         return new Response(JSON.stringify(result), { status: 200, headers: cors });
       } catch (e) {
@@ -1735,14 +1841,15 @@ var worker_default = {
           }
         }
         // Add email addresses
-        await Promise.all(Object.values(byUser).filter((u) => !u.deleted && !u.trial).map(async (u) => {
-          try {
-            const uRes = await fetch(`${SUPABASE_URL}/auth/v1/admin/users/${u.id}`, {
-              headers: { apikey: env.SUPABASE_SERVICE_KEY, Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}` }
-            });
-            if (uRes.ok) { const au = await uRes.json(); u.email = au.email || ""; }
-          } catch (_) {}
-        }));
+        // One batched look-up for everyone's email (not one request per person)
+        try {
+          const authById = new Map((await listAuthUsers(env)).map((au) => [au.id, au]));
+          for (const u of Object.values(byUser)) {
+            if (u.deleted || u.trial) continue;
+            const au = authById.get(u.id);
+            if (au) u.email = au.email || "";
+          }
+        } catch (e) { console.warn("admin usage: could not read emails:", e.message); }
         return new Response(JSON.stringify({ period, from, to, month_start: monthStart, features: USAGE_FEATURES, defaults, trial, users: Object.values(byUser) }), { status: 200, headers: cors });
       } catch (e) {
         console.error("admin usage:", e.message);
@@ -1789,6 +1896,126 @@ var worker_default = {
           prefer: "resolution=merge-duplicates,return=representation"
         });
         return new Response(JSON.stringify({ ok: true }), { status: 200, headers: cors });
+      } catch (e) {
+        return new Response(JSON.stringify({ error: e.message }), { status: 500, headers: cors });
+      }
+    }
+
+    // ── GET /api/admin/people — everyone (members only), with what the People tab needs ──
+    // One call, a few batched look-ups: accounts, profiles, cellars, wines and this month's AI use
+    if (url.pathname.endsWith("/api/admin/people") && request.method === "GET") {
+      const { user: admin, reason: _authReason } = await verifyAdmin(env, request);
+      if (!admin) return new Response(JSON.stringify({ error: "Unauthorized", reason: _authReason }), { status: 401, headers: cors });
+      try {
+        const optional = (p) => p.catch((e) => { console.warn("admin people (optional part):", e.message); return null; });
+        const monthStart = await sb_fetch(env, "/rpc/usage_month_start", { method: "POST", body: { p_months_back: 0 }, prefer: "return=representation" }).catch(() => null);
+        const [authUsers, profiles, members, cellars, wineRows, usageRows, overrides, defaultRows, trialRows] = await Promise.all([
+          listAuthUsers(env),
+          sbAll(env, "/profiles?select=id,display_name,is_admin"),
+          sbAll(env, "/cellar_members?select=cellar_id,user_id,role"),
+          sbAll(env, "/cellars?select=id,name"),
+          sbAll(env, "/wines?select=user_id,created_at"),
+          optional(monthStart ? sb_fetch(env, "/rpc/usage_summary", { method: "POST", body: { p_from: monthStart, p_to: null }, prefer: "return=representation" }) : Promise.resolve(null)),
+          optional(sb_fetch(env, "/usage_limits?select=user_id,feature,monthly_limit", { prefer: "return=representation" })),
+          optional(sb_fetch(env, "/usage_limit_defaults?select=feature,monthly_limit", { prefer: "return=representation" })),
+          optional(sbAll(env, "/api_usage?trial=eq.true&select=user_id"))
+        ]);
+        const profileById = new Map(profiles.map((p) => [p.id, p]));
+        const cellarName = new Map(cellars.map((c) => [c.id, c.name]));
+        const cellarsByUser = {};
+        for (const m of members) (cellarsByUser[m.user_id] = cellarsByUser[m.user_id] || []).push({ id: m.cellar_id, name: cellarName.get(m.cellar_id) || "Cellar", role: m.role });
+        const wines = {};
+        for (const w of wineRows) {
+          if (!w.user_id) continue;
+          const s = wines[w.user_id] || (wines[w.user_id] = { count: 0, last: null });
+          s.count++;
+          if (w.created_at && (!s.last || w.created_at > s.last)) s.last = w.created_at;
+        }
+        const usage = {};
+        let aiCostMonth = 0;
+        for (const r of usageRows || []) {
+          aiCostMonth += Number(r.cost_usd) || 0;
+          if (!r.user_id) continue;
+          (usage[r.user_id] = usage[r.user_id] || {})[r.feature] = { calls: Number(r.calls), cost_usd: Number(r.cost_usd) };
+        }
+        const defaults = {};
+        for (const f of USAGE_FEATURES) defaults[f] = null;
+        for (const r of defaultRows || []) defaults[r.feature] = r.monthly_limit;
+        const overrideMap = {};
+        for (const o of overrides || []) overrideMap[o.user_id + ":" + o.feature] = o.monthly_limit;
+        const now = Date.now(), week = 7 * 864e5;
+        const trialUsed = new Set((trialRows || []).map((r) => r.user_id));
+        const people = [];
+        let trialsActive = 0, trialsTotal = 0, converted = 0, newThisWeek = 0;
+        for (const u of authUsers) {
+          if (u.is_anonymous) {
+            trialsTotal++;
+            if (u.last_sign_in_at && now - Date.parse(u.last_sign_in_at) < week) trialsActive++;
+            continue;
+          }
+          const p = profileById.get(u.id) || {};
+          const isAdmin = !!p.is_admin;
+          if (u.created_at && now - Date.parse(u.created_at) < week) newThisWeek++;
+          const fromTrial = trialUsed.has(u.id);
+          if (fromTrial) converted++;
+          const limits = {};
+          for (const f of USAGE_FEATURES) {
+            const key = u.id + ":" + f;
+            limits[f] = key in overrideMap ? { limit: overrideMap[key], source: "user" }
+              : isAdmin ? { limit: null, source: "admin" } : { limit: defaults[f], source: "default" };
+          }
+          const us = usage[u.id] || {};
+          people.push({
+            id: u.id,
+            display_name: p.display_name || (u.email ? u.email.split("@")[0] : "Member"),
+            email: u.email || "",
+            is_admin: isAdmin,
+            created_at: u.created_at,
+            last_sign_in_at: u.last_sign_in_at,
+            status: accountStatus(u),
+            from_trial: fromTrial,
+            wine_count: wines[u.id] ? wines[u.id].count : 0,
+            last_wine_at: wines[u.id] ? wines[u.id].last : null,
+            cellars: cellarsByUser[u.id] || [],
+            usage_month: us,
+            cost_month: Object.values(us).reduce((s, x) => s + (x.cost_usd || 0), 0),
+            limits
+          });
+        }
+        const summary = {
+          members: people.length,
+          new_this_week: newThisWeek,
+          trials_active: trialsActive,
+          trials_total: trialsTotal,
+          converted: trialRows ? converted : null,
+          ai_cost_month: usageRows ? Math.round(aiCostMonth * 100) / 100 : null
+        };
+        return new Response(JSON.stringify({ summary, defaults, features: USAGE_FEATURES, people }), { status: 200, headers: cors });
+      } catch (e) {
+        console.error("admin people:", e.message);
+        return new Response(JSON.stringify({ error: e.message }), { status: 500, headers: cors });
+      }
+    }
+
+    // ── PATCH /api/admin/users/:id/admin — make someone an admin, or remove it ──
+    // body: { is_admin: true | false }. You can't change your own, and the last admin can't be removed.
+    if (url.pathname.match(/\/api\/admin\/users\/[^/]+\/admin$/) && request.method === "PATCH") {
+      const { user: admin, reason: _authReason } = await verifyAdmin(env, request);
+      if (!admin) return new Response(JSON.stringify({ error: "Unauthorized", reason: _authReason }), { status: 401, headers: cors });
+      try {
+        const userId = decodeURIComponent(url.pathname.split("/").slice(-2)[0]);
+        const { is_admin } = await request.json();
+        if (typeof is_admin !== "boolean") return new Response(JSON.stringify({ error: "is_admin must be true or false" }), { status: 400, headers: cors });
+        if (userId === admin.id) return new Response(JSON.stringify({ error: "You can't change your own admin rights" }), { status: 400, headers: cors });
+        if (!is_admin) {
+          const admins = await sb_fetch(env, "/profiles?is_admin=eq.true&select=id", { prefer: "return=representation" }) || [];
+          if (admins.filter((a) => a.id !== userId).length < 1) return new Response(JSON.stringify({ error: "There must always be at least one admin" }), { status: 400, headers: cors });
+        }
+        const r = await fetch(`${SUPABASE_URL}/auth/v1/admin/users/${encodeURIComponent(userId)}`, { headers: { apikey: env.SUPABASE_SERVICE_KEY, Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}` } });
+        if (r.ok) { const u = await r.json(); if (u.is_anonymous) return new Response(JSON.stringify({ error: "A free-trial visitor can't be an admin" }), { status: 400, headers: cors }); }
+        const updated = await sb_fetch(env, "/profiles?id=eq." + encodeURIComponent(userId), { method: "PATCH", body: { is_admin }, prefer: "return=representation" });
+        if (!updated || !updated.length) return new Response(JSON.stringify({ error: "No profile found for that person" }), { status: 404, headers: cors });
+        return new Response(JSON.stringify({ ok: true, is_admin }), { status: 200, headers: cors });
       } catch (e) {
         return new Response(JSON.stringify({ error: e.message }), { status: 500, headers: cors });
       }
