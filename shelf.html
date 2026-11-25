@@ -915,11 +915,61 @@ async function runScan() {
   showView('viewResults');
 }
 
+// Captcha (Cloudflare Turnstile) for the trial sign-in. Same site key as in
+// index.html; leave it empty while captcha is off in Supabase.
+const TURNSTILE_SITE_KEY = '';
+let turnstileLoading = null;
+function loadTurnstile() {
+  if (window.turnstile) return Promise.resolve();
+  if (!turnstileLoading) {
+    turnstileLoading = new Promise((resolve, reject) => {
+      const s = document.createElement('script');
+      s.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
+      s.async = true;
+      s.onload = () => resolve();
+      s.onerror = () => { turnstileLoading = null; reject(new Error('CAPTCHA_LOAD')); };
+      document.head.appendChild(s);
+    });
+  }
+  return turnstileLoading;
+}
+// A fresh one-use token, or undefined when captcha is off. Usually invisible;
+// if Cloudflare wants a tick, a small box appears at the bottom of the screen.
+async function getCaptchaToken() {
+  if (!TURNSTILE_SITE_KEY) return undefined;
+  await loadTurnstile();
+  let box = $('captchaBox');
+  if (!box) {
+    box = el('div');
+    box.id = 'captchaBox';
+    box.style.cssText = 'position:fixed;left:50%;bottom:calc(16px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:60';
+    document.body.appendChild(box);
+  }
+  return new Promise((resolve, reject) => {
+    let id = null, over = false;
+    const finish = (fn, v) => {
+      if (over) return; over = true;
+      clearTimeout(timer);
+      setTimeout(() => { try { if (id !== null) window.turnstile.remove(id); } catch (_) {} }, 0);
+      fn(v);
+    };
+    const timer = setTimeout(() => finish(reject, new Error('CAPTCHA_FAILED')), 90000);
+    id = window.turnstile.render(box, {
+      sitekey: TURNSTILE_SITE_KEY,
+      appearance: 'interaction-only',
+      callback: (t) => finish(resolve, t),
+      'error-callback': () => finish(reject, new Error('CAPTCHA_FAILED')),
+      'expired-callback': () => finish(reject, new Error('CAPTCHA_FAILED'))
+    });
+  });
+}
+
 // Free trial: sign a visitor in as a Supabase "anonymous" user, so they can scan
 // without an account. Creating an account later (on the journal) keeps everything.
 async function startTrial() {
   try {
-    const { data, error } = await sb.auth.signInAnonymously();
+    const captchaToken = await getCaptchaToken();
+    const { data, error } = await sb.auth.signInAnonymously({ options: { captchaToken } });
     if (error || !data || !data.user) { console.warn('[shelf] free trial not available:', error && error.message); return false; }
     $('visitorNote').hidden = true;
     $('backLabel').textContent = 'Back to my journal';

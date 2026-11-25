@@ -3966,12 +3966,14 @@ async function handleAuthSubmit() {
 
   setAuthLoading(true);
   try {
-    const { error } = await _sb.auth.signInWithPassword({ email, password });
+    const captchaToken = await getCaptchaToken();
+    const { error } = await _sb.auth.signInWithPassword({ email, password, options: { captchaToken } });
     if (error) throw error;
   } catch(e) {
     const msg = e.message || '';
     const low = msg.toLowerCase();
-    if (low.includes('invalid login')) showAuthMsg('err', 'Incorrect email or password. New here, or not set a password yet? Use \u201CForgot password?\u201D below to get a set-password link.');
+    if (_isCaptchaError(e)) showAuthMsg('err', _CAPTCHA_MSG);
+    else if (low.includes('invalid login')) showAuthMsg('err', 'Incorrect email or password. New here, or not set a password yet? Use \u201CForgot password?\u201D below to get a set-password link.');
     else if (low.includes('not confirmed')) showAuthMsg('err', 'This email address hasn\u2019t been confirmed yet. Use \u201CForgot password?\u201D below to get a new link.');
     else if (low.includes('rate limit') || low.includes('too many')) showAuthMsg('err', 'Too many attempts \u2014 please wait a minute and try again.');
     else if (low.includes('failed to fetch') || low.includes('network') || low.includes('load failed')) showAuthMsg('err', 'Can\u2019t reach the server \u2014 check your internet connection and try again.');
@@ -3980,6 +3982,63 @@ async function handleAuthSubmit() {
     setAuthLoading(false);
   }
 }
+
+/* ── Captcha (Cloudflare Turnstile) ───────────────────────────
+   When captcha is switched on in Supabase (Authentication → Attack
+   Protection), every sign-in, sign-up, trial sign-in and password-reset
+   email must carry a captcha token. Put the Turnstile SITE key here
+   (it's public). Leave it empty while captcha is off in Supabase.
+   Order matters: fill this in and publish FIRST, then switch captcha on
+   in Supabase, or nobody will be able to sign in.
+   Keep in step with shelf.html.                                       */
+const TURNSTILE_SITE_KEY = '';
+let _turnstileLoading = null;
+function _loadTurnstile() {
+  if (window.turnstile) return Promise.resolve();
+  if (!_turnstileLoading) {
+    _turnstileLoading = new Promise((resolve, reject) => {
+      const s = document.createElement('script');
+      s.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
+      s.async = true;
+      s.onload = () => resolve();
+      s.onerror = () => { _turnstileLoading = null; reject(new Error('CAPTCHA_LOAD')); };
+      document.head.appendChild(s);
+    });
+  }
+  return _turnstileLoading;
+}
+// A fresh one-use token, or undefined when captcha is off. Usually invisible;
+// if Cloudflare wants a tick, a small box appears at the bottom of the screen.
+async function getCaptchaToken() {
+  if (!TURNSTILE_SITE_KEY) return undefined;
+  await _loadTurnstile();
+  let box = document.getElementById('captchaBox');
+  if (!box) {
+    box = document.createElement('div');
+    box.id = 'captchaBox';
+    box.style.cssText = 'position:fixed;left:50%;bottom:calc(16px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:3000';
+    document.body.appendChild(box);
+  }
+  return new Promise((resolve, reject) => {
+    let id = null, over = false;
+    const finish = (fn, v) => {
+      if (over) return; over = true;
+      clearTimeout(timer);
+      setTimeout(() => { try { if (id !== null) window.turnstile.remove(id); } catch (_) {} }, 0);
+      fn(v);
+    };
+    const timer = setTimeout(() => finish(reject, new Error('CAPTCHA_FAILED')), 90000);
+    id = window.turnstile.render(box, {
+      sitekey: TURNSTILE_SITE_KEY,
+      appearance: 'interaction-only',
+      callback: (t) => finish(resolve, t),
+      'error-callback': () => finish(reject, new Error('CAPTCHA_FAILED')),
+      'expired-callback': () => finish(reject, new Error('CAPTCHA_FAILED'))
+    });
+  });
+}
+const _CAPTCHA_MSG = 'Couldn’t check you’re not a robot. Refresh the page and try again.';
+function _isCaptchaError(e) { return /CAPTCHA_|captcha/i.test((e && e.message) || ''); }
 
 /* ── Create a free account (open sign-up) ─────────────────────
    where = 'auth'    the form on the sign-in screen (visitors)
@@ -4040,7 +4099,8 @@ async function handleSignUp(where) {
       done(inboxText(true));
       return;
     }
-    const { data, error } = await _sb.auth.signUp({ email, password, options: { data: { full_name: name }, emailRedirectTo: redirect } });
+    const captchaToken = await getCaptchaToken();
+    const { data, error } = await _sb.auth.signUp({ email, password, options: { data: { full_name: name }, emailRedirectTo: redirect, captchaToken } });
     if (error) throw error;
     if (data && data.session) {   // email confirmation is switched off: they're signed in already
       closeSignupOverlay();
@@ -4055,7 +4115,9 @@ async function handleSignUp(where) {
     done(inboxText(false));
   } catch (e) {
     const m = (e && e.message) || '';
-    if (/signups? not allowed|sign ?ups? (are )?disabled|signup is disabled/i.test(m)) {
+    if (_isCaptchaError(e)) {
+      fail(_CAPTCHA_MSG);
+    } else if (/signups? not allowed|sign ?ups? (are )?disabled|signup is disabled/i.test(m)) {
       // Sign-up isn't switched on in Supabase yet: pass their details to the admins instead
       if (await _requestAccessFallback(name, email)) {
         done('Thanks! New accounts aren’t fully open yet, so we’ve passed your details on and will email you when your account is ready.');
@@ -4105,7 +4167,8 @@ function startTrial() {
   if (!_trialStarting) {
     _trialStarting = (async () => {
       try {
-        const { data, error } = await _sb.auth.signInAnonymously();
+        const captchaToken = await getCaptchaToken();
+        const { data, error } = await _sb.auth.signInAnonymously({ options: { captchaToken } });
         if (error || !data || !data.user) { console.warn('[trial] not available:', error && error.message); return false; }
         _currentUser = data.user;
         console.log('[trial] started');
@@ -4196,7 +4259,8 @@ async function handleSendLink() {
     // Fallback: Supabase's own reset email
     if (!sent) {
       const redirectTo = window.location.origin + window.location.pathname + '?type=recovery';
-      const { error } = await _sb.auth.resetPasswordForEmail(email, { redirectTo });
+      const captchaToken = await getCaptchaToken();
+      const { error } = await _sb.auth.resetPasswordForEmail(email, { redirectTo, captchaToken });
       // Don't expose whether the account exists — always show success
       if (error && !error.message?.toLowerCase().includes('not found')) {
         throw error;
