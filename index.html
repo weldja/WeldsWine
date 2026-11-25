@@ -3991,7 +3991,7 @@ async function handleAuthSubmit() {
    Order matters: fill this in and publish FIRST, then switch captcha on
    in Supabase, or nobody will be able to sign in.
    Keep in step with shelf.html.                                       */
-const TURNSTILE_SITE_KEY = '';
+const TURNSTILE_SITE_KEY = '0x4AAAAAAGSTQExBwmzC05CX';
 let _turnstileLoading = null;
 function _loadTurnstile() {
   if (window.turnstile) return Promise.resolve();
@@ -4009,7 +4009,14 @@ function _loadTurnstile() {
 }
 // A fresh one-use token, or undefined when captcha is off. Usually invisible;
 // if Cloudflare wants a tick, a small box appears at the bottom of the screen.
+// If Turnstile can't give a token (blocked, not loading, wrong hostname), carry
+// on without one: while captcha is off in Supabase nothing is lost, and when it
+// is on, Supabase refuses the request and the person is told to try again.
 async function getCaptchaToken() {
+  try { return await _getCaptchaToken(); }
+  catch (e) { console.warn('[captcha] no token:', e && e.message); return undefined; }
+}
+async function _getCaptchaToken() {
   if (!TURNSTILE_SITE_KEY) return undefined;
   await _loadTurnstile();
   let box = document.getElementById('captchaBox');
@@ -4027,7 +4034,7 @@ async function getCaptchaToken() {
       setTimeout(() => { try { if (id !== null) window.turnstile.remove(id); } catch (_) {} }, 0);
       fn(v);
     };
-    const timer = setTimeout(() => finish(reject, new Error('CAPTCHA_FAILED')), 90000);
+    const timer = setTimeout(() => finish(reject, new Error('CAPTCHA_FAILED')), 30000);
     id = window.turnstile.render(box, {
       sitekey: TURNSTILE_SITE_KEY,
       appearance: 'interaction-only',

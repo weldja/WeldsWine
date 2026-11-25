@@ -917,7 +917,7 @@ async function runScan() {
 
 // Captcha (Cloudflare Turnstile) for the trial sign-in. Same site key as in
 // index.html; leave it empty while captcha is off in Supabase.
-const TURNSTILE_SITE_KEY = '';
+const TURNSTILE_SITE_KEY = '0x4AAAAAAGSTQExBwmzC05CX';
 let turnstileLoading = null;
 function loadTurnstile() {
   if (window.turnstile) return Promise.resolve();
@@ -935,7 +935,12 @@ function loadTurnstile() {
 }
 // A fresh one-use token, or undefined when captcha is off. Usually invisible;
 // if Cloudflare wants a tick, a small box appears at the bottom of the screen.
+// If Turnstile can't give a token, carry on without one (Supabase decides).
 async function getCaptchaToken() {
+  try { return await getCaptchaTokenNow(); }
+  catch (e) { console.warn('[shelf] captcha: no token:', e && e.message); return undefined; }
+}
+async function getCaptchaTokenNow() {
   if (!TURNSTILE_SITE_KEY) return undefined;
   await loadTurnstile();
   let box = $('captchaBox');
@@ -953,7 +958,7 @@ async function getCaptchaToken() {
       setTimeout(() => { try { if (id !== null) window.turnstile.remove(id); } catch (_) {} }, 0);
       fn(v);
     };
-    const timer = setTimeout(() => finish(reject, new Error('CAPTCHA_FAILED')), 90000);
+    const timer = setTimeout(() => finish(reject, new Error('CAPTCHA_FAILED')), 30000);
     id = window.turnstile.render(box, {
       sitekey: TURNSTILE_SITE_KEY,
       appearance: 'interaction-only',
