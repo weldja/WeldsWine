@@ -4073,22 +4073,25 @@ async function _getCaptchaToken(background) {
     card.style.boxShadow = on ? '0 18px 50px rgba(0,0,0,.3)' : 'none';
     document.getElementById('captchaMsg').style.display = on ? 'block' : 'none';
   };
-  const box = document.getElementById('captchaBox');
+  // Each check gets its own slot, so an earlier check that hasn't been
+  // cleared away yet can never block a new one
+  const slot = document.createElement('div');
+  document.getElementById('captchaBox').appendChild(slot);
   const started = Date.now();
   return new Promise((resolve, reject) => {
     let id = null, over = false, timer = null;
     const finish = (fn, v) => {
       if (over) return; over = true;
       clearTimeout(timer);
-      showAsk(false);
-      setTimeout(() => { try { if (id !== null) window.turnstile.remove(id); } catch (_) {} }, 0);
+      if (!background) showAsk(false);   // a background check never shows (or hides) the tick-box
+      setTimeout(() => { try { if (id !== null && id !== undefined) window.turnstile.remove(id); } catch (_) {} slot.remove(); }, 0);
       fn(v);
     };
     // 30 seconds for the invisible check; longer once a person is asked to tick
     const wait = (ms) => { clearTimeout(timer); timer = setTimeout(() => finish(reject, new Error('CAPTCHA_TIMEOUT')), ms); };
     wait(30000);
     let retries = 0;
-    id = window.turnstile.render(box, {
+    id = window.turnstile.render(slot, {
       sitekey: TURNSTILE_SITE_KEY,
       appearance: 'interaction-only',
       callback: (t) => { console.log('[captcha] ok in ' + (Date.now() - started) + 'ms'); finish(resolve, t); },
@@ -4107,6 +4110,8 @@ async function _getCaptchaToken(background) {
       },
       'expired-callback': () => finish(reject, new Error('CAPTCHA_EXPIRED'))
     });
+    // Cloudflare refused to start the check: say so now rather than waiting 30 seconds
+    if (id === undefined || id === null) finish(reject, new Error('CAPTCHA_NOT_STARTED'));
   });
 }
 const _CAPTCHA_MSG = 'Couldn’t check you’re not a robot. Refresh the page and try again.';
