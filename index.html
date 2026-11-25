@@ -47,7 +47,7 @@
   {"@context":"https://schema.org","@type":"WebApplication","name":"Welds Wine Wisdoms","url":"https://weldswine.co.uk/","description":"A personal wine journal and label scanner. Photograph any wine bottle, get AI-powered label recognition, rate wines 1–10, record tasting notes, and share recommendations.","applicationCategory":"LifestyleApplication","operatingSystem":"Any","offers":{"@type":"Offer","price":"0","priceCurrency":"GBP"},"featureList":["AI wine label scanner","1–10 wine rating system","Tasting notes journal","Wine collection tracker","Interactive map of wine origins","Share wine recommendations"],"inLanguage":"en-GB"}
   </script>
   <script type="application/ld+json">
-  {"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Is Welds Wine Wisdoms free?","acceptedAnswer":{"@type":"Answer","text":"Yes, it is free to use. Anyone can look at the bottle and shelf scanners, but scanning and saving wines to your own journal need an account, which is currently by request."}},{"@type":"Question","name":"How does the wine label scanner work?","acceptedAnswer":{"@type":"Answer","text":"Point your phone or laptop camera at the front and back of any wine bottle. AI reads the label and automatically extracts the wine name, region, grape variety, vintage and tasting notes — no typing required."}},{"@type":"Question","name":"What devices does it work on?","acceptedAnswer":{"@type":"Answer","text":"It works on any device with a camera — iPhone, Android, iPad, laptop or desktop. Install it as an app from your browser for the best experience, or use it directly in any modern web browser."}},{"@type":"Question","name":"Can I share wines with friends?","acceptedAnswer":{"@type":"Answer","text":"Yes. You can share individual wine recommendations and join a shared cellar with friends to see each other's finds, ratings, comments and tasting events."}}]}
+  {"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Is Welds Wine Wisdoms free?","acceptedAnswer":{"@type":"Answer","text":"Yes, it is free. You can try the bottle and shelf scanners straight away without signing up. Create a free account whenever you want to keep your journal: anything you saved while trying it comes with you."}},{"@type":"Question","name":"How does the wine label scanner work?","acceptedAnswer":{"@type":"Answer","text":"Point your phone or laptop camera at the front and back of any wine bottle. AI reads the label and automatically extracts the wine name, region, grape variety, vintage and tasting notes — no typing required."}},{"@type":"Question","name":"What devices does it work on?","acceptedAnswer":{"@type":"Answer","text":"It works on any device with a camera — iPhone, Android, iPad, laptop or desktop. Install it as an app from your browser for the best experience, or use it directly in any modern web browser."}},{"@type":"Question","name":"Can I share wines with friends?","acceptedAnswer":{"@type":"Answer","text":"Yes. You can share individual wine recommendations and join a shared cellar with friends to see each other's finds, ratings, comments and tasting events."}}]}
   </script>
   <!-- Preconnect to all external origins to cut DNS/TLS time -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -85,6 +85,25 @@
 .landing-notice-divider{width:60px;height:1px;background:rgba(201,163,74,.3);margin:12px auto}
 .landing-notice-warning{font-family:var(--font-d);font-size:1.3rem;font-weight:600;color:rgba(239,159,39,.9);line-height:1.35;margin-bottom:8px}
 .landing-notice-kicker{font-family:var(--font-b);font-size:.8rem;font-style:italic;color:rgba(245,237,226,.35);margin-bottom:28px}
+/* Clear headline first; the "Notice to all users" joke sits below as a small aside */
+.landing-headline em{display:block;font-size:.6em;line-height:1.3;margin-top:10px}
+.landing-notice{margin:26px auto 0;max-width:320px;padding:14px 18px 4px;border:1px dashed rgba(201,163,74,.3);border-radius:14px;text-align:center}
+.landing-notice .landing-notice-label{font-size:.62rem;margin-bottom:6px}
+.landing-notice-line{font-family:var(--font-d);font-size:1.05rem;font-weight:600;color:var(--ivory);line-height:1.3;margin-bottom:4px}
+.landing-notice-line em{color:var(--gold);font-style:normal}
+.landing-notice .landing-notice-warning{font-size:.95rem;margin-bottom:4px}
+.landing-notice .landing-notice-kicker{margin-bottom:10px}
+/* Trial banner and sign-up bits */
+.auth-signup-note{font-family:var(--font-b);font-size:.76rem;color:var(--warm-gray);line-height:1.5;margin-top:8px;text-align:center}
+.trial-banner{display:none;align-items:center;gap:10px;flex-wrap:wrap;margin:10px auto 0;max-width:1200px;padding:10px 14px;border-radius:12px;background:#FBF3E0;border:1px solid rgba(201,163,74,.45);font-family:var(--font-b);font-size:.84rem;color:var(--charcoal);line-height:1.45}
+.trial-banner.show{display:flex}
+.trial-banner-text{flex:1 1 220px;min-width:0}
+.trial-banner-btn{flex:0 0 auto;min-height:40px;padding:0 16px;border:none;border-radius:20px;background:var(--burgundy);color:#fff;font-family:var(--font-b);font-size:.85rem;font-weight:600;cursor:pointer}
+.signup-overlay{position:fixed;inset:0;z-index:1200;display:none;align-items:center;justify-content:center;padding:16px;background:rgba(28,18,16,.55)}
+.signup-overlay.open{display:flex}
+.signup-box{width:100%;max-width:400px;max-height:calc(100vh - 32px);overflow:auto;background:var(--ivory);border-radius:18px;padding:22px 20px;box-shadow:0 18px 50px rgba(0,0,0,.3)}
+.signup-title{font-family:var(--font-d);font-size:1.25rem;font-weight:600;color:var(--charcoal);margin-bottom:6px}
+.signup-sub{font-family:var(--font-b);font-size:.85rem;color:var(--warm-gray);line-height:1.5;margin-bottom:16px}
 
 /* ── Guest scan CTA box ──────────────────────────────────── */
 .landing-scan-box{background:#3D0F1E;border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:20px;max-width:360px;margin:0 auto 20px;text-align:left}
@@ -1320,7 +1339,7 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
 
 /* ── Request Access section (replaces Create Account tab) ── */
 .auth-request-section{margin-top:4px}
-.auth-request-divider{display:flex;align-items:center;gap:10px;margin:14px 0;color:var(--light-gray);font-family:var(--font-b);font-size:.75rem}
+.auth-request-divider{display:flex;align-items:center;gap:10px;margin:14px 0;color:var(--warm-gray);font-family:var(--font-b);font-size:.78rem;font-weight:600}
 .auth-request-divider::before,.auth-request-divider::after{content:'';flex:1;height:1px;background:var(--light-gray)}
 .auth-request-success{text-align:center;padding:24px 0}
 .auth-request-success-icon{width:48px;height:48px;border-radius:50%;background:#f0fdf4;display:inline-flex;align-items:center;justify-content:center;font-size:1.3rem;margin-bottom:12px}
@@ -2394,22 +2413,17 @@ body{
 
     <!-- Hero -->
     <div class="landing-hero">
-      <div class="landing-eyebrow">Free AI-powered wine journal</div>
-      <h1 class="sr-only">Welds Wine Wisdoms — Scan Wine Labels with AI &amp; Build Your Personal Wine Journal</h1>
-      <div class="landing-notice-label">Notice to all users</div>
-      <p class="landing-headline" aria-hidden="true">Pinot Noir &amp; Syrah<br><em>fully supported.</em></p>
-      <div class="landing-notice-divider"></div>
-      <p class="landing-notice-warning">Sauvignon Blanc<br>restrictions apply.</p>
-      <p class="landing-notice-kicker">We're watching the SSB too.</p>
-      <p class="landing-sub">Scan any bottle and AI instantly reads the label — name, region, grape, vintage. No typing required.</p>
+      <div class="landing-eyebrow">Free wine journal · Try it without signing up</div>
+      <h1 class="landing-headline">Your personal wine journal.<em>Snap the label and it fills itself in.</em></h1>
+      <p class="landing-sub">Remember every bottle you’ve loved, and the ones you didn’t. Take a photo and AI reads the name, region, grape and vintage. Add your score and a note, and your journal builds itself.</p>
 
-      <!-- The two big choices. Anyone can open either one and see how it works;
-           actually scanning (which spends AI credit) is for members only. -->
+      <!-- The two big choices. Visitors get a few free scans (a free trial) without
+           an account; creating a free account keeps everything they saved. -->
       <div class="landing-fork" role="group" aria-label="What would you like to scan?">
         <button class="fork-btn fork-bottle" id="guestScanBtn" onclick="openGuestScan()">
           <span class="fork-ic" aria-hidden="true">📷</span>
           <span class="fork-t">Scan a bottle</span>
-          <span class="fork-s">Add a wine to your cellar</span>
+          <span class="fork-s">Start your journal</span>
         </button>
         <a class="fork-btn fork-shelf" href="/shelf.html">
           <span class="fork-ic" aria-hidden="true">🛒</span>
@@ -2417,8 +2431,16 @@ body{
           <span class="fork-s">Find the best-value wine</span>
         </a>
       </div>
-      <p class="landing-fork-note">Free for members. Have a look at either one, then <a href="#" onclick="event.preventDefault();goRequestAccess()">request an account</a> to start scanning.</p>
+      <p class="landing-fork-note">Try either one now, free, with no sign-up. <a href="#" onclick="event.preventDefault();goSignUp()">Create a free account</a> when you want to keep your journal.</p>
       <a class="landing-shelf-link" href="/wine-shelf-scanner.html">How does the Shelf Scanner work? →</a>
+
+      <!-- The house joke, kept as a small aside -->
+      <aside class="landing-notice" aria-label="Notice to all users">
+        <div class="landing-notice-label">Notice to all users</div>
+        <p class="landing-notice-line">Pinot Noir &amp; Syrah <em>fully supported.</em></p>
+        <p class="landing-notice-warning">Sauvignon Blanc restrictions apply.</p>
+        <p class="landing-notice-kicker">We’re watching the SSB too.</p>
+      </aside>
     </div>
 
     <!-- Proof strip -->
@@ -2477,7 +2499,7 @@ body{
             </div>
           </div>
           <div class="landing-demo-actions" id="ldActions">
-            <button class="landing-demo-save" onclick="document.querySelector('.auth-panel').scrollIntoView({behavior:'smooth'})">Save to my journal</button>
+            <button class="landing-demo-save" onclick="openGuestScan()">Try it on your bottle</button>
             <button class="landing-demo-edit">Edit</button>
           </div>
         </div>
@@ -2527,7 +2549,7 @@ body{
         <div class="landing-faq">
           <div class="landing-step-body" style="margin-bottom:16px">
             <h3 class="landing-step-title">Is Welds Wine Wisdoms free?</h3>
-            <div class="landing-step-text">Yes, it is free to use. Anyone can look at the bottle and shelf scanners, but scanning and saving wines to your own journal need an account, which is currently by request.</div>
+            <div class="landing-step-text">Yes, it is free. You can try the bottle and shelf scanners straight away without signing up. Create a free account whenever you want to keep your journal: anything you saved while trying it comes with you.</div>
           </div>
           <div class="landing-step-body" style="margin-bottom:16px">
             <h3 class="landing-step-title">How does the wine label scanner work?</h3>
@@ -2547,9 +2569,9 @@ body{
       <!-- Mobile bottom CTA -->
       <div class="landing-bottom-cta">
         <h2 class="landing-bottom-title">Start with your next bottle</h2>
-        <p class="landing-bottom-sub">Scan a bottle, or a whole shelf.<br>Request access to start scanning.</p>
-        <button class="landing-bottom-btn" onclick="document.querySelector('.auth-panel').scrollIntoView({behavior:'smooth'})">Request access ↓</button>
-        <div class="landing-bottom-note">Invite only · Access by request</div>
+        <p class="landing-bottom-sub">Scan a bottle, or a whole shelf.<br>Try it now, no sign-up needed.</p>
+        <button class="landing-bottom-btn" onclick="openGuestScan()">Try it free</button>
+        <div class="landing-bottom-note">Free · <a href="#" onclick="event.preventDefault();goSignUp()" style="color:inherit">Create a free account</a> to keep your journal</div>
       </div>
 
       <!-- Crawlable link to the public cellar (SEO: gives /wines a real link path) -->
@@ -2600,9 +2622,9 @@ body{
           </button>
         </div>
 
-        <!-- Request Access (replaces Create Account) -->
+        <!-- Create a free account (anyone can sign up; no admin approval) -->
         <div class="auth-request-section" id="authRequestSection">
-          <div class="auth-request-divider"><span>New here?</span></div>
+          <div class="auth-request-divider"><span>New here? Create a free account</span></div>
           <div id="authRequestForm">
             <div class="auth-form-group">
               <label for="reqName">Your name</label>
@@ -2613,19 +2635,20 @@ body{
               <input type="email" id="reqEmail" placeholder="you@example.com" autocomplete="email"/>
             </div>
             <div class="auth-form-group">
-              <label for="reqMessage">Quick message <span style="font-weight:400;color:var(--warm-gray)">(optional)</span></label>
-              <textarea id="reqMessage" placeholder="e.g. Rob's mate, keen to track some wines" rows="2" style="width:100%;border:1px solid var(--light-gray);border-radius:var(--r);padding:10px 12px;font-family:var(--font-b);font-size:.9rem;color:var(--charcoal);background:var(--cream);resize:none;outline:none"></textarea>
+              <label for="reqPassword">Choose a password</label>
+              <input type="password" id="reqPassword" placeholder="At least 8 characters" autocomplete="new-password" minlength="8"/>
             </div>
-            <button class="auth-btn-primary" style="background:transparent;color:var(--burgundy);border:1.5px solid var(--burgundy)" id="reqSubmitBtn" onclick="handleRequestAccess()">
-              <span id="reqSubmitLabel">Request access</span>
-              <span id="reqSubmitSpinner" style="display:none">Sending…</span>
+            <button class="auth-btn-primary" style="background:transparent;color:var(--burgundy);border:1.5px solid var(--burgundy)" id="reqSubmitBtn" onclick="handleSignUp('auth')">
+              <span id="reqSubmitLabel">Create free account</span>
+              <span id="reqSubmitSpinner" style="display:none">Creating…</span>
             </button>
             <div class="auth-msg" id="reqMsg"></div>
+            <p class="auth-signup-note">Free. We’ll email you a link to confirm your address.</p>
           </div>
           <div id="authRequestSuccess" style="display:none" class="auth-request-success">
             <div class="auth-request-success-icon">✓</div>
-            <div class="auth-request-success-title">Request sent</div>
-            <div class="auth-request-success-msg">We'll let you know when your account is ready. Keep an eye on your inbox.</div>
+            <div class="auth-request-success-title">Check your inbox</div>
+            <div class="auth-request-success-msg">We’ve sent you a link. Click it to finish creating your account.</div>
           </div>
         </div>
       </div>
@@ -2764,6 +2787,48 @@ body{
       </label>
       <button class="tb-tool tb-export" id="exportBtn" title="Export your wines as a CSV file"><svg class="wi" aria-hidden="true" focusable="false"><use href="#wi-download"/></svg><span>Export</span></button>
     </div>
+  </div>
+</div>
+
+<!-- FREE TRIAL BANNER (visitors trying the app without an account) -->
+<div style="padding:0 16px">
+  <div class="trial-banner" id="trialBanner" role="status">
+    <div class="trial-banner-text"><strong>You’re trying Welds Wine Wisdoms.</strong> <span id="trialBannerMsg">Create a free account to keep your journal and carry on scanning.</span></div>
+    <button class="trial-banner-btn" type="button" onclick="openSignupOverlay()">Create free account</button>
+  </div>
+</div>
+
+<!-- CREATE ACCOUNT (for trial visitors, from inside the app) -->
+<div class="signup-overlay" id="signupOverlay" role="dialog" aria-modal="true" aria-labelledby="signupTitle" onclick="if(event.target===this)closeSignupOverlay()">
+  <div class="signup-box">
+    <div id="signupFormBox">
+      <div class="signup-title" id="signupTitle">Create your free account</div>
+      <p class="signup-sub" id="signupSub">Keep everything you’ve saved while trying it, and carry on scanning.</p>
+      <div class="auth-form-group">
+        <label for="suName">Your name</label>
+        <input type="text" id="suName" placeholder="e.g. Dave" autocomplete="name"/>
+      </div>
+      <div class="auth-form-group">
+        <label for="suEmail">Email</label>
+        <input type="email" id="suEmail" placeholder="you@example.com" autocomplete="email"/>
+      </div>
+      <div class="auth-form-group">
+        <label for="suPassword">Choose a password</label>
+        <input type="password" id="suPassword" placeholder="At least 8 characters" autocomplete="new-password" minlength="8"/>
+      </div>
+      <button class="auth-btn-primary" id="suSubmitBtn" onclick="handleSignUp('overlay')">
+        <span id="suSubmitLabel">Create free account</span>
+        <span id="suSubmitSpinner" style="display:none">Creating…</span>
+      </button>
+      <div class="auth-msg" id="suMsg"></div>
+      <p class="auth-signup-note">Free. We’ll email you a link to confirm your address.</p>
+    </div>
+    <div id="signupDoneBox" style="display:none" class="auth-request-success">
+      <div class="auth-request-success-icon">✓</div>
+      <div class="auth-request-success-title">Check your inbox</div>
+      <div class="auth-request-success-msg" id="signupDoneMsg">We’ve sent you a link. Click it to finish creating your account. Your wines are kept.</div>
+    </div>
+    <button type="button" onclick="closeSignupOverlay()" style="display:block;margin:14px auto 0;background:none;border:none;color:var(--warm-gray);font-family:var(--font-b);font-size:.85rem;text-decoration:underline;cursor:pointer;min-height:40px">Not now</button>
   </div>
 </div>
 
@@ -3550,7 +3615,7 @@ document.addEventListener('DOMContentLoaded', function() {
       const note = document.createElement('div');
       note.id = 'authInviteNote';
       note.style.cssText = 'font-family:var(--font-b);font-size:.85rem;line-height:1.6;color:var(--charcoal);background:var(--cream);border:1px solid var(--light-gray);border-radius:var(--r);padding:10px 12px;margin-bottom:16px;text-align:center';
-      note.textContent = '\uD83C\uDF77 You\u2019ve been invited to a shared cellar. Sign in to join it \u2014 or, if you don\u2019t have an account yet, request access below.';
+      note.textContent = '\uD83C\uDF77 You\u2019ve been invited to a shared cellar. Sign in to join it \u2014 or, if you don\u2019t have an account yet, create a free one below.';
       const main = document.getElementById('authStateMain');
       if (main) main.insertBefore(note, main.firstChild);
     }
@@ -3620,6 +3685,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     _currentUser = session ? session.user : null;
+    updateTrialBanner();   // a trial that has just become a real account loses the banner straight away
 
     // A new member who is signed in but hasn't chosen a password yet (for
     // example they closed the page half-way through) is asked to choose one
@@ -3660,9 +3726,13 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   });
 
-  ['reqName','reqEmail'].forEach(function(id) {
+  ['reqName','reqEmail','reqPassword'].forEach(function(id) {
     var el = document.getElementById(id);
-    if (el) el.addEventListener('keydown', function(e) { if (e.key === 'Enter') handleRequestAccess(); });
+    if (el) el.addEventListener('keydown', function(e) { if (e.key === 'Enter') handleSignUp('auth'); });
+  });
+  ['suName','suEmail','suPassword'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.addEventListener('keydown', function(e) { if (e.key === 'Enter') handleSignUp('overlay'); });
   });
 
   var resetEmailEl = document.getElementById('resetEmail');
@@ -3754,6 +3824,14 @@ async function showApp() {
   // Check admin status (non-blocking)
   _checkAdminStatus().catch(() => {});
 
+  // Free trial visitors: show the "create a free account" banner
+  updateTrialBanner();
+  if (_wantSignup) {
+    _wantSignup = false;
+    try { window.history.replaceState(history.state, '', window.location.pathname); } catch(_) {}
+    if (_isTrialUser()) setTimeout(openSignupOverlay, 600);
+  }
+
   // Include cellarId in cache key so stale solo cache never renders for cellar members
   const cacheKey = 'wwwCache_' + userId + '_' + (window._cellarId || 'solo');
   try { await loadWinesFromDB(cacheKey); }
@@ -3807,6 +3885,15 @@ function hideApp() {
   }
   const badge = document.getElementById('userBadge');
   if (badge) badge.style.display = 'none';
+  const trialBanner = document.getElementById('trialBanner');
+  if (trialBanner) trialBanner.classList.remove('show');
+  closeSignupOverlay();
+  // Arrived with ?signup=1 and not signed in: go straight to the sign-up form
+  if (_wantSignup && !_isPublicView) {
+    _wantSignup = false;
+    try { window.history.replaceState(null, '', window.location.pathname); } catch(_) {}
+    setTimeout(goSignUp, 400);
+  }
   const pill = document.getElementById('cellarPill');
   if (pill) pill.style.display = 'none';
   const hint = document.getElementById('onboardingHint');
@@ -3894,66 +3981,182 @@ async function handleAuthSubmit() {
   }
 }
 
-/* ── Request Access (public, no auth) ────────────────────── */
-async function handleRequestAccess() {
-  const name    = document.getElementById('reqName').value.trim();
-  const email   = document.getElementById('reqEmail').value.trim();
-  const message = document.getElementById('reqMessage').value.trim();
-  const btn     = document.getElementById('reqSubmitBtn');
-  const label   = document.getElementById('reqSubmitLabel');
-  const spinner = document.getElementById('reqSubmitSpinner');
-  const msg     = document.getElementById('reqMsg');
+/* ── Create a free account (open sign-up) ─────────────────────
+   where = 'auth'    the form on the sign-in screen (visitors)
+           'overlay' the pop-up inside the app (visitors on a free trial)
+   A trial visitor's account is upgraded in place, so everything they
+   saved while trying the app is kept. Supabase emails a link to confirm
+   the address. If sign-ups are still switched off in Supabase, the
+   details are passed to the admins as an access request instead.      */
+async function handleSignUp(where) {
+  const ids = where === 'overlay'
+    ? { name: 'suName', email: 'suEmail', pw: 'suPassword', btn: 'suSubmitBtn', label: 'suSubmitLabel', spin: 'suSubmitSpinner', msg: 'suMsg' }
+    : { name: 'reqName', email: 'reqEmail', pw: 'reqPassword', btn: 'reqSubmitBtn', label: 'reqSubmitLabel', spin: 'reqSubmitSpinner', msg: 'reqMsg' };
+  const byId = (id) => document.getElementById(id);
+  const name = byId(ids.name).value.trim();
+  const email = byId(ids.email).value.trim();
+  const password = byId(ids.pw).value;
+  const msg = byId(ids.msg);
+  const fail = (t) => { msg.className = 'auth-msg err'; msg.style.display = ''; msg.textContent = t; };
+  if (!name) { fail('Please enter your name'); return; }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { fail('Please enter a valid email'); return; }
+  if (password.length < 8) { fail('Please choose a password of at least 8 characters'); return; }
+  if (!_ensureSb()) { fail('Still loading — please wait a moment and try again'); return; }
 
-  if (!name)  { msg.className = 'auth-msg err'; msg.textContent = 'Please enter your name'; return; }
-  if (!email) { msg.className = 'auth-msg err'; msg.textContent = 'Please enter your email'; return; }
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { msg.className = 'auth-msg err'; msg.textContent = 'Please enter a valid email'; return; }
+  const btn = byId(ids.btn), label = byId(ids.label), spin = byId(ids.spin);
+  btn.disabled = true; label.style.display = 'none'; spin.style.display = 'inline';
+  msg.className = 'auth-msg'; msg.textContent = '';
 
-  btn.disabled = true;
-  label.style.display = 'none';
-  spinner.style.display = 'inline';
-  // Clear any earlier message (don't hide the box itself, or later errors never show)
-  msg.className = 'auth-msg'; msg.textContent = ''; msg.style.display = '';
+  // Swap the form for "Check your inbox"
+  const done = (text) => {
+    if (where === 'overlay') {
+      byId('signupFormBox').style.display = 'none';
+      byId('signupDoneBox').style.display = 'block';
+      byId('signupDoneMsg').textContent = text;
+    } else {
+      byId('authRequestForm').style.display = 'none';
+      byId('authRequestSuccess').style.display = 'block';
+      const m = document.querySelector('#authRequestSuccess .auth-request-success-msg');
+      if (m) m.textContent = text;
+    }
+  };
+  const inboxText = (keeps) => 'We’ve sent a link to ' + email + '. Click it to finish creating your account.' +
+    (keeps ? ' Everything you’ve saved is kept.' : '') + ' Can’t see it? Check your junk folder.';
 
   try {
+    const redirect = window.location.origin + '/';
+    const { data: s } = await _sb.auth.getSession();
+    const user = s && s.session && s.session.user;
+    if (user && user.is_anonymous) {
+      // A free-trial visitor: turn the trial into a real account.
+      // Some set-ups only accept the email first; then the password is chosen
+      // after the email link (the "choose a password" screen, via needs_password).
+      let r = await _sb.auth.updateUser({ email, password, data: { full_name: name } }, { emailRedirectTo: redirect });
+      if (r.error && /password/i.test(r.error.message || '')) {
+        r = await _sb.auth.updateUser({ email, data: { full_name: name, needs_password: true } }, { emailRedirectTo: redirect });
+      }
+      if (r.error) throw r.error;
+      try { await _sb.from('profiles').update({ display_name: name }).eq('id', user.id); } catch (_) {}
+      done(inboxText(true));
+      return;
+    }
+    const { data, error } = await _sb.auth.signUp({ email, password, options: { data: { full_name: name }, emailRedirectTo: redirect } });
+    if (error) throw error;
+    if (data && data.session) {   // email confirmation is switched off: they're signed in already
+      closeSignupOverlay();
+      showToast('Welcome! Your account is ready');
+      return;
+    }
+    // Supabase answers this way (a user with no identities) when the email already has an account
+    if (data && data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
+      fail('There’s already an account for this email. Sign in, or use “Forgot password?” to set a new password.');
+      return;
+    }
+    done(inboxText(false));
+  } catch (e) {
+    const m = (e && e.message) || '';
+    if (/signups? not allowed|sign ?ups? (are )?disabled|signup is disabled/i.test(m)) {
+      // Sign-up isn't switched on in Supabase yet: pass their details to the admins instead
+      if (await _requestAccessFallback(name, email)) {
+        done('Thanks! New accounts aren’t fully open yet, so we’ve passed your details on and will email you when your account is ready.');
+      } else {
+        fail('New accounts aren’t open just yet. Please try again later.');
+      }
+    } else if (/already (been )?registered|already exists/i.test(m)) {
+      fail('There’s already an account for this email. Sign in, or use “Forgot password?” to set a new password.');
+    } else if (/rate limit|too many/i.test(m)) {
+      fail('Too many attempts — please wait a few minutes and try again.');
+    } else if (/failed to fetch|network|load failed/i.test(m)) {
+      fail('Can’t reach the server — check your internet connection and try again.');
+    } else {
+      fail(m || 'Something went wrong — try again');
+    }
+  } finally {
+    btn.disabled = false; label.style.display = ''; spin.style.display = 'none';
+  }
+}
+
+// The old "request access" route, used only if sign-ups are switched off in Supabase
+async function _requestAccessFallback(name, email) {
+  try {
     const proxyUrl = typeof Scanner !== 'undefined' && Scanner.getProxyUrl ? Scanner.getProxyUrl() : '';
-    if (!proxyUrl) throw new Error('App not configured');
-    // If they arrived from a cellar invite link, tell the admin, so they can be put in the right cellar
-    const note = _hasPendingInvite() ? '[Arrived from a cellar invite link]' : '';
-    const fullMessage = [message, note].filter(Boolean).join(' ');
+    if (!proxyUrl) return false;
+    const note = _hasPendingInvite() ? ' [Arrived from a cellar invite link]' : '';
     const res = await fetch(proxyUrl.replace(/\/$/, '') + '/api/access-request', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, email, message: fullMessage || null })
+      body: JSON.stringify({ name, email, message: 'Tried to create an account while sign-ups were switched off.' + note })
     });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.error || 'Request failed');
-    }
-    // Find out whether the confirmation email actually went out
-    const result = await res.json().catch(() => ({}));
-    const successMsg = document.querySelector('#authRequestSuccess .auth-request-success-msg');
-    if (result.confirmation_sent === false) {
-      console.warn('[request access] Request saved, but confirmation email failed:', result.confirmation_error);
-      if (successMsg) successMsg.textContent = 'Your request has been saved and we\u2019ll be in touch, but we couldn\u2019t send a confirmation email just now.';
-    } else if (result.confirmation_sent === undefined) {
-      console.warn('[request access] Request saved, but the worker did not report on the email \u2014 the updated worker.js may not be deployed yet.');
-    } else {
-      console.log('[request access] Request saved and confirmation email handed to Resend.');
-    }
-    document.getElementById('authRequestForm').style.display = 'none';
-    document.getElementById('authRequestSuccess').style.display = 'block';
-  } catch (e) {
-    msg.className = 'auth-msg err';
-    msg.style.display = '';
-    msg.textContent = /failed to fetch|network|load failed/i.test(e.message || '')
-      ? 'Can\u2019t reach the server \u2014 check your internet connection and try again.'
-      : (e.message || 'Something went wrong — try again');
-  } finally {
-    btn.disabled = false;
-    label.style.display = '';
-    spinner.style.display = 'none';
+    return res.ok;
+  } catch (_) { return false; }
+}
+
+/* ── Free trial: visitors can scan without an account ─────────
+   Signs the visitor in as a Supabase "anonymous" user the first time
+   they actually scan or save. Their free allowance is set in the admin
+   Usage tab. Creating an account later keeps everything they saved.
+   Needs "Allow anonymous sign-ins" switched on in Supabase; if it
+   isn't, the old "this is for members" message is shown instead.     */
+function _isTrialUser(u) { u = u || _currentUser; return !!(u && u.is_anonymous); }
+let _trialStarting = null;
+function startTrial() {
+  if (_currentUser) return Promise.resolve(true);
+  if (!_ensureSb()) return Promise.resolve(false);
+  if (!_trialStarting) {
+    _trialStarting = (async () => {
+      try {
+        const { data, error } = await _sb.auth.signInAnonymously();
+        if (error || !data || !data.user) { console.warn('[trial] not available:', error && error.message); return false; }
+        _currentUser = data.user;
+        console.log('[trial] started');
+        return true;
+      } catch (e) { console.warn('[trial] not available:', e); return false; }
+    })();
+    _trialStarting.finally(() => { _trialStarting = null; });
+  }
+  return _trialStarting;
+}
+// Start a trial and wait (up to 10 seconds) for the journal to finish setting up, so a wine can be saved
+async function _startTrialAndWait() {
+  if (!(await startTrial())) return false;
+  const until = Date.now() + 10000;
+  while (Date.now() < until && !(window._cellarId && !_bootstrapRunning)) await new Promise(r => setTimeout(r, 150));
+  return true;
+}
+
+// The banner inside the app while someone is on a free trial
+function updateTrialBanner() {
+  const b = document.getElementById('trialBanner');
+  if (b) b.classList.toggle('show', _isTrialUser());
+}
+
+// "Create a free account": the pop-up for a trial visitor, otherwise the form on the sign-in screen
+function goSignUp() {
+  if (_isTrialUser()) { openSignupOverlay(); return; }
+  const o = document.getElementById('scanOverlay');
+  if (o && o.classList.contains('open')) { o.classList.remove('open'); o.style.zIndex = ''; document.body.style.overflow = ''; }
+  const target = document.getElementById('reqName') || document.querySelector('.auth-panel');
+  if (target) {
+    target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    if (target.focus) setTimeout(() => target.focus({ preventScroll: true }), 600);
   }
 }
+function openSignupOverlay() {
+  if (!_isTrialUser()) { goSignUp(); return; }
+  const o = document.getElementById('signupOverlay');
+  if (!o) return;
+  document.getElementById('signupFormBox').style.display = '';
+  document.getElementById('signupDoneBox').style.display = 'none';
+  const m = document.getElementById('suMsg'); if (m) { m.className = 'auth-msg'; m.textContent = ''; }
+  o.classList.add('open');
+  setTimeout(() => { const n = document.getElementById('suName'); if (n) n.focus(); }, 100);
+}
+function closeSignupOverlay() {
+  const o = document.getElementById('signupOverlay');
+  if (o) o.classList.remove('open');
+}
+// Arrived with ?signup=1 (e.g. from the Shelf Scanner's "Create free account")
+var _wantSignup = /[?&]signup=1\b/.test(window.location.search);
 
 /* ── Forgot password ─────────────────────────────────────── */
 async function handleSendLink() {
@@ -4109,6 +4312,11 @@ function showResetMsg(type, msg) {
 
 /* ── Sign out ────────────────────────────────────────────── */
 async function handleSignOut() {
+  // A free-trial visitor has no way back in once signed out, so check first
+  if (_isTrialUser() && !confirm('You’re trying Welds Wine Wisdoms without an account. If you sign out, the wines you’ve saved will be lost.\n\nTo keep them, choose Cancel and create a free account. Sign out anyway?')) {
+    openSignupOverlay();
+    return;
+  }
   const uid = _currentUser?.id || '';
   const cellar = window._cellarId || 'solo';
   _isRecoveryFlow = false; // so the sign-out is never ignored
@@ -6859,8 +7067,9 @@ async function handleSave(e) {
   // "Save without rating" — no score and no tasted date
   const toTaste = _saveAsToTaste;
   _saveAsToTaste = false;
-  // Guest user — stash form data then redirect to sign-in
-  if (!_currentUser) {
+  // A visitor: start a free trial and save the wine straight into it. Only if the
+  // trial isn't available: stash the form data, then send them to sign in.
+  if (!_currentUser && !(await _startTrialAndWait())) {
     // Capture everything currently in the form so it survives the auth flow.
     // Photos straight from a phone camera are far too big for the browser's
     // storage (saving them used to fail silently and the wine was lost), so
@@ -6919,7 +7128,7 @@ async function handleSave(e) {
     // Say the same thing on the sign-in screen itself (the pop-up message can be hidden behind it)
     // (shown a moment later, after the sign-in screen has finished resetting itself)
     if (guestStashed) setTimeout(function() {
-      try { showAuthMsg('ok', '\uD83C\uDF77 Your scanned wine is ready to save \u2014 sign in and it will be waiting for you. No account yet? Request access below.'); } catch(_) {}
+      try { showAuthMsg('ok', '\uD83C\uDF77 Your scanned wine is ready to save \u2014 sign in and it will be waiting for you. No account yet? Create a free one below.'); } catch(_) {}
     }, 250);
     return;
   }
@@ -7976,7 +8185,7 @@ async function handleQuickAdd() {
       if (panel) panel.scrollIntoView({behavior:'smooth'});
       switchAuthTab('signin');
     }, 100);
-    showToast('Sign in or request access to save your wines');
+    showToast('Sign in or create a free account to save your wines');
     return;
   }
   const name = document.getElementById('qaName').value.trim();
@@ -8807,8 +9016,9 @@ function updateGoBtn() {
 }
 
 async function doScan() {
-  // Scanning is for members. Visitors can take the photos, then are asked to sign in or request an account.
-  if (!_currentUser) { showScanMembersOnly(); return; }
+  // Visitors get a free trial: they're signed in as a trial user the first time they scan.
+  // (If the trial isn't available, they're asked to create an account instead.)
+  if (!_currentUser && !(await startTrial())) { showScanMembersOnly(); return; }
   // Must have an API key
   if (!Scanner.hasKey()) {
     closeScanModal();
@@ -8862,6 +9072,11 @@ function showScanResultsUI(res) {
 // "You've used all 50 of your label scans this month. They reset on 1 December."
 function usageLimitText(b, what) {
   b = b || {};
+  // Visitors on the free trial
+  if (b.trial && b.reason === 'trial_busy') return 'Lots of people are trying Welds Wine Wisdoms today, so free trial ' + what + ' are paused. Create a free account to carry on now: everything you’ve saved is kept.';
+  if (b.trial) return b.limit === 0
+    ? 'This isn’t part of the free trial. Create a free account to use it: everything you’ve saved is kept.'
+    : 'You’ve used your free trial ' + what + '. Create a free account to keep going: it takes a minute, and everything you’ve saved is kept.';
   if (b.limit === 0) return 'This is switched off for your account. Ask an admin if you need it.';
   const reset = b.resets_at ? new Date(b.resets_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', timeZone: 'Europe/London' }) : null;
   return 'You’ve used all ' + b.limit + ' of your ' + what + ' this month.' + (reset ? ' They reset on ' + reset + '.' : '') + ' Ask an admin if you need more.';
@@ -8882,8 +9097,15 @@ function showScanErrorUI(err) {
     USAGE_LIMIT: ['Scan limit reached', usageLimitText(err.limitInfo, 'label scans')]
   };
   const [title,detail]=msgs[m]||['Analysis failed', m||'Unexpected error. Please try again.'];
-  document.getElementById('scanErrorMsg').textContent=title;
+  document.getElementById('scanErrorMsg').textContent = (m === 'USAGE_LIMIT' && err.limitInfo && err.limitInfo.trial) ? 'Free trial used' : title;
   document.getElementById('scanErrorDetail').textContent=detail;
+  if (m === 'USAGE_LIMIT' && err.limitInfo && err.limitInfo.trial) {
+    setScanFooter([
+      {label:'Not now',             cls:'btn-secondary', action:closeScanModal},
+      {label:'Create free account', cls:'btn-primary',   action:() => { closeScanModal(); openSignupOverlay(); }}
+    ]);
+    return;
+  }
   setScanFooter([
     {label:'Cancel',      cls:'btn-secondary', action:closeScanModal},
     {label:'↩ Try Again', cls:'btn-primary',   action:openScanModal}
@@ -10606,24 +10828,16 @@ async function _authHeaders() {
 function showScanMembersOnly() {
   showScanScreen('scanError');
   const ic = document.querySelector('#scanError .scan-error-icon'); if (ic) ic.textContent = '🔒';
-  document.getElementById('scanErrorMsg').textContent = 'Scanning is for members';
-  document.getElementById('scanErrorDetail').textContent = 'Welds Wine Wisdoms is free, but you need an account to scan. Request one, and once it\u2019s set up you can sign in and scan. Already a member? Sign in, then scan again.';
+  document.getElementById('scanErrorMsg').textContent = 'Create a free account to scan';
+  document.getElementById('scanErrorDetail').textContent = 'Welds Wine Wisdoms is free. Create an account (it takes a minute), then scan again: your photos will still be here. Already a member? Sign in, then scan again.';
   setScanFooter([
     {label:'Close', cls:'btn-secondary', action:closeScanModal},
-    {label:'Sign in or request an account', cls:'btn-primary', action:goRequestAccess}
+    {label:'Create free account', cls:'btn-primary', action:goSignUp}
   ]);
 }
 
-// Take a visitor to the sign-in and request-an-account panel
-function goRequestAccess() {
-  const o = document.getElementById('scanOverlay');
-  if (o && o.classList.contains('open')) { o.classList.remove('open'); o.style.zIndex = ''; document.body.style.overflow = ''; }
-  const target = document.getElementById('reqName') || document.querySelector('.auth-panel');
-  if (target) {
-    target.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    if (target.focus) setTimeout(() => target.focus({ preventScroll: true }), 600);
-  }
-}
+// Older name, still used in a few places
+function goRequestAccess() { goSignUp(); }
 
 function _adminFetch(path, opts = {}) {
   const proxyUrl = typeof Scanner !== 'undefined' && Scanner.getProxyUrl ? Scanner.getProxyUrl() : '';
@@ -10787,7 +11001,7 @@ async function loadAdminUsageTab() {
 }
 
 // A limit picker: [Default (n) | Unlimited | Off | Limit…] plus a number box for "Limit…"
-function _limitControl(current, isOverride, defaultText, onSave) {
+function _limitControl(current, isOverride, defaultText, onSave, unitText) {
   const wrap = document.createElement('div');
   wrap.className = 'usage-limit-ctl';
   const sel = document.createElement('select');
@@ -10797,8 +11011,8 @@ function _limitControl(current, isOverride, defaultText, onSave) {
   opts.forEach(([v, t]) => { const o = document.createElement('option'); o.value = v; o.textContent = t; sel.appendChild(o); });
   const num = document.createElement('input');
   num.type = 'number'; num.min = '1'; num.max = '100000'; num.step = '1'; num.inputMode = 'numeric';
-  num.placeholder = 'a month';
-  num.setAttribute('aria-label', 'Monthly limit');
+  num.placeholder = unitText || 'a month';
+  num.setAttribute('aria-label', unitText ? 'Limit (' + unitText + ')' : 'Monthly limit');
   if (defaultText !== null && !isOverride) sel.value = 'default';
   else if (current === null || current === undefined) sel.value = 'unlimited';
   else if (current === 0) sel.value = 'off';
@@ -10858,7 +11072,7 @@ function renderAdminUsage() {
   box.appendChild(bar);
 
   // Totals for the period
-  const users = (d.users || []).map(u => {
+  let users = (d.users || []).map(u => {
     const usage = u.usage || {};
     const cost = Object.values(usage).reduce((s, x) => s + (Number(x.cost_usd) || 0), 0);
     const calls = Object.values(usage).reduce((s, x) => s + (Number(x.calls) || 0), 0);
@@ -10891,7 +11105,71 @@ function renderAdminUsage() {
   defCard.appendChild(defList);
   box.appendChild(defCard);
 
-  // One card per person, biggest spender first
+  // Free trial: what each visitor gets without an account, and a daily cap for all of them
+  const trialCard = document.createElement('div');
+  trialCard.className = 'admin-cellar-card';
+  trialCard.innerHTML = '<div class="admin-cellar-header"><div><div class="admin-cellar-title">Free trial (no account)</div>' +
+    '<div class="admin-cellar-meta">' + (d.trial
+      ? 'Visitors can try the app without signing up. “Each visitor” is in total, not per month. “All visitors a day” is a safety cap for everyone on the trial together, over 24 hours.'
+      : 'Not set up yet: run supabase-free-trial.sql in Supabase, and switch on “Allow anonymous sign-ins” under Authentication.') + '</div></div></div>';
+  if (d.trial) {
+    const tList = document.createElement('div');
+    tList.className = 'admin-member-list';
+    USAGE_LIMITED_FEATURES.forEach(f => {
+      const t = d.trial[f] || { per_user: 0, daily_total: 0 };
+      const row = document.createElement('div');
+      row.className = 'usage-feature-row';
+      row.innerHTML = '<div class="usage-feature-name">' + escHtml(USAGE_FEATURE_NAMES[f]) + '</div>';
+      const save = (changes, what) => _saveUsageLimit('/api/admin/usage-trial', Object.assign({ feature: f, per_user: t.per_user, daily_total: t.daily_total }, changes),
+        'Free trial · ' + USAGE_FEATURE_NAMES[f].toLowerCase() + ' · ' + what);
+      const each = document.createElement('div');
+      each.style.cssText = 'display:flex;align-items:center;gap:6px;flex-wrap:wrap';
+      each.appendChild(Object.assign(document.createElement('span'), { className: 'usage-used', textContent: 'Each visitor' }));
+      each.appendChild(_limitControl(t.per_user, true, null, (v) => save({ per_user: v }, 'each visitor: ' + _limitWords(v)), 'in total'));
+      const all = document.createElement('div');
+      all.style.cssText = 'display:flex;align-items:center;gap:6px;flex-wrap:wrap';
+      all.appendChild(Object.assign(document.createElement('span'), { className: 'usage-used', textContent: 'All visitors a day' }));
+      all.appendChild(_limitControl(t.daily_total, true, null, (v) => save({ daily_total: v }, 'all visitors a day: ' + _limitWords(v)), 'a day'));
+      row.appendChild(each);
+      row.appendChild(all);
+      tList.appendChild(row);
+    });
+    trialCard.appendChild(tList);
+  }
+  box.appendChild(trialCard);
+
+  // Everyone on the free trial, added together in one card
+  const trialUsers = users.filter(u => u.trial);
+  if (trialUsers.length) {
+    const sum = {};
+    trialUsers.forEach(u => Object.entries(u.usage || {}).forEach(([f, x]) => {
+      const s = sum[f] || (sum[f] = { calls: 0, failed: 0, cost_usd: 0 });
+      s.calls += Number(x.calls) || 0; s.failed += Number(x.failed) || 0; s.cost_usd += Number(x.cost_usd) || 0;
+    }));
+    const cost = trialUsers.reduce((s, u) => s + u._cost, 0);
+    const used = trialUsers.filter(u => u._calls > 0).length;
+    const tc = document.createElement('div');
+    tc.className = 'admin-cellar-card';
+    tc.innerHTML = '<div class="admin-cellar-header"><div style="min-width:0">' +
+      '<div class="admin-cellar-title">Free trial visitors</div>' +
+      '<div class="admin-cellar-meta">' + escHtml(trialUsers.length + ' visitor' + (trialUsers.length === 1 ? '' : 's') + ' without an account · ' + used + ' used AI in this period') + '</div></div>' +
+      '<div class="usage-user-cost">' + escHtml(_fmtCost(cost)) + '</div></div>';
+    const list = document.createElement('div');
+    list.className = 'admin-member-list';
+    Object.keys(sum).forEach(f => {
+      const s = sum[f];
+      const row = document.createElement('div');
+      row.className = 'usage-feature-row';
+      row.innerHTML = '<div class="usage-feature-name">' + escHtml(USAGE_FEATURE_NAMES[f] || f) + '<small>' +
+        escHtml(s.calls + ' call' + (s.calls === 1 ? '' : 's') + (s.failed ? ' (+' + s.failed + ' failed)' : '') + ' · ' + _fmtCost(s.cost_usd)) + '</small></div>';
+      list.appendChild(row);
+    });
+    tc.appendChild(list);
+    box.appendChild(tc);
+  }
+
+  // One card per person (members only), biggest spender first
+  users = users.filter(u => !u.trial);
   users.sort((a, b) => (b._cost - a._cost) || (a.display_name || a.email || '').localeCompare(b.display_name || b.email || ''));
   users.forEach(u => {
     const name = u.deleted ? 'Deleted accounts' : (u.display_name || (u.email ? u.email.split('@')[0] : 'Member'));

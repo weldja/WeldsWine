@@ -478,7 +478,8 @@ async function handleScan(request, env, ctx) {
 
   // Within this person's monthly shelf-scan limit?
   const claim = await claimUsage(env, caller.user.id, "shelf");
-  if (!claim.allowed) return reply(request, 429, { error: "USAGE_LIMIT", used: claim.used, limit: claim.limit, resets_at: claim.resets_at });
+  // trial: a visitor on the free trial; reason "trial_busy" = the daily cap for all trial visitors was hit
+  if (!claim.allowed) return reply(request, 429, { error: "USAGE_LIMIT", used: claim.used, limit: claim.limit, resets_at: claim.resets_at, trial: !!claim.trial, reason: claim.reason || "limit" });
   const record = (d, ok) => { const p = finishUsage(env, claim, d, ok); if (ctx && ctx.waitUntil) ctx.waitUntil(p); return p; };
 
   let res;

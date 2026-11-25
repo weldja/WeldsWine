@@ -785,7 +785,8 @@ async function finishUsage(env, claim, data, ok, fallbackModel) {
 }
 __name(finishUsage, "finishUsage");
 function usageLimitResponse(claim, cors) {
-  return new Response(JSON.stringify({ error: "USAGE_LIMIT", used: claim.used, limit: claim.limit, resets_at: claim.resets_at }), { status: 429, headers: cors });
+  // trial: a visitor on the free trial; reason "trial_busy" = the daily cap for all trial visitors was hit
+  return new Response(JSON.stringify({ error: "USAGE_LIMIT", used: claim.used, limit: claim.limit, resets_at: claim.resets_at, trial: !!claim.trial, reason: claim.reason || "limit" }), { status: 429, headers: cors });
 }
 __name(usageLimitResponse, "usageLimitResponse");
 
@@ -1016,6 +1017,8 @@ h1{font-family:Lora,Georgia,serif;font-size:1.6rem;font-weight:600;color:#2C0A16
 }
 __name(render_wine_list, "render_wine_list");
 
+// When the public Shelf Scanner page (wine-shelf-scanner.html) last changed. Update it when you edit that page.
+const SHELF_PAGE_UPDATED = "2026-11-25";
 function render_sitemap(wines) {
   const today = new Date().toISOString().slice(0, 10);
   const entries = wines.map(w => {
@@ -1026,6 +1029,7 @@ function render_sitemap(wines) {
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url><loc>${APP_URL}/</loc><lastmod>${today}</lastmod><changefreq>monthly</changefreq><priority>1.0</priority></url>
   <url><loc>${APP_URL}/wines</loc><lastmod>${today}</lastmod><changefreq>weekly</changefreq><priority>0.9</priority></url>
+  <url><loc>${APP_URL}/wine-shelf-scanner.html</loc><lastmod>${SHELF_PAGE_UPDATED}</lastmod><changefreq>monthly</changefreq><priority>0.9</priority></url>
 ${entries}
 </urlset>`;
 }
@@ -1657,7 +1661,11 @@ var worker_default = {
             const uRes = await fetch(`${SUPABASE_URL}/auth/v1/admin/users/${p.id}`, {
               headers: { apikey: env.SUPABASE_SERVICE_KEY, Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}` }
             });
-            if (uRes.ok) { const u = await uRes.json(); email = u.email || ""; }
+            if (uRes.ok) {
+              const u = await uRes.json();
+              if (u.is_anonymous) continue;   // a visitor on the free trial, not a member
+              email = u.email || "";
+            }
           } catch (_) {}
           result.push({ ...p, email });
         }
@@ -1684,18 +1692,26 @@ var worker_default = {
           from = null;
         }
         const summary = (from, to) => sb_fetch(env, "/rpc/usage_summary", { method: "POST", body: { p_from: from, p_to: to }, prefer: "return=representation" }).then((r) => r || []);
-        const [periodRows, monthRows, profiles, overrides, defaultRows] = await Promise.all([
+        // The free-trial parts need supabase-free-trial.sql; without it they are simply left out
+        const optional = (p) => p.catch((e) => { console.warn("admin usage (free trial not set up?):", e.message); return null; });
+        const [periodRows, monthRows, profiles, overrides, defaultRows, trialRows, trialIdRows] = await Promise.all([
           summary(from, to),
           period === "month" ? null : summary(monthStart, null),
           sb_fetch(env, "/profiles?select=id,display_name,is_admin&order=display_name.asc", { prefer: "return=representation" }),
           sb_fetch(env, "/usage_limits?select=user_id,feature,monthly_limit", { prefer: "return=representation" }),
-          sb_fetch(env, "/usage_limit_defaults?select=feature,monthly_limit", { prefer: "return=representation" })
+          sb_fetch(env, "/usage_limit_defaults?select=feature,monthly_limit", { prefer: "return=representation" }),
+          optional(sb_fetch(env, "/usage_trial_settings?select=feature,per_user,daily_total", { prefer: "return=representation" })),
+          optional(sb_fetch(env, "/rpc/trial_user_ids", { method: "POST", body: {}, prefer: "return=representation" }))
         ]);
         const defaults = {};
         for (const f of USAGE_FEATURES) defaults[f] = null;
         for (const r of defaultRows || []) defaults[r.feature] = r.monthly_limit;
+        // Free trial: what each visitor gets, and the daily cap for all of them together
+        const trial = trialRows ? {} : null;
+        for (const r of trialRows || []) trial[r.feature] = { per_user: r.per_user, daily_total: r.daily_total };
+        const trialIds = new Set((trialIdRows || []).map((r) => typeof r === "string" ? r : (r && (r.trial_user_ids || r.id))));
         const byUser = {};
-        const blank = (id, p) => ({ id, display_name: p ? p.display_name : null, is_admin: !!(p && p.is_admin), email: "", deleted: !p, limits: {}, usage: {}, month_used: {} });
+        const blank = (id, p) => ({ id, display_name: p ? p.display_name : null, is_admin: !!(p && p.is_admin), email: "", deleted: !p && !trialIds.has(id), trial: trialIds.has(id), limits: {}, usage: {}, month_used: {} });
         for (const p of profiles || []) byUser[p.id] = blank(p.id, p);
         for (const r of periodRows) {
           const k = r.user_id || "deleted";
@@ -1713,12 +1729,13 @@ var worker_default = {
           for (const f of USAGE_FEATURES) {
             const key = u.id + ":" + f;
             if (key in overrideMap) u.limits[f] = { limit: overrideMap[key], source: "user" };
+            else if (u.trial) u.limits[f] = { limit: trial && trial[f] ? trial[f].per_user : 0, source: "trial" };
             else if (u.is_admin) u.limits[f] = { limit: null, source: "admin" };
             else u.limits[f] = { limit: defaults[f], source: "default" };
           }
         }
         // Add email addresses
-        await Promise.all(Object.values(byUser).filter((u) => !u.deleted).map(async (u) => {
+        await Promise.all(Object.values(byUser).filter((u) => !u.deleted && !u.trial).map(async (u) => {
           try {
             const uRes = await fetch(`${SUPABASE_URL}/auth/v1/admin/users/${u.id}`, {
               headers: { apikey: env.SUPABASE_SERVICE_KEY, Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}` }
@@ -1726,7 +1743,7 @@ var worker_default = {
             if (uRes.ok) { const au = await uRes.json(); u.email = au.email || ""; }
           } catch (_) {}
         }));
-        return new Response(JSON.stringify({ period, from, to, month_start: monthStart, features: USAGE_FEATURES, defaults, users: Object.values(byUser) }), { status: 200, headers: cors });
+        return new Response(JSON.stringify({ period, from, to, month_start: monthStart, features: USAGE_FEATURES, defaults, trial, users: Object.values(byUser) }), { status: 200, headers: cors });
       } catch (e) {
         console.error("admin usage:", e.message);
         return new Response(JSON.stringify({ error: e.message }), { status: 500, headers: cors });
@@ -1769,6 +1786,27 @@ var worker_default = {
         await sb_fetch(env, "/usage_limit_defaults?on_conflict=feature", {
           method: "POST",
           body: { feature, monthly_limit: limit },
+          prefer: "resolution=merge-duplicates,return=representation"
+        });
+        return new Response(JSON.stringify({ ok: true }), { status: 200, headers: cors });
+      } catch (e) {
+        return new Response(JSON.stringify({ error: e.message }), { status: 500, headers: cors });
+      }
+    }
+
+    // ── PUT /api/admin/usage-trial — set the free-trial allowance for one feature ──
+    // body: { feature, per_user, daily_total }  each a whole number (0 = none) or null = unlimited
+    if (url.pathname.endsWith("/api/admin/usage-trial") && request.method === "PUT") {
+      const { user: admin, reason: _authReason } = await verifyAdmin(env, request);
+      if (!admin) return new Response(JSON.stringify({ error: "Unauthorized", reason: _authReason }), { status: 401, headers: cors });
+      try {
+        const { feature, per_user, daily_total } = await request.json();
+        if (!USAGE_FEATURES.includes(feature)) return new Response(JSON.stringify({ error: "A valid feature is required" }), { status: 400, headers: cors });
+        const okNum = (v) => v === null || (Number.isInteger(v) && v >= 0 && v <= 100000);
+        if (!okNum(per_user) || !okNum(daily_total)) return new Response(JSON.stringify({ error: "Each allowance must be a whole number from 0 to 100000, or unlimited" }), { status: 400, headers: cors });
+        await sb_fetch(env, "/usage_trial_settings?on_conflict=feature", {
+          method: "POST",
+          body: { feature, per_user, daily_total },
           prefer: "resolution=merge-duplicates,return=representation"
         });
         return new Response(JSON.stringify({ ok: true }), { status: 200, headers: cors });

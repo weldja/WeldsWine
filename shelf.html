@@ -5,6 +5,15 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
 <title>Shelf Scanner — Welds Wine Wisdoms</title>
 <meta name="robots" content="noindex"/>
+<!-- The app page stays out of search (the public page is /wine-shelf-scanner.html), but links shared in messages get a proper preview -->
+<meta name="description" content="Photograph a supermarket wine shelf and see the best-value wines, with Clubcard and Nectar prices. Try it free, no sign-up needed."/>
+<meta property="og:type" content="website"/>
+<meta property="og:site_name" content="Welds Wine Wisdoms"/>
+<meta property="og:title" content="Shelf Scanner: find the best-value wine on the shelf"/>
+<meta property="og:description" content="Photograph a supermarket wine shelf and see the best-value wines, with Clubcard and Nectar prices. Try it free, no sign-up needed."/>
+<meta property="og:url" content="https://weldswine.co.uk/shelf.html"/>
+<meta property="og:image" content="https://weldswine.co.uk/wine-shelf-scanner.png"/>
+<meta name="twitter:card" content="summary_large_image"/>
 <meta name="theme-color" content="#5C1525"/>
 <link rel="icon" href="/favicon.ico" sizes="32x32"/>
 <link rel="apple-touch-icon" href="/icon-192.png"/>
@@ -272,7 +281,7 @@ h1{font-family:var(--font-d);font-size:1.5rem;font-weight:600;line-height:1.2}
 
     <!-- Shown to visitors who aren't signed in: they can look round, but scanning is for members -->
     <div class="card" id="visitorNote" hidden>
-      <p class="small" style="color:var(--charcoal)">You’re welcome to try this out. Scanning is for members of Welds Wine Wisdoms, which is free: <a href="/">sign in or request an account</a>. <a href="/wine-shelf-scanner.html">How does it work?</a></p>
+      <p class="small" style="color:var(--charcoal)"><strong>Try it free, no sign-up needed.</strong> Take your photos and tap the button below. Already have an account? <a href="/">Sign in</a> first. <a href="/wine-shelf-scanner.html">How does it work?</a></p>
     </div>
 
     <div style="display:flex;flex-direction:column;gap:10px">
@@ -371,7 +380,7 @@ h1{font-family:var(--font-d);font-size:1.5rem;font-weight:600;line-height:1.2}
       <p class="small" style="margin-top:6px;color:var(--charcoal)" id="errorText"></p>
       <div style="display:flex;flex-direction:column;gap:8px;margin-top:14px">
         <button class="btn-main" id="retryBtn">Try again</button>
-        <a class="btn-main" id="joinBtn" href="/" hidden>Sign in or request an account</a>
+        <a class="btn-main" id="joinBtn" href="/?signup=1" hidden>Create a free account</a>
         <button class="btn-line" id="errorBackBtn">Back to my photos</button>
       </div>
     </div>
@@ -490,6 +499,7 @@ let wakeLock = null;
 let listFilter = 'all';
 let wantColour = 'any';   // the colour chosen on the photo screen: any, red, white or rose
 let pickMode = 'value';   // what kind of pick: value, budget or treat
+let lastLimit = null;     // the worker's answer when a scan limit was hit (says if it was the free trial)
 
 const $ = id => document.getElementById(id);
 
@@ -819,7 +829,7 @@ async function keepScreenOn(on) {
 // ── Scan ─────────────────────────────────────────────────────
 const ERRORS = {
   NOT_SIGNED_IN: ['You’re signed out', 'Sign in, then come back to the Shelf Scanner. Your photos will still be here for a few hours.'],
-  MEMBERS_ONLY: ['Scanning is for members', 'Welds Wine Wisdoms is free, but you need an account to scan. Already a member? Sign in, then come back: your photos will still be here for a few hours.'],
+  MEMBERS_ONLY: ['Create a free account to scan', 'Welds Wine Wisdoms is free. Create an account (it takes a minute), then come back: your photos will still be here for a few hours. Already a member? Sign in, then come back.'],
   ADMIN_ONLY: ['Not available yet', 'The Shelf Scanner is still being tested and is only open to admins.'],
   NO_KEY_IN_WORKER: ['Scanner not set up', 'The shelf scanner worker has no Claude API key yet. Add ANTHROPIC_API_KEY as a secret in Cloudflare.'],
   INVALID_KEY: ['Scanner not set up', 'The Claude API key in the shelf scanner worker was rejected. Check it in Cloudflare.'],
@@ -838,9 +848,11 @@ async function runScan() {
     return;
   }
   savePrefs();
-  // Visitors can take photos and choose options, but scanning is for members
+  // Visitors get a free trial: they're signed in as a trial user the first time they scan.
+  // (If the trial isn't available, they're asked to create an account instead.)
   if (!isMember) {
     try { isMember = !!(await sb.auth.getSession()).data.session; } catch (_) {}
+    if (!isMember) isMember = await startTrial();
     if (!isMember) { showScanProblem('MEMBERS_ONLY'); return; }
   }
   showView('viewWorking');
@@ -874,6 +886,7 @@ async function runScan() {
     const body = await res.json().catch(() => ({}));
     if (!res.ok || !Array.isArray(body.wines)) {
       errorCode = body.error || 'HTTP_' + res.status;
+      lastLimit = errorCode === 'USAGE_LIMIT' ? body : null;
       errorDetail = errorCode === 'USAGE_LIMIT' ? usageLimitText(body) : (body.detail || '');
     } else {
       result = body;
@@ -902,8 +915,23 @@ async function runScan() {
   showView('viewResults');
 }
 
+// Free trial: sign a visitor in as a Supabase "anonymous" user, so they can scan
+// without an account. Creating an account later (on the journal) keeps everything.
+async function startTrial() {
+  try {
+    const { data, error } = await sb.auth.signInAnonymously();
+    if (error || !data || !data.user) { console.warn('[shelf] free trial not available:', error && error.message); return false; }
+    $('visitorNote').hidden = true;
+    $('backLabel').textContent = 'Back to my journal';
+    loadCellar();
+    return true;
+  } catch (e) { console.warn('[shelf] free trial not available:', e); return false; }
+}
+
 // "You've used all 20 shelf scans this month. They reset on 1 December."
 function usageLimitText(b) {
+  if (b && b.trial && b.reason === 'trial_busy') return 'Lots of people are trying the Shelf Scanner today, so free trial scans are paused. Create a free account to scan now: it takes a minute.';
+  if (b && b.trial) return 'You’ve used your free trial shelf scan. Create a free account to keep scanning: it takes a minute, and anything you’ve saved is kept.';
   const reset = b && b.resets_at ? new Date(b.resets_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', timeZone: 'Europe/London' }) : null;
   const used = b && b.limit === 0
     ? 'Shelf scanning is switched off for your account.'
@@ -913,9 +941,10 @@ function usageLimitText(b) {
 
 // The "that didn't work" card, also used for "scanning is for members"
 function showScanProblem(code, detail) {
-  const [title, text] = code === 'USAGE_LIMIT' ? ['Scan limit reached', detail] :
+  const trialUsed = code === 'USAGE_LIMIT' && lastLimit && lastLimit.trial;
+  const [title, text] = code === 'USAGE_LIMIT' ? [trialUsed ? 'Free trial used' : 'Scan limit reached', detail] :
     ERRORS[code] || ['That didn’t work', 'Something went wrong (' + code + (detail ? ': ' + detail : '') + '). Try again.'];
-  const needsSignIn = code === 'NOT_SIGNED_IN' || code === 'MEMBERS_ONLY';
+  const needsSignIn = code === 'NOT_SIGNED_IN' || code === 'MEMBERS_ONLY' || trialUsed;
   if ($('viewWorking').hidden) {   // not started yet: show the photos being kept
     const thumbs = $('workingThumbs');
     thumbs.textContent = '';
