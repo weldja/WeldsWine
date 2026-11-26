@@ -431,6 +431,25 @@ h1{font-family:var(--font-d);font-size:1.5rem;font-weight:600;line-height:1.2}
       <p class="small" id="heatWantNote" hidden></p>
       <div class="heat-sel" id="heatSel" hidden></div>
     </section>
+    <section class="card" id="repickCard">
+      <h2 class="sec-h" style="margin:0 0 8px">Show picks for</h2>
+      <div class="choices" role="group" aria-label="What kind of pick to show">
+        <button type="button" class="choice" data-rmode="value" aria-pressed="true">Best value</button>
+        <button type="button" class="choice" data-rmode="budget" aria-pressed="false">Under a budget</button>
+        <button type="button" class="choice" data-rmode="treat" aria-pressed="false">A treat</button>
+      </div>
+      <div class="fld" id="rBudgetFld" hidden>
+        <label for="rBudgetInput">Most I’ll pay for a bottle (£)</label>
+        <input type="number" id="rBudgetInput" inputmode="decimal" min="3" max="500" step="0.5" placeholder="e.g. 10" enterkeyhint="done"/>
+      </div>
+      <div class="choices" role="group" aria-label="Which colour of wine to pick from" style="margin-top:10px">
+        <button type="button" class="choice" data-rwant="any" aria-pressed="true">Any</button>
+        <button type="button" class="choice" data-rwant="red" aria-pressed="false">Red</button>
+        <button type="button" class="choice" data-rwant="white" aria-pressed="false">White</button>
+        <button type="button" class="choice" data-rwant="rose" aria-pressed="false">Rosé</button>
+      </div>
+      <p class="small" style="margin-top:8px">Uses the wines from this scan, so there’s no need to scan again.</p>
+    </section>
     <h2 class="sec-h" id="picksHead">Best value on this shelf</h2>
     <div style="display:flex;flex-direction:column;gap:14px" id="picks"></div>
     <h2 class="sec-h" id="poorHead">Paying for the name</h2>
@@ -1141,8 +1160,107 @@ function priceRow(w) {
   return row;
 }
 
+// ── Re-pick without scanning again ───────────────────────────
+/* The scan gives every wine a quality score and a value score, so the
+   page can choose new picks itself when the person switches between
+   best value, a budget and a treat, or changes colour. The new picks
+   show at once; the worker's /reasons then writes the short "why" for
+   each one (text only, no photos, a few seconds). Each view is kept in
+   result.repicks, so switching back is instant. The scan's own picks
+   are kept in result.scan and used whenever that view is chosen. */
+let repickInFlight = new Set();
+
+function viewKey(mode, budget, want) { return mode + '|' + (mode === 'budget' ? budget : '') + '|' + (want || 'any'); }
+function ensureScanView() {
+  if (!result || result.scan) return;
+  result.scan = { mode: scanMode(), budget: result.budget || null, want: scanWant(), picks: result.picks || [], poor: result.poor_value || [] };
+  result.repicks = {};
+}
+// The best few wines for this view, chosen from the scores (same rules as the AI was given)
+function localPicks(mode, budget, want) {
+  const poorIds = new Set((result.scan.poor || []).map(p => p.wine_id));
+  let c = result.wines.filter(w => payPrice(w) && !poorIds.has(w.id)
+    && (!want || styleKey(w.style) === want)
+    && (mode !== 'budget' || payPrice(w) <= budget));
+  // Quality floor: a cheap but dull wine shouldn't win if better ones are there
+  if (c.some(w => (w.quality_score || 0) >= 6)) c = c.filter(w => (w.quality_score || 0) >= 6);
+  const q = w => w.quality_score || 0, v = w => w.value_score || 0, low = w => w.confidence === 'low' ? 1 : 0;
+  c.sort((a, b) => low(a) - low(b)
+    || (mode === 'treat' ? (q(b) - q(a) || v(b) - v(a)) : (v(b) - v(a) || q(b) - q(a)))
+    || payPrice(a) - payPrice(b));
+  return c.slice(0, 3).map(w => ({ wine_id: w.id, reason: '', pending: true }));
+}
+function applyView(mode, budget, want) {
+  if (!result) return;
+  ensureScanView();
+  const s = result.scan;
+  const key = viewKey(mode, budget, want);
+  let picks;
+  if (key === viewKey(s.mode, s.budget, s.want)) picks = s.picks;
+  else picks = result.repicks[key] || (result.repicks[key] = localPicks(mode, budget, want));
+  const pickIds = new Set(picks.map(p => p.wine_id));
+  result.mode = mode;
+  result.budget = mode === 'budget' ? budget : null;
+  result.want = want;
+  result.picks = picks;
+  // The scan's poor-value wines, minus any of the wrong colour
+  result.poor_value = (s.poor || []).filter(p => !pickIds.has(p.wine_id) && (!want || !wineById(p.wine_id) || styleKey(wineById(p.wine_id).style) === want));
+  saveResult();
+  renderResults();
+}
+async function fetchReasons(key, picks) {
+  repickInFlight.add(key);
+  let ok = false, code = '';
+  try {
+    const { data } = await sb.auth.getSession();
+    const token = data && data.session && data.session.access_token;
+    if (!token) throw Object.assign(new Error('NOT_SIGNED_IN'), { code: 'NOT_SIGNED_IN' });
+    const [mode, budget, want] = key.split('|');
+    const fields = ['id', 'name', 'producer', 'grape', 'region', 'country', 'style', 'vintage', 'price', 'loyalty_price', 'quality_score', 'value_score', 'confidence', 'note'];
+    const wines = picks.map(p => wineById(p.wine_id)).filter(Boolean).map(w => Object.fromEntries(fields.map(f => [f, w[f]])));
+    const res = await fetch(SHELF_WORKER_URL.replace(/\/$/, '') + '/reasons', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify({ mode, budget: budget ? Number(budget) : null, want: want === 'any' ? null : want, loyaltyCard: !!result.loyalty_card, shop: result.shop || null, wines })
+    });
+    const body = await res.json().catch(() => ({}));
+    if (res.ok && body.reasons) {
+      picks.forEach(p => { p.reason = body.reasons[p.wine_id] || ''; });
+      ok = true;
+    } else code = body.error || 'HTTP_' + res.status;
+  } catch (e) { code = (e && e.code) || 'NETWORK'; }
+  repickInFlight.delete(key);
+  picks.forEach(p => { delete p.pending; if (!ok) p.failed = true; });
+  // Keep the stored view in step (after a reload it is a separate copy).
+  // On failure, forget this view so choosing it again tries again.
+  if (result && result.repicks && result.repicks[key]) {
+    if (ok) result.repicks[key] = picks; else delete result.repicks[key];
+  }
+  if (!ok) console.warn('[shelf] reasons failed:', code);
+  if (code === 'TOO_MANY_REPICKS') toast('That’s a lot of changes – try again in a little while.');
+  if (!result || result.picks !== picks) { saveResult(); return; }
+  saveResult();
+  renderResults(true);
+}
+function syncRepickControls() {
+  const mode = scanMode(), want = scanWant() || 'any';
+  document.querySelectorAll('.choice[data-rmode]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.rmode === mode)));
+  document.querySelectorAll('.choice[data-rwant]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.rwant === want)));
+  $('rBudgetFld').hidden = mode !== 'budget';
+  if (mode === 'budget' && result.budget) $('rBudgetInput').value = result.budget;
+  $('repickCard').hidden = !result.wines.some(w => payPrice(w));
+}
+function rBudgetValue() {
+  const n = parseFloat($('rBudgetInput').value);
+  return n >= 3 && n <= 500 ? Math.round(n * 100) / 100 : null;
+}
+
 function renderResults(keepSelection) {
   const r = result;
+  syncRepickControls();
+  // New picks still waiting for their reasons (e.g. the page was reloaded meanwhile)
+  const pendingKey = viewKey(scanMode(), r.budget, scanWant());
+  if ((r.picks || []).some(p => p.pending) && !repickInFlight.has(pendingKey)) fetchReasons(pendingKey, r.picks);
   shareImage = null;   // the picture is made again from the new results
   const wines = r.wines;
   const priced = wines.filter(w => w.price);
@@ -1199,7 +1317,7 @@ function renderResults(keepSelection) {
     const c = el('div', 'card');
     const wantCount = want ? wines.filter(w => styleKey(w.style) === want).length : 0;
     c.appendChild(el('p', 'small', want && wines.length && !wantCount
-      ? 'No ' + COLOUR_WORDS[want][1] + ' could be found in these photos. Tap “See all wines found” to see what is on the shelf, or start a new scan with “Any” chosen.'
+      ? 'No ' + COLOUR_WORDS[want][1] + ' could be found in these photos. Tap “See all wines found” to see what is on the shelf, or choose “Any” above.'
       : mode === 'budget' && r.budget && wines.some(w => payPrice(w)) && !wines.some(w => payPrice(w) && payPrice(w) <= r.budget)
       ? 'No wine within ' + money(r.budget) + ' could be found in these photos. Tap “See all wines found” to see the prices, or try a higher budget.'
       : wines.length
@@ -1220,6 +1338,8 @@ function renderResults(keepSelection) {
     card.appendChild(top);
     card.appendChild(priceRow(w));
     if (p.reason) card.appendChild(el('p', 'why', p.reason));
+    else if (p.pending) card.appendChild(el('p', 'small', 'Writing why this was picked…'));
+    else if (p.failed) card.appendChild(el('p', 'small', 'Picked for its scores. The reason couldn’t be written just now.'));
     const cr = el('div', 'conf-row');
     const qc = qualityChip(w);
     if (qc) cr.appendChild(qc);
@@ -2145,6 +2265,35 @@ document.querySelectorAll('.choice[data-mode]').forEach(b => b.addEventListener(
   if (b.dataset.mode === 'budget' && !budgetValue()) $('budgetInput').focus();
 }));
 $('budgetInput').addEventListener('change', savePrefs);
+// "Show picks for" on the results screen: re-pick from this scan
+document.querySelectorAll('.choice[data-rmode]').forEach(b => b.addEventListener('click', () => {
+  if (!result) return;
+  const mode = b.dataset.rmode, want = scanWant();
+  if (mode === 'budget') {
+    if (!$('rBudgetInput').value && budgetValue()) $('rBudgetInput').value = budgetValue();
+    const bv = rBudgetValue();
+    if (!bv) {
+      document.querySelectorAll('.choice[data-rmode]').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+      $('rBudgetFld').hidden = false;
+      $('rBudgetInput').focus();
+      return;
+    }
+    applyView('budget', bv, want);
+  } else applyView(mode, null, want);
+}));
+$('rBudgetInput').addEventListener('change', () => {
+  const bv = rBudgetValue();
+  if (!bv) { toast('Enter a budget between £3 and £500.'); return; }
+  if (result) applyView('budget', bv, scanWant());
+});
+$('rBudgetInput').addEventListener('keydown', e => { if (e.key === 'Enter') e.target.blur(); });
+document.querySelectorAll('.choice[data-rwant]').forEach(b => b.addEventListener('click', () => {
+  if (!result) return;
+  const want = b.dataset.rwant === 'any' ? null : b.dataset.rwant;
+  const mode = scanMode();
+  if (mode === 'budget' && !result.budget) return;
+  applyView(mode, mode === 'budget' ? result.budget : null, want);
+}));
 $('heatToggle').addEventListener('click', () => {
   heatOff = !heatOff;
   $('heatToggle').setAttribute('aria-pressed', String(heatOff));

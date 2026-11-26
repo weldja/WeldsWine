@@ -568,6 +568,132 @@ async function handleScan(request, env, ctx) {
   return reply(request, 200, result);
 }
 
+/* ── New reasons when the person changes what they want ─────────
+   After a scan, the page can re-pick from the wines it already has
+   (e.g. switch from best value to a treat) without a new scan. The
+   page chooses the new picks itself from the scores; this only writes
+   the short "why" for each one. It sends the wine details as text, no
+   photos, so it is quick and cheap. It does NOT count towards the
+   monthly shelf-scan limit, but each call is recorded in api_usage as
+   "shelf_reasons", and there is a simple hourly cap per person. */
+
+const REASONS_MODEL = "claude-sonnet-5-5";
+const REASONS_PER_HOUR = 40;
+
+// How many re-pick calls this person has made in the last hour (0 if it can't be checked)
+async function recentReasonCalls(env, userId) {
+  try {
+    const since = new Date(Date.now() - 3600 * 1000).toISOString();
+    const rows = await sbService(env, "/api_usage?select=id&feature=eq.shelf_reasons&user_id=eq." + encodeURIComponent(userId) +
+      "&created_at=gte." + encodeURIComponent(since), "GET");
+    return Array.isArray(rows) ? rows.length : 0;
+  } catch (e) {
+    return 0;
+  }
+}
+
+// Record one re-pick call (cost tracking only: never blocks anything)
+async function recordReasons(env, userId, data, ok) {
+  try {
+    const row = await sbService(env, "/api_usage", "POST", { user_id: userId, feature: "shelf_reasons" });
+    const id = Array.isArray(row) && row[0] && row[0].id;
+    if (id) await finishUsage(env, { id }, data, ok);
+  } catch (e) {
+    console.error("recordReasons: could not record usage:", e.message);
+  }
+}
+
+function buildReasonsPrompt(wines, mode, budget, want, hasLoyaltyCard, shop) {
+  const w = WANT_WORDS[want];
+  const what = mode === "treat"
+    ? "a treat: the best wine on the shelf for a special occasion. Each reason should say what makes the wine special. Price matters only a little."
+    : mode === "budget"
+    ? `the best value wine within a budget of £${budget} a bottle. Each reason should say why the wine is good for the money, not just that it is cheap.`
+    : "the best value wine: the most quality for the money (not just the cheapest). Each reason should say why the wine is good for the money, not just that it is cheap.";
+  const list = wines.map((x) => JSON.stringify(x)).join("\n");
+  return `A wine lover in a UK shop${shop ? " (" + shop + ")" : ""} scanned a shelf. These wines have been picked for them, best first. They want ${what}${w ? ` They only want a ${w} wine today.` : ""}
+They ${hasLoyaltyCard ? "have" : "do not have"} a loyalty card, so the price they pay is the ${hasLoyaltyCard ? "loyalty price where there is one, otherwise the normal price" : "normal price"}.
+
+The picks (quality_score and value_score are out of 10; "confidence" is how sure the price reading is):
+${list}
+
+For EACH pick, write a short reason: 1 or 2 plain sentences, British English, no hype. Base it on what you know about the wine, its producer, region and grape. If you are not familiar with a wine, say so honestly rather than inventing facts. If its confidence is "low" or it has a note, say the price is worth double-checking.
+
+Return ONLY a valid JSON object, no markdown fences, in this shape:
+{"reasons":[{"id":"w1","reason":"..."}]}`;
+}
+
+async function handleReasons(request, env, ctx) {
+  const apiKey = env && env.ANTHROPIC_API_KEY;
+  if (!apiKey) return reply(request, 500, { error: "NO_KEY_IN_WORKER" });
+
+  const caller = await checkCaller(request);
+  if (caller.error) return reply(request, caller.status, { error: caller.error });
+
+  let body;
+  try { body = await request.json(); }
+  catch { return reply(request, 400, { error: "BAD_REQUEST" }); }
+
+  const mode = MODES.includes(body.mode) ? body.mode : "value";
+  const budgetNum = Number(body.budget);
+  const budget = mode === "budget" && budgetNum >= 3 && budgetNum <= 500 ? Math.round(budgetNum * 100) / 100 : null;
+  if (mode === "budget" && !budget) return reply(request, 400, { error: "BAD_BUDGET" });
+  const want = WANT_WORDS[body.want] ? body.want : null;
+  const shop = str(body.shop, 60);
+  const loyaltyCard = body.loyaltyCard === true;
+
+  // Only the few picked wines, and only the details the reasons need
+  const wines = (Array.isArray(body.wines) ? body.wines : []).slice(0, 3).map((w) => w && typeof w === "object" ? {
+    id: str(w.id, 20), name: str(w.name, 120), producer: str(w.producer, 80), grape: str(w.grape, 80),
+    region: str(w.region, 80), country: str(w.country, 40), style: cleanStyle(w.style),
+    vintage: parseInt(w.vintage, 10) >= 1900 && parseInt(w.vintage, 10) <= 2100 ? parseInt(w.vintage, 10) : null,
+    price: num(w.price), loyalty_price: num(w.loyalty_price),
+    quality_score: parseInt(w.quality_score, 10) || null, value_score: parseInt(w.value_score, 10) || null,
+    confidence: ["high", "medium", "low"].includes(w.confidence) ? w.confidence : "medium",
+    note: str(w.note, 200)
+  } : null).filter((w) => w && w.id && w.name);
+  if (!wines.length) return reply(request, 400, { error: "NO_WINES" });
+
+  if ((await recentReasonCalls(env, caller.user.id)) >= REASONS_PER_HOUR) return reply(request, 429, { error: "TOO_MANY_REPICKS" });
+
+  let res;
+  try {
+    res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-api-key": apiKey, "anthropic-version": "2023-06-01", "anthropic-beta": "server-side-fallback-2026-07-01" },
+      // A short writing job, so low effort keeps it to a few seconds
+      body: JSON.stringify({ model: REASONS_MODEL, max_tokens: 4000, output_config: { effort: "low" }, fallbacks: "default",
+        messages: [{ role: "user", content: buildReasonsPrompt(wines, mode, budget, want, loyaltyCard, shop) }] })
+    });
+  } catch (e) {
+    return reply(request, 502, { error: "AI_UNREACHABLE" });
+  }
+  const record = (d, ok) => { const p = recordReasons(env, caller.user.id, d, ok); if (ctx && ctx.waitUntil) ctx.waitUntil(p); };
+  if (!res.ok) {
+    record(null, false);
+    const err = await res.json().catch(() => ({}));
+    console.error("shelf reasons: Anthropic error", res.status, JSON.stringify(err));
+    if (res.status === 429 || res.status === 529) return reply(request, 429, { error: "BUSY" });
+    return reply(request, 502, { error: "AI_ERROR" });
+  }
+  const data = await res.json();
+  const text = (data.content || []).filter((b) => b.type === "text").map((b) => b.text).join("");
+  const parsed = data.stop_reason === "end_turn" ? readJson(text) : null;
+  if (!parsed || !Array.isArray(parsed.reasons)) {
+    record(data, false);
+    console.error("shelf reasons: could not read AI answer", { stop: data.stop_reason, start: text.slice(0, 300) });
+    return reply(request, 422, { error: "UNREADABLE_ANSWER" });
+  }
+  record(data, true);
+  const ids = new Set(wines.map((w) => w.id));
+  const reasons = {};
+  parsed.reasons.forEach((r) => {
+    const id = r && str(r.id, 20);
+    if (id && ids.has(id) && !reasons[id]) reasons[id] = str(r.reason, 400) || "";
+  });
+  return reply(request, 200, { reasons });
+}
+
 /* ── Entry point ─────────────────────────────────────────────── */
 
 export default {
@@ -583,6 +709,13 @@ export default {
       try { return await handleScan(request, env, ctx); }
       catch (e) {
         console.error("shelf scan: unexpected error", e && e.stack || e);
+        return reply(request, 500, { error: "UNEXPECTED" });
+      }
+    }
+    if (request.method === "POST" && path === "/reasons") {
+      try { return await handleReasons(request, env, ctx); }
+      catch (e) {
+        console.error("shelf reasons: unexpected error", e && e.stack || e);
         return reply(request, 500, { error: "UNEXPECTED" });
       }
     }

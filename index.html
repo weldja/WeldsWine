@@ -11197,7 +11197,7 @@ async function startBulkEnrich() {
 /* ── Usage tab: AI usage, estimated cost and monthly limits per person ── */
 var _adminUsagePeriod = 'month';
 var _adminUsage = null;
-var USAGE_FEATURE_NAMES = { label: 'Label scans', shelf: 'Shelf scans', research: 'Wine Intel', deals: 'Deals checks' };
+var USAGE_FEATURE_NAMES = { label: 'Label scans', shelf: 'Shelf scans', shelf_reasons: 'Shelf re-picks', research: 'Wine Intel', deals: 'Deals checks' };
 var USAGE_LIMITED_FEATURES = ['label', 'shelf', 'research'];   // deals is one shared result, so tracked only
 
 function _fmtCost(c) {
