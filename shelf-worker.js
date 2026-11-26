@@ -510,10 +510,10 @@ async function handleScan(request, env, ctx) {
       method: "POST",
       headers: { "Content-Type": "application/json", "x-api-key": apiKey, "anthropic-version": "2023-06-01", "anthropic-beta": "server-side-fallback-2026-07-01" },
       // Sonnet 5.5 thinks before answering and that thinking shares max_tokens,
-      // so allow plenty of room. "high" effort gives it time to judge each
-      // wine's quality properly, which costs a little more per scan.
+      // so allow plenty of room. "medium" effort (was "high") makes scans
+      // noticeably quicker; if quality scores or picks get worse, set it back.
       // If the AI declines a request, "fallbacks" lets the API retry it on another model.
-      body: JSON.stringify({ model: MODEL, max_tokens: MAX_TOKENS, output_config: { effort: "high" }, fallbacks: "default", messages: [{ role: "user", content }] })
+      body: JSON.stringify({ model: MODEL, max_tokens: MAX_TOKENS, output_config: { effort: "medium" }, fallbacks: "default", messages: [{ role: "user", content }] })
     });
   } catch (e) {
     record(null, false);
