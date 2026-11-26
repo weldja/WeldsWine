@@ -37,6 +37,11 @@ const SUPABASE_URL = "https://phcnswuwrqarikzjvfqd.supabase.co";
 const SUPABASE_KEY = "sb_publishable_6FvpnoWmZ8pSFy-GWZfFQw_ciawP5aA";
 
 const MAX_PHOTOS = 6;
+
+// Room for the AI's thinking AND its answer together. A busy shelf over
+// several photos produces a long answer (every wine, plus a box for each
+// photo it appears in), and 20,000 was not always enough.
+const MAX_TOKENS = 32000;
 const MAX_PHOTO_BYTES = 4 * 1024 * 1024; // per photo, after base64 decoding (Claude's limit is 5 MB)
 
 const ALLOWED_ORIGINS = [
@@ -267,7 +272,7 @@ YOUR TASKS
 
 8. Write a one-sentence summary of the shelf.
 
-Return ONLY a valid JSON object — no markdown fences, no explanation — exactly in this shape:
+Return ONLY a valid JSON object — no markdown fences, no explanation, no line breaks or indentation inside it (write it compactly to save space) — exactly in this shape:
 {
   "shop": "shop name or null",
   "summary": "one sentence",
@@ -438,6 +443,23 @@ function cleanResult(raw, photoCount, want, mode, budget, loyaltyCard) {
   return out;
 }
 
+/* ── Read the JSON in the AI's answer ───────────────────────────
+   Takes everything from the first "{" to the last "}". If that will
+   not parse, it tries once more after removing trailing commas
+   (e.g. [1, 2,]), a small slip the AI sometimes makes. Returns null
+   if the answer still cannot be read. */
+
+function readJson(text) {
+  const cleaned = String(text || "").replace(/```json\s*/gi, "").replace(/```\s*/gi, "").trim();
+  const start = cleaned.indexOf("{");
+  const end = cleaned.lastIndexOf("}");
+  if (start === -1 || end <= start) return null;
+  const candidate = cleaned.slice(start, end + 1);
+  try { return JSON.parse(candidate); } catch (_) {}
+  try { return JSON.parse(candidate.replace(/,\s*([}\]])/g, "$1")); } catch (_) {}
+  return null;
+}
+
 /* ── The scan itself ─────────────────────────────────────────── */
 
 async function handleScan(request, env, ctx) {
@@ -491,7 +513,7 @@ async function handleScan(request, env, ctx) {
       // so allow plenty of room. "high" effort gives it time to judge each
       // wine's quality properly, which costs a little more per scan.
       // If the AI declines a request, "fallbacks" lets the API retry it on another model.
-      body: JSON.stringify({ model: MODEL, max_tokens: 20000, output_config: { effort: "high" }, fallbacks: "default", messages: [{ role: "user", content }] })
+      body: JSON.stringify({ model: MODEL, max_tokens: MAX_TOKENS, output_config: { effort: "high" }, fallbacks: "default", messages: [{ role: "user", content }] })
     });
   } catch (e) {
     record(null, false);
@@ -507,14 +529,28 @@ async function handleScan(request, env, ctx) {
   }
 
   const data = await res.json();
-  const text = (data.content || []).filter((b) => b.type === "text").map((b) => b.text).join("");
-  const cleaned = text.replace(/```json\s*/gi, "").replace(/```\s*/gi, "").trim();
-  const match = cleaned.match(/\{[\s\S]*\}/);
-  let parsed;
-  try { parsed = JSON.parse(match ? match[0] : cleaned); }
-  catch {
+  const stop = data.stop_reason;
+  const outTokens = (data.usage && data.usage.output_tokens) || 0;
+
+  // The AI ran out of room before finishing, so the answer is cut off mid-way.
+  if (stop === "max_tokens") {
     record(data, false);
-    console.error("shelf scan: could not read AI answer:", text.slice(0, 500));
+    console.error("shelf scan: answer cut off at max_tokens", { photos: photos.length, outTokens });
+    return reply(request, 422, { error: "ANSWER_TOO_LONG" });
+  }
+  // The AI declined to answer (very rare for shelf photos).
+  if (stop === "refusal") {
+    record(data, false);
+    console.error("shelf scan: AI declined", { photos: photos.length });
+    return reply(request, 422, { error: "AI_DECLINED" });
+  }
+
+  const text = (data.content || []).filter((b) => b.type === "text").map((b) => b.text).join("");
+  const parsed = readJson(text);
+  if (!parsed) {
+    record(data, false);
+    // Log the start AND the end, so the Cloudflare logs show where it went wrong
+    console.error("shelf scan: could not read AI answer", { stop, outTokens, length: text.length, start: text.slice(0, 300), end: text.slice(-300) });
     return reply(request, 422, { error: "UNREADABLE_ANSWER" });
   }
   record(data, true);

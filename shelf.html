@@ -484,7 +484,7 @@ let isMember = false;   // signed in? Visitors can use the page but not scan
 const MAX_PHOTOS = 6;
 const PHOTO_MAX_PX = 1568;          // long side sent to the AI; small price text needs the detail
 const PHOTO_QUALITY = 0.85;
-const SCAN_TIMEOUT_MS = 180000;     // give up after three minutes
+const SCAN_TIMEOUT_MS = 300000;     // give up after five minutes (busy shelves over several photos take a while)
 const DRAFT_KEY = 'wwShelfDraft';   // photos in progress (this tab only)
 const RESULT_KEY = 'wwShelfResult'; // last result (this tab only)
 const PREFS_KEY = 'wwShelfPrefs';   // loyalty card, shop and colour (remembered on this device)
@@ -837,6 +837,8 @@ const ERRORS = {
   BUSY: ['The AI is busy', 'Too many requests right now. Wait a minute and try again.'],
   PHOTO_TOO_BIG: ['A photo is too large', 'Remove the last photo and take it again.'],
   UNREADABLE_ANSWER: ['Couldn’t read the shelf', 'The AI’s answer came back garbled. Trying again usually works.'],
+  ANSWER_TOO_LONG: ['Too many wines in one go', 'This shelf has more wines than the AI could finish in one scan. Try two or three photos of half the shelf each, then scan the other half.'],
+  AI_DECLINED: ['Couldn’t read the shelf', 'The AI wouldn’t process these photos. Make sure they show only the wine shelf, then try again.'],
   TIMEOUT: ['That took too long', 'Try again, perhaps with fewer photos.'],
   NETWORK: ['No connection', 'Couldn’t reach the scanner. Check your signal and try again — your photos are still here.']
 };
