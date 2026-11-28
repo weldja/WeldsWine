@@ -1,8 +1,15 @@
 # Welds Wine Wisdoms
+#
+# NOTE: this file is NOT what visitors and Google see. The Cloudflare Worker
+# (worker.js, look for "GET /robots.txt") answers /robots.txt on weldswine.co.uk.
+# Change it there. This copy is only a fallback, used if that Worker route is
+# ever removed, so keep the two the same.
+#
 # Everything may be crawled. The Shelf Scanner app itself (shelf.html)
 # is kept out of Google by a "noindex" tag inside the page, not here:
 # Google has to be allowed to read the page to see that tag.
 User-agent: *
 Allow: /
+Disallow: /api/
 
 Sitemap: https://weldswine.co.uk/sitemap.xml

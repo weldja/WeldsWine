@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+
+<!-- ── Search engines ──────────────────────────────────────────
+     This page exists so Google has a clear page to show for searches
+     like "wine scanner" and "wine label scanner". The app itself is
+     the homepage; every button here leads there.
+     Keep the title under about 60 characters and the description
+     under about 160, or Google cuts them short.                  -->
+<title>Wine Scanner: Scan Any Wine Label Free in Your Browser</title>
+<meta name="description" content="Free wine label scanner: photograph a bottle and AI reads the wine, region, grape and vintage into your own wine journal. No app or sign-up needed to try it."/>
+<link rel="canonical" href="https://weldswine.co.uk/wine-label-scanner.html"/>
+<meta name="robots" content="index, follow, max-image-preview:large"/>
+
+<!-- ── How the page looks when shared (WhatsApp, Facebook, X …) ── -->
+<meta property="og:type" content="website"/>
+<meta property="og:site_name" content="Welds Wine Wisdoms"/>
+<meta property="og:locale" content="en_GB"/>
+<meta property="og:title" content="Wine Scanner: scan any wine label free"/>
+<meta property="og:description" content="Take a photo of the label. AI reads the wine, region, grape and vintage, and your wine journal fills itself in."/>
+<meta property="og:url" content="https://weldswine.co.uk/wine-label-scanner.html"/>
+<meta property="og:image" content="https://weldswine.co.uk/og-image.png"/>
+<meta property="og:image:width" content="1200"/>
+<meta property="og:image:height" content="630"/>
+<meta property="og:image:alt" content="Welds Wine Wisdoms: AI wine label scanner and personal wine journal"/>
+<meta name="twitter:card" content="summary_large_image"/>
+
+<meta name="theme-color" content="#5C1525"/>
+<link rel="icon" href="/favicon.ico" sizes="32x32"/>
+<link rel="apple-touch-icon" href="/icon-192.png"/>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,500;0,600;1,500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+<!-- ── Structured data: tells search engines exactly what this page is.
+     The FAQ answers here must match the visible FAQ further down.
+     If you change one, change the other.                            -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebApplication",
+      "@id": "https://weldswine.co.uk/wine-label-scanner.html#app",
+      "name": "Wine Label Scanner",
+      "alternateName": ["Welds Wine Scanner", "Welds Wine Wisdoms wine scanner"],
+      "url": "https://weldswine.co.uk/wine-label-scanner.html",
+      "description": "Photograph the front and back label of a wine bottle and AI reads the wine name, producer, region, grape, vintage and tasting notes, then saves the wine to your own wine journal with your score out of 10.",
+      "applicationCategory": "LifestyleApplication",
+      "operatingSystem": "Any. Works in your phone's web browser.",
+      "browserRequirements": "Requires a modern web browser and a camera.",
+      "inLanguage": "en-GB",
+      "image": "https://weldswine.co.uk/og-image.png",
+      "offers": { "@type": "Offer", "price": "0", "priceCurrency": "GBP" },
+      "featureList": [
+        "Reads the front and back label from a photo",
+        "Fills in the wine name, producer, region, grape and vintage",
+        "Lets you check and correct every detail before saving",
+        "Saves each wine to your journal with your score out of 10 and notes",
+        "Maps where your wines come from",
+        "Share wines with friends or keep a shared cellar"
+      ],
+      "publisher": { "@id": "https://weldswine.co.uk/#organization" },
+      "isPartOf": { "@id": "https://weldswine.co.uk/#website" }
+    },
+    {
+      "@type": "WebSite",
+      "@id": "https://weldswine.co.uk/#website",
+      "name": "Welds Wine Wisdoms",
+      "url": "https://weldswine.co.uk/"
+    },
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        { "@type": "ListItem", "position": 1, "name": "Welds Wine Wisdoms", "item": "https://weldswine.co.uk/" },
+        { "@type": "ListItem", "position": 2, "name": "Wine Label Scanner", "item": "https://weldswine.co.uk/wine-label-scanner.html" }
+      ]
+    },
+    {
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "Is the wine scanner free?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Yes. You can try it straight away without signing up. Create a free account when you want to keep your journal, and anything you saved while trying it comes with you." }
+        },
+        {
+          "@type": "Question",
+          "name": "What does it read from the label?",
+          "acceptedAnswer": { "@type": "Answer", "text": "The wine's name, the producer, the region, the grape and the vintage, plus tasting notes where the label has them. Photograph the back label too: that is often where the grape and region are printed." }
+        },
+        {
+          "@type": "Question",
+          "name": "Do I need to download an app?",
+          "acceptedAnswer": { "@type": "Answer", "text": "No. It works in your phone's web browser. If you use it often, you can install it from your browser so it opens from your home screen like any other app." }
+        },
+        {
+          "@type": "Question",
+          "name": "What devices does it work on?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Any device with a camera: iPhone, Android, iPad, laptop or desktop, in any modern web browser." }
+        },
+        {
+          "@type": "Question",
+          "name": "What if it reads something wrong?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Nothing is saved until you have looked at it. Every detail it fills in can be changed before you save, and you can edit a wine later too. Glare, curved labels and fancy lettering are the usual causes of a misread." }
+        },
+        {
+          "@type": "Question",
+          "name": "How is this different from the Shelf Scanner?",
+          "acceptedAnswer": { "@type": "Answer", "text": "The wine label scanner is for one bottle: it reads the label and adds that wine to your journal. The Shelf Scanner is for a whole shop shelf: it reads every wine and price tag and tells you which bottles are the best value." }
+        },
+        {
+          "@type": "Question",
+          "name": "Can I share wines with friends?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Yes. You can share a single wine recommendation, or join a shared cellar with friends to see each other's finds, ratings, comments and tasting events." }
+        }
+      ]
+    }
+  ]
+}
+</script>
+
+<style>
+/* Colours and fonts are the same as the rest of Welds Wine Wisdoms */
+:root{
+  --burgundy:#8B2439; --burgundy-deep:#5C1525; --parchment:#F5EDE2; --cream:#F9F5F0; --ivory:#FFFFFF;
+  --charcoal:#2D2420; --text-2:#5F5450; --light-gray:#E8DDD4; --gold:#C9A34A; --gold-lt:#E2C070; --gold-text:#8A6A1F;
+  --font-d:'Lora',Georgia,serif; --font-b:'Inter',system-ui,-apple-system,sans-serif;
+  --r:10px; --rl:16px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%;scroll-padding-top:env(safe-area-inset-top,0px)}
+body{font-family:var(--font-b);font-size:1.0625rem;background:var(--cream);color:var(--charcoal);line-height:1.6;-webkit-font-smoothing:antialiased}
+a{color:var(--burgundy)}
+:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+img,svg{max-width:100%}
+
+/* Header bar, as on the rest of the site */
+.hdr{background:var(--burgundy-deep);color:var(--parchment);padding:calc(12px + env(safe-area-inset-top,0px)) 20px 12px}
+.hdr-in{max-width:1080px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:16px}
+.brand{font-family:var(--font-d);font-size:1.1rem;font-weight:600;color:var(--parchment);text-decoration:none}
+.hdr a.nav{color:var(--gold-lt);font-size:.9rem;text-decoration:none}
+.hdr a.nav:hover{text-decoration:underline}
+
+.wrap{max-width:1080px;margin:0 auto;padding:0 20px}
+.measure{max-width:38rem}
+.wrap.measure{max-width:1080px}
+.wrap.measure > *{max-width:38rem}
+
+/* Breadcrumb */
+.crumbs{font-size:.82rem;color:var(--text-2);padding-top:18px}
+.crumbs a{color:var(--text-2)}
+
+/* Hero: the words on one side, the example result on the other */
+.hero{display:grid;gap:28px;padding:20px 0 44px;align-items:center}
+@media (min-width:900px){.hero{grid-template-columns:1fr 1fr;gap:48px;padding:36px 0 64px}}
+h1{font-family:var(--font-d);font-weight:600;font-size:clamp(2rem,5.2vw,3.1rem);line-height:1.12;letter-spacing:-.01em;color:var(--burgundy-deep)}
+.lead{font-size:1.15rem;line-height:1.6;color:#3D3330;margin-top:16px}
+.ctas{display:flex;flex-wrap:wrap;gap:12px;margin-top:26px}
+.btn{display:inline-flex;align-items:center;justify-content:center;min-height:50px;padding:0 24px;border-radius:25px;font-weight:600;font-size:1rem;text-decoration:none}
+.btn-main{background:var(--burgundy);color:#fff}
+.btn-main:hover{background:var(--burgundy-deep)}
+.btn-line{border:1.5px solid var(--burgundy);color:var(--burgundy)}
+.btn-line:hover{background:#fff}
+.status{margin-top:16px;font-size:.88rem;color:var(--text-2)}
+.status strong{color:var(--gold-text);font-weight:600}
+
+/* The example: a label on the left, what the scanner filled in on the right */
+.demo{background:#EFE4D6;border-radius:var(--rl);padding:16px;border:1px solid var(--light-gray);margin:0}
+.demo-row{display:grid;grid-template-columns:120px 1fr;gap:16px;align-items:center}
+@media (max-width:420px){.demo-row{grid-template-columns:96px 1fr;gap:12px}}
+.demo svg{display:block;width:100%;height:auto}
+.card{background:#fff;border-radius:var(--r);padding:14px 16px;border:1px solid var(--light-gray)}
+.card dl{display:grid;gap:10px}
+.card dt{font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;color:var(--text-2);font-weight:600}
+.card dd{font-family:var(--font-d);font-size:1rem;font-weight:600;color:var(--burgundy-deep);line-height:1.3}
+.card .ok{margin-top:12px;font-size:.8rem;color:#1E7A43;font-weight:600}
+.demo figcaption{font-size:.84rem;color:var(--text-2);padding:12px 4px 0}
+
+/* Sections */
+section.block{padding:44px 0;border-top:1px solid var(--light-gray)}
+h2{font-family:var(--font-d);font-weight:600;font-size:clamp(1.5rem,3.4vw,2rem);line-height:1.2;color:var(--burgundy-deep)}
+h3{font-family:var(--font-d);font-weight:600;font-size:1.15rem;line-height:1.3}
+.block p{margin-top:12px}
+
+/* How it works: a real sequence, so it is numbered */
+.steps{list-style:none;counter-reset:s;display:grid;gap:22px;margin-top:24px}
+@media (min-width:760px){.steps{grid-template-columns:repeat(3,1fr);gap:32px}}
+.steps li{counter-increment:s;position:relative;padding-top:52px}
+.steps li::before{content:counter(s);position:absolute;top:0;left:0;width:40px;height:40px;border-radius:20px;background:var(--burgundy-deep);color:var(--gold-lt);font-family:var(--font-d);font-weight:600;font-size:1.15rem;display:flex;align-items:center;justify-content:center}
+.steps p{margin-top:6px;color:#3D3330}
+
+/* Lists of features */
+.gets{display:grid;gap:4px 40px;margin-top:22px}
+@media (min-width:760px){.gets{grid-template-columns:1fr 1fr}}
+.gets div{padding:16px 0;border-bottom:1px solid var(--light-gray)}
+.gets dt{font-weight:600;font-size:1.02rem}
+.gets dd{color:#3D3330;margin-top:4px}
+
+/* Tips */
+.tips{margin:16px 0 0 1.2em;display:grid;gap:8px;color:#3D3330}
+
+/* Two scanners side by side */
+.pair{display:grid;gap:16px;margin-top:22px}
+@media (min-width:760px){.pair{grid-template-columns:1fr 1fr}}
+.pair > div{background:#fff;border:1px solid var(--light-gray);border-radius:var(--r);padding:18px 20px}
+.pair p{margin-top:8px;color:#3D3330}
+
+/* FAQ */
+.faq{margin-top:20px}
+.faq details{border-bottom:1px solid var(--light-gray)}
+.faq summary{cursor:pointer;list-style:none;padding:16px 32px 16px 0;position:relative;font-weight:600}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary::after{content:"+";position:absolute;right:4px;top:12px;font-size:1.4rem;font-weight:400;color:var(--burgundy)}
+.faq details[open] summary::after{content:"–"}
+.faq details p{margin:0 0 18px;color:#3D3330}
+
+/* Closing */
+.closing{text-align:left;padding:48px 0 56px}
+footer{background:var(--burgundy-deep);color:#E8C6CE;font-size:.86rem;padding:22px 20px calc(22px + env(safe-area-inset-bottom,0px))}
+footer a{color:var(--gold-lt)}
+footer .wrap{display:flex;flex-wrap:wrap;gap:8px 24px;justify-content:space-between;padding:0}
+footer nav{display:flex;flex-wrap:wrap;gap:8px 18px}
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <div class="hdr-in">
+    <a class="brand" href="/">Welds Wine Wisdoms</a>
+    <a class="nav" href="/">Open my wine journal</a>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+    <nav class="crumbs" aria-label="Breadcrumb"><a href="/">Welds Wine Wisdoms</a> / Wine Label Scanner</nav>
+
+    <div class="hero">
+      <div>
+        <h1>Free wine scanner: snap the label and it’s all filled in</h1>
+        <p class="lead measure">Had a bottle you loved and can’t remember what it was? Take a photo of the label. The wine scanner reads the name, producer, region, grape and vintage, and saves it to your own wine journal with your score and a note. No typing.</p>
+        <div class="ctas">
+          <a class="btn btn-main" href="/">Scan a bottle free</a>
+          <a class="btn btn-line" href="#what-it-reads">What it reads</a>
+        </div>
+        <p class="status"><strong>No sign-up needed to try it.</strong> It works in your phone’s browser, with no app to download.</p>
+      </div>
+
+      <figure class="demo">
+        <div class="demo-row">
+          <svg viewBox="0 0 120 300" role="img" aria-labelledby="btlTitle">
+            <title id="btlTitle">A bottle of red wine with its label</title>
+            <path fill="#2E2A26" d="M50 0h20v24h-1v66c0 18 37 30 37 66v130a14 14 0 0 1-14 14H28a14 14 0 0 1-14-14V156c0-36 37-48 37-66V24h-1z"/>
+            <rect x="22" y="170" width="76" height="92" rx="4" fill="#F7F0E4"/>
+            <rect x="34" y="184" width="52" height="4" rx="2" fill="#5C1525"/>
+            <rect x="40" y="196" width="40" height="3" rx="1.5" fill="#B9A992"/>
+            <circle cx="60" cy="222" r="11" fill="none" stroke="#C9A34A" stroke-width="2"/>
+            <rect x="38" y="242" width="44" height="3" rx="1.5" fill="#B9A992"/>
+            <rect x="46" y="250" width="28" height="3" rx="1.5" fill="#CFC2AE"/>
+          </svg>
+          <div class="card">
+            <dl>
+              <div><dt>Wine</dt><dd>Château Pichon Baron</dd></div>
+              <div><dt>Region</dt><dd>Pauillac, Bordeaux</dd></div>
+              <div><dt>Grape · Vintage</dt><dd>Cabernet Sauvignon · 2018</dd></div>
+              <div><dt>Tasting notes</dt><dd>Blackcurrant, cedar, firm tannins</dd></div>
+            </dl>
+            <p class="ok">✓ Read from the label</p>
+          </div>
+        </div>
+        <figcaption>An example of what the scanner fills in from one photo of the label. You check it, add your score out of 10, and save.</figcaption>
+      </figure>
+    </div>
+  </div>
+
+  <section class="block" id="what-it-reads" aria-labelledby="reads-h">
+    <div class="wrap">
+      <h2 id="reads-h">What the wine scanner reads from a label</h2>
+      <p class="measure">Wine labels pack a lot into a small space, often in another language. The scanner uses AI to read both the front and back label and pull out the details that matter, so your journal entry is done in seconds.</p>
+      <dl class="gets">
+        <div><dt>Wine name and producer</dt><dd>The château, domaine, estate or brand, and the name of the wine itself.</dd></div>
+        <div><dt>Region and country</dt><dd>Where it comes from, so your wines can be shown on a map of the world.</dd></div>
+        <div><dt>Grape</dt><dd>The grape or blend, which is often only printed on the back label.</dd></div>
+        <div><dt>Vintage</dt><dd>The year on the bottle, so you can tell one year from another.</dd></div>
+        <div><dt>Tasting notes</dt><dd>Where the label describes the wine, those notes are filled in for you to keep or replace with your own.</dd></div>
+        <div><dt>Your photo of the label</dt><dd>Kept with the wine, so you can spot the same bottle on the shelf next time.</dd></div>
+      </dl>
+    </div>
+  </section>
+
+  <section class="block" id="how-it-works" aria-labelledby="how-h">
+    <div class="wrap">
+      <h2 id="how-h">How to scan a wine label</h2>
+      <ol class="steps">
+        <li>
+          <h3>Photograph the label</h3>
+          <p>Take a photo of the front label, then the back. You can use your phone’s camera or a photo you already have.</p>
+        </li>
+        <li>
+          <h3>Check what it read</h3>
+          <p>The details are filled in for you. Have a quick look, change anything that isn’t right, and add your score out of 10.</p>
+        </li>
+        <li>
+          <h3>It’s in your journal</h3>
+          <p>Save, and the wine joins your journal. Search it, sort by score or grape, see it on the map, or share it with a friend.</p>
+        </li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="block" aria-labelledby="tips-h">
+    <div class="wrap measure">
+      <h2 id="tips-h">Tips for a good scan</h2>
+      <ul class="tips">
+        <li>Fill the frame with the label, and hold the phone straight on rather than at an angle.</li>
+        <li>Avoid glare: tilt the bottle away from bright lights or a window.</li>
+        <li>On a curved bottle, keep the middle of the label facing you; the edges matter less.</li>
+        <li>Always add the back label. It is usually where the grape, region and alcohol are printed.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="block" aria-labelledby="pair-h">
+    <div class="wrap">
+      <h2 id="pair-h">One bottle, or a whole shelf?</h2>
+      <div class="pair">
+        <div>
+          <h3>Wine label scanner</h3>
+          <p>For the bottle in your hand. It reads the label and adds that wine to your journal, so you remember what you thought of it.</p>
+        </div>
+        <div>
+          <h3>Shelf Scanner</h3>
+          <p>For the supermarket aisle. Photograph the shelf and it reads every wine and price tag, then shows which bottles are the best value. <a href="/wine-shelf-scanner.html">How the Shelf Scanner works</a>.</p>
+        </div>
+      </div>
+      <p class="measure">Want to see real results? <a href="/wines">Browse every wine we’ve scanned and rated</a>.</p>
+    </div>
+  </section>
+
+  <section class="block" aria-labelledby="faq-h">
+    <div class="wrap measure">
+      <h2 id="faq-h">Questions</h2>
+      <!-- Keep these answers the same as the FAQ in the structured data at the top of the page -->
+      <div class="faq">
+        <details>
+          <summary>Is the wine scanner free?</summary>
+          <p>Yes. You can try it straight away without signing up. Create a free account when you want to keep your journal, and anything you saved while trying it comes with you.</p>
+        </details>
+        <details>
+          <summary>What does it read from the label?</summary>
+          <p>The wine’s name, the producer, the region, the grape and the vintage, plus tasting notes where the label has them. Photograph the back label too: that is often where the grape and region are printed.</p>
+        </details>
+        <details>
+          <summary>Do I need to download an app?</summary>
+          <p>No. It works in your phone’s web browser. If you use it often, you can install it from your browser so it opens from your home screen like any other app.</p>
+        </details>
+        <details>
+          <summary>What devices does it work on?</summary>
+          <p>Any device with a camera: iPhone, Android, iPad, laptop or desktop, in any modern web browser.</p>
+        </details>
+        <details>
+          <summary>What if it reads something wrong?</summary>
+          <p>Nothing is saved until you have looked at it. Every detail it fills in can be changed before you save, and you can edit a wine later too. Glare, curved labels and fancy lettering are the usual causes of a misread.</p>
+        </details>
+        <details>
+          <summary>How is this different from the Shelf Scanner?</summary>
+          <p>The wine label scanner is for one bottle: it reads the label and adds that wine to your journal. The Shelf Scanner is for a whole shop shelf: it reads every wine and price tag and tells you which bottles are the best value.</p>
+        </details>
+        <details>
+          <summary>Can I share wines with friends?</summary>
+          <p>Yes. You can share a single wine recommendation, or join a shared cellar with friends to see each other’s finds, ratings, comments and tasting events.</p>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  <section class="block closing" aria-labelledby="go-h">
+    <div class="wrap measure">
+      <h2 id="go-h">Scan your next bottle</h2>
+      <p>Next time you open something good, or something you’d never buy again, take a photo of the label. In a year you’ll have a journal of every wine you’ve tried, and you’ll know what to buy again.</p>
+      <div class="ctas">
+        <a class="btn btn-main" href="/">Scan a bottle free</a>
+        <a class="btn btn-line" href="/wine-shelf-scanner.html">Try the Shelf Scanner</a>
+      </div>
+      <p class="status">No sign-up needed to try it.</p>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>Welds Wine Wisdoms</span>
+    <nav aria-label="Site"><a href="/">Wine journal</a><a href="/wine-label-scanner.html">Wine label scanner</a><a href="/wine-shelf-scanner.html">Shelf Scanner</a><a href="/wines">Wines we’ve rated</a></nav>
+  </div>
+</footer>
+
+</body>
+</html>

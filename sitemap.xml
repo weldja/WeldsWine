@@ -1,11 +1,26 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!--
+  NOTE: this file is NOT what visitors and Google see. The Cloudflare Worker
+  (worker.js, render_sitemap) answers /sitemap.xml on weldswine.co.uk and builds
+  the full list, including every public wine page and the grape, region and
+  country pages. Add new pages there.
+  This copy is only a fallback, used if that Worker route is ever removed.
+-->
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://weldswine.co.uk/</loc>
-    <lastmod>2026-11-25</lastmod>
+    <lastmod>2026-11-28</lastmod>
+  </url>
+  <url>
+    <loc>https://weldswine.co.uk/wine-label-scanner.html</loc>
+    <lastmod>2026-11-28</lastmod>
   </url>
   <url>
     <loc>https://weldswine.co.uk/wine-shelf-scanner.html</loc>
     <lastmod>2026-11-25</lastmod>
+  </url>
+  <url>
+    <loc>https://weldswine.co.uk/wines</loc>
+    <lastmod>2026-11-28</lastmod>
   </url>
 </urlset>

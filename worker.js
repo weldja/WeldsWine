@@ -876,10 +876,100 @@ function wine_meta_desc(w, enrich) {
 }
 __name(wine_meta_desc, "wine_meta_desc");
 
+// The wine's name as people would search for it, e.g. "Mad Fish Shiraz 2025".
+// The winery is left out when the name already starts with it, so it isn't said twice.
+function wine_plain_name(w, withVintage = true) {
+  const winery = String(w.winery || "").trim();
+  const name = String(w.name || "").trim();
+  const parts = (name && winery && name.toLowerCase().startsWith(winery.toLowerCase())) ? [name] : [winery, name];
+  if (withVintage && w.vintage) parts.push(String(w.vintage));
+  return parts.filter(Boolean).join(" ") || "Wine";
+}
+__name(wine_plain_name, "wine_plain_name");
+
 function wine_title(w) {
-  return esc([w.winery, w.name, w.vintage].filter(Boolean).join(" · ") || "Wine");
+  return esc(wine_plain_name(w));
 }
 __name(wine_title, "wine_title");
+
+/* ── Grape, region and country pages ────────────────────────────
+   Each grape, region and country in the public cellar gets its own page,
+   e.g. /wine/grape-shiraz, /wine/region-rioja, /wine/country-france.
+   They live under /wine/ because that is the address the Worker already answers;
+   wine IDs never start with "grape-", "region-" or "country-", so they can't clash.
+   Pages with fewer than HUB_MIN_WINES wines still work, but are kept out of Google
+   and the sitemap, so Google doesn't see lots of near-empty pages.          */
+const HUB_MIN_WINES = 3;
+const HUB_PATH = /^(grape|region|country)-([a-z0-9-]+)$/;
+
+function slugify(s) {
+  return String(s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase()
+    .replace(/&/g, " and ").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+}
+__name(slugify, "slugify");
+
+// "Grenache Noir, Syrah, Mourvèdre" -> three grapes. Values that are clearly a region
+// typed into the grape box (they contain a dash or brackets) are skipped.
+function wine_grapes(w) {
+  if (!w.grape) return [];
+  return String(w.grape).split(/\s*(?:,|\/|&|\+|\band\b)\s*/i)
+    .map(s => s.trim())
+    .filter(s => s.length > 2 && s.length <= 40 && !/[–—(]/.test(s));
+}
+__name(wine_grapes, "wine_grapes");
+
+// "Rioja – Denominación de Origen Calificada (Crianza)" -> "Rioja"
+function wine_main_region(w) {
+  if (!w.region) return "";
+  const r = String(w.region).split(/\s+[–—-]\s+|\s*\(/)[0].trim();
+  return r.length > 1 && r.length <= 40 && !/^\d+$/.test(r) ? r : "";
+}
+__name(wine_main_region, "wine_main_region");
+
+const HUB_KINDS = {
+  grape:   { plural: "Grapes",    names: w => wine_grapes(w) },
+  region:  { plural: "Regions",   names: w => [wine_main_region(w)].filter(Boolean) },
+  country: { plural: "Countries", names: w => [String(w.country || "").trim()].filter(s => s.length > 1) }
+};
+
+function hub_url(kind, name) {
+  const s = slugify(name);
+  return s ? `${APP_URL}/wine/${kind}-${s}` : "";
+}
+__name(hub_url, "hub_url");
+
+// Group wines into grape/region/country pages. Returns { "grape-shiraz": { kind, slug, name, wines } }
+function build_hubs(wines) {
+  const hubs = {};
+  for (const w of wines) {
+    for (const kind of Object.keys(HUB_KINDS)) {
+      const seen = new Set();
+      for (const name of HUB_KINDS[kind].names(w)) {
+        const slug = slugify(name);
+        const key = kind + "-" + slug;
+        if (!slug || seen.has(key)) continue;
+        seen.add(key);
+        const h = hubs[key] || (hubs[key] = { kind, slug, url: `${APP_URL}/wine/${key}`, spellings: {}, wines: [] });
+        h.spellings[name] = (h.spellings[name] || 0) + 1;
+        h.wines.push(w);
+      }
+    }
+  }
+  // Show each page under the spelling used most often ("Cabernet Sauvignon", not "cabernet sauvignon")
+  for (const h of Object.values(hubs)) {
+    h.name = Object.entries(h.spellings).sort((a, b) => b[1] - a[1])[0][0];
+    delete h.spellings;
+  }
+  return hubs;
+}
+__name(build_hubs, "build_hubs");
+
+// The bigger pages of one kind, most wines first (used for the "browse by" links)
+function big_hubs(hubs, kind) {
+  return Object.values(hubs).filter(h => h.kind === kind && h.wines.length >= HUB_MIN_WINES)
+    .sort((a, b) => b.wines.length - a.wines.length || a.name.localeCompare(b.name));
+}
+__name(big_hubs, "big_hubs");
 
 function style_colour(style) {
   const m = { Red: "#8B2439", White: "#C9A34A", "Rosé": "#D4849A", Sparkling: "#B8A44C", Dessert: "#D4A574", Fortified: "#6B3A2A" };
@@ -915,18 +1005,33 @@ function render_wine_page(w, enrich) {
   const frontUrl = pageUrl + "?photo=front";
   const backUrl = pageUrl + "?photo=back";
   const photoHtml = (w.photo_front || w.photo_back) ? `<div class="photos">${w.photo_front ? `<img src="${esc(frontUrl)}" alt="${esc((w.winery||"")+" "+(w.name||""))} front label" loading="lazy" decoding="async"/>` : ""}${w.photo_back ? `<img src="${esc(backUrl)}" alt="${esc((w.winery||"")+" "+(w.name||""))} back label" loading="lazy" decoding="async"/>` : ""}</div>` : "";
+  // Grape, region and country link to the page listing every wine we've rated with that grape/region/country
+  const link = (href, text) => href ? `<a href="${esc(href)}">${esc(text)}</a>` : esc(text);
+  const grapes = wine_grapes(w);
+  const mainRegion = wine_main_region(w);
+  const grapeHtml = grapes.length ? grapes.map(g => link(hub_url("grape", g), g)).join(", ") : esc(String(w.grape || ""));
   const details = [
-    w.grape   ? ["Grape", w.grape] : null,
-    w.region  ? ["Region", w.region] : null,
-    w.country ? ["Country", w.country] : null,
-    w.vintage ? ["Vintage", w.vintage] : null,
-    w.style   ? ["Style", w.style] : null
-  ].filter(Boolean).map(([l,v]) => `<div class="detail"><span class="detail-label">${esc(l)}</span><span class="detail-value">${esc(String(v))}</span></div>`).join("");
+    w.grape   ? ["Grape", grapeHtml] : null,
+    w.region  ? ["Region", mainRegion ? link(hub_url("region", mainRegion), String(w.region)) : esc(String(w.region))] : null,
+    w.country ? ["Country", link(hub_url("country", String(w.country).trim()), String(w.country))] : null,
+    w.vintage ? ["Vintage", esc(String(w.vintage))] : null,
+    w.style   ? ["Style", esc(String(w.style))] : null
+  ].filter(Boolean).map(([l,v]) => `<div class="detail"><span class="detail-label">${esc(l)}</span><span class="detail-value">${v}</span></div>`).join("");
+  // Breadcrumb: Wines › Shiraz › this wine (the middle step is the first grape, if there is one)
+  const crumbHub = grapes.length ? { name: grapes[0], url: hub_url("grape", grapes[0]) } : null;
+  const crumbs = [
+    { name: "Wines", url: APP_URL + "/wines" },
+    ...(crumbHub && crumbHub.url ? [crumbHub] : []),
+    { name: wine_plain_name(w), url: pageUrl }
+  ];
+  const crumbHtml = `<nav class="crumbs" aria-label="Breadcrumb">${crumbs.map((c, i) => i < crumbs.length - 1 ? `<a href="${esc(c.url)}">${esc(c.name)}</a>` : `<span>${esc(c.name)}</span>`).join(" › ")}</nav>`;
+  const crumbSchema = JSON.stringify({ "@context": "https://schema.org", "@type": "BreadcrumbList",
+    "itemListElement": [{ name: "Welds Wine Wisdoms", url: APP_URL + "/" }, ...crumbs].map((c, i) => ({ "@type": "ListItem", "position": i + 1, "name": c.name, "item": c.url })) }).replace(/</g, "\\u003c");
   const ratingHtml = w.rating != null ? `<div class="rating"><span class="rating-num">${w.rating}</span><span class="rating-of">/10</span></div>` : "";
   const notesHtml = w.notes ? `<div class="notes"><h2>Tasting Notes</h2><p>${esc(w.notes)}</p></div>` : "";
   const intelHtml = render_intel(enrich);
   const schema = JSON.stringify({
-    "@context": "https://schema.org", "@type": "Product", "name": [w.winery, w.name].filter(Boolean).join(" "),
+    "@context": "https://schema.org", "@type": "Product", "name": wine_plain_name(w),
     "description": desc.replace(/&amp;/g,"&").replace(/&lt;/g,"<").replace(/&gt;/g,">").replace(/&quot;/g,'"'),
     "brand": w.winery ? { "@type": "Brand", "name": w.winery } : undefined,
     "image": w.photo_front ? frontUrl : undefined, "url": pageUrl,
@@ -946,7 +1051,8 @@ function render_wine_page(w, enrich) {
 <meta name="twitter:card" content="summary_large_image"/><meta name="twitter:title" content="${title}"/>
 <meta name="twitter:description" content="${desc}"/>
 <meta name="twitter:image" content="${w.photo_front ? esc(frontUrl) : APP_URL + "/og-image.png"}"/>
-<script type="application/ld+json">${schema}</script>
+<script type="application/ld+json">${schema.replace(/</g, "\\u003c")}</script>
+<script type="application/ld+json">${crumbSchema}</script>
 <link rel="icon" href="/favicon.ico" sizes="32x32"/>
 <link href="https://fonts.googleapis.com/css2?family=Lora:wght@500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
@@ -994,11 +1100,16 @@ h1.wine-name{display:inline}
 .intel-scores{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
 .intel-score{background:#2C0A16;color:#F5EDE2;border-radius:6px;padding:6px 12px;font-size:.82rem}
 .intel-score strong{color:#C9A34A}
+.crumbs{font-size:.82rem;color:#8B7355;margin-bottom:16px;line-height:1.5}
+.crumbs a{color:#8B2439;text-decoration:none;font-weight:500}
+.detail-value a{color:inherit;text-decoration:underline;text-decoration-color:#C9A34A;text-underline-offset:3px}
+.cta-box .cta-alt{margin:14px 0 0;font-family:Inter,sans-serif;font-size:.85rem}
+.cta-box .cta-alt a{color:#E2C070}
 </style></head><body>
 <div class="topbar"><a href="${APP_URL}">🍷 Welds Wine Wisdoms</a><a class="topbar-cta" href="${APP_URL}">Open App</a></div>
 <div class="accent"></div>
 <div class="container">
-<a class="back" href="${APP_URL}/wines">← All wines</a>
+${crumbHtml}
 <div class="wine-header">
 ${w.winery ? `<div class="wine-winery">${esc(w.winery)}</div>` : ""}
 <h1 class="wine-name">${esc(w.name || "Unnamed Wine")}</h1>${w.vintage ? `<span class="wine-vintage">${esc(String(w.vintage))}</span>` : ""}
@@ -1008,31 +1119,59 @@ ${photoHtml}
 <div class="details">${details}</div>
 ${notesHtml}
 ${intelHtml}
-<div class="cta-box">
-<p>Free AI wine label scanner and personal wine journal</p>
-<a class="cta-btn" href="${APP_URL}">Visit Welds Wine Wisdoms</a>
-</div>
-<div class="footer"><a href="${APP_URL}">weldswine.co.uk</a> · An AI-powered wine journal</div>
+${site_cta()}
+${site_footer()}
 </div></body></html>`;
 }
 __name(render_wine_page, "render_wine_page");
 
-function render_wine_list(wines) {
-  const cards = wines.map(w => {
-    const accent = style_colour(w.style);
-    const rating = w.rating != null ? `<span class="card-rating">${w.rating}</span>` : "";
-    const sub = [w.grape, w.region, w.vintage].filter(Boolean).join(" · ");
-    const photo = `<img src="${APP_URL}/wine/${encodeURIComponent(w.id)}?photo=front" alt="${esc((w.winery||"")+" "+(w.name||""))}" loading="lazy" decoding="async" width="80" height="100"/>`;
-    return `<a class="card" href="${APP_URL}/wine/${encodeURIComponent(w.id)}">
+// The box at the bottom of every public wine page, pointing at the two scanners
+function site_cta() {
+  return `<div class="cta-box">
+<p>Made with Welds Wine Wisdoms, the free wine label scanner and wine journal</p>
+<a class="cta-btn" href="${APP_URL}/wine-label-scanner.html">Try the free wine scanner</a>
+<p class="cta-alt"><a href="${APP_URL}/wine-shelf-scanner.html">Or find the best-value wine on a shop shelf →</a></p>
+</div>`;
+}
+__name(site_cta, "site_cta");
+
+function site_footer() {
+  return `<div class="footer"><a href="${APP_URL}">weldswine.co.uk</a> · <a href="${APP_URL}/wine-label-scanner.html">Wine label scanner</a> · <a href="${APP_URL}/wine-shelf-scanner.html">Shelf Scanner</a> · <a href="${APP_URL}/wines">All wines</a></div>`;
+}
+__name(site_footer, "site_footer");
+
+// One wine in a list of wines (the /wines page and the grape/region/country pages)
+function wine_card(w) {
+  const accent = style_colour(w.style);
+  const rating = w.rating != null ? `<span class="card-rating">${w.rating}</span>` : "";
+  const sub = [w.grape, w.region, w.vintage].filter(Boolean).join(" · ");
+  const photo = `<img src="${APP_URL}/wine/${encodeURIComponent(w.id)}?photo=front" alt="${esc(wine_plain_name(w, false))}" loading="lazy" decoding="async" width="80" height="100"/>`;
+  return `<a class="card" href="${APP_URL}/wine/${encodeURIComponent(w.id)}">
 <div class="card-photo">${photo}</div>
 <div class="card-body"><div class="card-accent" style="background:${accent}"></div>
 <div class="card-winery">${esc(w.winery || "")}</div>
 <div class="card-name">${esc(w.name || "Unnamed")}</div>
 <div class="card-sub">${esc(sub)}</div>
 ${rating}</div></a>`;
-  }).join("");
+}
+__name(wine_card, "wine_card");
 
-  return `<!DOCTYPE html><html lang="en"><head>
+// "Browse by grape / region / country" links. `except` is the page being shown, which is left out.
+function browse_links(hubs, except) {
+  const groups = Object.keys(HUB_KINDS).map(kind => {
+    const list = big_hubs(hubs, kind).filter(h => h !== except);
+    if (!list.length) return "";
+    return `<div class="browse-group"><h2>${HUB_KINDS[kind].plural}</h2><div class="browse-links">${list.map(h => `<a href="${esc(h.url)}">${esc(h.name)} <span>${h.wines.length}</span></a>`).join("")}</div></div>`;
+  }).join("");
+  return groups ? `<div class="browse">${groups}</div>` : "";
+}
+__name(browse_links, "browse_links");
+
+function render_wine_list(wines) {
+  const cards = wines.map(wine_card).join("");
+  const hubs = build_hubs(wines);
+
+  return `<!DOCTYPE html><html lang="en-GB"><head>
 <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>Wine Reviews &amp; Ratings — Welds Wine Wisdoms</title>
 <meta name="description" content="Browse ${wines.length} wines we have tasted and rated out of 10, with tasting notes, grapes and regions. Made with Welds Wine Wisdoms, a free AI wine label scanner and journal."/>
@@ -1046,7 +1185,75 @@ ${rating}</div></a>`;
 <meta name="twitter:card" content="summary_large_image"/>
 <link rel="icon" href="/favicon.ico" sizes="32x32"/>
 <link href="https://fonts.googleapis.com/css2?family=Lora:wght@500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-<style>
+<style>${LIST_CSS}</style></head><body>
+<div class="topbar"><a href="${APP_URL}">🍷 Welds Wine Wisdoms</a><a class="topbar-cta" href="${APP_URL}">Open App</a></div>
+<div class="container">
+<h1>Wine Reviews &amp; Ratings</h1>
+<p class="count">${wines.length} wine${wines.length===1?"":"s"} in our cellar</p>
+${browse_links(hubs, null)}
+<div class="grid">${cards}</div>
+${site_cta()}
+${site_footer()}
+</div></body></html>`;
+}
+__name(render_wine_list, "render_wine_list");
+
+// A page listing every wine we've rated with one grape, region or country, best first
+function render_hub_page(hub, hubs) {
+  const wines = hub.wines.slice().sort((a, b) => (b.rating ?? -1) - (a.rating ?? -1) || String(b.created_at || "").localeCompare(String(a.created_at || "")));
+  const n = wines.length;
+  const rated = wines.filter(w => w.rating != null);
+  const avg = rated.length ? (rated.reduce((s, w) => s + Number(w.rating), 0) / rated.length).toFixed(1) : null;
+  const top = rated[0];
+  const bottles = `${n} bottle${n === 1 ? "" : "s"}`;
+  const heading = hub.kind === "country" ? `Wines from ${hub.name} we’ve rated` : `${hub.name} wines we’ve rated`;
+  const titleBottles = `${n} Bottle${n === 1 ? "" : "s"}`;
+  const titleText = hub.kind === "country" ? `Wines from ${hub.name}: ${titleBottles} Rated` : `${hub.name} Wine Reviews: ${titleBottles} Rated`;
+  const descText = (`${n} ${hub.kind === "country" ? "wines from " + hub.name : hub.name + " wines"} we have tasted and scored out of 10, best first.` +
+    (top ? ` Top scorer: ${wine_plain_name(top)} (${top.rating}/10).` : "") +
+    ` Each scanned from the label with our free wine scanner.`).slice(0, 160);
+  const intro = `${bottles}${hub.kind === "country" ? " from " + hub.name : " of " + hub.name}, each tasted and given a score out of 10, best first.` +
+    (avg ? ` The average score is ${avg}.` : "") +
+    (top ? ` The highest scorer so far is <a href="${APP_URL}/wine/${encodeURIComponent(top.id)}">${esc(wine_plain_name(top))}</a> at ${top.rating}/10.` : "");
+  const schema = JSON.stringify({ "@context": "https://schema.org", "@graph": [
+    { "@type": "BreadcrumbList", "itemListElement": [
+      { "@type": "ListItem", "position": 1, "name": "Welds Wine Wisdoms", "item": APP_URL + "/" },
+      { "@type": "ListItem", "position": 2, "name": "Wines", "item": APP_URL + "/wines" },
+      { "@type": "ListItem", "position": 3, "name": hub.name, "item": hub.url } ] },
+    { "@type": "ItemList", "name": heading.replace("’", "'"), "numberOfItems": n,
+      "itemListElement": wines.map((w, i) => ({ "@type": "ListItem", "position": i + 1, "url": `${APP_URL}/wine/${encodeURIComponent(w.id)}`, "name": wine_plain_name(w) })) }
+  ] }).replace(/</g, "\\u003c");
+
+  return `<!DOCTYPE html><html lang="en-GB"><head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>${esc(titleText)} | Welds Wine Wisdoms</title>
+<meta name="description" content="${esc(descText)}"/>
+<meta name="robots" content="${n >= HUB_MIN_WINES ? "index, follow" : "noindex, follow"}"/>
+<link rel="canonical" href="${esc(hub.url)}"/>
+<meta property="og:type" content="website"/><meta property="og:site_name" content="Welds Wine Wisdoms"/>
+<meta property="og:title" content="${esc(titleText)}"/><meta property="og:description" content="${esc(descText)}"/>
+<meta property="og:url" content="${esc(hub.url)}"/><meta property="og:locale" content="en_GB"/>
+<meta property="og:image" content="${APP_URL}/og-image.png"/>
+<meta name="twitter:card" content="summary_large_image"/>
+<script type="application/ld+json">${schema}</script>
+<link rel="icon" href="/favicon.ico" sizes="32x32"/>
+<link href="https://fonts.googleapis.com/css2?family=Lora:wght@500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>${LIST_CSS}</style></head><body>
+<div class="topbar"><a href="${APP_URL}">🍷 Welds Wine Wisdoms</a><a class="topbar-cta" href="${APP_URL}">Open App</a></div>
+<div class="container">
+<nav class="crumbs" aria-label="Breadcrumb"><a href="${APP_URL}/wines">Wines</a> › <span>${esc(hub.name)}</span></nav>
+<h1>${esc(heading)}</h1>
+<p class="intro">${intro}</p>
+<div class="grid">${wines.map(wine_card).join("")}</div>
+${browse_links(hubs, hub)}
+${site_cta()}
+${site_footer()}
+</div></body></html>`;
+}
+__name(render_hub_page, "render_hub_page");
+
+// Styles shared by the /wines page and the grape/region/country pages
+const LIST_CSS = `
 *{margin:0;padding:0;box-sizing:border-box}
 body{background:#F9F5F0;color:#2C2420;font-family:Inter,system-ui,sans-serif;min-height:100vh}
 .topbar{background:#2C0A16;padding:14px 20px;display:flex;align-items:center;justify-content:space-between}
@@ -1073,34 +1280,44 @@ h1{font-family:Lora,Georgia,serif;font-size:1.6rem;font-weight:600;color:#2C0A16
 .cta-box p{color:#F5EDE2;font-family:Lora,Georgia,serif;font-size:1rem;margin-bottom:14px}
 .cta-btn{display:inline-block;background:#C9A34A;color:#2C0A16;padding:12px 28px;border-radius:8px;font-weight:600;text-decoration:none;font-size:.92rem}
 @media(max-width:480px){.grid{grid-template-columns:1fr}h1{font-size:1.3rem}}
-</style></head><body>
-<div class="topbar"><a href="${APP_URL}">🍷 Welds Wine Wisdoms</a><a class="topbar-cta" href="${APP_URL}">Open App</a></div>
-<div class="container">
-<h1>Wine Reviews &amp; Ratings</h1>
-<p class="count">${wines.length} wine${wines.length===1?"":"s"} in our cellar</p>
-<div class="grid">${cards}</div>
-<div class="cta-box">
-<p>Free AI wine label scanner and personal wine journal</p>
-<a class="cta-btn" href="${APP_URL}">Visit Welds Wine Wisdoms</a>
-</div>
-<div class="footer"><a href="${APP_URL}">weldswine.co.uk</a> · An AI-powered wine journal</div>
-</div></body></html>`;
-}
-__name(render_wine_list, "render_wine_list");
+.crumbs{font-size:.82rem;color:#8B7355;margin-bottom:14px}
+.crumbs a{color:#8B2439;text-decoration:none;font-weight:500}
+.intro{font-size:.95rem;line-height:1.65;color:#5A4E44;margin:8px 0 24px;max-width:38rem}
+.intro a{color:#8B2439}
+.browse{margin:8px 0 28px;display:grid;gap:16px}
+.grid + .browse{margin-top:32px}
+.browse-group h2{font-family:Inter,sans-serif;font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;color:#8B7355;font-weight:600;margin-bottom:8px}
+.browse-links{display:flex;flex-wrap:wrap;gap:8px}
+.browse-links a{display:inline-flex;align-items:center;gap:6px;min-height:36px;padding:0 12px;background:#fff;border:1px solid rgba(0,0,0,.08);border-radius:18px;font-size:.84rem;color:#2C0A16;text-decoration:none}
+.browse-links a:hover{border-color:#C9A34A}
+.browse-links span{font-size:.72rem;color:#8B7355}
+.cta-box .cta-alt{margin:14px 0 0;font-family:Inter,sans-serif;font-size:.85rem}
+.cta-box .cta-alt a{color:#E2C070}
+`;
 
 // When the public Shelf Scanner page (wine-shelf-scanner.html) last changed. Update it when you edit that page.
 const SHELF_PAGE_UPDATED = "2026-11-25";
+// When the public wine label scanner page (wine-label-scanner.html) last changed. Update it when you edit that page.
+const LABEL_PAGE_UPDATED = "2026-11-28";
 function render_sitemap(wines) {
   const today = new Date().toISOString().slice(0, 10);
+  const day = (w) => w.created_at ? w.created_at.slice(0, 10) : today;
   const entries = wines.map(w => {
-    const lastmod = w.created_at ? w.created_at.slice(0, 10) : today;
-    return `  <url><loc>${APP_URL}/wine/${encodeURIComponent(w.id)}</loc><lastmod>${lastmod}</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>`;
+    return `  <url><loc>${APP_URL}/wine/${encodeURIComponent(w.id)}</loc><lastmod>${day(w)}</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>`;
+  }).join("\n");
+  // Grape, region and country pages with enough wines to be worth showing in Google
+  const hubs = build_hubs(wines);
+  const hubEntries = Object.keys(HUB_KINDS).flatMap(kind => big_hubs(hubs, kind)).map(h => {
+    const lastmod = h.wines.map(day).sort().pop();
+    return `  <url><loc>${esc(h.url)}</loc><lastmod>${lastmod}</lastmod><changefreq>weekly</changefreq><priority>0.8</priority></url>`;
   }).join("\n");
   return `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url><loc>${APP_URL}/</loc><lastmod>${today}</lastmod><changefreq>monthly</changefreq><priority>1.0</priority></url>
-  <url><loc>${APP_URL}/wines</loc><lastmod>${today}</lastmod><changefreq>weekly</changefreq><priority>0.9</priority></url>
+  <url><loc>${APP_URL}/wine-label-scanner.html</loc><lastmod>${LABEL_PAGE_UPDATED}</lastmod><changefreq>monthly</changefreq><priority>0.9</priority></url>
   <url><loc>${APP_URL}/wine-shelf-scanner.html</loc><lastmod>${SHELF_PAGE_UPDATED}</lastmod><changefreq>monthly</changefreq><priority>0.9</priority></url>
+  <url><loc>${APP_URL}/wines</loc><lastmod>${today}</lastmod><changefreq>weekly</changefreq><priority>0.9</priority></url>
+${hubEntries}
 ${entries}
 </urlset>`;
 }
@@ -1144,7 +1361,7 @@ var worker_default = {
     const htmlHeaders = { "Content-Type": "text/html;charset=UTF-8", "Cache-Control": "public, max-age=3600, s-maxage=86400" };
     const CELLAR_ID = "8c1f5417-b9c7-49e3-915d-f9239cf48ff2";
     const PUBLIC_WINE_FIELDS = "id,name,winery,vintage,country,region,grape,style,rating,notes,photo_front,photo_back,created_at";
-    const LIST_WINE_FIELDS = "id,name,winery,vintage,region,grape,style,rating,created_at";
+    const LIST_WINE_FIELDS = "id,name,winery,vintage,country,region,grape,style,rating,created_at";
     const PLACEHOLDER_SVG = '<svg xmlns="http://www.w3.org/2000/svg" width="160" height="200" viewBox="0 0 160 200"><rect width="160" height="200" fill="#F4F0EB"/><path d="M62 58h36v22a18 18 0 0 1-36 0z" fill="#8B2439"/><rect x="78" y="98" width="4" height="30" fill="#8B2439"/><rect x="66" y="128" width="28" height="4" rx="2" fill="#8B2439"/></svg>';
 
     // ── GET /robots.txt ──────────────────────────────────────
@@ -1180,6 +1397,23 @@ var worker_default = {
       } catch (e) {
         console.error("wine photo error:", e.message);
         return new Response(PLACEHOLDER_SVG, { status: 200, headers: svgHeaders });
+      }
+    }
+
+    // ── GET /wine/grape-shiraz, /wine/region-rioja, /wine/country-france ──
+    const hubMatch = (wineMatch && request.method === "GET") ? wineMatch[1].match(HUB_PATH) : null;
+    if (hubMatch) {
+      try {
+        const wines = await sb_fetch(env,
+          "/wines?cellar_id=eq." + CELLAR_ID + "&rating=not.is.null&select=" + LIST_WINE_FIELDS + "&order=created_at.desc",
+          { prefer: "return=representation" });
+        const hubs = build_hubs(wines || []);
+        const hub = hubs[hubMatch[1] + "-" + hubMatch[2]];
+        if (!hub) return new Response(render_404(), { status: 404, headers: htmlHeaders });
+        return new Response(render_hub_page(hub, hubs), { status: 200, headers: htmlHeaders });
+      } catch (e) {
+        console.error("public hub page error:", e.message);
+        return new Response(render_404(), { status: 500, headers: htmlHeaders });
       }
     }
 
@@ -1222,7 +1456,7 @@ var worker_default = {
     if (url.pathname === "/sitemap.xml" && request.method === "GET") {
       try {
         const wines = await sb_fetch(env,
-          "/wines?cellar_id=eq." + CELLAR_ID + "&rating=not.is.null&select=id,created_at&order=created_at.desc",
+          "/wines?cellar_id=eq." + CELLAR_ID + "&rating=not.is.null&select=id,created_at,grape,region,country&order=created_at.desc",
           { prefer: "return=representation" });
         return new Response(render_sitemap(wines || []), { status: 200, headers: { "Content-Type": "application/xml;charset=UTF-8", "Cache-Control": "public, max-age=3600, s-maxage=86400" } });
       } catch (e) {
