@@ -932,6 +932,31 @@ const HUB_KINDS = {
   country: { plural: "Countries", names: w => [String(w.country || "").trim()].filter(s => s.length > 1) }
 };
 
+/* ── Wine page addresses ────────────────────────────────────────
+   A wine's page is /wine/<its name>-<its id>, e.g.
+   /wine/mad-fish-shiraz-2025-0d5b771673bb49429c506a7ec4235dab
+   The name is there for people and Google; only the id on the end is used to find the wine.
+   Old addresses (/wine/<id> on its own) and addresses with an out-of-date name
+   (the wine was renamed) are sent to the right address with a permanent redirect.
+   Ids that aren't the usual 32 letters/numbers (made by very old browsers) keep
+   the plain /wine/<id> address.                                          */
+const WINE_ID = /^[0-9a-f]{32}$/;
+const WINE_PATH = /^(?:[a-z0-9-]*-)?([0-9a-f]{32})$/;
+
+function wine_url(w) {
+  const id = String(w.id || "");
+  if (!WINE_ID.test(id)) return `${APP_URL}/wine/${encodeURIComponent(id)}`;
+  const slug = slugify(wine_plain_name(w)).slice(0, 80).replace(/-+$/, "") || "wine";
+  return `${APP_URL}/wine/${slug}-${id}`;
+}
+__name(wine_url, "wine_url");
+
+// Label photos keep the plain id address, so photos already cached (or in Google Images) stay put
+function wine_photo_url(w, side) {
+  return `${APP_URL}/wine/${encodeURIComponent(String(w.id || ""))}?photo=${side}`;
+}
+__name(wine_photo_url, "wine_photo_url");
+
 function hub_url(kind, name) {
   const s = slugify(name);
   return s ? `${APP_URL}/wine/${kind}-${s}` : "";
@@ -1000,10 +1025,10 @@ __name(render_intel, "render_intel");
 function render_wine_page(w, enrich) {
   const title = wine_title(w);
   const desc = wine_meta_desc(w, enrich);
-  const pageUrl = APP_URL + "/wine/" + encodeURIComponent(w.id);
+  const pageUrl = wine_url(w);
   const accent = style_colour(w.style);
-  const frontUrl = pageUrl + "?photo=front";
-  const backUrl = pageUrl + "?photo=back";
+  const frontUrl = wine_photo_url(w, "front");
+  const backUrl = wine_photo_url(w, "back");
   const photoHtml = (w.photo_front || w.photo_back) ? `<div class="photos">${w.photo_front ? `<img src="${esc(frontUrl)}" alt="${esc((w.winery||"")+" "+(w.name||""))} front label" loading="lazy" decoding="async"/>` : ""}${w.photo_back ? `<img src="${esc(backUrl)}" alt="${esc((w.winery||"")+" "+(w.name||""))} back label" loading="lazy" decoding="async"/>` : ""}</div>` : "";
   // Grape, region and country link to the page listing every wine we've rated with that grape/region/country
   const link = (href, text) => href ? `<a href="${esc(href)}">${esc(text)}</a>` : esc(text);
@@ -1145,8 +1170,8 @@ function wine_card(w) {
   const accent = style_colour(w.style);
   const rating = w.rating != null ? `<span class="card-rating">${w.rating}</span>` : "";
   const sub = [w.grape, w.region, w.vintage].filter(Boolean).join(" · ");
-  const photo = `<img src="${APP_URL}/wine/${encodeURIComponent(w.id)}?photo=front" alt="${esc(wine_plain_name(w, false))}" loading="lazy" decoding="async" width="80" height="100"/>`;
-  return `<a class="card" href="${APP_URL}/wine/${encodeURIComponent(w.id)}">
+  const photo = `<img src="${esc(wine_photo_url(w, "front"))}" alt="${esc(wine_plain_name(w, false))}" loading="lazy" decoding="async" width="80" height="100"/>`;
+  return `<a class="card" href="${esc(wine_url(w))}">
 <div class="card-photo">${photo}</div>
 <div class="card-body"><div class="card-accent" style="background:${accent}"></div>
 <div class="card-winery">${esc(w.winery || "")}</div>
@@ -1214,14 +1239,14 @@ function render_hub_page(hub, hubs) {
     ` Each scanned from the label with our free wine scanner.`).slice(0, 160);
   const intro = `${bottles}${hub.kind === "country" ? " from " + hub.name : " of " + hub.name}, each tasted and given a score out of 10, best first.` +
     (avg ? ` The average score is ${avg}.` : "") +
-    (top ? ` The highest scorer so far is <a href="${APP_URL}/wine/${encodeURIComponent(top.id)}">${esc(wine_plain_name(top))}</a> at ${top.rating}/10.` : "");
+    (top ? ` The highest scorer so far is <a href="${esc(wine_url(top))}">${esc(wine_plain_name(top))}</a> at ${top.rating}/10.` : "");
   const schema = JSON.stringify({ "@context": "https://schema.org", "@graph": [
     { "@type": "BreadcrumbList", "itemListElement": [
       { "@type": "ListItem", "position": 1, "name": "Welds Wine Wisdoms", "item": APP_URL + "/" },
       { "@type": "ListItem", "position": 2, "name": "Wines", "item": APP_URL + "/wines" },
       { "@type": "ListItem", "position": 3, "name": hub.name, "item": hub.url } ] },
     { "@type": "ItemList", "name": heading.replace("’", "'"), "numberOfItems": n,
-      "itemListElement": wines.map((w, i) => ({ "@type": "ListItem", "position": i + 1, "url": `${APP_URL}/wine/${encodeURIComponent(w.id)}`, "name": wine_plain_name(w) })) }
+      "itemListElement": wines.map((w, i) => ({ "@type": "ListItem", "position": i + 1, "url": wine_url(w), "name": wine_plain_name(w) })) }
   ] }).replace(/</g, "\\u003c");
 
   return `<!DOCTYPE html><html lang="en-GB"><head>
@@ -1299,24 +1324,25 @@ h1{font-family:Lora,Georgia,serif;font-size:1.6rem;font-weight:600;color:#2C0A16
 const SHELF_PAGE_UPDATED = "2026-11-25";
 // When the public wine label scanner page (wine-label-scanner.html) last changed. Update it when you edit that page.
 const LABEL_PAGE_UPDATED = "2026-11-28";
+// When the homepage's landing screen (the part Google reads) last changed. Update it when you change that wording.
+const HOME_PAGE_UPDATED = "2026-11-28";
+// Google ignores <changefreq> and <priority>, so they are left out. It does use <lastmod>,
+// but only trusts it if it is accurate, so each date is when that page really last changed.
 function render_sitemap(wines) {
   const today = new Date().toISOString().slice(0, 10);
   const day = (w) => w.created_at ? w.created_at.slice(0, 10) : today;
-  const entries = wines.map(w => {
-    return `  <url><loc>${APP_URL}/wine/${encodeURIComponent(w.id)}</loc><lastmod>${day(w)}</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>`;
-  }).join("\n");
+  const newest = (list) => list.length ? list.map(day).sort().pop() : today;
+  const url = (loc, lastmod) => `  <url><loc>${esc(loc)}</loc><lastmod>${lastmod}</lastmod></url>`;
+  const entries = wines.map(w => url(wine_url(w), day(w))).join("\n");
   // Grape, region and country pages with enough wines to be worth showing in Google
   const hubs = build_hubs(wines);
-  const hubEntries = Object.keys(HUB_KINDS).flatMap(kind => big_hubs(hubs, kind)).map(h => {
-    const lastmod = h.wines.map(day).sort().pop();
-    return `  <url><loc>${esc(h.url)}</loc><lastmod>${lastmod}</lastmod><changefreq>weekly</changefreq><priority>0.8</priority></url>`;
-  }).join("\n");
+  const hubEntries = Object.keys(HUB_KINDS).flatMap(kind => big_hubs(hubs, kind)).map(h => url(h.url, newest(h.wines))).join("\n");
   return `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url><loc>${APP_URL}/</loc><lastmod>${today}</lastmod><changefreq>monthly</changefreq><priority>1.0</priority></url>
-  <url><loc>${APP_URL}/wine-label-scanner.html</loc><lastmod>${LABEL_PAGE_UPDATED}</lastmod><changefreq>monthly</changefreq><priority>0.9</priority></url>
-  <url><loc>${APP_URL}/wine-shelf-scanner.html</loc><lastmod>${SHELF_PAGE_UPDATED}</lastmod><changefreq>monthly</changefreq><priority>0.9</priority></url>
-  <url><loc>${APP_URL}/wines</loc><lastmod>${today}</lastmod><changefreq>weekly</changefreq><priority>0.9</priority></url>
+${url(APP_URL + "/", HOME_PAGE_UPDATED)}
+${url(APP_URL + "/wine-label-scanner.html", LABEL_PAGE_UPDATED)}
+${url(APP_URL + "/wine-shelf-scanner.html", SHELF_PAGE_UPDATED)}
+${url(APP_URL + "/wines", newest(wines))}
 ${hubEntries}
 ${entries}
 </urlset>`;
@@ -1369,8 +1395,14 @@ var worker_default = {
       return new Response("User-agent: *\nAllow: /\nDisallow: /api/\n\nSitemap: https://weldswine.co.uk/sitemap.xml\n", { headers: { "Content-Type": "text/plain", "Cache-Control": "public, max-age=86400" } });
     }
 
-    // ── GET /wine/:id — individual wine page ───────────────
+    // ── GET /wine/<name>-<id> — individual wine page ─────────
     const wineMatch = url.pathname.match(/^\/wine\/([^/]+)$/);
+    // Which wine the address points at: the id on the end of /wine/<name>-<id>,
+    // or the whole of an old-style /wine/<id>. (A badly encoded address gives "".)
+    let wineSegment = "";
+    if (wineMatch) { try { wineSegment = decodeURIComponent(wineMatch[1]); } catch (e) { wineSegment = ""; } }
+    const wineIdTail = wineSegment.match(WINE_PATH);
+    const wineIdFromPath = wineIdTail ? wineIdTail[1] : wineSegment;
 
     // GET /wine/:id?photo=front|back -- label image bytes (query param keeps it
     // under the same Worker route that already serves /wine/:id)
@@ -1378,7 +1410,7 @@ var worker_default = {
     if (photoSide === "front" || photoSide === "back") {
       const svgHeaders = { "Content-Type": "image/svg+xml", "Cache-Control": "public, max-age=3600" };
       try {
-        const encId = encodeURIComponent(decodeURIComponent(wineMatch[1]));
+        const encId = encodeURIComponent(wineIdFromPath);
         const col = "photo_" + photoSide;
         const rows = await sb_fetch(env,
           "/wines?id=eq." + encId + "&cellar_id=eq." + CELLAR_ID + "&select=" + col,
@@ -1401,7 +1433,8 @@ var worker_default = {
     }
 
     // ── GET /wine/grape-shiraz, /wine/region-rioja, /wine/country-france ──
-    const hubMatch = (wineMatch && request.method === "GET") ? wineMatch[1].match(HUB_PATH) : null;
+    // (An address ending in a wine id is always a wine, even if the wine's name starts with "grape")
+    const hubMatch = (wineMatch && !wineIdTail && request.method === "GET") ? wineSegment.match(HUB_PATH) : null;
     if (hubMatch) {
       try {
         const wines = await sb_fetch(env,
@@ -1418,9 +1451,9 @@ var worker_default = {
     }
 
     if (wineMatch && request.method === "GET") {
-      const wineId = decodeURIComponent(wineMatch[1]);
+      if (!wineIdFromPath) return new Response(render_404(), { status: 404, headers: htmlHeaders });
       try {
-        const encId = encodeURIComponent(wineId);
+        const encId = encodeURIComponent(wineIdFromPath);
         const [rows, enrichRows] = await Promise.all([
           sb_fetch(env,
             "/wines?id=eq." + encId + "&cellar_id=eq." + CELLAR_ID + "&select=" + PUBLIC_WINE_FIELDS,
@@ -1431,6 +1464,12 @@ var worker_default = {
         ]);
         if (!rows || !rows.length) return new Response(render_404(), { status: 404, headers: htmlHeaders });
         const w = rows[0];
+        // Old address (/wine/<id>) or an out-of-date name: send people and Google to the right address.
+        // A permanent (301) redirect tells Google to move the page's ranking to the new address.
+        const canonical = new URL(wine_url(w));
+        if (canonical.pathname !== url.pathname) {
+          return new Response(null, { status: 301, headers: { "Location": canonical.href + url.search, "Cache-Control": "public, max-age=3600" } });
+        }
         const enrich = (enrichRows && enrichRows.length) ? enrichRows[0] : null;
         return new Response(render_wine_page(w, enrich), { status: 200, headers: htmlHeaders });
       } catch (e) {
@@ -1456,7 +1495,7 @@ var worker_default = {
     if (url.pathname === "/sitemap.xml" && request.method === "GET") {
       try {
         const wines = await sb_fetch(env,
-          "/wines?cellar_id=eq." + CELLAR_ID + "&rating=not.is.null&select=id,created_at,grape,region,country&order=created_at.desc",
+          "/wines?cellar_id=eq." + CELLAR_ID + "&rating=not.is.null&select=id,name,winery,vintage,created_at,grape,region,country&order=created_at.desc",
           { prefer: "return=representation" });
         return new Response(render_sitemap(wines || []), { status: 200, headers: { "Content-Type": "application/xml;charset=UTF-8", "Cache-Control": "public, max-age=3600, s-maxage=86400" } });
       } catch (e) {
